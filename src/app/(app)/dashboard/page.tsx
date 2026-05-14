@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, AlertTriangle, ArrowUpRight, CheckCircle2, Clock, Circle, Film } from "lucide-react";
+import { Star, AlertTriangle, ArrowUpRight, CheckCircle2, Clock, Circle, Film, Megaphone, Camera, Zap } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar,
@@ -62,11 +62,11 @@ const overdue = [
   { client: "RetailCZ",     amount: "18 000 Kč", days: 12 },
 ];
 const metrics = [
-  { label: "Tržby / červen",   value: "125 000",  unit: "Kč",   delta: "+7,2%",    up: true  },
-  { label: "Náklady / červen", value: "55 000",   unit: "Kč",   delta: "+14,5%",   up: false },
-  { label: "Zisk / červen",    value: "70 000",   unit: "Kč",   delta: "+3,1%",    up: true  },
-  { label: "Aktiv. projekty",  value: "8",        unit: "",     delta: "3 deadlines", up: false },
-  { label: "Produkce / měsíc", value: "25",       unit: "vid.", delta: "+39% YoY", up: true  },
+  { label: "Tržby / Květen",   value: "134 000",  unit: "Kč",   delta: "+21,8% vs. Duben", up: true  },
+  { label: "Náklady / Květen", value: "48 000",   unit: "Kč",   delta: "–7,7% vs. Duben",  up: true  },
+  { label: "Zisk / Květen",    value: "86 000",   unit: "Kč",   delta: "+38,7% vs. Duben", up: true  },
+  { label: "Aktiv. projekty",  value: "7",        unit: "",     delta: "2 deadlines",       up: false },
+  { label: "Produkce / měsíc", value: "28",       unit: "dní",  delta: "+39% YoY",          up: true  },
 ];
 
 /* ── Helpers ───────────────────────────────────────────────────────────────── */
@@ -180,7 +180,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-[12px] md:text-[13px] text-[--muted-foreground] mt-1.5">
-            OnVision s.r.o. · červen 2026
+            OnVision s.r.o. · Květen 2026
           </p>
         </div>
         <div
@@ -419,12 +419,12 @@ export default function DashboardPage() {
               { label: "Tento měsíc", icon: Film,         color: "oklch(0.74 0.165 75)",  tasks: monthTasks },
             ].map(({ label, icon: Icon, color, tasks }) => (
               <motion.div key={label} variants={stagger.item}>
-                <SpotlightCard
-                  className="px-5 py-4"
-                  style={{ borderLeft: `3px solid ${color}` }}
-                >
+                <SpotlightCard className="px-5 py-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Icon className="w-3.5 h-3.5" style={{ color }} />
+                    <div className="w-6 h-6 rounded-[5px] flex items-center justify-center shrink-0"
+                      style={{background:`${color.replace(")","/0.12)")}`,border:`1px solid ${color.replace(")","/0.2)")}`}}>
+                      <Icon className="w-3 h-3" style={{ color }}/>
+                    </div>
                     <span
                       className="text-[11px] font-semibold uppercase tracking-[0.1em]"
                       style={{ color }}
@@ -511,6 +511,144 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* ── Bottom row: Ad Monitor + Production Map ── */}
+      <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
+
+        {/* Ad Spend Monitor */}
+        <SpotlightCard className="p-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
+              style={{background:"oklch(0.74 0.165 75 / 0.12)",border:"1px solid oklch(0.74 0.165 75 / 0.2)"}}>
+              <Megaphone className="w-3.5 h-3.5" style={{color:"oklch(0.78 0.165 75)"}}/>
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Ad Spend Monitor</p>
+              <p className="text-[11px] text-[--muted-foreground]">Aktivní Meta kampaně · Květen 2026</p>
+            </div>
+            <a href="/ads" className="ml-auto text-[11px] font-semibold flex items-center gap-1 btn-tactile px-2 py-1 rounded-[5px]"
+              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+              Vše <ArrowUpRight className="w-3 h-3"/>
+            </a>
+          </div>
+          <div className="space-y-2">
+            {[
+              { klient:"SENIMED s.r.o.",    castka: 8500,  stav:"Probíhá",   vysledek:"CTR 3.2%" },
+              { klient:"EASTGATE Brno",     castka: 5200,  stav:"Probíhá",   vysledek:"Reach 42k" },
+              { klient:"Power Plate Česko", castka: 12000, stav:"Probíhá",   vysledek:"Conv. 24" },
+              { klient:"BehejBrno",         castka: 3500,  stav:"Dokončeno", vysledek:"ROAS 4.1×" },
+            ].map(ad=>{
+              const active = ad.stav==="Probíhá";
+              return (
+                <div key={ad.klient} className="flex items-center gap-3 px-3 py-2.5 rounded-[8px]"
+                  style={{background:"oklch(1 0 0 / 0.03)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:active?"oklch(0.67 0.155 155)":"oklch(0.40 0.005 222)"}}/>
+                  <span className="flex-1 text-[12px] font-semibold text-[--foreground] truncate" style={{fontFamily:"var(--font-outfit)"}}>{ad.klient}</span>
+                  <span className="text-[11px]" style={{color:"oklch(0.50 0.005 222)"}}>{ad.vysledek}</span>
+                  <span className="num text-[12px] font-bold shrink-0" style={{fontFamily:"var(--font-outfit)",color:active?"oklch(0.78 0.165 75)":"oklch(0.45 0.005 222)"}}>
+                    {ad.castka.toLocaleString("cs-CZ")} Kč
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 pt-3 flex items-center justify-between border-t" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
+            <span className="text-[11px] text-[--muted-foreground]">Celkem investováno</span>
+            <span className="num text-[13px] font-bold" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.78 0.165 75)"}}>29 200 Kč</span>
+          </div>
+        </SpotlightCard>
+
+        {/* Production Map */}
+        <SpotlightCard className="p-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
+              style={{background:"oklch(0.81 0.155 200 / 0.12)",border:"1px solid oklch(0.81 0.155 200 / 0.2)"}}>
+              <Camera className="w-3.5 h-3.5" style={{color:"oklch(0.81 0.155 200)"}}/>
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Produkční mapa</p>
+              <p className="text-[11px] text-[--muted-foreground]">Nadcházející natáčecí dny · Květen</p>
+            </div>
+            <a href="/calendar" className="ml-auto text-[11px] font-semibold flex items-center gap-1 btn-tactile px-2 py-1 rounded-[5px]"
+              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+              Kalendář <ArrowUpRight className="w-3 h-3"/>
+            </a>
+          </div>
+          <div className="space-y-2">
+            {[
+              { datum:"16. 5.", klient:"SK Brno Slatina — FINAL FOUR",     typ:"Natáčení", clenove:["Adam","Zdeněk","Matěj"] },
+              { datum:"22. 5.", klient:"TEKMA s.r.o. — promo video",        typ:"Natáčení", clenove:["Adam","Zdeněk"] },
+              { datum:"26. 5.", klient:"Power Plate — produktové focení",   typ:"Focení",   clenove:["Adam","Matěj"] },
+              { datum:"28. 5.", klient:"FIRESTA — Dvorecký most",           typ:"Natáčení", clenove:["Adam"] },
+              { datum:"29. 5.", klient:"EFFECT Clinic — brand content",     typ:"Focení",   clenove:["Adam","Matěj"] },
+            ].map(ev=>{
+              const isShoot = ev.typ==="Natáčení";
+              const c = isShoot?"oklch(0.81 0.155 200)":"oklch(0.67 0.155 155)";
+              return (
+                <div key={ev.datum} className="flex items-center gap-3">
+                  <div className="w-10 shrink-0 text-center">
+                    <p className="text-[15px] font-bold leading-none" style={{fontFamily:"var(--font-outfit)",color:c}}>{ev.datum.split(".")[0]}.</p>
+                    <p className="text-[9px] font-bold uppercase" style={{color:"oklch(0.35 0.005 222)"}}>Kvě</p>
+                  </div>
+                  <div className="flex-1 min-w-0 px-3 py-2 rounded-[7px]"
+                    style={{background:`${c.replace(")","/0.06)")}`,border:`1px solid ${c.replace(")","/0.14)")}`}}>
+                    <p className="text-[11px] font-semibold truncate text-[--foreground]" style={{fontFamily:"var(--font-outfit)"}}>{ev.klient}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[9px] font-bold uppercase tracking-wide" style={{color:c}}>{ev.typ}</span>
+                      <span className="text-[9px] text-[--muted-foreground]">{ev.clenove.join(", ")}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SpotlightCard>
+
+      </div>
+
+      {/* ── Cashflow Gauge ── */}
+      <SpotlightCard className="p-5">
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
+            style={{background:"oklch(0.67 0.155 155 / 0.12)",border:"1px solid oklch(0.67 0.155 155 / 0.2)"}}>
+            <Zap className="w-3.5 h-3.5" style={{color:"oklch(0.67 0.155 155)"}}/>
+          </div>
+          <div>
+            <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Cashflow · Květen 2026</p>
+            <p className="text-[11px] text-[--muted-foreground]">Příjmy vs. výdaje aktuálního měsíce</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label:"Příjmy",  value:134000, color:"oklch(0.67 0.155 155)", pct:100 },
+            { label:"Výdaje",  value:48000,  color:"oklch(0.65 0.22 25)",   pct:35.8 },
+            { label:"Zisk",    value:86000,  color:"oklch(0.81 0.155 200)", pct:64.2 },
+          ].map(({label,value,color,pct})=>(
+            <div key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[--muted-foreground] mb-2">{label}</p>
+              <p className="num text-[22px] font-bold leading-none mb-2" style={{fontFamily:"var(--font-outfit)",color,letterSpacing:"-0.02em"}}>
+                {value.toLocaleString("cs-CZ")}
+                <span className="text-[13px] font-normal ml-1" style={{color:"oklch(0.40 0.005 222)"}}>Kč</span>
+              </p>
+              <div className="h-[6px] rounded-full overflow-hidden" style={{background:"oklch(1 0 0 / 0.07)"}}>
+                <motion.div className="h-full rounded-full" style={{background:color}}
+                  initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:0.8,delay:0.3,ease:[0.23,1,0.32,1]}}/>
+              </div>
+              <p className="text-[10px] mt-1" style={{color:"oklch(0.40 0.005 222)"}}>{pct.toFixed(1)}% z příjmů</p>
+            </div>
+          ))}
+        </div>
+        {/* Marže indicator */}
+        <div className="mt-4 pt-4 flex items-center gap-3 border-t" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
+          <span className="text-[11px] text-[--muted-foreground]">Čistá marže</span>
+          <div className="flex-1 h-[4px] rounded-full overflow-hidden" style={{background:"oklch(1 0 0 / 0.07)"}}>
+            <motion.div className="h-full rounded-full" style={{background:"oklch(0.81 0.155 200)"}}
+              initial={{width:0}} animate={{width:"64.2%"}} transition={{duration:1,delay:0.5,ease:[0.23,1,0.32,1]}}/>
+          </div>
+          <span className="num text-[13px] font-bold shrink-0" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.81 0.155 200)"}}>64,2%</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.67 0.155 155 / 0.12)",color:"oklch(0.67 0.155 155)"}}>+38,7% vs. Duben</span>
+        </div>
+      </SpotlightCard>
 
     </div>
   );
