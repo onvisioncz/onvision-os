@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
-  CalendarDays, TrendingUp, FolderLock, Settings, Megaphone,
+  CalendarDays, TrendingUp, FolderLock, Settings, Megaphone, Clapperboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const nav = [
   { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
   { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
+  { label: "Produkce",        short: "Produkce",   href: "/produkce",         icon: Clapperboard },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Growth Hub",      short: "Growth",     href: "/growth",           icon: TrendingUp },
   { label: "Vault",           short: "Vault",      href: "/vault",            icon: FolderLock },
