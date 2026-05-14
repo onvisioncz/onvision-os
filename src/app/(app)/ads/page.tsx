@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, Search, Megaphone,
-  CheckCircle2, Clock, AlertCircle, ChevronDown,
+  CheckCircle2, Clock, AlertCircle, ChevronDown, TrendingUp, Users2,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -88,6 +88,28 @@ function payStyle(s: PayStatus) {
   if (s === "Odesláno")  return { color: "oklch(0.67 0.155 155)", dot: "oklch(0.67 0.155 155)" };
   if (s === "Neodesláno") return { color: "oklch(0.65 0.22 25)",   dot: "oklch(0.65 0.22 25)" };
   return                         { color: "oklch(0.40 0.005 222)", dot: "oklch(0.35 0.005 222)" };
+}
+
+/* ── Money helpers ──────────────────────────────────────────────────────────── */
+function parseCastka(s: string): number {
+  if (!s || s === "—") return 0;
+  return parseInt(s.replace(/\D/g, ""), 10) || 0;
+}
+function formatKc(n: number): string {
+  if (!n) return "—";
+  return n.toLocaleString("cs-CZ") + " Kč";
+}
+
+/* ── Date sort helper ───────────────────────────────────────────────────────── */
+const MONTH_CZ: Record<string, number> = {
+  LEDEN: 1, ÚNOR: 2, BŘEZEN: 3, DUBEN: 4, KVĚTEN: 5, ČERVEN: 6,
+  ČERVENEC: 7, SRPEN: 8, ZÁŘÍ: 9, ŘÍJEN: 10, LISTOPAD: 11, PROSINEC: 12,
+};
+function mesicToOrder(m: string): number {
+  // "BŘEZEN / DUBEN" → take last word
+  const parts = m.split(/[\s/]+/).filter(Boolean);
+  const last = parts[parts.length - 1];
+  return MONTH_CZ[last] ?? 0;
 }
 
 /* ── Badge ──────────────────────────────────────────────────────────────────── */
@@ -179,6 +201,167 @@ function StatsStrip({ ads }: { ads: Ad[] }) {
           </p>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── Investment Panel ───────────────────────────────────────────────────────── */
+function InvestmentPanel({ ads }: { ads: Ad[] }) {
+  const allMonths = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    [...ads].sort((a, b) => mesicToOrder(b.mesic) - mesicToOrder(a.mesic))
+      .forEach(a => { if (!seen.has(a.mesic)) { seen.add(a.mesic); out.push(a.mesic); } });
+    return out;
+  }, [ads]);
+
+  const [period, setPeriod] = useState("Vše");
+
+  const periodAds = useMemo(
+    () => period === "Vše" ? ads : ads.filter(a => a.mesic === period),
+    [ads, period],
+  );
+
+  const total = useMemo(() => periodAds.reduce((s, a) => s + parseCastka(a.castka), 0), [periodAds]);
+
+  const byClient = useMemo(() => {
+    const map: Record<string, { count: number; total: number; active: number }> = {};
+    periodAds.forEach(a => {
+      if (!map[a.klient]) map[a.klient] = { count: 0, total: 0, active: 0 };
+      map[a.klient].count++;
+      map[a.klient].total += parseCastka(a.castka);
+      if (a.stav === "Probíhá" || a.stav === "Probíhá vyhodnocení") map[a.klient].active++;
+    });
+    return Object.entries(map)
+      .map(([klient, d]) => ({ klient, ...d }))
+      .sort((a, b) => b.total - a.total);
+  }, [periodAds]);
+
+  // client colors cycling
+  const CLIENT_COLORS = [
+    "oklch(0.81 0.155 200)", "oklch(0.64 0.21 290)", "oklch(0.74 0.165 75)",
+    "oklch(0.67 0.155 155)", "oklch(0.65 0.22 25)",  "oklch(0.72 0.18 340)",
+  ];
+
+  return (
+    <div className="card p-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
+            style={{ background: "oklch(0.81 0.155 200 / 0.1)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
+            <TrendingUp className="w-3.5 h-3.5" style={{ color: "oklch(0.81 0.155 200)" }} />
+          </div>
+          <div>
+            <p className="text-[14px] font-bold text-[--foreground] leading-none"
+              style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>
+              Přehled investic
+            </p>
+            <p className="text-[11px] text-[--muted-foreground] mt-0.5">Celková útrata klientů za reklamy</p>
+          </div>
+        </div>
+        {/* Period filter */}
+        <div className="relative w-full sm:w-auto sm:min-w-[160px]">
+          <select
+            value={period}
+            onChange={e => setPeriod(e.target.value)}
+            className="w-full pl-3 pr-8 py-1.5 rounded-[7px] text-[12px] font-medium appearance-none cursor-pointer outline-none transition-all"
+            style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.09)", color: "var(--foreground)", fontFamily: "var(--font-jakarta)" }}
+          >
+            <option value="Vše" style={{ background: "oklch(0.12 0.008 222)" }}>Všechna období</option>
+            {allMonths.map(m => (
+              <option key={m} value={m} style={{ background: "oklch(0.12 0.008 222)" }}>{m}</option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[--muted-foreground]" />
+        </div>
+      </div>
+
+      {/* Total + client grid */}
+      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 md:gap-8">
+        {/* Total */}
+        <div className="md:border-r md:pr-8" style={{ borderColor: "oklch(1 0 0 / 0.07)" }}>
+          <p className="text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em] mb-2">
+            Celkem investováno
+          </p>
+          <p className="num leading-none mb-1"
+            style={{ fontSize: "clamp(28px, 5vw, 40px)", fontWeight: 700, fontFamily: "var(--font-outfit)", letterSpacing: "-0.03em", color: "var(--foreground)" }}>
+            {formatKc(total)}
+          </p>
+          <p className="text-[11px] text-[--muted-foreground] mt-1.5">
+            {periodAds.filter(a => a.castka).length} kampaní s&nbsp;částkou
+            {period !== "Vše" && ` · ${period}`}
+          </p>
+
+          {/* Donut-style mini stats */}
+          <div className="mt-4 flex items-center gap-4">
+            {[
+              { label: "Dokončeno",  n: periodAds.filter(a => a.stav === "Dokončeno").length,           color: "oklch(0.67 0.155 155)" },
+              { label: "Probíhá",   n: periodAds.filter(a => a.stav !== "Dokončeno").length,             color: "oklch(0.81 0.155 200)" },
+              { label: "Neodesláno",n: periodAds.filter(a => a.stavVyplaty === "Neodesláno").length,     color: "oklch(0.65 0.22 25)" },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <p className="num text-[20px] font-bold leading-none" style={{ fontFamily: "var(--font-outfit)", color: s.color }}>{s.n}</p>
+                <p className="text-[9px] text-[--muted-foreground] mt-1 uppercase tracking-[0.06em]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Per-client breakdown */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Users2 className="w-3 h-3 text-[--muted-foreground]" />
+            <p className="text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">
+              Podle klienta
+            </p>
+          </div>
+          <div className="space-y-3">
+            {byClient.map(({ klient, count, total: ct, active }, i) => {
+              const pct   = total > 0 ? (ct / total) * 100 : 0;
+              const color = CLIENT_COLORS[i % CLIENT_COLORS.length];
+              return (
+                <div key={klient}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-[13px] font-semibold text-[--foreground] truncate"
+                        style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>
+                        {klient}
+                      </span>
+                      {active > 0 && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px]"
+                          style={{ background: "oklch(0.81 0.155 200 / 0.1)", color: "oklch(0.81 0.155 200)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
+                          {active} aktivní
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                      <span className="text-[11px] text-[--muted-foreground]">{count}×</span>
+                      <span className="num text-[13px] font-bold text-[--foreground]"
+                        style={{ fontFamily: "var(--font-outfit)", minWidth: "80px", textAlign: "right" }}>
+                        {ct > 0 ? formatKc(ct) : "—"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 0.07)" }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {byClient.length === 0 && (
+              <p className="text-[12px] text-[--muted-foreground]">Žádná data pro toto období.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -506,8 +689,27 @@ export default function AdsPage() {
         if (!search) return true;
         const q = search.toLowerCase();
         return a.klient.toLowerCase().includes(q) || a.tema.toLowerCase().includes(q) || a.mesic.toLowerCase().includes(q);
+      })
+      // Newest first — by month order descending, then by id descending
+      .sort((a, b) => {
+        const mo = mesicToOrder(b.mesic) - mesicToOrder(a.mesic);
+        return mo !== 0 ? mo : b.id - a.id;
       });
   }, [ads, filter, search]);
+
+  // Group by mesic, preserving sort order
+  const grouped = useMemo(() => {
+    const groups: { mesic: string; ads: Ad[] }[] = [];
+    const seen: Record<string, number> = {};
+    filtered.forEach(a => {
+      if (seen[a.mesic] === undefined) {
+        seen[a.mesic] = groups.length;
+        groups.push({ mesic: a.mesic, ads: [] });
+      }
+      groups[seen[a.mesic]].ads.push(a);
+    });
+    return groups;
+  }, [filtered]);
 
   function toggleDone(id: number) {
     setAds(prev => prev.map(a => {
@@ -575,6 +777,11 @@ export default function AdsPage() {
         {/* Stats */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
           <StatsStrip ads={ads} />
+        </motion.div>
+
+        {/* Investment panel */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }}>
+          <InvestmentPanel ads={ads} />
         </motion.div>
 
         {/* Filters */}
@@ -652,13 +859,36 @@ export default function AdsPage() {
               </thead>
               <tbody>
                 <AnimatePresence mode="popLayout">
-                  {filtered.map(ad => (
-                    <AdRow
-                      key={ad.id}
-                      ad={ad}
-                      onEdit={a => setModal(a)}
-                      onToggleDone={toggleDone}
-                    />
+                  {grouped.map(group => (
+                    <>
+                      {/* Month header row */}
+                      <tr key={`header-${group.mesic}`}>
+                        <td colSpan={12} className="px-4 pt-4 pb-1.5">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="text-[11px] font-bold uppercase tracking-[0.1em]"
+                              style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}
+                            >
+                              {group.mesic}
+                            </span>
+                            <span className="flex-1 h-px" style={{ background: "oklch(0.81 0.155 200 / 0.15)" }} />
+                            <span className="text-[10px] text-[--muted-foreground]">
+                              {group.ads.length} {group.ads.length === 1 ? "kampaň" : group.ads.length < 5 ? "kampaně" : "kampaní"}
+                              {" · "}
+                              {formatKc(group.ads.reduce((s, a) => s + parseCastka(a.castka), 0))}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {group.ads.map(ad => (
+                        <AdRow
+                          key={ad.id}
+                          ad={ad}
+                          onEdit={a => setModal(a)}
+                          onToggleDone={toggleDone}
+                        />
+                      ))}
+                    </>
                   ))}
                 </AnimatePresence>
                 {filtered.length === 0 && (
@@ -675,19 +905,34 @@ export default function AdsPage() {
 
         {/* Cards — mobile */}
         <motion.div
-          className="space-y-2.5 md:hidden"
+          className="space-y-2 md:hidden"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
         >
           <AnimatePresence mode="popLayout">
-            {filtered.map(ad => (
-              <AdCard
-                key={ad.id}
-                ad={ad}
-                onEdit={a => setModal(a)}
-                onToggleDone={toggleDone}
-              />
+            {grouped.map(group => (
+              <div key={`m-${group.mesic}`} className="space-y-2">
+                {/* Month header mobile */}
+                <div className="flex items-center gap-2 pt-2 pb-0.5">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.1em]"
+                    style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}>
+                    {group.mesic}
+                  </span>
+                  <span className="flex-1 h-px" style={{ background: "oklch(0.81 0.155 200 / 0.15)" }} />
+                  <span className="text-[10px] text-[--muted-foreground]">
+                    {formatKc(group.ads.reduce((s, a) => s + parseCastka(a.castka), 0))}
+                  </span>
+                </div>
+                {group.ads.map(ad => (
+                  <AdCard
+                    key={ad.id}
+                    ad={ad}
+                    onEdit={a => setModal(a)}
+                    onToggleDone={toggleDone}
+                  />
+                ))}
+              </div>
             ))}
           </AnimatePresence>
           {filtered.length === 0 && (
