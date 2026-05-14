@@ -429,7 +429,7 @@ function AdModal({
             <Field label="Stav kampaně">
               <Select value={form.stav} onChange={v => set("stav")(v)} options={STATUS_OPTIONS} />
             </Field>
-            <Field label="Stav výplaty">
+            <Field label="Stav reklamy">
               <Select value={form.stavVyplaty} onChange={set("stavVyplaty")} options={["Odesláno", "Neodesláno", "—"]} />
             </Field>
 
