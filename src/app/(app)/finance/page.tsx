@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, TrendingUp, TrendingDown,
   Wallet, BarChart3, CheckCircle2, Clock, AlertCircle,
+  FileText, Receipt, Paperclip, Download,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -12,7 +13,7 @@ import {
 } from "recharts";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
-type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance";
+type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance" | "faktury" | "doklady";
 type MonthStatus  = "UZAVŘENO" | "PROBÍHÁ" | "NEPROBĚHLO";
 type ItemStatus   = "Zaplaceno" | "Čeká" | "Storno";
 type IncomeType   = "Měsíční klient" | "Jednorázový" | "Ostatní";
@@ -45,6 +46,36 @@ interface ExpenseItem {
   castka: number;
   stav: ItemStatus;
   poznamka?: string;
+}
+
+type FakturaStav = "Zaplacena" | "Čeká na platbu" | "Po splatnosti" | "Storno";
+interface Faktura {
+  id: number;
+  cislo: string;
+  klient: string;
+  popis: string;
+  castka: number;
+  castkaBezvat: number;
+  dph: 21 | 15 | 0;
+  datum: string;
+  splatnost: string;
+  stav: FakturaStav;
+  soubor: string;
+}
+
+type DokladTyp = "Faktura přijatá" | "Pokladní doklad" | "Bankovní výpis" | "Smlouva" | "Jiné";
+type DokladKat = "Software" | "Mzdy" | "Pojištění" | "Provize" | "Marketing" | "Vybavení" | "Jiné";
+type DokladStav = "Zpracováno" | "Čeká na zpracování";
+interface Doklad {
+  id: number;
+  typ: DokladTyp;
+  dodavatel: string;
+  popis: string;
+  castka: number;
+  datum: string;
+  kategorie: DokladKat;
+  stav: DokladStav;
+  soubor: string;
 }
 
 /* ── Seed data ──────────────────────────────────────────────────────────────── */
@@ -136,6 +167,41 @@ const EXPENSE_SEED: ExpenseItem[] = [
   { id: 25, mesic: "Březen", dodavatel: "Jan KŘÍŽ",            typ: "Mzdy",       datumZaplaceni: "10.3.2026", castka: 40000, stav: "Zaplaceno" },
   { id: 26, mesic: "Březen", dodavatel: "META Ads",            typ: "Marketing",  datumZaplaceni: "15.3.2026", castka: 8500,  stav: "Zaplaceno", poznamka: "FB/IG kampaně" },
   { id: 27, mesic: "Březen", dodavatel: "Různí dodavatelé",    typ: "Ostatní",    datumZaplaceni: "31.3.2026", castka: 8494,  stav: "Zaplaceno" },
+];
+
+/* ── Faktury seed ───────────────────────────────────────────────────────────── */
+const FAKTURY_SEED: Faktura[] = [
+  { id:  1, cislo:"FV-2026-001", klient:"SENIMED s.r.o.",    popis:"Video produkce Leden",          castka:42350, castkaBezvat:35000, dph:21, datum:"31. 1. 2026", splatnost:"14. 2. 2026", stav:"Zaplacena",      soubor:"FV-2026-001.pdf" },
+  { id:  2, cislo:"FV-2026-002", klient:"EASTGATE Brno",     popis:"Foto dokumentace stavby",       castka:21780, castkaBezvat:18000, dph:21, datum:"28. 1. 2026", splatnost:"11. 2. 2026", stav:"Zaplacena",      soubor:"" },
+  { id:  3, cislo:"FV-2026-003", klient:"Power Plate Česko", popis:"Social media content Leden",    castka:30250, castkaBezvat:25000, dph:21, datum:"31. 1. 2026", splatnost:"14. 2. 2026", stav:"Zaplacena",      soubor:"FV-2026-003.pdf" },
+  { id:  4, cislo:"FV-2026-004", klient:"IMTOS spol. s r.o.",popis:"Firemní akce — ROSSO STEEL",    castka:26620, castkaBezvat:22000, dph:21, datum:"25. 1. 2026", splatnost:"8. 2. 2026",  stav:"Zaplacena",      soubor:"" },
+  { id:  5, cislo:"FV-2026-005", klient:"BehejBrno",         popis:"Race coverage CRAFT Únor",      castka:21780, castkaBezvat:18000, dph:21, datum:"28. 2. 2026", splatnost:"14. 3. 2026", stav:"Zaplacena",      soubor:"FV-2026-005.pdf" },
+  { id:  6, cislo:"FV-2026-006", klient:"SENIMED s.r.o.",    popis:"Video produkce Únor",           castka:42350, castkaBezvat:35000, dph:21, datum:"28. 2. 2026", splatnost:"14. 3. 2026", stav:"Zaplacena",      soubor:"FV-2026-006.pdf" },
+  { id:  7, cislo:"FV-2026-007", klient:"NERA Displays",     popis:"EuroShop promo video",          castka:60500, castkaBezvat:50000, dph:21, datum:"15. 2. 2026", splatnost:"1. 3. 2026",  stav:"Zaplacena",      soubor:"FV-2026-007.pdf" },
+  { id:  8, cislo:"FV-2026-008", klient:"TEKMA s.r.o.",      popis:"Promo video — výrobní hala",    castka:54450, castkaBezvat:45000, dph:21, datum:"28. 2. 2026", splatnost:"14. 3. 2026", stav:"Zaplacena",      soubor:"" },
+  { id:  9, cislo:"FV-2026-009", klient:"SENIMED s.r.o.",    popis:"Video produkce Březen",         castka:42350, castkaBezvat:35000, dph:21, datum:"31. 3. 2026", splatnost:"14. 4. 2026", stav:"Zaplacena",      soubor:"FV-2026-009.pdf" },
+  { id: 10, cislo:"FV-2026-010", klient:"EFFECT Clinic",     popis:"Brand content — exteriér",      castka:18150, castkaBezvat:15000, dph:21, datum:"30. 3. 2026", splatnost:"13. 4. 2026", stav:"Zaplacena",      soubor:"" },
+  { id: 11, cislo:"FV-2026-011", klient:"Power Plate Česko", popis:"Kampaňové video Duben",         castka:30250, castkaBezvat:25000, dph:21, datum:"30. 4. 2026", splatnost:"14. 5. 2026", stav:"Zaplacena",      soubor:"FV-2026-011.pdf" },
+  { id: 12, cislo:"FV-2026-012", klient:"FIRESTA s.r.o.",    popis:"Dvorecký most — dokumentace",   castka:45980, castkaBezvat:38000, dph:21, datum:"30. 4. 2026", splatnost:"14. 5. 2026", stav:"Zaplacena",      soubor:"" },
+  { id: 13, cislo:"FV-2026-013", klient:"SENIMED s.r.o.",    popis:"Video produkce Duben",          castka:42350, castkaBezvat:35000, dph:21, datum:"30. 4. 2026", splatnost:"14. 5. 2026", stav:"Zaplacena",      soubor:"FV-2026-013.pdf" },
+  { id: 14, cislo:"FV-2026-014", klient:"SK Brno Slatina",   popis:"FINAL FOUR live coverage",      castka:21780, castkaBezvat:18000, dph:21, datum:"16. 5. 2026", splatnost:"30. 5. 2026", stav:"Čeká na platbu", soubor:"" },
+  { id: 15, cislo:"FV-2026-015", klient:"EASTGATE Brno",     popis:"Průběh stavby — Květen",        castka:21780, castkaBezvat:18000, dph:21, datum:"9. 5. 2026",  splatnost:"31. 5. 2026", stav:"Čeká na platbu", soubor:"" },
+];
+
+/* ── Doklady seed ───────────────────────────────────────────────────────────── */
+const DOKLADY_SEED: Doklad[] = [
+  { id:  1, typ:"Faktura přijatá", dodavatel:"Adobe Systems",       popis:"Creative Cloud — All Apps",    castka: 1573, datum:"1. 5. 2026",  kategorie:"Software",  stav:"Zpracováno",          soubor:"adobe-may.pdf" },
+  { id:  2, typ:"Faktura přijatá", dodavatel:"Slack Technologies",  popis:"Slack Business Duben",         castka:  890, datum:"1. 4. 2026",  kategorie:"Software",  stav:"Zpracováno",          soubor:"" },
+  { id:  3, typ:"Faktura přijatá", dodavatel:"Notion Labs",         popis:"Notion Team Duben",            castka:  650, datum:"1. 4. 2026",  kategorie:"Software",  stav:"Zpracováno",          soubor:"" },
+  { id:  4, typ:"Faktura přijatá", dodavatel:"Adobe Systems",       popis:"Creative Cloud — All Apps",    castka: 1573, datum:"1. 4. 2026",  kategorie:"Software",  stav:"Zpracováno",          soubor:"adobe-apr.pdf" },
+  { id:  5, typ:"Faktura přijatá", dodavatel:"Adobe Systems",       popis:"Creative Cloud — All Apps",    castka: 1573, datum:"1. 3. 2026",  kategorie:"Software",  stav:"Zpracováno",          soubor:"adobe-mar.pdf" },
+  { id:  6, typ:"Pokladní doklad", dodavatel:"Zdeněk Dolíhal",      popis:"Paušál Květen",                castka:15000, datum:"1. 5. 2026",  kategorie:"Mzdy",      stav:"Zpracováno",          soubor:"pausal-zd-may.pdf" },
+  { id:  7, typ:"Pokladní doklad", dodavatel:"Zdeněk Dolíhal",      popis:"Paušál Duben",                 castka:15000, datum:"1. 4. 2026",  kategorie:"Mzdy",      stav:"Zpracováno",          soubor:"" },
+  { id:  8, typ:"Faktura přijatá", dodavatel:"Pojišťovna Allianz",  popis:"Odpovědnostní pojištění Q2",   castka: 2100, datum:"1. 4. 2026",  kategorie:"Pojištění", stav:"Zpracováno",          soubor:"allianz-q2.pdf" },
+  { id:  9, typ:"Pokladní doklad", dodavatel:"Různé nákupy",        popis:"Kamerové příslušenství",       castka: 8500, datum:"15. 2. 2026", kategorie:"Vybavení",  stav:"Zpracováno",          soubor:"" },
+  { id: 10, typ:"Faktura přijatá", dodavatel:"META Platforms",      popis:"Meta Ads Duben",               castka: 3500, datum:"30. 4. 2026", kategorie:"Marketing", stav:"Zpracováno",          soubor:"meta-apr.pdf" },
+  { id: 11, typ:"Faktura přijatá", dodavatel:"META Platforms",      popis:"Meta Ads Květen (záloha)",     castka: 3500, datum:"1. 5. 2026",  kategorie:"Marketing", stav:"Čeká na zpracování",  soubor:"" },
+  { id: 12, typ:"Smlouva",         dodavatel:"Nájemce studio",      popis:"Nájem ateliéru Květen",        castka:12000, datum:"1. 5. 2026",  kategorie:"Jiné",      stav:"Zpracováno",          soubor:"najem-may.pdf" },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -789,21 +855,454 @@ function ModalWrap({ title, onClose, onSave, children }: {
   );
 }
 
+/* ── Faktura stav badge ─────────────────────────────────────────────────────── */
+function FakturaStavBadge({ stav }: { stav: FakturaStav }) {
+  const map: Record<FakturaStav, { color: string; bg: string; border: string }> = {
+    "Zaplacena":      { color:"oklch(0.67 0.155 155)", bg:"oklch(0.67 0.155 155 / 0.1)",  border:"oklch(0.67 0.155 155 / 0.2)" },
+    "Čeká na platbu": { color:"oklch(0.78 0.165 75)",  bg:"oklch(0.74 0.165 75 / 0.1)",   border:"oklch(0.74 0.165 75 / 0.2)"  },
+    "Po splatnosti":  { color:"oklch(0.65 0.22 25)",   bg:"oklch(0.65 0.22 25 / 0.1)",    border:"oklch(0.65 0.22 25 / 0.2)"   },
+    "Storno":         { color:"oklch(0.40 0.005 222)", bg:"oklch(1 0 0 / 0.05)",           border:"oklch(1 0 0 / 0.08)"          },
+  };
+  const s = map[stav];
+  return (
+    <span className="px-2 py-0.5 rounded-[5px] text-[10px] font-bold whitespace-nowrap"
+      style={{ color:s.color, background:s.bg, border:`1px solid ${s.border}` }}>
+      {stav}
+    </span>
+  );
+}
+
+/* ── Doklad stav badge ──────────────────────────────────────────────────────── */
+function DokladStavBadge({ stav }: { stav: DokladStav }) {
+  const ok = stav === "Zpracováno";
+  return (
+    <span className="px-2 py-0.5 rounded-[5px] text-[10px] font-bold whitespace-nowrap"
+      style={{
+        color:   ok ? "oklch(0.67 0.155 155)"      : "oklch(0.78 0.165 75)",
+        background: ok ? "oklch(0.67 0.155 155 / 0.1)" : "oklch(0.74 0.165 75 / 0.1)",
+        border: `1px solid ${ok ? "oklch(0.67 0.155 155 / 0.2)" : "oklch(0.74 0.165 75 / 0.2)"}`,
+      }}>
+      {stav}
+    </span>
+  );
+}
+
+/* ── File chip ──────────────────────────────────────────────────────────────── */
+function FileChip({ soubor }: { soubor: string }) {
+  if (!soubor) return <span className="text-[--muted-foreground] opacity-30"><Paperclip className="w-3.5 h-3.5"/></span>;
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-[5px]"
+      style={{ color:"oklch(0.81 0.155 200)", background:"oklch(0.81 0.155 200 / 0.08)", border:"1px solid oklch(0.81 0.155 200 / 0.18)" }}>
+      <Paperclip className="w-3 h-3"/>{soubor}
+    </span>
+  );
+}
+
+/* ── FakturyTab ─────────────────────────────────────────────────────────────── */
+const F_EMPTY: Omit<Faktura,"id"> = { cislo:"", klient:"", popis:"", castka:0, castkaBezvat:0, dph:21, datum:"", splatnost:"", stav:"Čeká na platbu", soubor:"" };
+
+function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Faktura[])=>Faktura[])=>void }) {
+  const [modal,    setModal]    = useState<Faktura|null|"new">(null);
+  const [stavF,    setStavF]    = useState("Vše");
+  const [uploadSim, setUploadSim] = useState<Record<number,string>>({});
+
+  const filtered = useMemo(()=>{
+    const base = stavF==="Vše" ? items : items.filter(f=>f.stav===stavF);
+    return [...base].sort((a,b)=>b.cislo.localeCompare(a.cislo));
+  },[items,stavF]);
+
+  const zaplaceno   = items.filter(f=>f.stav==="Zaplacena").reduce((s,f)=>s+f.castka,0);
+  const ceka        = items.filter(f=>f.stav==="Čeká na platbu").reduce((s,f)=>s+f.castka,0);
+  const poSplatnosti= items.filter(f=>f.stav==="Po splatnosti").reduce((s,f)=>s+f.castka,0);
+  const celkem      = items.reduce((s,f)=>s+f.castka,0);
+
+  function save(data: Omit<Faktura,"id">&{id?:number}) {
+    if(data.id!==undefined) setItems(p=>p.map(f=>f.id===data.id?{...data,id:data.id!}:f));
+    else setItems(p=>[...p,{...data,id:Date.now()}]);
+    setModal(null);
+  }
+
+  const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] outline-none transition-all";
+  const iSty = { background:"oklch(1 0 0 / 0.04)", border:"1px solid oklch(1 0 0 / 0.09)", fontFamily:"var(--font-jakarta)" };
+  function FI({ value, onChange, placeholder }: { value:string; onChange:(v:string)=>void; placeholder?:string }) {
+    return <input value={value} placeholder={placeholder} onChange={e=>onChange(e.target.value)} className={iCls} style={iSty}/>;
+  }
+  function FS({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:string[] }) {
+    return (
+      <div className="relative"><select value={value} onChange={e=>onChange(e.target.value)}
+        className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{...iSty,color:"var(--foreground)"}}>
+        {options.map(o=><option key={o} value={o} style={{background:"oklch(0.12 0.008 222)"}}>{o}</option>)}
+      </select></div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+        {[
+          { label:"Celkem YTD",       value:celkem,       color:"oklch(0.81 0.155 200)" },
+          { label:"Zaplaceno",        value:zaplaceno,    color:"oklch(0.67 0.155 155)" },
+          { label:"Čeká na platbu",   value:ceka,         color:"oklch(0.78 0.165 75)"  },
+          { label:"Po splatnosti",    value:poSplatnosti, color:"oklch(0.65 0.22 25)"   },
+        ].map(s=>(
+          <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
+            <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5">{s.label}</p>
+            <p className="num leading-none" style={{fontSize:"clamp(16px,2.5vw,24px)",fontWeight:700,fontFamily:"var(--font-outfit)",color:s.color,letterSpacing:"-0.02em"}}>
+              {fKcShort(s.value)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter + Add */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {["Vše","Zaplacena","Čeká na platbu","Po splatnosti","Storno"].map(s=>(
+          <motion.button key={s} onClick={()=>setStavF(s)} whileTap={{scale:0.95}}
+            className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
+            style={stavF===s
+              ?{background:"oklch(0.81 0.155 200 / 0.1)",color:"oklch(0.81 0.155 200)",border:"1px solid oklch(0.81 0.155 200 / 0.25)"}
+              :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
+            {s}
+          </motion.button>
+        ))}
+        <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
+          className="ml-auto btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
+          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          <Plus className="w-3.5 h-3.5"/> Nová faktura
+        </motion.button>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{borderBottom:"1px solid oklch(1 0 0 / 0.07)"}}>
+                {["Číslo","Klient","Popis","Datum","Splatnost","Částka","Stav","Soubor",""].map((h,i)=>(
+                  <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h==="Soubor"||h==="Popis"?"hidden md:table-cell":h===""?"w-8":""}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(f=>(
+                <motion.tr key={f.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{borderColor:"oklch(1 0 0 / 0.05)"}}>
+                  <td className="px-4 py-3 text-[12px] font-mono text-[--muted-foreground] whitespace-nowrap">{f.cislo}</td>
+                  <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground] max-w-[160px] truncate" style={{fontFamily:"var(--font-outfit)"}}>{f.klient}</td>
+                  <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden md:table-cell max-w-[200px] truncate">{f.popis}</td>
+                  <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap">{f.datum}</td>
+                  <td className="px-4 py-3 text-[12px] whitespace-nowrap" style={{color: f.stav==="Po splatnosti"?"oklch(0.65 0.22 25)":"oklch(0.50 0.005 222)"}}>{f.splatnost}</td>
+                  <td className="px-4 py-3 num text-[13px] font-bold whitespace-nowrap" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.81 0.155 200)"}}>{fKc(f.castka)}</td>
+                  <td className="px-4 py-3"><FakturaStavBadge stav={f.stav}/></td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {uploadSim[f.id]
+                      ? <FileChip soubor={uploadSim[f.id]}/>
+                      : <div>
+                          <FileChip soubor={f.soubor}/>
+                          {!f.soubor&&(
+                            <label className="cursor-pointer ml-1 text-[10px] px-2 py-0.5 rounded-[5px] inline-flex items-center gap-1"
+                              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.06)",border:"1px solid oklch(0.81 0.155 200 / 0.15)"}}>
+                              <Plus className="w-2.5 h-2.5"/>
+                              <input type="file" className="hidden" onChange={e=>{if(e.target.files?.[0])setUploadSim(p=>({...p,[f.id]:e.target.files![0].name}));}}/>
+                              Nahrát
+                            </label>
+                          )}
+                        </div>
+                    }
+                  </td>
+                  <td className="pr-4 pl-2 py-3 w-8">
+                    <motion.button onClick={()=>setModal(f)} whileTap={{scale:0.9}}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{color:"oklch(0.45 0.005 222)"}}>
+                      <Edit2 className="w-3.5 h-3.5"/>
+                    </motion.button>
+                  </td>
+                </motion.tr>
+              ))}
+              {filtered.length===0&&<tr><td colSpan={9} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné faktury.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modal!==null&&(
+          <motion.div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            style={{background:"oklch(0 0 0 / 0.6)",backdropFilter:"blur(4px)"}} onClick={()=>setModal(null)}>
+            <motion.div className="relative w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
+              style={{background:"oklch(0.11 0.008 222)",border:"1px solid oklch(1 0 0 / 0.09)"}}
+              initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
+              transition={{duration:0.3,ease:[0.23,1,0.32,1]}} onClick={e=>e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
+                <h2 className="text-[15px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>
+                  {modal==="new"?"Nová faktura":"Upravit fakturu"}
+                </h2>
+                <button onClick={()=>setModal(null)} className="p-1.5 rounded-[6px] text-[--muted-foreground]"><X className="w-4 h-4"/></button>
+              </div>
+              {(() => {
+                const init = modal==="new" ? {...F_EMPTY} : {...modal as Faktura};
+                return <FakturaForm initial={init} onSave={save} isNew={modal==="new"}/>;
+              })()}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FakturaForm({ initial, onSave, isNew }: { initial: Omit<Faktura,"id">&{id?:number}; onSave:(d:Omit<Faktura,"id">&{id?:number})=>void; isNew:boolean }) {
+  const [f, setF] = useState(initial);
+  const set = (k: keyof typeof f) => (v: string) => setF(p=>({...p,[k]: k==="castka"||k==="castkaBezvat"||k==="dph" ? Number(v)||0 : v}));
+  const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] outline-none transition-all";
+  const iSty = { background:"oklch(1 0 0 / 0.04)", border:"1px solid oklch(1 0 0 / 0.09)", fontFamily:"var(--font-jakarta)" };
+  return (
+    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Číslo faktury</label>
+        <input value={f.cislo} onChange={e=>set("cislo")(e.target.value)} className={iCls} style={iSty} placeholder="FV-2026-016"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Klient</label>
+        <input value={f.klient} onChange={e=>set("klient")(e.target.value)} className={iCls} style={iSty} placeholder="Název klienta"/></div>
+      <div className="md:col-span-2 space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Popis</label>
+        <input value={f.popis} onChange={e=>set("popis")(e.target.value)} className={iCls} style={iSty} placeholder="Popis plnění"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Datum vydání</label>
+        <input value={f.datum} onChange={e=>set("datum")(e.target.value)} className={iCls} style={iSty} placeholder="31. 5. 2026"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Splatnost</label>
+        <input value={f.splatnost} onChange={e=>set("splatnost")(e.target.value)} className={iCls} style={iSty} placeholder="14. 6. 2026"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Částka bez DPH (Kč)</label>
+        <input value={f.castkaBezvat||""} onChange={e=>set("castkaBezvat")(e.target.value)} className={iCls} style={iSty} type="number" placeholder="25000"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Částka s DPH (Kč)</label>
+        <input value={f.castka||""} onChange={e=>set("castka")(e.target.value)} className={iCls} style={iSty} type="number" placeholder="30250"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Stav</label>
+        <div className="relative"><select value={f.stav} onChange={e=>set("stav")(e.target.value)} className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{...iSty,color:"var(--foreground)"}}>
+          {["Zaplacena","Čeká na platbu","Po splatnosti","Storno"].map(o=><option key={o} value={o} style={{background:"oklch(0.12 0.008 222)"}}>{o}</option>)}
+        </select></div></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Soubor</label>
+        <input value={f.soubor} onChange={e=>set("soubor")(e.target.value)} className={iCls} style={iSty} placeholder="FV-2026-016.pdf"/></div>
+      <div className="md:col-span-2 flex justify-end pt-2 border-t" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
+        <motion.button onClick={()=>onSave(f)} whileTap={{scale:0.96}}
+          className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
+          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          {isNew?"Vytvořit fakturu":"Uložit změny"}
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+/* ── DokladyTab ─────────────────────────────────────────────────────────────── */
+const D_EMPTY: Omit<Doklad,"id"> = { typ:"Faktura přijatá", dodavatel:"", popis:"", castka:0, datum:"", kategorie:"Software", stav:"Čeká na zpracování", soubor:"" };
+
+function DokladyTab({ items, setItems }: { items:Doklad[]; setItems:(fn:(p:Doklad[])=>Doklad[])=>void }) {
+  const [modal,  setModal]  = useState<Doklad|null|"new">(null);
+  const [katF,   setKatF]   = useState("Vše");
+  const [uploadSim, setUploadSim] = useState<Record<number,string>>({});
+
+  const filtered = useMemo(()=>{
+    const base = katF==="Vše" ? items : items.filter(d=>d.kategorie===katF);
+    return [...base].sort((a,b)=>b.datum.localeCompare(a.datum));
+  },[items,katF]);
+
+  const celkem     = items.reduce((s,d)=>s+d.castka,0);
+  const zpracovano = items.filter(d=>d.stav==="Zpracováno").reduce((s,d)=>s+d.castka,0);
+  const ceka       = items.filter(d=>d.stav==="Čeká na zpracování").reduce((s,d)=>s+d.castka,0);
+
+  const katColors: Record<string,string> = {
+    Software:"oklch(0.81 0.155 200)", Mzdy:"oklch(0.67 0.155 155)", Pojištění:"oklch(0.65 0.22 25)",
+    Provize:"oklch(0.78 0.165 75)", Marketing:"oklch(0.74 0.165 75)", Vybavení:"oklch(0.72 0.18 290)", Jiné:"oklch(0.50 0.005 222)",
+  };
+
+  function save(data: Omit<Doklad,"id">&{id?:number}) {
+    if(data.id!==undefined) setItems(p=>p.map(d=>d.id===data.id?{...data,id:data.id!}:d));
+    else setItems(p=>[...p,{...data,id:Date.now()}]);
+    setModal(null);
+  }
+
+  const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] outline-none transition-all";
+  const iSty = { background:"oklch(1 0 0 / 0.04)", border:"1px solid oklch(1 0 0 / 0.09)", fontFamily:"var(--font-jakarta)" };
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+        {[
+          { label:"Celkem výdajů",    value:celkem,     color:"oklch(0.65 0.22 25)"   },
+          { label:"Zpracováno",       value:zpracovano, color:"oklch(0.67 0.155 155)" },
+          { label:"Čeká na zprac.",   value:ceka,       color:"oklch(0.78 0.165 75)"  },
+        ].map(s=>(
+          <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
+            <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5">{s.label}</p>
+            <p className="num leading-none" style={{fontSize:"clamp(16px,2.5vw,24px)",fontWeight:700,fontFamily:"var(--font-outfit)",color:s.color,letterSpacing:"-0.02em"}}>{fKcShort(s.value)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Category filter + add */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {["Vše","Software","Mzdy","Pojištění","Provize","Marketing","Vybavení","Jiné"].map(k=>(
+          <motion.button key={k} onClick={()=>setKatF(k)} whileTap={{scale:0.95}}
+            className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
+            style={katF===k
+              ?{background:`${(katColors[k]||"oklch(0.81 0.155 200)").replace(")","/0.12)")}`,color:katColors[k]||"oklch(0.81 0.155 200)",border:`1px solid ${(katColors[k]||"oklch(0.81 0.155 200)").replace(")","/0.25)")}`}
+              :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
+            {k}
+          </motion.button>
+        ))}
+        <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
+          className="ml-auto btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
+          style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.98 0 0)",fontFamily:"var(--font-outfit)"}}>
+          <Plus className="w-3.5 h-3.5"/> Přidat doklad
+        </motion.button>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{borderBottom:"1px solid oklch(1 0 0 / 0.07)"}}>
+                {["Typ","Dodavatel","Popis","Datum","Kategorie","Částka","Stav","Soubor",""].map((h,i)=>(
+                  <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h==="Popis"||h==="Soubor"?"hidden md:table-cell":h===""?"w-8":""}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(d=>{
+                const c = katColors[d.kategorie] || "oklch(0.50 0.005 222)";
+                return (
+                  <motion.tr key={d.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{borderColor:"oklch(1 0 0 / 0.05)"}}>
+                    <td className="px-4 py-3 text-[11px] text-[--muted-foreground] whitespace-nowrap">
+                      <span className="flex items-center gap-1.5"><Receipt className="w-3 h-3 shrink-0"/>{d.typ}</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground] max-w-[140px] truncate" style={{fontFamily:"var(--font-outfit)"}}>{d.dodavatel}</td>
+                    <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden md:table-cell max-w-[180px] truncate">{d.popis}</td>
+                    <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap">{d.datum}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-[5px] text-[10px] font-bold whitespace-nowrap"
+                        style={{color:c,background:`${c.replace(")","/0.1)")}`,border:`1px solid ${c.replace(")","/0.2)")}`}}>
+                        {d.kategorie}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 num text-[13px] font-bold whitespace-nowrap" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.65 0.22 25)"}}>{fKc(d.castka)}</td>
+                    <td className="px-4 py-3"><DokladStavBadge stav={d.stav}/></td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {uploadSim[d.id]
+                        ? <FileChip soubor={uploadSim[d.id]}/>
+                        : <div>
+                            <FileChip soubor={d.soubor}/>
+                            {!d.soubor&&(
+                              <label className="cursor-pointer ml-1 text-[10px] px-2 py-0.5 rounded-[5px] inline-flex items-center gap-1"
+                                style={{color:"oklch(0.65 0.22 25)",background:"oklch(0.65 0.22 25 / 0.06)",border:"1px solid oklch(0.65 0.22 25 / 0.15)"}}>
+                                <Plus className="w-2.5 h-2.5"/>
+                                <input type="file" className="hidden" onChange={e=>{if(e.target.files?.[0])setUploadSim(p=>({...p,[d.id]:e.target.files![0].name}));}}/>
+                                Nahrát
+                              </label>
+                            )}
+                          </div>
+                      }
+                    </td>
+                    <td className="pr-4 pl-2 py-3 w-8">
+                      <motion.button onClick={()=>setModal(d)} whileTap={{scale:0.9}}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{color:"oklch(0.45 0.005 222)"}}>
+                        <Edit2 className="w-3.5 h-3.5"/>
+                      </motion.button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+              {filtered.length===0&&<tr><td colSpan={9} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné doklady.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modal!==null&&(
+          <motion.div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            style={{background:"oklch(0 0 0 / 0.6)",backdropFilter:"blur(4px)"}} onClick={()=>setModal(null)}>
+            <motion.div className="relative w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
+              style={{background:"oklch(0.11 0.008 222)",border:"1px solid oklch(1 0 0 / 0.09)"}}
+              initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
+              transition={{duration:0.3,ease:[0.23,1,0.32,1]}} onClick={e=>e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
+                <h2 className="text-[15px] font-bold" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em",color:"var(--foreground)"}}>
+                  {modal==="new"?"Přidat doklad":"Upravit doklad"}
+                </h2>
+                <button onClick={()=>setModal(null)} className="p-1.5 rounded-[6px] text-[--muted-foreground]"><X className="w-4 h-4"/></button>
+              </div>
+              {(() => {
+                const init = modal==="new" ? {...D_EMPTY} : {...modal as Doklad};
+                return (
+                  <DokladForm initial={init} onSave={save} isNew={modal==="new"}/>
+                );
+              })()}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DokladForm({ initial, onSave, isNew }: { initial: Omit<Doklad,"id">&{id?:number}; onSave:(d:Omit<Doklad,"id">&{id?:number})=>void; isNew:boolean }) {
+  const [f, setF] = useState(initial);
+  const set = (k: keyof typeof f) => (v: string) => setF(p=>({...p,[k]: k==="castka"?Number(v)||0:v}));
+  const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] outline-none transition-all";
+  const iSty = { background:"oklch(1 0 0 / 0.04)", border:"1px solid oklch(1 0 0 / 0.09)", fontFamily:"var(--font-jakarta)" };
+  return (
+    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Typ dokladu</label>
+        <div className="relative"><select value={f.typ} onChange={e=>set("typ")(e.target.value)} className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{...iSty,color:"var(--foreground)"}}>
+          {["Faktura přijatá","Pokladní doklad","Bankovní výpis","Smlouva","Jiné"].map(o=><option key={o} value={o} style={{background:"oklch(0.12 0.008 222)"}}>{o}</option>)}
+        </select></div></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Dodavatel</label>
+        <input value={f.dodavatel} onChange={e=>set("dodavatel")(e.target.value)} className={iCls} style={iSty} placeholder="Název dodavatele"/></div>
+      <div className="md:col-span-2 space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Popis</label>
+        <input value={f.popis} onChange={e=>set("popis")(e.target.value)} className={iCls} style={iSty} placeholder="Popis výdaje"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Datum</label>
+        <input value={f.datum} onChange={e=>set("datum")(e.target.value)} className={iCls} style={iSty} placeholder="1. 5. 2026"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Částka (Kč)</label>
+        <input value={f.castka||""} onChange={e=>set("castka")(e.target.value)} className={iCls} style={iSty} type="number" placeholder="1573"/></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Kategorie</label>
+        <div className="relative"><select value={f.kategorie} onChange={e=>set("kategorie")(e.target.value)} className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{...iSty,color:"var(--foreground)"}}>
+          {["Software","Mzdy","Pojištění","Provize","Marketing","Vybavení","Jiné"].map(o=><option key={o} value={o} style={{background:"oklch(0.12 0.008 222)"}}>{o}</option>)}
+        </select></div></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Stav</label>
+        <div className="relative"><select value={f.stav} onChange={e=>set("stav")(e.target.value)} className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{...iSty,color:"var(--foreground)"}}>
+          {["Zpracováno","Čeká na zpracování"].map(o=><option key={o} value={o} style={{background:"oklch(0.12 0.008 222)"}}>{o}</option>)}
+        </select></div></div>
+      <div className="space-y-1.5"><label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">Soubor</label>
+        <input value={f.soubor} onChange={e=>set("soubor")(e.target.value)} className={iCls} style={iSty} placeholder="doklad.pdf"/></div>
+      <div className="md:col-span-2 flex justify-end pt-2 border-t" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
+        <motion.button onClick={()=>onSave(f)} whileTap={{scale:0.96}}
+          className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
+          style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.98 0 0)",fontFamily:"var(--font-outfit)"}}>
+          {isNew?"Přidat doklad":"Uložit změny"}
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: "prehled", label: "Přehled",     icon: <BarChart3 className="w-3.5 h-3.5" />,     color: "oklch(0.81 0.155 200)" },
-  { id: "prijmy",  label: "Příjmy",      icon: <TrendingUp className="w-3.5 h-3.5" />,    color: "oklch(0.67 0.155 155)" },
-  { id: "vydaje",  label: "Výdaje",      icon: <TrendingDown className="w-3.5 h-3.5" />,  color: "oklch(0.65 0.22 25)" },
-  { id: "bilance", label: "Bilance",     icon: <Wallet className="w-3.5 h-3.5" />,        color: "oklch(0.74 0.165 75)" },
+  { id: "prehled", label: "Přehled",  icon: <BarChart3 className="w-3.5 h-3.5" />,    color: "oklch(0.81 0.155 200)" },
+  { id: "prijmy",  label: "Příjmy",   icon: <TrendingUp className="w-3.5 h-3.5" />,   color: "oklch(0.67 0.155 155)" },
+  { id: "vydaje",  label: "Výdaje",   icon: <TrendingDown className="w-3.5 h-3.5" />, color: "oklch(0.65 0.22 25)" },
+  { id: "bilance", label: "Bilance",  icon: <Wallet className="w-3.5 h-3.5" />,       color: "oklch(0.74 0.165 75)" },
+  { id: "faktury", label: "Faktury",  icon: <FileText className="w-3.5 h-3.5" />,     color: "oklch(0.72 0.18 290)" },
+  { id: "doklady", label: "Doklady",  icon: <Receipt className="w-3.5 h-3.5" />,      color: "oklch(0.72 0.18 340)" },
 ];
 
 export default function FinancePage() {
-  const [tab,      setTab]      = useState<Tab>("prehled");
+  const [tab,       setTab]      = useState<Tab>("prehled");
   const [summaries, setSummaries] = useState<MonthSummary[]>(SUMMARIES);
-  const [incomes,  setIncomes]  = useState<IncomeItem[]>(INCOME_SEED);
-  const [expenses, setExpenses] = useState<ExpenseItem[]>(EXPENSE_SEED);
-
-  const activeTab = TABS.find(t => t.id === tab)!;
+  const [incomes,   setIncomes]  = useState<IncomeItem[]>(INCOME_SEED);
+  const [expenses,  setExpenses] = useState<ExpenseItem[]>(EXPENSE_SEED);
+  const [faktury,   setFaktury]  = useState<Faktura[]>(FAKTURY_SEED);
+  const [doklady,   setDoklady]  = useState<Doklad[]>(DOKLADY_SEED);
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
@@ -860,6 +1359,8 @@ export default function FinancePage() {
           {tab === "prijmy"  && <PrijmyTab  items={incomes}  setItems={fn => setIncomes(fn)} />}
           {tab === "vydaje"  && <VydajeTab  items={expenses} setItems={fn => setExpenses(fn)} />}
           {tab === "bilance" && <BilanceTab incomes={incomes} expenses={expenses} />}
+          {tab === "faktury" && <FakturyTab items={faktury}  setItems={fn => setFaktury(fn)} />}
+          {tab === "doklady" && <DokladyTab items={doklady}  setItems={fn => setDoklady(fn)} />}
         </motion.div>
       </AnimatePresence>
     </div>
