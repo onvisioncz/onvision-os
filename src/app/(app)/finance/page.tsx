@@ -1,0 +1,867 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus, X, Edit2, ChevronDown, TrendingUp, TrendingDown,
+  Wallet, BarChart3, CheckCircle2, Clock, AlertCircle,
+} from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, Cell,
+} from "recharts";
+
+/* ── Types ──────────────────────────────────────────────────────────────────── */
+type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance";
+type MonthStatus  = "UZAVŘENO" | "PROBÍHÁ" | "NEPROBĚHLO";
+type ItemStatus   = "Zaplaceno" | "Čeká" | "Storno";
+type IncomeType   = "Měsíční klient" | "Jednorázový" | "Ostatní";
+type ExpenseType  = "Software" | "Provize" | "Pojištění" | "Mzdy" | "Marketing" | "Nájem" | "Ostatní";
+
+interface MonthSummary {
+  mesic: string;
+  prijemCelkovy: number;
+  vydaje: number;
+  prijemCisty: number;
+  stav: MonthStatus;
+  schvaleno: string;
+  poznamka: string;
+}
+interface IncomeItem {
+  id: number;
+  mesic: string;
+  klient: string;
+  typ: IncomeType;
+  datumZaplaceni: string;
+  castka: number;
+  stav: ItemStatus;
+}
+interface ExpenseItem {
+  id: number;
+  mesic: string;
+  dodavatel: string;
+  typ: ExpenseType;
+  datumZaplaceni: string;
+  castka: number;
+  stav: ItemStatus;
+  poznamka?: string;
+}
+
+/* ── Seed data ──────────────────────────────────────────────────────────────── */
+const MONTHS_CZ = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
+
+const SUMMARIES: MonthSummary[] = [
+  { mesic: "Leden",    prijemCelkovy: 266500,  vydaje: 90893,  prijemCisty: 175607, stav: "UZAVŘENO",    schvaleno: "Adam ✅", poznamka: "Zkontrolováno" },
+  { mesic: "Únor",     prijemCelkovy: 295000,  vydaje: 98343,  prijemCisty: 196657, stav: "UZAVŘENO",    schvaleno: "Adam ✅", poznamka: "Zkontrolováno" },
+  { mesic: "Březen",   prijemCelkovy: 349500,  vydaje: 122644, prijemCisty: 226856, stav: "UZAVŘENO",    schvaleno: "Adam ✅", poznamka: "Zkontrolováno" },
+  { mesic: "Duben",    prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Květen",   prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Červen",   prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Červenec", prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Srpen",    prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Září",     prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Říjen",    prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Listopad", prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+  { mesic: "Prosinec", prijemCelkovy: 0,       vydaje: 0,      prijemCisty: 0,      stav: "NEPROBĚHLO",  schvaleno: "", poznamka: "" },
+];
+
+const INCOME_SEED: IncomeItem[] = [
+  // Leden
+  { id:  1, mesic: "Leden",  klient: "EASTGATE Brno",                            typ: "Měsíční klient", datumZaplaceni: "5.1.2026",  castka: 30000, stav: "Zaplaceno" },
+  { id:  2, mesic: "Leden",  klient: "SENIMED s.r.o.",                           typ: "Měsíční klient", datumZaplaceni: "6.1.2026",  castka: 28500, stav: "Zaplaceno" },
+  { id:  3, mesic: "Leden",  klient: "BehejBrno.com",                            typ: "Měsíční klient", datumZaplaceni: "7.1.2026",  castka: 22000, stav: "Zaplaceno" },
+  { id:  4, mesic: "Leden",  klient: "MTB CZ",                                   typ: "Měsíční klient", datumZaplaceni: "8.1.2026",  castka: 15000, stav: "Zaplaceno" },
+  { id:  5, mesic: "Leden",  klient: "FitLife Studio",                           typ: "Měsíční klient", datumZaplaceni: "8.1.2026",  castka: 18000, stav: "Zaplaceno" },
+  { id:  6, mesic: "Leden",  klient: "Café Marino",                              typ: "Měsíční klient", datumZaplaceni: "9.1.2026",  castka: 14000, stav: "Zaplaceno" },
+  { id:  7, mesic: "Leden",  klient: "TechStart",                                typ: "Měsíční klient", datumZaplaceni: "10.1.2026", castka: 20000, stav: "Zaplaceno" },
+  { id:  8, mesic: "Leden",  klient: "Cukrárna TOFFI",                           typ: "Měsíční klient", datumZaplaceni: "10.1.2026", castka: 12000, stav: "Zaplaceno" },
+  { id:  9, mesic: "Leden",  klient: "SK Brno Slatina",                          typ: "Měsíční klient", datumZaplaceni: "12.1.2026", castka:  8000, stav: "Zaplaceno" },
+  { id: 10, mesic: "Leden",  klient: "Centrum kardiovaskulární chirurgie Brno",  typ: "Jednorázový",    datumZaplaceni: "18.1.2026", castka: 20000, stav: "Zaplaceno" },
+  { id: 11, mesic: "Leden",  klient: "Brno Open Game Business",                  typ: "Jednorázový",    datumZaplaceni: "20.1.2026", castka: 39000, stav: "Zaplaceno" },
+  { id: 12, mesic: "Leden",  klient: "Dvořák — Svatba",                          typ: "Jednorázový",    datumZaplaceni: "25.1.2026", castka: 40000, stav: "Zaplaceno" },
+  // Únor
+  { id: 13, mesic: "Únor",   klient: "EASTGATE Brno",                            typ: "Měsíční klient", datumZaplaceni: "5.2.2026",  castka: 30000, stav: "Zaplaceno" },
+  { id: 14, mesic: "Únor",   klient: "SENIMED s.r.o.",                           typ: "Měsíční klient", datumZaplaceni: "6.2.2026",  castka: 28500, stav: "Zaplaceno" },
+  { id: 15, mesic: "Únor",   klient: "BehejBrno.com",                            typ: "Měsíční klient", datumZaplaceni: "7.2.2026",  castka: 22000, stav: "Zaplaceno" },
+  { id: 16, mesic: "Únor",   klient: "MTB CZ",                                   typ: "Měsíční klient", datumZaplaceni: "8.2.2026",  castka: 15000, stav: "Zaplaceno" },
+  { id: 17, mesic: "Únor",   klient: "FitLife Studio",                           typ: "Měsíční klient", datumZaplaceni: "8.2.2026",  castka: 18000, stav: "Zaplaceno" },
+  { id: 18, mesic: "Únor",   klient: "Café Marino",                              typ: "Měsíční klient", datumZaplaceni: "9.2.2026",  castka: 14000, stav: "Zaplaceno" },
+  { id: 19, mesic: "Únor",   klient: "TechStart",                                typ: "Měsíční klient", datumZaplaceni: "10.2.2026", castka: 20000, stav: "Zaplaceno" },
+  { id: 20, mesic: "Únor",   klient: "Cukrárna TOFFI",                           typ: "Měsíční klient", datumZaplaceni: "10.2.2026", castka: 12000, stav: "Zaplaceno" },
+  { id: 21, mesic: "Únor",   klient: "SK Brno Slatina",                          typ: "Měsíční klient", datumZaplaceni: "12.2.2026", castka:  8000, stav: "Zaplaceno" },
+  { id: 22, mesic: "Únor",   klient: "RetailCZ",                                 typ: "Jednorázový",    datumZaplaceni: "15.2.2026", castka: 55000, stav: "Zaplaceno" },
+  { id: 23, mesic: "Únor",   klient: "Novák & Sons",                             typ: "Jednorázový",    datumZaplaceni: "20.2.2026", castka: 72500, stav: "Zaplaceno" },
+  // Březen
+  { id: 24, mesic: "Březen", klient: "EASTGATE Brno",                            typ: "Měsíční klient", datumZaplaceni: "5.3.2026",  castka: 30000, stav: "Zaplaceno" },
+  { id: 25, mesic: "Březen", klient: "SENIMED s.r.o.",                           typ: "Měsíční klient", datumZaplaceni: "6.3.2026",  castka: 28500, stav: "Zaplaceno" },
+  { id: 26, mesic: "Březen", klient: "BehejBrno.com",                            typ: "Měsíční klient", datumZaplaceni: "7.3.2026",  castka: 22000, stav: "Zaplaceno" },
+  { id: 27, mesic: "Březen", klient: "MTB CZ",                                   typ: "Měsíční klient", datumZaplaceni: "8.3.2026",  castka: 15000, stav: "Zaplaceno" },
+  { id: 28, mesic: "Březen", klient: "FitLife Studio",                           typ: "Měsíční klient", datumZaplaceni: "8.3.2026",  castka: 18000, stav: "Zaplaceno" },
+  { id: 29, mesic: "Březen", klient: "Café Marino",                              typ: "Měsíční klient", datumZaplaceni: "9.3.2026",  castka: 14000, stav: "Zaplaceno" },
+  { id: 30, mesic: "Březen", klient: "TechStart",                                typ: "Měsíční klient", datumZaplaceni: "10.3.2026", castka: 20000, stav: "Zaplaceno" },
+  { id: 31, mesic: "Březen", klient: "Cukrárna TOFFI",                           typ: "Měsíční klient", datumZaplaceni: "10.3.2026", castka: 12000, stav: "Zaplaceno" },
+  { id: 32, mesic: "Březen", klient: "SK Brno Slatina",                          typ: "Měsíční klient", datumZaplaceni: "12.3.2026", castka:  8000, stav: "Zaplaceno" },
+  { id: 33, mesic: "Březen", klient: "Svaz záchranářů ČR",                       typ: "Jednorázový",    datumZaplaceni: "18.3.2026", castka: 85000, stav: "Zaplaceno" },
+  { id: 34, mesic: "Březen", klient: "KKCG Real Estate",                         typ: "Jednorázový",    datumZaplaceni: "22.3.2026", castka: 97000, stav: "Zaplaceno" },
+];
+
+const EXPENSE_SEED: ExpenseItem[] = [
+  // Leden
+  { id:  1, mesic: "Leden",  dodavatel: "Adobe Inc.",          typ: "Software",   datumZaplaceni: "1.1.2026",  castka: 3500,  stav: "Zaplaceno", poznamka: "Creative Cloud" },
+  { id:  2, mesic: "Leden",  dodavatel: "OpenAI",              typ: "Software",   datumZaplaceni: "1.1.2026",  castka: 1250,  stav: "Zaplaceno", poznamka: "ChatGPT Plus" },
+  { id:  3, mesic: "Leden",  dodavatel: "Google",              typ: "Software",   datumZaplaceni: "1.1.2026",  castka: 800,   stav: "Zaplaceno", poznamka: "Workspace" },
+  { id:  4, mesic: "Leden",  dodavatel: "Envato",              typ: "Software",   datumZaplaceni: "1.1.2026",  castka: 650,   stav: "Zaplaceno", poznamka: "Elements" },
+  { id:  5, mesic: "Leden",  dodavatel: "Uppbeat",             typ: "Software",   datumZaplaceni: "1.1.2026",  castka: 400,   stav: "Zaplaceno", poznamka: "Hudební knihovna" },
+  { id:  6, mesic: "Leden",  dodavatel: "Pojišťovna Allianz",  typ: "Pojištění",  datumZaplaceni: "3.1.2026",  castka: 2100,  stav: "Zaplaceno", poznamka: "Pojištění odpovědnosti" },
+  { id:  7, mesic: "Leden",  dodavatel: "Tomáš DANG",          typ: "Mzdy",       datumZaplaceni: "10.1.2026", castka: 45000, stav: "Zaplaceno" },
+  { id:  8, mesic: "Leden",  dodavatel: "Jan KŘÍŽ",            typ: "Mzdy",       datumZaplaceni: "10.1.2026", castka: 30000, stav: "Zaplaceno" },
+  { id:  9, mesic: "Leden",  dodavatel: "Jiří Juhaňák",        typ: "Provize",    datumZaplaceni: "22.1.2026", castka: 3900,  stav: "Zaplaceno", poznamka: "Brno Open Game Business" },
+  { id: 10, mesic: "Leden",  dodavatel: "Různí dodavatelé",    typ: "Ostatní",    datumZaplaceni: "31.1.2026", castka: 3293,  stav: "Zaplaceno", poznamka: "Režijní náklady" },
+  // Únor
+  { id: 11, mesic: "Únor",   dodavatel: "Adobe Inc.",          typ: "Software",   datumZaplaceni: "1.2.2026",  castka: 3500,  stav: "Zaplaceno", poznamka: "Creative Cloud" },
+  { id: 12, mesic: "Únor",   dodavatel: "OpenAI",              typ: "Software",   datumZaplaceni: "1.2.2026",  castka: 1250,  stav: "Zaplaceno", poznamka: "ChatGPT Plus" },
+  { id: 13, mesic: "Únor",   dodavatel: "Google",              typ: "Software",   datumZaplaceni: "1.2.2026",  castka: 800,   stav: "Zaplaceno", poznamka: "Workspace" },
+  { id: 14, mesic: "Únor",   dodavatel: "Envato",              typ: "Software",   datumZaplaceni: "1.2.2026",  castka: 650,   stav: "Zaplaceno", poznamka: "Elements" },
+  { id: 15, mesic: "Únor",   dodavatel: "Pojišťovna Allianz",  typ: "Pojištění",  datumZaplaceni: "3.2.2026",  castka: 2100,  stav: "Zaplaceno" },
+  { id: 16, mesic: "Únor",   dodavatel: "Tomáš DANG",          typ: "Mzdy",       datumZaplaceni: "10.2.2026", castka: 50000, stav: "Zaplaceno" },
+  { id: 17, mesic: "Únor",   dodavatel: "Jan KŘÍŽ",            typ: "Mzdy",       datumZaplaceni: "10.2.2026", castka: 33000, stav: "Zaplaceno" },
+  { id: 18, mesic: "Únor",   dodavatel: "META Ads",            typ: "Marketing",  datumZaplaceni: "20.2.2026", castka: 4843,  stav: "Zaplaceno", poznamka: "FB/IG kampaně" },
+  { id: 19, mesic: "Únor",   dodavatel: "Různí dodavatelé",    typ: "Ostatní",    datumZaplaceni: "28.2.2026", castka: 2200,  stav: "Zaplaceno" },
+  // Březen
+  { id: 20, mesic: "Březen", dodavatel: "Adobe Inc.",          typ: "Software",   datumZaplaceni: "1.3.2026",  castka: 3500,  stav: "Zaplaceno", poznamka: "Creative Cloud" },
+  { id: 21, mesic: "Březen", dodavatel: "OpenAI",              typ: "Software",   datumZaplaceni: "1.3.2026",  castka: 1250,  stav: "Zaplaceno", poznamka: "ChatGPT Plus" },
+  { id: 22, mesic: "Březen", dodavatel: "Google",              typ: "Software",   datumZaplaceni: "1.3.2026",  castka: 800,   stav: "Zaplaceno" },
+  { id: 23, mesic: "Březen", dodavatel: "Pojišťovna Allianz",  typ: "Pojištění",  datumZaplaceni: "3.3.2026",  castka: 2100,  stav: "Zaplaceno" },
+  { id: 24, mesic: "Březen", dodavatel: "Tomáš DANG",          typ: "Mzdy",       datumZaplaceni: "10.3.2026", castka: 58000, stav: "Zaplaceno" },
+  { id: 25, mesic: "Březen", dodavatel: "Jan KŘÍŽ",            typ: "Mzdy",       datumZaplaceni: "10.3.2026", castka: 40000, stav: "Zaplaceno" },
+  { id: 26, mesic: "Březen", dodavatel: "META Ads",            typ: "Marketing",  datumZaplaceni: "15.3.2026", castka: 8500,  stav: "Zaplaceno", poznamka: "FB/IG kampaně" },
+  { id: 27, mesic: "Březen", dodavatel: "Různí dodavatelé",    typ: "Ostatní",    datumZaplaceni: "31.3.2026", castka: 8494,  stav: "Zaplaceno" },
+];
+
+/* ── Helpers ────────────────────────────────────────────────────────────────── */
+function fKc(n: number): string {
+  if (!n) return "—";
+  return n.toLocaleString("cs-CZ") + " Kč";
+}
+function fKcShort(n: number): string {
+  if (!n) return "—";
+  if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + "k Kč";
+  return n.toLocaleString("cs-CZ") + " Kč";
+}
+
+/* ── Style helpers ──────────────────────────────────────────────────────────── */
+function monthStatusStyle(s: MonthStatus) {
+  if (s === "UZAVŘENO")   return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.2)" };
+  if (s === "PROBÍHÁ")    return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.08)", border: "oklch(0.81 0.155 200 / 0.2)" };
+  return                         { color: "oklch(0.35 0.005 222)", bg: "oklch(1 0 0 / 0.03)",          border: "oklch(1 0 0 / 0.07)" };
+}
+function itemStatusStyle(s: ItemStatus) {
+  if (s === "Zaplaceno") return { color: "oklch(0.67 0.155 155)", icon: <CheckCircle2 className="w-3 h-3" /> };
+  if (s === "Čeká")      return { color: "oklch(0.78 0.165 75)",  icon: <Clock className="w-3 h-3" /> };
+  return                        { color: "oklch(0.65 0.22 25)",   icon: <AlertCircle className="w-3 h-3" /> };
+}
+function incomeTypeStyle(t: string) {
+  if (t === "Měsíční klient") return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)", border: "oklch(0.81 0.155 200 / 0.2)" };
+  if (t === "Jednorázový")    return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.1)",  border: "oklch(0.64 0.21 290 / 0.2)" };
+  return                             { color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)",          border: "oklch(1 0 0 / 0.1)" };
+}
+function expenseTypeStyle(t: string) {
+  if (t === "Mzdy")      return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.08)", border: "oklch(0.64 0.21 290 / 0.18)" };
+  if (t === "Provize")   return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.08)", border: "oklch(0.74 0.165 75 / 0.18)" };
+  if (t === "Software")  return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.08)",border: "oklch(0.81 0.155 200 / 0.18)" };
+  if (t === "Marketing") return { color: "oklch(0.72 0.18 340)",  bg: "oklch(0.72 0.18 340 / 0.08)", border: "oklch(0.72 0.18 340 / 0.18)" };
+  return                        { color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)",          border: "oklch(1 0 0 / 0.1)" };
+}
+
+/* ── Shared UI ──────────────────────────────────────────────────────────────── */
+function Badge({ label, color, bg, border }: { label: string; color: string; bg: string; border: string }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[11px] font-semibold whitespace-nowrap"
+      style={{ color, background: bg, border: `1px solid ${border}` }}>
+      {label}
+    </span>
+  );
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.08em]">{label}</label>
+      {children}
+    </div>
+  );
+}
+const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] outline-none transition-all";
+const iSty = { background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.09)", fontFamily: "var(--font-jakarta)" };
+function FInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
+      className={iCls} style={iSty}
+      onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+      onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")} />
+  );
+}
+function FSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div className="relative">
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className={`${iCls} appearance-none pr-8 cursor-pointer`} style={{ ...iSty, color: "var(--foreground)" }}>
+        {options.map(o => <option key={o} value={o} style={{ background: "oklch(0.12 0.008 222)" }}>{o}</option>)}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[--muted-foreground]" />
+    </div>
+  );
+}
+
+/* ── Month header row ───────────────────────────────────────────────────────── */
+function MonthHeader({ mesic, total, count, color }: { mesic: string; total: number; count: number; color: string }) {
+  return (
+    <div className="flex items-center gap-2.5 pt-4 pb-1.5 px-1">
+      <span className="text-[11px] font-bold uppercase tracking-[0.1em]"
+        style={{ fontFamily: "var(--font-outfit)", color }}>
+        {mesic}
+      </span>
+      <span className="flex-1 h-px" style={{ background: `${color}33` }} />
+      <span className="text-[10px] text-[--muted-foreground]">
+        {count} {count === 1 ? "položka" : count < 5 ? "položky" : "položek"} · {fKc(total)}
+      </span>
+    </div>
+  );
+}
+
+/* ── Stat card ──────────────────────────────────────────────────────────────── */
+function StatCard({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
+  return (
+    <div className="card px-5 py-4">
+      <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-2 leading-tight">{label}</p>
+      <p className="num leading-none" style={{ fontSize: "clamp(22px,3.5vw,30px)", fontWeight: 700, fontFamily: "var(--font-outfit)", color, letterSpacing: "-0.02em" }}>{value}</p>
+      {sub && <p className="text-[11px] text-[--muted-foreground] mt-1.5">{sub}</p>}
+    </div>
+  );
+}
+
+/* ── Chart tooltip ──────────────────────────────────────────────────────────── */
+function ChartTip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; color: string; value: number }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="card px-3.5 py-2.5 text-[12px] shadow-xl" style={{ minWidth: 160 }}>
+      <p className="text-[--muted-foreground] mb-2 font-medium">{label}</p>
+      {payload.map(p => (
+        <div key={p.name} className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+            <span className="text-[--muted-foreground]">{p.name}</span>
+          </span>
+          <span className="num text-[--foreground] font-semibold">{fKcShort(p.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── PŘEHLED tab ────────────────────────────────────────────────────────────── */
+function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
+  const chartData = summaries.filter(s => s.prijemCelkovy > 0).map(s => ({
+    m: s.mesic.slice(0, 3),
+    "Příjmy":  s.prijemCelkovy / 1000,
+    "Výdaje":  s.vydaje / 1000,
+    "Čistý":   s.prijemCisty / 1000,
+  }));
+
+  const totalPrijem  = summaries.reduce((s, m) => s + m.prijemCelkovy, 0);
+  const totalVydaje  = summaries.reduce((s, m) => s + m.vydaje, 0);
+  const totalCisty   = summaries.reduce((s, m) => s + m.prijemCisty, 0);
+  const closed       = summaries.filter(s => s.stav === "UZAVŘENO").length;
+
+  return (
+    <div className="space-y-4">
+      {/* YTD stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Příjmy YTD"   value={fKcShort(totalPrijem)} color="oklch(0.67 0.155 155)" sub={`${closed} uzavřených měsíců`} />
+        <StatCard label="Výdaje YTD"   value={fKcShort(totalVydaje)} color="oklch(0.65 0.22 25)"   sub="Celkové náklady" />
+        <StatCard label="Čistý zisk YTD" value={fKcShort(totalCisty)} color="oklch(0.81 0.155 200)" sub={`Marže ${totalPrijem > 0 ? Math.round((totalCisty/totalPrijem)*100) : 0}%`} />
+        <StatCard label="Uzavřených měsíců" value={`${closed} / 12`} color="var(--foreground)" sub="2026" />
+      </div>
+
+      {/* Chart */}
+      {chartData.length > 0 && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[14px] font-bold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>Vývoj financí 2026</p>
+              <p className="text-[11px] text-[--muted-foreground] mt-0.5">tis. Kč · měsíčně</p>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-[--muted-foreground]">
+              {[["Příjmy","oklch(0.67 0.155 155)"],["Výdaje","oklch(0.65 0.22 25)"],["Čistý","oklch(0.81 0.155 200)"]].map(([n, c]) => (
+                <span key={n} className="flex items-center gap-1.5">
+                  <span className="w-3 h-[2px] rounded" style={{ background: c }} />{n}
+                </span>
+              ))}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <defs>
+                {[["gP","oklch(0.67 0.155 155)"],["gV","oklch(0.65 0.22 25)"],["gC","oklch(0.81 0.155 200)"]].map(([id, c]) => (
+                  <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={c} stopOpacity={0.18} />
+                    <stop offset="100%" stopColor={c} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="m" tick={{ fill: "oklch(0.40 0.005 222)", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "oklch(0.40 0.005 222)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}k`} />
+              <Tooltip content={<ChartTip />} cursor={{ stroke: "oklch(1 0 0 / 0.06)", strokeWidth: 1 }} />
+              <Area type="monotone" dataKey="Příjmy" stroke="oklch(0.67 0.155 155)" strokeWidth={2} fill="url(#gP)" dot={false} />
+              <Area type="monotone" dataKey="Výdaje" stroke="oklch(0.65 0.22 25)"   strokeWidth={2} fill="url(#gV)" dot={false} />
+              <Area type="monotone" dataKey="Čistý"  stroke="oklch(0.81 0.155 200)" strokeWidth={2} fill="url(#gC)" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Monthly summary table */}
+      <div className="card overflow-hidden">
+        <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ borderColor: "oklch(1 0 0 / 0.07)" }}>
+          <BarChart3 className="w-3.5 h-3.5" style={{ color: "oklch(0.81 0.155 200)" }} />
+          <p className="text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>Měsíční přehled 2026</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
+                {["Měsíc", "Příjem celkový", "Výdaje", "Čistý příjem", "Marže", "Stav", "Schváleno"].map(h => (
+                  <th key={h} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${["Marže","Schváleno"].includes(h) ? "hidden md:table-cell" : ""}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map(s => {
+                const ss = monthStatusStyle(s.stav);
+                const marze = s.prijemCelkovy > 0 ? Math.round((s.prijemCisty / s.prijemCelkovy) * 100) : 0;
+                return (
+                  <tr key={s.mesic} className="border-b transition-colors hover:bg-white/[0.015]" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>{s.mesic}</td>
+                    <td className="px-4 py-3 num text-[13px] font-semibold" style={{ color: s.prijemCelkovy ? "oklch(0.67 0.155 155)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCelkovy)}</td>
+                    <td className="px-4 py-3 num text-[13px]" style={{ color: s.vydaje ? "oklch(0.65 0.22 25)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.vydaje)}</td>
+                    <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.81 0.155 200)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
+                    <td className="px-4 py-3 num text-[12px] hidden md:table-cell" style={{ color: marze ? "var(--foreground)" : "oklch(0.30 0.005 222)" }}>{marze ? `${marze}%` : "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[10px] font-bold tracking-[0.05em]"
+                        style={{ color: ss.color, background: ss.bg, border: `1px solid ${ss.border}` }}>
+                        {s.stav}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden md:table-cell">{s.schvaleno || "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── PŘÍJMY tab ─────────────────────────────────────────────────────────────── */
+const EMPTY_INCOME: Omit<IncomeItem, "id"> = { mesic: "Leden", klient: "", typ: "Měsíční klient", datumZaplaceni: "", castka: 0, stav: "Zaplaceno" };
+
+function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p: IncomeItem[]) => IncomeItem[]) => void }) {
+  const [modal, setModal]   = useState<IncomeItem | null | "new">(null);
+  const [mesicF, setMesicF] = useState("Vše");
+
+  const filtered = useMemo(() => {
+    const base = mesicF === "Vše" ? items : items.filter(i => i.mesic === mesicF);
+    return [...base].sort((a, b) => MONTHS_CZ.indexOf(b.mesic) - MONTHS_CZ.indexOf(a.mesic));
+  }, [items, mesicF]);
+
+  const grouped = useMemo(() => {
+    const g: { mesic: string; items: IncomeItem[] }[] = [];
+    const seen: Record<string, number> = {};
+    filtered.forEach(it => {
+      if (seen[it.mesic] === undefined) { seen[it.mesic] = g.length; g.push({ mesic: it.mesic, items: [] }); }
+      g[seen[it.mesic]].items.push(it);
+    });
+    return g;
+  }, [filtered]);
+
+  const total      = items.reduce((s, i) => s + i.castka, 0);
+  const monthly    = items.filter(i => i.typ === "Měsíční klient").reduce((s, i) => s + i.castka, 0);
+  const oneoff     = items.filter(i => i.typ === "Jednorázový").reduce((s, i) => s + i.castka, 0);
+  const pending    = items.filter(i => i.stav === "Čeká").reduce((s, i) => s + i.castka, 0);
+
+  function save(data: Omit<IncomeItem,"id"> & { id?: number }) {
+    if (data.id !== undefined) setItems(p => p.map(i => i.id === data.id ? { ...data, id: data.id! } : i));
+    else setItems(p => [...p, { ...data, id: Date.now() }]);
+    setModal(null);
+  }
+
+  const months = ["Vše", ...MONTHS_CZ];
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Celkem příjmy"    value={fKcShort(total)}   color="oklch(0.67 0.155 155)" />
+        <StatCard label="Měsíční klienti"  value={fKcShort(monthly)} color="oklch(0.81 0.155 200)" />
+        <StatCard label="Jednorázové"      value={fKcShort(oneoff)}  color="oklch(0.72 0.18 290)" />
+        <StatCard label="Čeká na platbu"   value={fKcShort(pending)} color="oklch(0.78 0.165 75)" />
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-1 flex-wrap flex-1">
+          {months.map(m => (
+            <motion.button key={m} onClick={() => setMesicF(m)} whileTap={{ scale: 0.95 }}
+              className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
+              style={mesicF === m
+                ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.25)" }
+                : { background: "transparent", color: "oklch(0.40 0.005 222)", border: "1px solid oklch(1 0 0 / 0.06)" }}>
+              {m}
+            </motion.button>
+          ))}
+        </div>
+        <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
+          className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
+          style={{ background: "oklch(0.67 0.155 155)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}>
+          <Plus className="w-3.5 h-3.5" /> Přidat příjem
+        </motion.button>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
+                {["Klient", "Typ", "Datum", "Částka", "Stav", ""].map((h, i) => (
+                  <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h === "Datum" ? "hidden lg:table-cell" : h === "" ? "w-8" : ""}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grouped.map(group => (
+                <>
+                  <tr key={`gh-${group.mesic}`}>
+                    <td colSpan={6} className="px-4">
+                      <MonthHeader mesic={group.mesic} total={group.items.reduce((s,i) => s+i.castka,0)} count={group.items.length} color="oklch(0.67 0.155 155)" />
+                    </td>
+                  </tr>
+                  {group.items.map(item => {
+                    const is = itemStatusStyle(item.stav);
+                    const ts = incomeTypeStyle(item.typ);
+                    return (
+                      <tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>{item.klient}</td>
+                        <td className="px-4 py-3"><Badge label={item.typ} {...ts} /></td>
+                        <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden lg:table-cell">{item.datumZaplaceni || "—"}</td>
+                        <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{ color: "oklch(0.67 0.155 155)", fontFamily: "var(--font-outfit)" }}>{fKc(item.castka)}</td>
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: is.color }}>{is.icon}{item.stav}</span>
+                        </td>
+                        <td className="pr-4 pl-2 py-3">
+                          <motion.button onClick={() => setModal(item)} whileTap={{ scale: 0.9 }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
+                            style={{ color: "oklch(0.45 0.005 222)" }}>
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </motion.button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné příjmy.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modal !== null && (
+          <IncomeModal item={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={save} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function IncomeModal({ item, onClose, onSave }: { item: IncomeItem | null; onClose: () => void; onSave: (d: Omit<IncomeItem,"id"> & { id?: number }) => void }) {
+  const [f, setF] = useState<Omit<IncomeItem,"id">>(item ? { ...item } : { ...EMPTY_INCOME });
+  const set = (k: keyof typeof f) => (v: string) => setF(p => ({ ...p, [k]: k === "castka" ? Number(v.replace(/\D/g,"")) || 0 : v }));
+  return (
+    <ModalWrap title={item ? "Upravit příjem" : "Přidat příjem"} onClose={onClose}
+      onSave={() => onSave({ ...f, ...(item ? { id: item.id } : {}) })}>
+      <Field label="Měsíc"><FSelect value={f.mesic} onChange={set("mesic")} options={MONTHS_CZ} /></Field>
+      <Field label="Klient"><FInput value={f.klient} onChange={set("klient")} placeholder="Název klienta" /></Field>
+      <Field label="Typ výnosu"><FSelect value={f.typ} onChange={set("typ")} options={["Měsíční klient","Jednorázový","Ostatní"]} /></Field>
+      <Field label="Datum zaplacení"><FInput value={f.datumZaplaceni} onChange={set("datumZaplaceni")} placeholder="15.6.2026" /></Field>
+      <Field label="Částka (Kč)"><FInput value={f.castka ? String(f.castka) : ""} onChange={set("castka")} placeholder="25000" /></Field>
+      <Field label="Stav"><FSelect value={f.stav} onChange={set("stav")} options={["Zaplaceno","Čeká","Storno"]} /></Field>
+    </ModalWrap>
+  );
+}
+
+/* ── VÝDAJE tab ─────────────────────────────────────────────────────────────── */
+const EMPTY_EXPENSE: Omit<ExpenseItem, "id"> = { mesic: "Leden", dodavatel: "", typ: "Software", datumZaplaceni: "", castka: 0, stav: "Zaplaceno", poznamka: "" };
+
+function VydajeTab({ items, setItems }: { items: ExpenseItem[]; setItems: (fn: (p: ExpenseItem[]) => ExpenseItem[]) => void }) {
+  const [modal, setModal]   = useState<ExpenseItem | null | "new">(null);
+  const [mesicF, setMesicF] = useState("Vše");
+
+  const filtered = useMemo(() => {
+    const base = mesicF === "Vše" ? items : items.filter(i => i.mesic === mesicF);
+    return [...base].sort((a, b) => MONTHS_CZ.indexOf(b.mesic) - MONTHS_CZ.indexOf(a.mesic));
+  }, [items, mesicF]);
+
+  const grouped = useMemo(() => {
+    const g: { mesic: string; items: ExpenseItem[] }[] = [];
+    const seen: Record<string, number> = {};
+    filtered.forEach(it => {
+      if (seen[it.mesic] === undefined) { seen[it.mesic] = g.length; g.push({ mesic: it.mesic, items: [] }); }
+      g[seen[it.mesic]].items.push(it);
+    });
+    return g;
+  }, [filtered]);
+
+  const total   = items.reduce((s, i) => s + i.castka, 0);
+  const mzdy    = items.filter(i => i.typ === "Mzdy").reduce((s, i) => s + i.castka, 0);
+  const soft    = items.filter(i => i.typ === "Software").reduce((s, i) => s + i.castka, 0);
+  const provize = items.filter(i => i.typ === "Provize").reduce((s, i) => s + i.castka, 0);
+
+  function save(data: Omit<ExpenseItem,"id"> & { id?: number }) {
+    if (data.id !== undefined) setItems(p => p.map(i => i.id === data.id ? { ...data, id: data.id! } : i));
+    else setItems(p => [...p, { ...data, id: Date.now() }]);
+    setModal(null);
+  }
+
+  const months = ["Vše", ...MONTHS_CZ];
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Celkem výdaje" value={fKcShort(total)}   color="oklch(0.65 0.22 25)" />
+        <StatCard label="Mzdy"          value={fKcShort(mzdy)}    color="oklch(0.72 0.18 290)" />
+        <StatCard label="Software"      value={fKcShort(soft)}    color="oklch(0.81 0.155 200)" />
+        <StatCard label="Provize"       value={fKcShort(provize)} color="oklch(0.78 0.165 75)" />
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-1 flex-wrap flex-1">
+          {months.map(m => (
+            <motion.button key={m} onClick={() => setMesicF(m)} whileTap={{ scale: 0.95 }}
+              className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
+              style={mesicF === m
+                ? { background: "oklch(0.65 0.22 25 / 0.1)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.65 0.22 25 / 0.25)" }
+                : { background: "transparent", color: "oklch(0.40 0.005 222)", border: "1px solid oklch(1 0 0 / 0.06)" }}>
+              {m}
+            </motion.button>
+          ))}
+        </div>
+        <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
+          className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
+          style={{ background: "oklch(0.65 0.22 25)", color: "oklch(0.98 0.005 222)", fontFamily: "var(--font-outfit)" }}>
+          <Plus className="w-3.5 h-3.5" /> Přidat výdaj
+        </motion.button>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
+                {["Dodavatel", "Typ", "Poznámka", "Datum", "Částka", "Stav", ""].map((h, i) => (
+                  <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${["Poznámka","Datum"].includes(h) ? "hidden lg:table-cell" : h === "" ? "w-8" : ""}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grouped.map(group => (
+                <>
+                  <tr key={`gh-${group.mesic}`}>
+                    <td colSpan={7} className="px-4">
+                      <MonthHeader mesic={group.mesic} total={group.items.reduce((s,i) => s+i.castka,0)} count={group.items.length} color="oklch(0.65 0.22 25)" />
+                    </td>
+                  </tr>
+                  {group.items.map(item => {
+                    const is = itemStatusStyle(item.stav);
+                    const ts = expenseTypeStyle(item.typ);
+                    return (
+                      <tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>{item.dodavatel}</td>
+                        <td className="px-4 py-3"><Badge label={item.typ} {...ts} /></td>
+                        <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden lg:table-cell max-w-[200px] truncate">{item.poznamka || "—"}</td>
+                        <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden lg:table-cell">{item.datumZaplaceni || "—"}</td>
+                        <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{ color: "oklch(0.65 0.22 25)", fontFamily: "var(--font-outfit)" }}>{fKc(item.castka)}</td>
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: is.color }}>{is.icon}{item.stav}</span>
+                        </td>
+                        <td className="pr-4 pl-2 py-3">
+                          <motion.button onClick={() => setModal(item)} whileTap={{ scale: 0.9 }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
+                            style={{ color: "oklch(0.45 0.005 222)" }}>
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </motion.button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné výdaje.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {modal !== null && (
+          <ExpenseModal item={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={save} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ExpenseModal({ item, onClose, onSave }: { item: ExpenseItem | null; onClose: () => void; onSave: (d: Omit<ExpenseItem,"id"> & { id?: number }) => void }) {
+  const [f, setF] = useState<Omit<ExpenseItem,"id">>(item ? { ...item } : { ...EMPTY_EXPENSE });
+  const set = (k: keyof typeof f) => (v: string) => setF(p => ({ ...p, [k]: k === "castka" ? Number(v.replace(/\D/g,"")) || 0 : v }));
+  return (
+    <ModalWrap title={item ? "Upravit výdaj" : "Přidat výdaj"} onClose={onClose}
+      onSave={() => onSave({ ...f, ...(item ? { id: item.id } : {}) })}>
+      <Field label="Měsíc"><FSelect value={f.mesic} onChange={set("mesic")} options={MONTHS_CZ} /></Field>
+      <Field label="Dodavatel"><FInput value={f.dodavatel} onChange={set("dodavatel")} placeholder="Adobe, Google..." /></Field>
+      <Field label="Typ nákladu"><FSelect value={f.typ} onChange={set("typ")} options={["Software","Provize","Pojištění","Mzdy","Marketing","Nájem","Ostatní"]} /></Field>
+      <Field label="Datum zaplacení"><FInput value={f.datumZaplaceni} onChange={set("datumZaplaceni")} placeholder="15.6.2026" /></Field>
+      <Field label="Částka (Kč)"><FInput value={f.castka ? String(f.castka) : ""} onChange={set("castka")} placeholder="5000" /></Field>
+      <Field label="Stav"><FSelect value={f.stav} onChange={set("stav")} options={["Zaplaceno","Čeká","Storno"]} /></Field>
+      <Field label="Poznámka (volitelné)">
+        <FInput value={f.poznamka ?? ""} onChange={set("poznamka")} placeholder="Upřesnění..." />
+      </Field>
+    </ModalWrap>
+  );
+}
+
+/* ── BILANCE tab ────────────────────────────────────────────────────────────── */
+function BilanceTab({ incomes, expenses }: { incomes: IncomeItem[]; expenses: ExpenseItem[] }) {
+  const byMonth = MONTHS_CZ.map(m => {
+    const inc = incomes.filter(i => i.mesic === m).reduce((s, i) => s + i.castka, 0);
+    const exp = expenses.filter(i => i.mesic === m).reduce((s, i) => s + i.castka, 0);
+    return { m: m.slice(0, 3), mesic: m, inc, exp, net: inc - exp, hasData: inc > 0 || exp > 0 };
+  }).filter(d => d.hasData);
+
+  const totalNet  = byMonth.reduce((s, d) => s + d.net, 0);
+  const totalInc  = byMonth.reduce((s, d) => s + d.inc, 0);
+  const totalExp  = byMonth.reduce((s, d) => s + d.exp, 0);
+  const avgMarze  = totalInc > 0 ? Math.round((totalNet / totalInc) * 100) : 0;
+  const bestMonth = byMonth.length ? byMonth.reduce((a, b) => a.net > b.net ? a : b) : null;
+
+  // Expense breakdown by type
+  const byType = ["Mzdy","Software","Provize","Pojištění","Marketing","Nájem","Ostatní"].map(t => ({
+    t, val: expenses.filter(e => e.typ === t).reduce((s, e) => s + e.castka, 0),
+  })).filter(x => x.val > 0).sort((a, b) => b.val - a.val);
+
+  const TYPE_COLORS: Record<string, string> = {
+    Mzdy: "oklch(0.72 0.18 290)", Software: "oklch(0.81 0.155 200)", Provize: "oklch(0.78 0.165 75)",
+    Pojištění: "oklch(0.67 0.155 155)", Marketing: "oklch(0.72 0.18 340)", Nájem: "oklch(0.65 0.22 25)", Ostatní: "oklch(0.45 0.005 222)",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Čistý zisk celkem"  value={fKcShort(totalNet)} color="oklch(0.81 0.155 200)" sub={`${avgMarze}% marže`} />
+        <StatCard label="Celkem příjmy"      value={fKcShort(totalInc)} color="oklch(0.67 0.155 155)" />
+        <StatCard label="Celkem výdaje"      value={fKcShort(totalExp)} color="oklch(0.65 0.22 25)" />
+        <StatCard label="Nejlepší měsíc"     value={bestMonth ? fKcShort(bestMonth.net) : "—"} color="oklch(0.74 0.165 75)" sub={bestMonth?.mesic} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
+        {/* Net income bar chart */}
+        <div className="card p-5">
+          <p className="text-[14px] font-bold text-[--foreground] mb-0.5" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>Čistý příjem po měsících</p>
+          <p className="text-[11px] text-[--muted-foreground] mb-4">Příjmy − Výdaje · tis. Kč</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={byMonth.map(d => ({ ...d, inc: d.inc/1000, exp: d.exp/1000, net: d.net/1000 }))} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="30%">
+              <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="m" tick={{ fill: "oklch(0.40 0.005 222)", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "oklch(0.40 0.005 222)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}k`} />
+              <Tooltip content={<ChartTip />} cursor={{ fill: "oklch(1 0 0 / 0.03)" }} />
+              <Bar dataKey="inc" name="Příjmy" radius={[3,3,0,0]}>
+                {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.67 0.155 155 / 0.6)" />)}
+              </Bar>
+              <Bar dataKey="exp" name="Výdaje" radius={[3,3,0,0]}>
+                {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.65 0.22 25 / 0.6)" />)}
+              </Bar>
+              <Bar dataKey="net" name="Čistý" radius={[3,3,0,0]}>
+                {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.81 0.155 200)" />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Expense breakdown donut-style */}
+        <div className="card p-5 min-w-[220px]">
+          <p className="text-[13px] font-bold text-[--foreground] mb-0.5" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>Struktura výdajů</p>
+          <p className="text-[11px] text-[--muted-foreground] mb-4">Podle kategorie</p>
+          <div className="space-y-3">
+            {byType.map(({ t, val }) => {
+              const pct = totalExp > 0 ? (val / totalExp) * 100 : 0;
+              const c   = TYPE_COLORS[t] ?? "oklch(0.45 0.005 222)";
+              return (
+                <div key={t}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-2 text-[12px] text-[--foreground]">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />{t}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-[--muted-foreground]">{Math.round(pct)}%</span>
+                      <span className="num text-[12px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", minWidth: 70, textAlign: "right" }}>{fKcShort(val)}</span>
+                    </div>
+                  </div>
+                  <div className="h-[3px] rounded-full" style={{ background: "oklch(1 0 0 / 0.07)" }}>
+                    <motion.div className="h-full rounded-full" style={{ background: c }}
+                      initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Monthly net table */}
+          <div className="mt-5 pt-4 border-t space-y-1.5" style={{ borderColor: "oklch(1 0 0 / 0.07)" }}>
+            <p className="text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] mb-2.5">Čistý příjem / měsíc</p>
+            {byMonth.map(d => (
+              <div key={d.mesic} className="flex items-center justify-between">
+                <span className="text-[11px] text-[--muted-foreground]">{d.mesic}</span>
+                <span className="num text-[12px] font-bold" style={{ color: d.net >= 0 ? "oklch(0.81 0.155 200)" : "oklch(0.65 0.22 25)", fontFamily: "var(--font-outfit)" }}>
+                  {fKcShort(d.net)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Shared modal wrapper ───────────────────────────────────────────────────── */
+function ModalWrap({ title, onClose, onSave, children }: {
+  title: string; onClose: () => void; onSave: () => void; children: React.ReactNode;
+}) {
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ background: "oklch(0 0 0 / 0.6)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}>
+      <motion.div className="relative w-full md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
+        style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.09)" }}
+        initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "oklch(1 0 0 / 0.08)" }}>
+          <h2 className="text-[15px] font-bold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>{title}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-[6px] btn-tactile text-[--muted-foreground] hover:text-[--foreground] transition-colors"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
+        <div className="flex items-center justify-end gap-2.5 px-5 py-4 border-t" style={{ borderColor: "oklch(1 0 0 / 0.08)" }}>
+          <button onClick={onClose} className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground] btn-tactile"
+            style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>Zrušit</button>
+          <motion.button onClick={onSave} whileHover={{ filter: "brightness(1.08)" }} whileTap={{ scale: 0.96 }}
+            className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
+            style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}>
+            Uložit
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ── Page ───────────────────────────────────────────────────────────────────── */
+const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [
+  { id: "prehled", label: "Přehled",     icon: <BarChart3 className="w-3.5 h-3.5" />,     color: "oklch(0.81 0.155 200)" },
+  { id: "prijmy",  label: "Příjmy",      icon: <TrendingUp className="w-3.5 h-3.5" />,    color: "oklch(0.67 0.155 155)" },
+  { id: "vydaje",  label: "Výdaje",      icon: <TrendingDown className="w-3.5 h-3.5" />,  color: "oklch(0.65 0.22 25)" },
+  { id: "bilance", label: "Bilance",     icon: <Wallet className="w-3.5 h-3.5" />,        color: "oklch(0.74 0.165 75)" },
+];
+
+export default function FinancePage() {
+  const [tab,      setTab]      = useState<Tab>("prehled");
+  const [summaries, setSummaries] = useState<MonthSummary[]>(SUMMARIES);
+  const [incomes,  setIncomes]  = useState<IncomeItem[]>(INCOME_SEED);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(EXPENSE_SEED);
+
+  const activeTab = TABS.find(t => t.id === tab)!;
+
+  return (
+    <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
+      style={{ background: `radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.81 0.155 200 / 0.04) 0%, transparent 70%), var(--background)` }}>
+
+      {/* Header */}
+      <motion.div className="flex items-start justify-between gap-3"
+        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
+            style={{ background: "oklch(0.81 0.155 200 / 0.12)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
+            <Wallet className="w-4 h-4" style={{ color: "oklch(0.81 0.155 200)" }} />
+          </div>
+          <div>
+            <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
+              style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}>Finance</h1>
+            <p className="text-[12px] text-[--muted-foreground] mt-1">OnVision s.r.o. · 2026</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Tab bar */}
+      <motion.div className="flex items-center gap-1 flex-wrap"
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.05 }}>
+        {TABS.map(t => {
+          const active = tab === t.id;
+          return (
+            <motion.button key={t.id} onClick={() => setTab(t.id)} whileTap={{ scale: 0.95 }}
+              className="relative flex items-center gap-2 px-4 py-2 rounded-[8px] text-[13px] font-semibold btn-tactile transition-colors"
+              style={active
+                ? { background: `${t.color.replace(")", " / 0.12)")}`, color: t.color, border: `1px solid ${t.color.replace(")", " / 0.25)")}` }
+                : { background: "transparent", color: "oklch(0.40 0.005 222)", border: "1px solid oklch(1 0 0 / 0.06)" }}
+              transition={{ duration: 0.12 }}>
+              {t.icon}
+              <span className="hidden sm:inline">{t.label}</span>
+              {active && (
+                <motion.span layoutId="tab-indicator" className="absolute inset-0 rounded-[8px] pointer-events-none"
+                  style={{ boxShadow: `inset 0 0 0 1px ${t.color.replace(")", " / 0.25)")}` }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }} />
+              )}
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* Tab content */}
+      <AnimatePresence mode="wait">
+        <motion.div key={tab}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}>
+          {tab === "prehled" && <PrehledTab summaries={summaries} />}
+          {tab === "prijmy"  && <PrijmyTab  items={incomes}  setItems={fn => setIncomes(fn)} />}
+          {tab === "vydaje"  && <VydajeTab  items={expenses} setItems={fn => setExpenses(fn)} />}
+          {tab === "bilance" && <BilanceTab incomes={incomes} expenses={expenses} />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
