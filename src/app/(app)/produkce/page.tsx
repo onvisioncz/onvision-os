@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, ChevronDown, Clapperboard,
   Clock, AlertCircle, CheckCircle2, User, CalendarDays,
-  TrendingUp, RefreshCw, ArrowUpCircle, ArrowDownCircle,
+  TrendingUp, RefreshCw, ArrowUpCircle, ArrowDownCircle, Undo2,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -248,24 +248,52 @@ function PendingQueue({
   items,
   setItems,
   onCreateEntry,
+  onPushHistory,
 }: {
   items: QPending[];
   setItems: React.Dispatch<React.SetStateAction<QPending[]>>;
   onCreateEntry: (d: Omit<ZEntry,"id">) => void;
+  onPushHistory: () => void;
 }) {
-  const [assignOpen, setAssignOpen] = useState<number|null>(null);
-  const [addModal, setAddModal]     = useState(false);
-  const [addForm, setAddForm]       = useState<Omit<QPending,"id">>({...Q_EMPTY});
+  const [dropdownOpen, setDropdownOpen] = useState<number|null>(null);
+  const [addModal, setAddModal]         = useState(false);
+  const [addForm, setAddForm]           = useState<Omit<QPending,"id">>({...Q_EMPTY});
 
   const active = items.filter(i=>!i.settled);
   const nad    = active.filter(i=>i.type==="NADPRACOVANÉ");
   const nev    = active.filter(i=>i.type==="NEVYČERPANÉ");
 
   function settle(id: number) {
+    onPushHistory();
     setItems(p=>p.map(i=>i.id===id?{...i,settled:true}:i));
+    setDropdownOpen(null);
   }
 
-  function assign(item: QPending, mesic: string) {
+  // NADPRACOVANÉ: paid in cash
+  function resolveProplaceno(item: QPending) {
+    onPushHistory();
+    setItems(p=>p.map(i=>i.id===item.id?{...i,settled:true,assignedMesic:"PROPLACENO"}:i));
+    setDropdownOpen(null);
+  }
+
+  // NADPRACOVANÉ: credit to a future month (creates a pre-credited planned entry)
+  function resolveTransfer(item: QPending, mesic: string) {
+    onPushHistory();
+    onCreateEntry({
+      mesic,
+      datum: item.datum,
+      projekt: item.projekt,
+      format: item.format,
+      status: "❓",
+      poznamka: `PŘEDPRACOVANÉ ${item.mesicOrigin}`,
+    });
+    setItems(p=>p.map(i=>i.id===item.id?{...i,settled:true,assignedMesic:mesic}:i));
+    setDropdownOpen(null);
+  }
+
+  // NEVYČERPANÉ: reschedule to a month (creates a planned makeup entry)
+  function assignNev(item: QPending, mesic: string) {
+    onPushHistory();
     onCreateEntry({
       mesic,
       datum: "",
@@ -275,14 +303,23 @@ function PendingQueue({
       poznamka: `NÁHRADA ${item.mesicOrigin}`,
     });
     setItems(p=>p.map(i=>i.id===item.id?{...i,assignedMesic:mesic,settled:true}:i));
-    setAssignOpen(null);
+    setDropdownOpen(null);
   }
 
   function addItem() {
+    onPushHistory();
     setItems(p=>[...p,{...addForm,id:Date.now(),settled:false}]);
     setAddModal(false);
     setAddForm({...Q_EMPTY});
   }
+
+  // Close dropdown on outside click
+  useEffect(()=>{
+    if(dropdownOpen===null) return;
+    const h = ()=>setDropdownOpen(null);
+    document.addEventListener("mousedown",h);
+    return ()=>document.removeEventListener("mousedown",h);
+  },[dropdownOpen]);
 
   if (active.length===0) return (
     <div className="card px-5 py-3 flex items-center gap-2.5">
@@ -318,36 +355,63 @@ function PendingQueue({
         </motion.button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{borderBottom:"0"}}>
+      <div className="grid grid-cols-1 md:grid-cols-2">
         {/* NADPRACOVANÉ */}
         <div className="p-4 space-y-2 md:border-r" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
           <div className="flex items-center gap-2 mb-3">
             <ArrowUpCircle className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.81 0.155 200)"}}/>
             <span className="text-[10px] font-bold uppercase tracking-[0.09em]" style={{color:"oklch(0.81 0.155 200)"}}>Nadpracované</span>
-            <span className="text-[10px] text-[--muted-foreground]">· čeká na proplacení</span>
+            <span className="text-[10px] text-[--muted-foreground]">· čeká na řešení</span>
             {nad.length>0&&<span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.81 0.155 200 / 0.1)",color:"oklch(0.81 0.155 200)"}}>{nad.length}</span>}
           </div>
           <AnimatePresence initial={false}>
             {nad.map(item=>(
-              <motion.div key={item.id}
-                layout
-                initial={{opacity:0,height:0,marginBottom:0}}
-                animate={{opacity:1,height:"auto",marginBottom:8}}
-                exit={{opacity:0,height:0,marginBottom:0,overflow:"hidden"}}
-                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}
-              >
-                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-[8px]"
+              <motion.div key={item.id} layout
+                initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0,overflow:"hidden"}}
+                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}>
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] mb-2"
                   style={{background:"oklch(0.81 0.155 200 / 0.06)",border:"1px solid oklch(0.81 0.155 200 / 0.15)"}}>
-                  <motion.button onClick={()=>settle(item.id)} whileTap={{scale:0.82}}
-                    className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 btn-tactile group/chk"
-                    style={{border:"1px solid oklch(0.81 0.155 200 / 0.35)",background:"oklch(0.81 0.155 200 / 0.05)"}}
-                    title="Označit jako vyřešené">
-                    <Check className="w-3 h-3 opacity-40 group-hover/chk:opacity-100 transition-opacity" style={{color:"oklch(0.81 0.155 200)"}}/>
-                  </motion.button>
                   <FmtBadge label={item.format} {...fmtStyleZ(item.format)}/>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-semibold truncate" style={{fontFamily:"var(--font-outfit)",color:"var(--foreground)"}}>{item.projekt||"—"}</p>
                     <p className="text-[10px]" style={{color:"oklch(0.45 0.005 222)"}}>{item.datum&&`${item.datum} · `}{item.mesicOrigin} 2026</p>
+                  </div>
+                  {/* Resolution dropdown */}
+                  <div className="relative shrink-0" onMouseDown={e=>e.stopPropagation()}>
+                    <motion.button
+                      onClick={()=>setDropdownOpen(dropdownOpen===item.id?null:item.id)}
+                      whileTap={{scale:0.92}}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
+                      style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.09)",border:"1px solid oklch(0.81 0.155 200 / 0.22)"}}>
+                      Vyřešit <ChevronDown className="w-3 h-3"/>
+                    </motion.button>
+                    <AnimatePresence>
+                      {dropdownOpen===item.id&&(
+                        <motion.div
+                          initial={{opacity:0,y:-6,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-4,scale:0.96}}
+                          transition={{duration:0.18,ease:[0.23,1,0.32,1]}}
+                          className="absolute right-0 top-full mt-1.5 z-30 rounded-[10px] overflow-hidden py-1"
+                          style={{background:"oklch(0.14 0.008 222)",border:"1px solid oklch(1 0 0 / 0.12)",boxShadow:"0 8px 32px oklch(0 0 0 / 0.5)",minWidth:"160px"}}>
+                          {/* Option 1: paid */}
+                          <button onClick={()=>resolveProplaceno(item)}
+                            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-[12px] transition-colors hover:bg-white/[0.06]"
+                            style={{color:"oklch(0.67 0.155 155)"}}>
+                            <Check className="w-3.5 h-3.5 shrink-0"/>
+                            <span>Proplaceno</span>
+                          </button>
+                          {/* Option 2: transfer to month */}
+                          <div className="mx-3 my-1 h-px" style={{background:"oklch(1 0 0 / 0.07)"}}/>
+                          <p className="px-3 py-1 text-[9px] font-bold uppercase tracking-[0.1em]" style={{color:"oklch(0.40 0.005 222)"}}>Převést do měsíce</p>
+                          {MONTHS_CZ.map(m=>(
+                            <button key={m} onClick={()=>resolveTransfer(item,m)}
+                              className="w-full text-left px-3 py-2 text-[12px] transition-colors hover:bg-white/[0.06]"
+                              style={{color:"var(--foreground)"}}>
+                              {m} 2026
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
@@ -366,20 +430,16 @@ function PendingQueue({
           </div>
           <AnimatePresence initial={false}>
             {nev.map(item=>(
-              <motion.div key={item.id}
-                layout
-                initial={{opacity:0,height:0,marginBottom:0}}
-                animate={{opacity:1,height:"auto",marginBottom:8}}
-                exit={{opacity:0,height:0,marginBottom:0,overflow:"hidden"}}
-                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}
-              >
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-[8px]"
+              <motion.div key={item.id} layout
+                initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0,overflow:"hidden"}}
+                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}>
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-[8px] mb-2"
                   style={{background:"oklch(0.65 0.22 25 / 0.06)",border:"1px solid oklch(0.65 0.22 25 / 0.15)"}}>
                   <motion.button onClick={()=>settle(item.id)} whileTap={{scale:0.82}}
                     className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 btn-tactile group/chk"
                     style={{border:"1px solid oklch(0.65 0.22 25 / 0.35)",background:"oklch(0.65 0.22 25 / 0.05)"}}
-                    title="Označit jako vyřešené">
-                    <Check className="w-3 h-3 opacity-40 group-hover/chk:opacity-100 transition-opacity" style={{color:"oklch(0.65 0.22 25)"}}/>
+                    title="Označit jako vyřešené bez přesunu">
+                    <Check className="w-3 h-3 opacity-30 group-hover/chk:opacity-100 transition-opacity" style={{color:"oklch(0.65 0.22 25)"}}/>
                   </motion.button>
                   <FmtBadge label={item.format} {...fmtStyleZ(item.format)}/>
                   <div className="flex-1 min-w-0">
@@ -387,25 +447,25 @@ function PendingQueue({
                       nevyčerpáno z <span className="font-semibold" style={{color:"var(--foreground)"}}>{item.mesicOrigin}</span>
                     </p>
                   </div>
-                  {/* Assign month */}
-                  <div className="relative shrink-0">
+                  {/* Assign dropdown */}
+                  <div className="relative shrink-0" onMouseDown={e=>e.stopPropagation()}>
                     <motion.button
-                      onClick={()=>setAssignOpen(assignOpen===item.id?null:item.id)}
+                      onClick={()=>setDropdownOpen(dropdownOpen===item.id?null:item.id)}
                       whileTap={{scale:0.94}}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
                       style={{color:"oklch(0.65 0.22 25)",background:"oklch(0.65 0.22 25 / 0.08)",border:"1px solid oklch(0.65 0.22 25 / 0.22)"}}>
                       → Přesunout
                     </motion.button>
                     <AnimatePresence>
-                      {assignOpen===item.id&&(
+                      {dropdownOpen===item.id&&(
                         <motion.div
                           initial={{opacity:0,y:-6,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-4,scale:0.96}}
                           transition={{duration:0.18,ease:[0.23,1,0.32,1]}}
                           className="absolute right-0 top-full mt-1.5 z-30 rounded-[10px] overflow-hidden py-1"
                           style={{background:"oklch(0.14 0.008 222)",border:"1px solid oklch(1 0 0 / 0.12)",boxShadow:"0 8px 32px oklch(0 0 0 / 0.5)",minWidth:"140px"}}>
-                          <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground]">Přesunout do</p>
+                          <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em]" style={{color:"oklch(0.40 0.005 222)"}}>Přesunout do</p>
                           {MONTHS_CZ.map(m=>(
-                            <button key={m} onClick={()=>assign(item,m)}
+                            <button key={m} onClick={()=>assignNev(item,m)}
                               className="w-full text-left px-3 py-2 text-[12px] transition-colors hover:bg-white/[0.06]"
                               style={{color:"var(--foreground)"}}>
                               {m} 2026
@@ -452,10 +512,15 @@ function AddPendingModal({ form, setForm, onSave, onClose }: {
 /* ── ZDENĚK tab ─────────────────────────────────────────────────────────────── */
 const Z_EMPTY: Omit<ZEntry,"id"> = { mesic:"Květen", datum:"", projekt:"", format:"3 HOD", status:"❓", poznamka:"" };
 
-function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(p:ZEntry[])=>ZEntry[])=>void }) {
-  const [modal, setModal]       = useState<ZEntry|null|"new">(null);
-  const [mesicF, setMesicF]     = useState("Vše");
-  const [pendingItems, setPendingItems] = useState<QPending[]>(Q_SEED);
+function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushHistory }: {
+  entries: ZEntry[];
+  setEntries: (fn:(p:ZEntry[])=>ZEntry[]) => void;
+  pendingItems: QPending[];
+  setPendingItems: React.Dispatch<React.SetStateAction<QPending[]>>;
+  onPushHistory: () => void;
+}) {
+  const [modal, setModal]   = useState<ZEntry|null|"new">(null);
+  const [mesicF, setMesicF] = useState("Vše");
 
   // Build months that have data (newest first)
   const usedMonths = useMemo(() => {
@@ -493,6 +558,7 @@ function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(
   const totalExtra = entries.filter(e=>e.poznamka==="NADPRACOVANÉ").length;
 
   function save(data: Omit<ZEntry,"id">&{id?:number}) {
+    onPushHistory();
     if(data.id!==undefined) setEntries(p=>p.map(e=>e.id===data.id?{...data,id:data.id!}:e));
     else setEntries(p=>[...p,{...data,id:Date.now()}]);
     setModal(null);
@@ -529,7 +595,7 @@ function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(
       </div>
 
       {/* Pending queue */}
-      <PendingQueue items={pendingItems} setItems={setPendingItems} onCreateEntry={createEntry}/>
+      <PendingQueue items={pendingItems} setItems={setPendingItems} onCreateEntry={createEntry} onPushHistory={onPushHistory}/>
 
       {/* Stats strip */}
       <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
@@ -986,12 +1052,38 @@ const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
   { id:"matej",   label:"Matěj Hořák",     short:"Matěj",   color:"oklch(0.72 0.18 290)" },
 ];
 
+type HistorySnap = { zEntries: ZEntry[]; pendingItems: QPending[] };
+
 export default function ProdukccePage() {
-  const [tab,      setTab]      = useState<ProdTab>("prehled");
-  const [zEntries, setZEntries] = useState<ZEntry[]>(Z_SEED);
-  const [mEntries, setMEntries] = useState<MEntry[]>(M_SEED);
+  const [tab,          setTab]          = useState<ProdTab>("prehled");
+  const [zEntries,     setZEntries]     = useState<ZEntry[]>(Z_SEED);
+  const [mEntries,     setMEntries]     = useState<MEntry[]>(M_SEED);
+  const [pendingItems, setPendingItems] = useState<QPending[]>(Q_SEED);
+  const [history,      setHistory]      = useState<HistorySnap[]>([]);
 
   const activeColor = TABS.find(t=>t.id===tab)?.color ?? "oklch(0.81 0.155 200)";
+  const canUndo = history.length > 0;
+
+  const pushHistory = useCallback(() => {
+    setHistory(h => [...h.slice(-24), { zEntries: [...zEntries], pendingItems: [...pendingItems] }]);
+  }, [zEntries, pendingItems]);
+
+  const undo = useCallback(() => {
+    if(!canUndo) return;
+    const prev = history[history.length-1];
+    setZEntries(prev.zEntries);
+    setPendingItems(prev.pendingItems);
+    setHistory(h=>h.slice(0,-1));
+  }, [history, canUndo]);
+
+  // Ctrl+Z global listener
+  useEffect(()=>{
+    const handler = (e: KeyboardEvent) => {
+      if((e.ctrlKey||e.metaKey) && e.key==="z" && !e.shiftKey) { e.preventDefault(); undo(); }
+    };
+    window.addEventListener("keydown", handler);
+    return ()=>window.removeEventListener("keydown", handler);
+  },[undo]);
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
@@ -1011,6 +1103,24 @@ export default function ProdukccePage() {
             <p className="text-[12px] text-[--muted-foreground] mt-1">Foto &amp; video externisté · 2026</p>
           </div>
         </div>
+        {/* Undo button */}
+        <AnimatePresence>
+          {canUndo&&(
+            <motion.button
+              key="undo-btn"
+              initial={{opacity:0,scale:0.85,x:8}} animate={{opacity:1,scale:1,x:0}} exit={{opacity:0,scale:0.85,x:8}}
+              transition={{duration:0.2,ease:[0.23,1,0.32,1]}}
+              onClick={undo}
+              whileTap={{scale:0.92}}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold btn-tactile"
+              style={{background:"oklch(1 0 0 / 0.05)",border:"1px solid oklch(1 0 0 / 0.1)",color:"oklch(0.55 0.005 222)"}}
+              title="Zpět (Ctrl+Z / ⌘Z)">
+              <Undo2 className="w-3.5 h-3.5"/>
+              <span className="hidden sm:inline">Zpět</span>
+              <span className="text-[10px] opacity-50 hidden md:inline">⌘Z</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Tab bar */}
@@ -1038,7 +1148,11 @@ export default function ProdukccePage() {
         <motion.div key={tab} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
           transition={{duration:0.25,ease:[0.23,1,0.32,1]}}>
           {tab==="prehled"&&<PrehledTab zEntries={zEntries} mEntries={mEntries}/>}
-          {tab==="zdenek"&&<ZdenekTab  entries={zEntries} setEntries={fn=>setZEntries(fn)}/>}
+          {tab==="zdenek"&&<ZdenekTab
+            entries={zEntries} setEntries={fn=>setZEntries(fn)}
+            pendingItems={pendingItems} setPendingItems={setPendingItems}
+            onPushHistory={pushHistory}
+          />}
           {tab==="matej"&&<MatejTab   entries={mEntries} setEntries={fn=>setMEntries(fn)}/>}
         </motion.div>
       </AnimatePresence>
