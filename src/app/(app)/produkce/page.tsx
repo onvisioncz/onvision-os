@@ -35,6 +35,16 @@ interface MEntry {
   castka: number;
   poznamka: string;
 }
+interface QPending {
+  id: number;
+  type: "NADPRACOVANÉ" | "NEVYČERPANÉ";
+  format: FormatZ;
+  datum: string;
+  projekt: string;
+  mesicOrigin: string;
+  assignedMesic: string;
+  settled: boolean;
+}
 
 /* ── Zdeněk paušál config ───────────────────────────────────────────────────── */
 const PAUSAL_CELODENNI = 1;
@@ -86,6 +96,17 @@ const M_SEED: MEntry[] = [
   { id:  4, mesic: "Duben",  datum: "17. 4.", projekt: 'IMTOS, spol. s r.o. — "ROSSO STEEL, a.s. firemní akce" (FOTO + VIDEO)', format: "3 HOD", status: "✅", castka: 3500, poznamka: "" },
   { id:  5, mesic: "Duben",  datum: "21. 4.", projekt: 'IMTOS, spol. s r.o. — "Dny průmyslového čištění" (FOTO + VIDEO)',       format: "3 HOD", status: "✅", castka: 3000, poznamka: "" },
   { id:  6, mesic: "Duben",  datum: "22. 4.", projekt: "EASTGATE Brno — průběh stavby měsíc DUBEN",                             format: "3 HOD", status: "✅", castka: 3000, poznamka: "" },
+];
+
+/* ── Seed: Pending queue ────────────────────────────────────────────────────── */
+const Q_SEED: QPending[] = [
+  // NADPRACOVANÉ — over quota, awaiting compensation
+  { id: 1, type: "NADPRACOVANÉ", format: "CELODENNÍ", datum: "12. 3.", projekt: "TEKMA — PROMO VIDEO",     mesicOrigin: "Březen", assignedMesic: "", settled: false },
+  { id: 2, type: "NADPRACOVANÉ", format: "CELODENNÍ", datum: "15. 4.", projekt: "POWER PLATE ČESKO",       mesicOrigin: "Duben",  assignedMesic: "", settled: false },
+  { id: 3, type: "NADPRACOVANÉ", format: "CELODENNÍ", datum: "17. 4.", projekt: "FIRESTA — Dvorecký most", mesicOrigin: "Duben",  assignedMesic: "", settled: false },
+  // NEVYČERPANÉ — unfulfilled quota slots, need rescheduling
+  { id: 4, type: "NEVYČERPANÉ",  format: "3 HOD",     datum: "",       projekt: "",                        mesicOrigin: "Únor",   assignedMesic: "", settled: false },
+  { id: 5, type: "NEVYČERPANÉ",  format: "3 HOD",     datum: "",       projekt: "",                        mesicOrigin: "Duben",  assignedMesic: "", settled: false },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -220,12 +241,221 @@ function PausalBar({ done, total, label, color }: { done:number; total:number; l
   );
 }
 
+/* ── Pending queue ───────────────────────────────────────────────────────────── */
+const Q_EMPTY: Omit<QPending,"id"> = { type:"NEVYČERPANÉ", format:"3 HOD", datum:"", projekt:"", mesicOrigin:"Květen", assignedMesic:"", settled:false };
+
+function PendingQueue({
+  items,
+  setItems,
+  onCreateEntry,
+}: {
+  items: QPending[];
+  setItems: React.Dispatch<React.SetStateAction<QPending[]>>;
+  onCreateEntry: (d: Omit<ZEntry,"id">) => void;
+}) {
+  const [assignOpen, setAssignOpen] = useState<number|null>(null);
+  const [addModal, setAddModal]     = useState(false);
+  const [addForm, setAddForm]       = useState<Omit<QPending,"id">>({...Q_EMPTY});
+
+  const active = items.filter(i=>!i.settled);
+  const nad    = active.filter(i=>i.type==="NADPRACOVANÉ");
+  const nev    = active.filter(i=>i.type==="NEVYČERPANÉ");
+
+  function settle(id: number) {
+    setItems(p=>p.map(i=>i.id===id?{...i,settled:true}:i));
+  }
+
+  function assign(item: QPending, mesic: string) {
+    onCreateEntry({
+      mesic,
+      datum: "",
+      projekt: `Přesun z ${item.mesicOrigin}`,
+      format: item.format,
+      status: "❓",
+      poznamka: `NÁHRADA ${item.mesicOrigin}`,
+    });
+    setItems(p=>p.map(i=>i.id===item.id?{...i,assignedMesic:mesic,settled:true}:i));
+    setAssignOpen(null);
+  }
+
+  function addItem() {
+    setItems(p=>[...p,{...addForm,id:Date.now(),settled:false}]);
+    setAddModal(false);
+    setAddForm({...Q_EMPTY});
+  }
+
+  if (active.length===0) return (
+    <div className="card px-5 py-3 flex items-center gap-2.5">
+      <CheckCircle2 className="w-4 h-4 shrink-0" style={{color:"oklch(0.67 0.155 155)"}}/>
+      <span className="text-[12px] text-[--muted-foreground]">Fronta přesunů je prázdná — vše vyřešeno.</span>
+      <motion.button onClick={()=>setAddModal(true)} whileTap={{scale:0.95}}
+        className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
+        style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+        <Plus className="w-3 h-3"/> Přidat
+      </motion.button>
+      <AnimatePresence>{addModal&&<AddPendingModal form={addForm} setForm={setAddForm} onSave={addItem} onClose={()=>setAddModal(false)}/>}</AnimatePresence>
+    </div>
+  );
+
+  return (
+    <>
+    <div className="card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
+        <div className="flex items-center gap-2.5">
+          <RefreshCw className="w-3.5 h-3.5" style={{color:"oklch(0.81 0.155 200)"}}/>
+          <span className="text-[13px] font-bold" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em",color:"var(--foreground)"}}>
+            Fronta přesunů
+          </span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.81 0.155 200 / 0.12)",color:"oklch(0.81 0.155 200)"}}>
+            {active.length}
+          </span>
+        </div>
+        <motion.button onClick={()=>setAddModal(true)} whileTap={{scale:0.95}}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
+          style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+          <Plus className="w-3 h-3"/> Přidat
+        </motion.button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{borderBottom:"0"}}>
+        {/* NADPRACOVANÉ */}
+        <div className="p-4 space-y-2 md:border-r" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
+          <div className="flex items-center gap-2 mb-3">
+            <ArrowUpCircle className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.81 0.155 200)"}}/>
+            <span className="text-[10px] font-bold uppercase tracking-[0.09em]" style={{color:"oklch(0.81 0.155 200)"}}>Nadpracované</span>
+            <span className="text-[10px] text-[--muted-foreground]">· čeká na proplacení</span>
+            {nad.length>0&&<span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.81 0.155 200 / 0.1)",color:"oklch(0.81 0.155 200)"}}>{nad.length}</span>}
+          </div>
+          <AnimatePresence initial={false}>
+            {nad.map(item=>(
+              <motion.div key={item.id}
+                layout
+                initial={{opacity:0,height:0,marginBottom:0}}
+                animate={{opacity:1,height:"auto",marginBottom:8}}
+                exit={{opacity:0,height:0,marginBottom:0,overflow:"hidden"}}
+                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}
+              >
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-[8px]"
+                  style={{background:"oklch(0.81 0.155 200 / 0.06)",border:"1px solid oklch(0.81 0.155 200 / 0.15)"}}>
+                  <motion.button onClick={()=>settle(item.id)} whileTap={{scale:0.82}}
+                    className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 btn-tactile group/chk"
+                    style={{border:"1px solid oklch(0.81 0.155 200 / 0.35)",background:"oklch(0.81 0.155 200 / 0.05)"}}
+                    title="Označit jako vyřešené">
+                    <Check className="w-3 h-3 opacity-40 group-hover/chk:opacity-100 transition-opacity" style={{color:"oklch(0.81 0.155 200)"}}/>
+                  </motion.button>
+                  <FmtBadge label={item.format} {...fmtStyleZ(item.format)}/>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold truncate" style={{fontFamily:"var(--font-outfit)",color:"var(--foreground)"}}>{item.projekt||"—"}</p>
+                    <p className="text-[10px]" style={{color:"oklch(0.45 0.005 222)"}}>{item.datum&&`${item.datum} · `}{item.mesicOrigin} 2026</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {nad.length===0&&<p className="text-[12px] px-1" style={{color:"oklch(0.40 0.005 222)"}}>Žádné nadpracované.</p>}
+        </div>
+
+        {/* NEVYČERPANÉ */}
+        <div className="p-4 space-y-2 border-t md:border-t-0" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
+          <div className="flex items-center gap-2 mb-3">
+            <ArrowDownCircle className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.65 0.22 25)"}}/>
+            <span className="text-[10px] font-bold uppercase tracking-[0.09em]" style={{color:"oklch(0.65 0.22 25)"}}>Nevyčerpané</span>
+            <span className="text-[10px] text-[--muted-foreground]">· přesunout do měsíce</span>
+            {nev.length>0&&<span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.65 0.22 25 / 0.1)",color:"oklch(0.65 0.22 25)"}}>{nev.length}</span>}
+          </div>
+          <AnimatePresence initial={false}>
+            {nev.map(item=>(
+              <motion.div key={item.id}
+                layout
+                initial={{opacity:0,height:0,marginBottom:0}}
+                animate={{opacity:1,height:"auto",marginBottom:8}}
+                exit={{opacity:0,height:0,marginBottom:0,overflow:"hidden"}}
+                transition={{duration:0.28,ease:[0.23,1,0.32,1]}}
+              >
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-[8px]"
+                  style={{background:"oklch(0.65 0.22 25 / 0.06)",border:"1px solid oklch(0.65 0.22 25 / 0.15)"}}>
+                  <motion.button onClick={()=>settle(item.id)} whileTap={{scale:0.82}}
+                    className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 btn-tactile group/chk"
+                    style={{border:"1px solid oklch(0.65 0.22 25 / 0.35)",background:"oklch(0.65 0.22 25 / 0.05)"}}
+                    title="Označit jako vyřešené">
+                    <Check className="w-3 h-3 opacity-40 group-hover/chk:opacity-100 transition-opacity" style={{color:"oklch(0.65 0.22 25)"}}/>
+                  </motion.button>
+                  <FmtBadge label={item.format} {...fmtStyleZ(item.format)}/>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px]" style={{color:"oklch(0.45 0.005 222)"}}>
+                      nevyčerpáno z <span className="font-semibold" style={{color:"var(--foreground)"}}>{item.mesicOrigin}</span>
+                    </p>
+                  </div>
+                  {/* Assign month */}
+                  <div className="relative shrink-0">
+                    <motion.button
+                      onClick={()=>setAssignOpen(assignOpen===item.id?null:item.id)}
+                      whileTap={{scale:0.94}}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
+                      style={{color:"oklch(0.65 0.22 25)",background:"oklch(0.65 0.22 25 / 0.08)",border:"1px solid oklch(0.65 0.22 25 / 0.22)"}}>
+                      → Přesunout
+                    </motion.button>
+                    <AnimatePresence>
+                      {assignOpen===item.id&&(
+                        <motion.div
+                          initial={{opacity:0,y:-6,scale:0.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-4,scale:0.96}}
+                          transition={{duration:0.18,ease:[0.23,1,0.32,1]}}
+                          className="absolute right-0 top-full mt-1.5 z-30 rounded-[10px] overflow-hidden py-1"
+                          style={{background:"oklch(0.14 0.008 222)",border:"1px solid oklch(1 0 0 / 0.12)",boxShadow:"0 8px 32px oklch(0 0 0 / 0.5)",minWidth:"140px"}}>
+                          <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground]">Přesunout do</p>
+                          {MONTHS_CZ.map(m=>(
+                            <button key={m} onClick={()=>assign(item,m)}
+                              className="w-full text-left px-3 py-2 text-[12px] transition-colors hover:bg-white/[0.06]"
+                              style={{color:"var(--foreground)"}}>
+                              {m} 2026
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {nev.length===0&&<p className="text-[12px] px-1" style={{color:"oklch(0.40 0.005 222)"}}>Žádné nevyčerpané.</p>}
+        </div>
+      </div>
+    </div>
+
+    <AnimatePresence>
+      {addModal&&<AddPendingModal form={addForm} setForm={setAddForm} onSave={addItem} onClose={()=>setAddModal(false)}/>}
+    </AnimatePresence>
+    </>
+  );
+}
+
+function AddPendingModal({ form, setForm, onSave, onClose }: {
+  form: Omit<QPending,"id">;
+  setForm: React.Dispatch<React.SetStateAction<Omit<QPending,"id">>>;
+  onSave: ()=>void;
+  onClose: ()=>void;
+}) {
+  const set = (k: keyof typeof form) => (v: string) => setForm(p=>({...p,[k]:v}));
+  return (
+    <ModalWrap title="Přidat do fronty" onClose={onClose} onSave={onSave}>
+      <Field label="Typ"><FSelect value={form.type} onChange={set("type")} options={["NADPRACOVANÉ","NEVYČERPANÉ"]}/></Field>
+      <Field label="Formát"><FSelect value={form.format} onChange={set("format") as (v:string)=>void} options={["CELODENNÍ","3 HOD","BTS"]}/></Field>
+      <Field label="Měsíc původu"><FSelect value={form.mesicOrigin} onChange={set("mesicOrigin")} options={MONTHS_CZ}/></Field>
+      {form.type==="NADPRACOVANÉ"&&<Field label="Datum"><FInput value={form.datum} onChange={set("datum")} placeholder="17. 4."/></Field>}
+      {form.type==="NADPRACOVANÉ"&&<Field label="Projekt / klient"><FInput value={form.projekt} onChange={set("projekt")} placeholder="Název projektu"/></Field>}
+    </ModalWrap>
+  );
+}
+
 /* ── ZDENĚK tab ─────────────────────────────────────────────────────────────── */
 const Z_EMPTY: Omit<ZEntry,"id"> = { mesic:"Květen", datum:"", projekt:"", format:"3 HOD", status:"❓", poznamka:"" };
 
 function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(p:ZEntry[])=>ZEntry[])=>void }) {
-  const [modal, setModal]   = useState<ZEntry|null|"new">(null);
-  const [mesicF, setMesicF] = useState("Vše");
+  const [modal, setModal]       = useState<ZEntry|null|"new">(null);
+  const [mesicF, setMesicF]     = useState("Vše");
+  const [pendingItems, setPendingItems] = useState<QPending[]>(Q_SEED);
 
   // Build months that have data (newest first)
   const usedMonths = useMemo(() => {
@@ -268,6 +498,10 @@ function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(
     setModal(null);
   }
 
+  function createEntry(data: Omit<ZEntry,"id">) {
+    setEntries(p=>[...p,{...data,id:Date.now()}]);
+  }
+
   const accentColor = "oklch(0.81 0.155 200)";
 
   return (
@@ -293,6 +527,9 @@ function ZdenekTab({ entries, setEntries }: { entries:ZEntry[]; setEntries:(fn:(
           ))}
         </div>
       </div>
+
+      {/* Pending queue */}
+      <PendingQueue items={pendingItems} setItems={setPendingItems} onCreateEntry={createEntry}/>
 
       {/* Stats strip */}
       <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
