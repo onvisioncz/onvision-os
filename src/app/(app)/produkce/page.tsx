@@ -76,16 +76,16 @@ const Z_SEED: ZEntry[] = [
 
 /* ── Seed: Matěj Hořák ──────────────────────────────────────────────────────── */
 const M_SEED: MEntry[] = [
-  { id:  1, mesic: "Únor",   datum: "16. 2.", projekt: "SENIMED s.r.o. — focení produktů",        format: "FOTO",         status: "✅", castka: 4500,  poznamka: "" },
-  { id:  2, mesic: "Březn",  datum: "4. 3.",  projekt: "Cukrárna TOFFI — dorty produktové foto",  format: "FOTO",         status: "✅", castka: 3500,  poznamka: "" },
-  { id:  3, mesic: "Březen", datum: "11. 3.", projekt: "SENIMED Lékárna — nová pobočka",          format: "FOTO + VIDEO", status: "✅", castka: 6000,  poznamka: "" },
-  { id:  4, mesic: "Březen", datum: "25. 3.", projekt: "EFFECT Clinic — exteriér a interiér",     format: "FOTO",         status: "✅", castka: 5000,  poznamka: "" },
-  { id:  5, mesic: "Duben",  datum: "9. 4.",  projekt: "SENIMED s.r.o. — kampaňové foto",         format: "FOTO",         status: "✅", castka: 4500,  poznamka: "" },
-  { id:  6, mesic: "Duben",  datum: "15. 4.", projekt: "POWER PLATE ČESKO — produkty",            format: "FOTO + VIDEO", status: "✅", castka: 7500,  poznamka: "" },
-  { id:  7, mesic: "Duben",  datum: "17. 4.", projekt: "FIRESTA — Dvorecký most",                 format: "FOTO",         status: "✅", castka: 5500,  poznamka: "" },
-  { id:  8, mesic: "Duben",  datum: "19. 4.", projekt: "BehejBrno — CRAFT půlmaraton",            format: "BTS",          status: "✅", castka: 3000,  poznamka: "" },
-  { id:  9, mesic: "Květen", datum: "7. 5.",  projekt: "Cukrárna TOFFI — Šumavská pobočka",      format: "FOTO",         status: "✅", castka: 3000,  poznamka: "" },
-  { id: 10, mesic: "Květen", datum: "16. 5.", projekt: "SK Brno Slatina — FINAL FOUR",            format: "FOTO + VIDEO", status: "❓", castka: 6000,  poznamka: "Čeká na potvrzení" },
+  // LEDEN — bez projektu
+  { id:  1, mesic: "Leden",  datum: "",       projekt: "BEZ PROJEKTU",                                                          format: "—",    status: "",  castka: 0,    poznamka: "" },
+  // ÚNOR
+  { id:  2, mesic: "Únor",   datum: "25. 2.", projekt: "EASTGATE Brno — průběh stavby měsíc ÚNOR",                              format: "3 HOD", status: "✅", castka: 3000, poznamka: "PROPLACENO" },
+  // BŘEZEN
+  { id:  3, mesic: "Březen", datum: "24. 3.", projekt: "EASTGATE Brno — průběh stavby měsíc BŘEZEN",                            format: "3 HOD", status: "✅", castka: 3000, poznamka: "PROPLACENO" },
+  // DUBEN
+  { id:  4, mesic: "Duben",  datum: "17. 4.", projekt: 'IMTOS, spol. s r.o. — "ROSSO STEEL, a.s. firemní akce" (FOTO + VIDEO)', format: "3 HOD", status: "✅", castka: 3500, poznamka: "" },
+  { id:  5, mesic: "Duben",  datum: "21. 4.", projekt: 'IMTOS, spol. s r.o. — "Dny průmyslového čištění" (FOTO + VIDEO)',       format: "3 HOD", status: "✅", castka: 3000, poznamka: "" },
+  { id:  6, mesic: "Duben",  datum: "22. 4.", projekt: "EASTGATE Brno — průběh stavby měsíc DUBEN",                             format: "3 HOD", status: "✅", castka: 3000, poznamka: "" },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -458,9 +458,10 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
     return g;
   },[filtered]);
 
-  const totalEarned   = entries.filter(e=>e.status==="✅").reduce((s,e)=>s+e.castka,0);
-  const totalPending  = entries.filter(e=>e.status==="❓").reduce((s,e)=>s+e.castka,0);
-  const jobsDone      = entries.filter(e=>e.status==="✅").length;
+  const realEntries   = entries.filter(e=>e.projekt!=="BEZ PROJEKTU");
+  const totalEarned   = realEntries.filter(e=>e.status==="✅").reduce((s,e)=>s+e.castka,0);
+  const totalPending  = realEntries.filter(e=>e.status==="❓").reduce((s,e)=>s+e.castka,0);
+  const jobsDone      = realEntries.filter(e=>e.status==="✅").length;
 
   const accentColor = "oklch(0.72 0.18 290)";
 
@@ -542,12 +543,34 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
                   <>
                     <tr key={`gh-${group.mesic}`}>
                       <td colSpan={7} className="px-4">
-                        <MonthHeader mesic={group.mesic} count={group.items.length} color={accentColor}
-                          right={<span className="text-[10px] text-[--muted-foreground]">{group.items.length} zakázek · <span style={{color:"oklch(0.67 0.155 155)"}}>{fKc(groupTotal)} splněno</span></span>}/>
+                        {(() => {
+                          const realItems = group.items.filter(i=>i.projekt!=="BEZ PROJEKTU");
+                          const realCount = realItems.length;
+                          return (
+                            <MonthHeader mesic={group.mesic} count={realCount} color={accentColor}
+                              right={realCount>0
+                                ?<span className="text-[10px] text-[--muted-foreground]">{realCount} zakázek · <span style={{color:"oklch(0.67 0.155 155)"}}>{fKc(groupTotal)} splněno</span></span>
+                                :<span className="text-[10px]" style={{color:"oklch(0.65 0.22 25)"}}>Žádná zakázka</span>
+                              }/>
+                          );
+                        })()}
                       </td>
                     </tr>
                     {group.items.map(item=>{
+                      const isBezProjektu = item.projekt === "BEZ PROJEKTU";
                       const fs = fmtStyleM(item.format);
+                      if (isBezProjektu) return (
+                        <tr key={item.id} style={{borderBottom:"1px solid oklch(1 0 0 / 0.05)"}}>
+                          <td colSpan={7} className="px-4 py-3">
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-[6px]"
+                              style={{background:"oklch(0.65 0.22 25 / 0.06)",border:"1px solid oklch(0.65 0.22 25 / 0.18)"}}>
+                              <X className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.65 0.22 25)"}}/>
+                              <span className="text-[12px] font-semibold" style={{color:"oklch(0.65 0.22 25)"}}>BEZ PROJEKTU</span>
+                              <span className="text-[11px] text-[--muted-foreground] ml-1">— v tomto měsíci nebyla zakázka</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
                       return (
                         <motion.tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{borderColor:"oklch(1 0 0 / 0.05)"}}>
                           <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap w-[80px]">{item.datum||"—"}</td>
@@ -561,7 +584,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
                             </span>
                           </td>
                           <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{color:"oklch(0.72 0.18 290)",fontFamily:"var(--font-outfit)"}}>{fKc(item.castka)}</td>
-                          <td className="px-4 py-3 hidden lg:table-cell text-[12px] text-[--muted-foreground]">{item.poznamka||"—"}</td>
+                          <td className="px-4 py-3 hidden lg:table-cell">{item.poznamka?<PozBadge label={item.poznamka}/>:"—"}</td>
                           <td className="pr-4 pl-2 py-3 w-8">
                             <motion.button onClick={()=>setModal(item)} whileTap={{scale:0.9}}
                               className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{color:"oklch(0.45 0.005 222)"}}>
