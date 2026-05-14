@@ -10,21 +10,22 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { label: "Dashboard",       href: "/dashboard",        icon: LayoutDashboard },
-  { label: "Jednorázovky",    href: "/projects/oneoffs", icon: FolderKanban },
-  { label: "Měsíční klienti", href: "/projects/monthly", icon: Users },
-  { label: "Finance",         href: "/finance",          icon: Receipt },
-  { label: "Kalendář",        href: "/calendar",         icon: CalendarDays },
-  { label: "Growth Hub",      href: "/growth",           icon: TrendingUp },
-  { label: "Vault",           href: "/vault",            icon: FolderLock },
+  { label: "Dashboard",       short: "Přehled",   href: "/dashboard",        icon: LayoutDashboard },
+  { label: "Jednorázovky",    short: "Projekt.",   href: "/projects/oneoffs", icon: FolderKanban },
+  { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
+  { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
+  { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
+  { label: "Growth Hub",      short: "Growth",     href: "/growth",           icon: TrendingUp },
+  { label: "Vault",           short: "Vault",      href: "/vault",            icon: FolderLock },
 ];
 
+/* ── Desktop sidebar ────────────────────────────────────────────────────────── */
 export function SidebarNav() {
   const path = usePathname();
 
   return (
     <aside
-      className="flex flex-col w-[212px] shrink-0 h-screen sticky top-0 border-r"
+      className="hidden md:flex flex-col w-[212px] shrink-0 h-screen sticky top-0 border-r"
       style={{ background: "var(--sidebar)", borderColor: "var(--sidebar-border)" }}
     >
       {/* Wordmark */}
@@ -78,7 +79,6 @@ export function SidebarNav() {
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
               >
-                {/* Active accent line with glow */}
                 {active && (
                   <motion.span
                     layoutId="nav-active-bar"
@@ -135,7 +135,6 @@ export function SidebarNav() {
             <p className="text-[12px] font-medium text-[--foreground] leading-tight">Adam</p>
             <p className="text-[11px] text-[--muted-foreground] leading-tight">Admin</p>
           </div>
-          {/* Perpetual pulse status dot */}
           <span
             className="pulse w-1.5 h-1.5 rounded-full shrink-0"
             style={{ background: "var(--success)" }}
@@ -143,5 +142,63 @@ export function SidebarNav() {
         </div>
       </div>
     </aside>
+  );
+}
+
+/* ── Mobile bottom nav ──────────────────────────────────────────────────────── */
+const mobileNav = nav.slice(0, 5); // Dashboard, Jednorázovky, Měsíční klienti, Finance, Kalendář
+
+export function MobileNav() {
+  const path = usePathname();
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+      style={{
+        background: "oklch(0.10 0.008 222)",
+        borderTop: "1px solid oklch(1 0 0 / 0.08)",
+        paddingTop: "10px",
+        paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)",
+      }}
+    >
+      {mobileNav.map(({ short, href, icon: Icon }) => {
+        const active = path === href || path.startsWith(href + "/");
+        return (
+          <Link key={href} href={href} className="flex-1">
+            <motion.div
+              className="flex flex-col items-center gap-1"
+              whileTap={{ scale: 0.88 }}
+              transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <div className="relative">
+                {active && (
+                  <motion.span
+                    layoutId="mobile-nav-glow"
+                    className="absolute inset-0 rounded-full -m-1"
+                    style={{ background: "oklch(0.81 0.155 200 / 0.15)" }}
+                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  />
+                )}
+                <Icon
+                  className="w-5 h-5 relative"
+                  style={{
+                    color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)",
+                  }}
+                />
+              </div>
+              <span
+                className="text-[9px] font-medium leading-none"
+                style={{
+                  color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)",
+                  fontFamily: "var(--font-jakarta)",
+                }}
+              >
+                {short}
+              </span>
+            </motion.div>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

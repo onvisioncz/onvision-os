@@ -153,7 +153,7 @@ function TaskRow({ text, type, urgent }: { text: string; type: string; urgent: b
 export default function DashboardPage() {
   return (
     <div
-      className="p-7 space-y-5 min-h-screen"
+      className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
       style={{
         background: `
           radial-gradient(ellipse 60% 40% at 100% 0%,
@@ -174,17 +174,17 @@ export default function DashboardPage() {
       >
         <div>
           <h1
-            className="text-[28px] leading-none text-[--foreground]"
+            className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
             style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}
           >
             Dashboard
           </h1>
-          <p className="text-[13px] text-[--muted-foreground] mt-1.5">
+          <p className="text-[12px] md:text-[13px] text-[--muted-foreground] mt-1.5">
             OnVision s.r.o. · červen 2026
           </p>
         </div>
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium"
+          className="flex items-center gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[11px] md:text-[12px] font-medium shrink-0"
           style={{
             background: "oklch(0.67 0.155 155 / 0.08)",
             border: "1px solid oklch(0.67 0.155 155 / 0.2)",
@@ -230,19 +230,21 @@ export default function DashboardPage() {
 
       {/* ── Metric strip — big Outfit numbers ── */}
       <motion.div
-        className="card grid grid-cols-5 divide-x divide-white/[0.06]"
+        className="grid grid-cols-2 md:grid-cols-5 gap-px rounded-[12px] overflow-hidden"
+        style={{ background: "oklch(1 0 0 / 0.06)" }}
         variants={stagger.container}
         initial="hidden"
         animate="show"
       >
         {metrics.map(({ label, value, unit, delta, up }) => (
-          <motion.div key={label} variants={stagger.item} className="px-5 py-5">
-            <p className="text-[11px] text-[--muted-foreground] font-medium mb-2.5 uppercase tracking-[0.06em]">
+          <motion.div key={label} variants={stagger.item} className="px-4 py-4 md:px-5 md:py-5"
+            style={{ background: "var(--card)" }}>
+            <p className="text-[10px] md:text-[11px] text-[--muted-foreground] font-medium mb-2 md:mb-2.5 uppercase tracking-[0.06em] leading-tight">
               {label}
             </p>
             <p
-              className="num leading-none mb-2"
-              style={{ fontSize: "32px", fontWeight: 700, fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em", color: "var(--foreground)" }}
+              className="num leading-none mb-1.5 md:mb-2"
+              style={{ fontSize: "clamp(20px, 4vw, 32px)", fontWeight: 700, fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em", color: "var(--foreground)" }}
             >
               {value}
               {unit && (
@@ -265,8 +267,7 @@ export default function DashboardPage() {
 
       {/* ── Bento grid — asymmetric 2.2fr 1fr ─────────────────────────────── */}
       <motion.div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: "minmax(0, 2.2fr) minmax(0, 1fr)" }}
+        className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]"
         variants={stagger.container}
         initial="hidden"
         animate="show"
@@ -401,7 +402,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── Priority Horizon + Starred ── */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "minmax(0, 2.2fr) minmax(0, 1fr)" }}>
+      <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
 
         {/* Horizon */}
         <div className="space-y-3">
