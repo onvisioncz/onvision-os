@@ -590,11 +590,7 @@ export default function DashboardPage() {
         {/* ── 2. KPI Strip ── */}
         <motion.div
           variants={item}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 12,
-          }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
         >
           {/* Tile 1: MRR */}
           <div
@@ -815,12 +811,7 @@ export default function DashboardPage() {
         {/* ── 3. Middle row (60/40) ── */}
         <motion.div
           variants={item}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)",
-            gap: 16,
-          }}
-          className="grid-cols-1 md:grid-cols-[3fr_2fr]"
+          className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4"
         >
           {/* Left: Finance chart */}
           <div style={{ ...cardStyle, padding: "22px 22px 16px" }}>
@@ -1051,12 +1042,7 @@ export default function DashboardPage() {
         {/* ── 4. Bottom row (3 columns) ── */}
         <motion.div
           variants={item}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 16,
-          }}
-          className="grid-cols-1 md:grid-cols-3"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
           {/* Column 1: Měsíční klienti */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
