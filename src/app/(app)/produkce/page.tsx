@@ -1002,36 +1002,33 @@ function MForm({ entry, onSave }: { entry:MEntry|null; onSave:(d:Omit<MEntry,"id
   );
 }
 
-/* ── GRAFICI tab ─────────────────────────────────────────────────────────────── */
-const GRAFICI_COLORS: Record<"Monika"|"Patrik", { accent: string; accentBg: string; accentBorder: string; initials: string }> = {
-  Monika: { accent: "oklch(0.76 0.20 340)", accentBg: "oklch(0.76 0.20 340 / 0.1)", accentBorder: "oklch(0.76 0.20 340 / 0.25)", initials: "MK" },
-  Patrik: { accent: "oklch(0.79 0.19 55)",  accentBg: "oklch(0.79 0.19 55 / 0.1)",  accentBorder: "oklch(0.79 0.19 55 / 0.25)",  initials: "PP" },
+/* ── GRAFIK colors ───────────────────────────────────────────────────────────── */
+const GRAFICI_COLORS: Record<"Monika"|"Patrik", { accent: string; accentBg: string; accentBorder: string; initials: string; fullName: string }> = {
+  Monika: { accent: "oklch(0.76 0.20 340)", accentBg: "oklch(0.76 0.20 340 / 0.1)", accentBorder: "oklch(0.76 0.20 340 / 0.25)", initials: "MK", fullName: "Monika Kudličková" },
+  Patrik: { accent: "oklch(0.79 0.19 55)",  accentBg: "oklch(0.79 0.19 55 / 0.1)",  accentBorder: "oklch(0.79 0.19 55 / 0.25)",  initials: "PP", fullName: "Patrik Petr" },
 };
 
-const G_EMPTY: Omit<GEntry,"id"> = { grafik:"Monika", mesic:"Květen", datum:"", projekt:"", popis:"", castka:0, status:"❓", poznamka:"" };
+/* ── Generic per-grafik tab (reused for Monika & Patrik) ─────────────────────── */
+function GrafikTab({ grafik, allEntries, setEntries }: {
+  grafik: "Monika" | "Patrik";
+  allEntries: GEntry[];
+  setEntries: (fn:(p:GEntry[])=>GEntry[]) => void;
+}) {
+  const c = GRAFICI_COLORS[grafik];
+  const [modal,  setModal]  = useState<GEntry|null|"new">(null);
+  const [mesicF, setMesicF] = useState("Vše");
 
-function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:(p:GEntry[])=>GEntry[])=>void }) {
-  const [modal,    setModal]   = useState<GEntry|null|"new">(null);
-  const [grafikF,  setGrafikF] = useState<"Vše"|"Monika"|"Patrik">("Vše");
-  const [mesicF,   setMesicF]  = useState("Vše");
+  const myEntries = useMemo(()=>allEntries.filter(e=>e.grafik===grafik),[allEntries,grafik]);
 
   const usedMonths = useMemo(()=>{
-    const s = new Set(entries.map(e=>e.mesic));
+    const s = new Set(myEntries.map(e=>e.mesic));
     return MONTHS_CZ.filter(m=>s.has(m)).reverse();
-  },[entries]);
-
-  function save(data: Omit<GEntry,"id">&{id?:number}) {
-    if(data.id!==undefined) setEntries(p=>p.map(e=>e.id===data.id?{...data,id:data.id!}:e));
-    else setEntries(p=>[...p,{...data,id:Date.now()}]);
-    setModal(null);
-  }
+  },[myEntries]);
 
   const filtered = useMemo(()=>{
-    let base = entries;
-    if(grafikF!=="Vše") base = base.filter(e=>e.grafik===grafikF);
-    if(mesicF !=="Vše") base = base.filter(e=>e.mesic===mesicF);
+    const base = mesicF==="Vše" ? myEntries : myEntries.filter(e=>e.mesic===mesicF);
     return [...base].sort((a,b)=>MONTHS_CZ.indexOf(b.mesic)-MONTHS_CZ.indexOf(a.mesic));
-  },[entries, grafikF, mesicF]);
+  },[myEntries, mesicF]);
 
   const grouped = useMemo(()=>{
     const g: {mesic:string; items:GEntry[]}[] = [];
@@ -1043,84 +1040,62 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
     return g;
   },[filtered]);
 
-  // Per-designer totals (all time)
-  function designerStats(grafik: "Monika"|"Patrik") {
-    const all = entries.filter(e=>e.grafik===grafik);
-    const earned  = all.filter(e=>e.status==="✅").reduce((s,e)=>s+e.castka,0);
-    const pending = all.filter(e=>e.status==="❓").reduce((s,e)=>s+e.castka,0);
-    const jobs    = all.filter(e=>e.status==="✅").length;
-    return { earned, pending, jobs };
+  const totalEarned  = myEntries.filter(e=>e.status==="✅").reduce((s,e)=>s+e.castka,0);
+  const totalPending = myEntries.filter(e=>e.status==="❓").reduce((s,e)=>s+e.castka,0);
+  const jobsDone     = myEntries.filter(e=>e.status==="✅").length;
+
+  function save(data: Omit<GEntry,"id">&{id?:number}) {
+    if(data.id!==undefined) setEntries(p=>p.map(e=>e.id===data.id?{...data,id:data.id!}:e));
+    else setEntries(p=>[...p,{...data,id:Date.now()}]);
+    setModal(null);
   }
 
-  const tabAccent = "oklch(0.76 0.20 340)";
+  const G_EMPTY_PERSON: Omit<GEntry,"id"> = { grafik, mesic:"Květen", datum:"", projekt:"", popis:"", castka:0, status:"❓", poznamka:"" };
 
   return (
     <div className="space-y-4">
-      {/* Designer cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {(["Monika","Patrik"] as const).map(g=>{
-          const c = GRAFICI_COLORS[g];
-          const st = designerStats(g);
-          const fullName = g==="Monika" ? "Monika Kudličková" : "Patrik Petr";
-          return (
-            <div key={g} className="card px-5 py-4 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-                  style={{background:c.accent,color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
-                  {c.initials}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-bold text-[--foreground] leading-tight" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>{fullName}</p>
-                  <p className="text-[11px] text-[--muted-foreground] mt-0.5">Grafik · Per zakázka</p>
-                </div>
-                <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold shrink-0"
-                  style={{color:c.accent,background:c.accentBg,border:`1px solid ${c.accentBorder}`}}>
-                  {st.jobs} zakázek
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="px-3 py-2 rounded-[8px]" style={{background:"oklch(1 0 0 / 0.03)",border:"1px solid oklch(1 0 0 / 0.07)"}}>
-                  <p className="text-[9px] uppercase tracking-[0.08em] text-[--muted-foreground] mb-0.5">Vyplaceno</p>
-                  <p className="num text-[16px] font-bold leading-none" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.67 0.155 155)",letterSpacing:"-0.02em"}}>{fKc(st.earned)}</p>
-                </div>
-                <div className="px-3 py-2 rounded-[8px]" style={{background:"oklch(1 0 0 / 0.03)",border:"1px solid oklch(1 0 0 / 0.07)"}}>
-                  <p className="text-[9px] uppercase tracking-[0.08em] text-[--muted-foreground] mb-0.5">Čeká</p>
-                  <p className="num text-[16px] font-bold leading-none" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.78 0.165 75)",letterSpacing:"-0.02em"}}>{fKc(st.pending)}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Profile banner */}
+      <div className="card px-5 py-4 flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-bold shrink-0"
+            style={{background:c.accent,color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+            {c.initials}
+          </div>
+          <div>
+            <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>{c.fullName}</p>
+            <p className="text-[11px] text-[--muted-foreground] mt-0.5">Grafik · Per zakázka</p>
+          </div>
+        </div>
+        <div className="md:ml-auto">
+          <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold"
+            style={{color:c.accent,background:c.accentBg,border:`1px solid ${c.accentBorder}`}}>
+            Bez paušálu — per zakázka
+          </span>
+        </div>
       </div>
 
-      {/* Filters + Add */}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+        {[
+          {label:"Celkem vyplaceno",  value:fKc(totalEarned),  color:"oklch(0.67 0.155 155)"},
+          {label:"Čeká na vyplacení", value:fKc(totalPending), color:"oklch(0.78 0.165 75)"},
+          {label:"Zakázek splněno",   value:String(jobsDone),  color:c.accent},
+        ].map(s=>(
+          <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
+            <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5 leading-tight">{s.label}</p>
+            <p className="num leading-none" style={{fontSize:"clamp(18px,3vw,26px)",fontWeight:700,fontFamily:"var(--font-outfit)",color:s.color,letterSpacing:"-0.02em"}}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter + Add */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex items-center gap-1 flex-wrap flex-1">
-          {/* Grafik filter */}
-          {(["Vše","Monika","Patrik"] as const).map(g=>{
-            const active = grafikF===g;
-            const c = g!=="Vše" ? GRAFICI_COLORS[g] : null;
-            return (
-              <motion.button key={g} onClick={()=>setGrafikF(g)} whileTap={{scale:0.95}}
-                className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
-                style={active && c
-                  ?{background:c.accentBg,color:c.accent,border:`1px solid ${c.accentBorder}`}
-                  :active
-                    ?{background:"oklch(0.76 0.20 340 / 0.1)",color:tabAccent,border:"1px solid oklch(0.76 0.20 340 / 0.25)"}
-                    :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
-                {g==="Monika"&&<span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background:GRAFICI_COLORS.Monika.accent,verticalAlign:"middle"}}/>}
-                {g==="Patrik"&&<span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background:GRAFICI_COLORS.Patrik.accent,verticalAlign:"middle"}}/>}
-                {g}
-              </motion.button>
-            );
-          })}
-          <div className="w-px h-4 mx-1" style={{background:"oklch(1 0 0 / 0.1)"}}/>
-          {/* Month filter */}
           {["Vše",...usedMonths].map(m=>(
             <motion.button key={m} onClick={()=>setMesicF(m)} whileTap={{scale:0.95}}
               className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
               style={mesicF===m
-                ?{background:"oklch(0.76 0.20 340 / 0.08)",color:tabAccent,border:"1px solid oklch(0.76 0.20 340 / 0.2)"}
+                ?{background:c.accentBg,color:c.accent,border:`1px solid ${c.accentBorder}`}
                 :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
               {m}
             </motion.button>
@@ -1128,7 +1103,7 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
         </div>
         <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
           className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{background:tabAccent,color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:c.accent,color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           <Plus className="w-3.5 h-3.5"/> Přidat zakázku
         </motion.button>
       </div>
@@ -1139,7 +1114,7 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
           <table className="w-full">
             <thead>
               <tr style={{borderBottom:"1px solid oklch(1 0 0 / 0.07)"}}>
-                {["Grafik","Datum","Projekt / Popis","Status","Částka","Poznámka",""].map((h,i)=>(
+                {["Datum","Projekt / Popis","Status","Částka","Poznámka",""].map((h,i)=>(
                   <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h==="Poznámka"?"hidden lg:table-cell":h===""?"w-8":""}`}>{h}</th>
                 ))}
               </tr>
@@ -1150,50 +1125,41 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
                 return (
                   <>
                     <tr key={`gh-${group.mesic}`}>
-                      <td colSpan={7} className="px-4">
-                        <MonthHeader mesic={group.mesic} count={group.items.length} color={tabAccent}
+                      <td colSpan={6} className="px-4">
+                        <MonthHeader mesic={group.mesic} count={group.items.length} color={c.accent}
                           right={<span className="text-[10px] text-[--muted-foreground]">{group.items.length} zakázek · <span style={{color:"oklch(0.67 0.155 155)"}}>{fKc(groupTotal)} splněno</span></span>}
                         />
                       </td>
                     </tr>
-                    {group.items.map(item=>{
-                      const c = GRAFICI_COLORS[item.grafik];
-                      return (
-                        <motion.tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{borderColor:"oklch(1 0 0 / 0.05)"}}>
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[5px] text-[11px] font-bold"
-                              style={{color:c.accent,background:c.accentBg,border:`1px solid ${c.accentBorder}`}}>
-                              {c.initials} {item.grafik}
+                    {group.items.map(item=>(
+                      <motion.tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{borderColor:"oklch(1 0 0 / 0.05)"}}>
+                        <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap w-[80px]">{item.datum||"—"}</td>
+                        <td className="px-4 py-3 max-w-[260px]">
+                          <p className="text-[13px] font-semibold text-[--foreground] leading-tight" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.01em"}}>{item.projekt}</p>
+                          {item.popis&&<p className="text-[11px] text-[--muted-foreground] mt-0.5 truncate">{item.popis}</p>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-1.5">{statusIcon(item.status)}
+                            <span className="text-[11px]" style={{color:item.status==="✅"?"oklch(0.67 0.155 155)":item.status==="❓"?"oklch(0.78 0.165 75)":"oklch(0.40 0.005 222)"}}>
+                              {item.status==="✅"?"Splněno":item.status==="❓"?"Čeká":"—"}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap w-[80px]">{item.datum||"—"}</td>
-                          <td className="px-4 py-3 max-w-[220px]">
-                            <p className="text-[13px] font-semibold text-[--foreground] leading-tight" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.01em"}}>{item.projekt}</p>
-                            {item.popis&&<p className="text-[11px] text-[--muted-foreground] mt-0.5 truncate">{item.popis}</p>}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="flex items-center gap-1.5">{statusIcon(item.status)}
-                              <span className="text-[11px]" style={{color:item.status==="✅"?"oklch(0.67 0.155 155)":item.status==="❓"?"oklch(0.78 0.165 75)":"oklch(0.40 0.005 222)"}}>
-                                {item.status==="✅"?"Splněno":item.status==="❓"?"Čeká":"—"}
-                              </span>
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{color:c.accent,fontFamily:"var(--font-outfit)"}}>{fKc(item.castka)}</td>
-                          <td className="px-4 py-3 hidden lg:table-cell">{item.poznamka?<PozBadge label={item.poznamka}/>:"—"}</td>
-                          <td className="pr-4 pl-2 py-3 w-8">
-                            <motion.button onClick={()=>setModal(item)} whileTap={{scale:0.9}}
-                              className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{color:"oklch(0.45 0.005 222)"}}>
-                              <Edit2 className="w-3.5 h-3.5"/>
-                            </motion.button>
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{color:c.accent,fontFamily:"var(--font-outfit)"}}>{fKc(item.castka)}</td>
+                        <td className="px-4 py-3 hidden lg:table-cell">{item.poznamka?<PozBadge label={item.poznamka}/>:"—"}</td>
+                        <td className="pr-4 pl-2 py-3 w-8">
+                          <motion.button onClick={()=>setModal(item)} whileTap={{scale:0.9}}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{color:"oklch(0.45 0.005 222)"}}>
+                            <Edit2 className="w-3.5 h-3.5"/>
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))}
                   </>
                 );
               })}
               {filtered.length===0&&(
-                <tr><td colSpan={7} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné zakázky.</td></tr>
+                <tr><td colSpan={6} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné zakázky.</td></tr>
               )}
             </tbody>
           </table>
@@ -1202,8 +1168,8 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
 
       <AnimatePresence>
         {modal!==null&&(
-          <ModalWrap title={modal==="new"?"Přidat zakázku — Grafici":"Upravit zakázku"} onClose={()=>setModal(null)} onSave={()=>{}}>
-            <GForm entry={modal==="new"?null:modal} onSave={save}/>
+          <ModalWrap title={modal==="new"?`Přidat zakázku — ${c.fullName}`:"Upravit zakázku"} onClose={()=>setModal(null)} onSave={()=>{}}>
+            <GForm entry={modal==="new"?null:modal} defaultGrafik={grafik} onSave={save}/>
           </ModalWrap>
         )}
       </AnimatePresence>
@@ -1211,12 +1177,13 @@ function GraficiTab({ entries, setEntries }: { entries:GEntry[]; setEntries:(fn:
   );
 }
 
-function GForm({ entry, onSave }: { entry:GEntry|null; onSave:(d:Omit<GEntry,"id">&{id?:number})=>void }) {
-  const [f, setF] = useState<Omit<GEntry,"id">>(entry?{...entry}:{...G_EMPTY});
+function GForm({ entry, defaultGrafik, onSave }: { entry:GEntry|null; defaultGrafik:"Monika"|"Patrik"; onSave:(d:Omit<GEntry,"id">&{id?:number})=>void }) {
+  const G_EMPTY_FORM: Omit<GEntry,"id"> = { grafik:defaultGrafik, mesic:"Květen", datum:"", projekt:"", popis:"", castka:0, status:"❓", poznamka:"" };
+  const [f, setF] = useState<Omit<GEntry,"id">>(entry?{...entry}:{...G_EMPTY_FORM});
   const set = (k:keyof typeof f)=>(v:string)=>setF(p=>({...p,[k]:k==="castka"?Number(v.replace(/\D/g,""))||0:v}));
+  const c = GRAFICI_COLORS[f.grafik];
   return (
     <>
-      <Field label="Grafik"><FSelect value={f.grafik} onChange={set("grafik")} options={["Monika","Patrik"]}/></Field>
       <Field label="Měsíc"><FSelect value={f.mesic} onChange={set("mesic")} options={MONTHS_CZ}/></Field>
       <Field label="Datum"><FInput value={f.datum} onChange={set("datum")} placeholder="16. 5."/></Field>
       <Field label="Projekt / Klient"><FInput value={f.projekt} onChange={set("projekt")} placeholder="Název klienta / projektu"/></Field>
@@ -1227,7 +1194,7 @@ function GForm({ entry, onSave }: { entry:GEntry|null; onSave:(d:Omit<GEntry,"id
       <div className="md:col-span-2 flex justify-end">
         <motion.button onClick={()=>onSave({...f,...(entry?{id:entry.id}:{})})} whileTap={{scale:0.96}}
           className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-          style={{background:"oklch(0.76 0.20 340)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:c.accent,color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           {entry?"Uložit změny":"Přidat"}
         </motion.button>
       </div>
@@ -1388,13 +1355,14 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────────── */
-type ProdTab = "prehled" | "zdenek" | "matej" | "grafici";
+type ProdTab = "prehled" | "zdenek" | "matej" | "monika" | "patrik";
 
 const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
-  { id:"prehled", label:"Přehled",         short:"Přehled", color:"oklch(0.81 0.155 200)" },
-  { id:"zdenek",  label:"Zdeněk Dolíhal",  short:"Zdeněk",  color:"oklch(0.81 0.155 200)" },
-  { id:"matej",   label:"Matěj Hořák",     short:"Matěj",   color:"oklch(0.72 0.18 290)" },
-  { id:"grafici", label:"Grafici",          short:"Grafici", color:"oklch(0.76 0.20 340)" },
+  { id:"prehled", label:"Přehled",            short:"Přehled", color:"oklch(0.81 0.155 200)" },
+  { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.81 0.155 200)" },
+  { id:"matej",   label:"Matěj Hořák",        short:"Matěj",   color:"oklch(0.72 0.18 290)" },
+  { id:"monika",  label:"Monika Kudličková",  short:"Monika",  color:"oklch(0.76 0.20 340)" },
+  { id:"patrik",  label:"Patrik Petr",        short:"Patrik",  color:"oklch(0.79 0.19 55)"  },
 ];
 
 type HistorySnap = { zEntries: ZEntry[]; pendingItems: QPending[] };
@@ -1479,14 +1447,10 @@ export default function ProdukccePage() {
               style={active
                 ?{background:`${t.color.replace(")","/0.12)")}`,color:t.color,border:`1px solid ${t.color.replace(")","/0.25)")}`}
                 :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
-              {t.id==="zdenek"&&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>ZD</span>}
-              {t.id==="matej"&&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>MH</span>}
-              {t.id==="grafici"&&(
-                <span className="flex -space-x-1 shrink-0">
-                  <span className="w-3.5 h-3.5 rounded-full text-[7px] font-bold flex items-center justify-center ring-1 ring-[var(--background)]" style={{background:active?GRAFICI_COLORS.Monika.accent:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>M</span>
-                  <span className="w-3.5 h-3.5 rounded-full text-[7px] font-bold flex items-center justify-center ring-1 ring-[var(--background)]" style={{background:active?GRAFICI_COLORS.Patrik.accent:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>P</span>
-                </span>
-              )}
+              {t.id==="zdenek" &&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>ZD</span>}
+              {t.id==="matej"  &&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>MH</span>}
+              {t.id==="monika" &&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>MK</span>}
+              {t.id==="patrik" &&<span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{background:active?t.color:"oklch(0.25 0.005 222)",color:active?"oklch(0.09 0.008 222)":"oklch(0.45 0.005 222)"}}>PP</span>}
               {t.id==="prehled"&&<CalendarDays className="w-3.5 h-3.5"/>}
               <span className="hidden sm:inline">{t.label}</span>
               <span className="sm:hidden">{t.short}</span>
@@ -1505,8 +1469,9 @@ export default function ProdukccePage() {
             pendingItems={pendingItems} setPendingItems={setPendingItems}
             onPushHistory={pushHistory}
           />}
-          {tab==="matej"&&<MatejTab   entries={mEntries} setEntries={fn=>setMEntries(fn)}/>}
-          {tab==="grafici"&&<GraficiTab entries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
+          {tab==="matej"  &&<MatejTab entries={mEntries} setEntries={fn=>setMEntries(fn)}/>}
+          {tab==="monika" &&<GrafikTab grafik="Monika" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
+          {tab==="patrik" &&<GrafikTab grafik="Patrik" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
         </motion.div>
       </AnimatePresence>
     </div>
