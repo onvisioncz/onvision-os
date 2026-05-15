@@ -525,8 +525,50 @@ export default function DashboardPage() {
     [deals]
   );
 
-  /* suppress unused warning for oneoffs (data loaded for potential future use) */
+  /* suppress unused warning for pipeline/approvals (still used in KPI strip) */
+  void deals;
   void oneoffs;
+
+  /* ── Projekty: group active tasks by projekt ── */
+  const projectStats = useMemo(() => {
+    const map = new Map<string, { total: number; done: number; review: number; people: Set<string>; nearestDays: number }>();
+    for (const t of tasks) {
+      const proj = t.projekt || "Bez projektu";
+      if (!map.has(proj)) map.set(proj, { total: 0, done: 0, review: 0, people: new Set(), nearestDays: 9999 });
+      const s = map.get(proj)!;
+      s.total++;
+      if (t.status === "Hotovo") s.done++;
+      if (t.status === "Review") s.review++;
+      if (t.prirazeno) s.people.add(t.prirazeno);
+      const d = parseDeadline(t.deadline);
+      if (d && t.status !== "Hotovo") {
+        const days = daysUntil(d);
+        if (days < s.nearestDays) s.nearestDays = days;
+      }
+    }
+    return Array.from(map.entries())
+      .map(([name, s]) => ({ name, ...s, people: Array.from(s.people) }))
+      .filter((p) => p.total - p.done > 0)
+      .sort((a, b) => a.nearestDays - b.nearestDays)
+      .slice(0, 6);
+  }, [tasks]);
+
+  /* ── Tým: per-person task stats ── */
+  const TEAM = ["Adam", "Honza", "Dominika"] as const;
+  const teamStats = useMemo(() => {
+    return TEAM.map((name) => {
+      const mine = tasks.filter((t) => t.prirazeno === name && t.status !== "Hotovo");
+      const urgent = mine.filter((t) => t.priorita === "Urgentní" || t.priorita === "Vysoká");
+      let nearestTask: Task | null = null;
+      let nearestDays = 9999;
+      for (const t of mine) {
+        const d = parseDeadline(t.deadline);
+        if (d) { const days = daysUntil(d); if (days < nearestDays) { nearestDays = days; nearestTask = t; } }
+      }
+      return { name, total: mine.length, urgent: urgent.length, nearestTask, nearestDays };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
 
   /* ── Render ── */
   return (
@@ -1220,267 +1262,238 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Column 2: Pipeline */}
+          {/* Column 2: Stav projektů */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <div
+            <p
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                fontFamily: "var(--font-heading)",
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                fontSize: 14,
+                color: "oklch(0.92 0.005 222)",
                 marginBottom: 16,
               }}
             >
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  fontSize: 14,
-                  color: "oklch(0.92 0.005 222)",
-                }}
-              >
-                Pipeline
-              </p>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "oklch(0.67 0.155 155)",
-                  fontFamily: "var(--font-outfit)",
-                }}
-              >
-                {pipelineWeighted > 0 ? fmt(Math.round(pipelineWeighted)) : "0 Kč"}
-              </span>
-            </div>
+              Stav projektů
+            </p>
 
-            {/* Faze breakdown */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
-              {pipelineByFaze.map(({ faze, count, sum }) => (
-                <div
-                  key={faze}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "6px 10px",
-                    borderRadius: 7,
-                    background: "oklch(1 0 0 / 0.025)",
-                    border: "1px solid oklch(1 0 0 / 0.05)",
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: "oklch(0.70 0.005 222)", fontWeight: 500 }}>
-                    {faze}
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: "1px 6px",
-                        borderRadius: 99,
-                        background: "oklch(1 0 0 / 0.07)",
-                        color: "oklch(0.50 0.005 222)",
-                      }}
-                    >
-                      {count}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "oklch(0.67 0.155 155)",
-                        fontFamily: "var(--font-outfit)",
-                      }}
-                    >
-                      {fmt(sum)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {pipelineByFaze.length === 0 && (
-                <p style={{ fontSize: 12, color: "oklch(0.40 0.005 222)", padding: "6px 0" }}>
-                  Žádné aktivní obchody
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {projectStats.length === 0 && (
+                <p style={{ fontSize: 12, color: "oklch(0.40 0.005 222)" }}>
+                  Žádné aktivní projekty
                 </p>
               )}
+              {projectStats.map((p) => {
+                const activeTasks = p.total - p.done;
+                const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+                const isUrgent = p.nearestDays <= 2;
+                const isSoon = p.nearestDays <= 7;
+                const barColor = isUrgent
+                  ? "oklch(0.62 0.22 25)"
+                  : isSoon
+                  ? "oklch(0.72 0.18 55)"
+                  : "oklch(0.62 0.27 265)";
+                return (
+                  <div key={p.name} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "oklch(0.88 0.005 222)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "60%",
+                        }}
+                      >
+                        {p.name}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {p.review > 0 && (
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              padding: "1px 5px",
+                              borderRadius: 4,
+                              background: "oklch(0.72 0.18 55 / 0.15)",
+                              color: "oklch(0.78 0.16 55)",
+                            }}
+                          >
+                            {p.review} review
+                          </span>
+                        )}
+                        <span style={{ fontSize: 11, color: "oklch(0.45 0.005 222)", fontWeight: 500 }}>
+                          {activeTasks} úkolů
+                        </span>
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div
+                      style={{
+                        height: 3,
+                        borderRadius: 99,
+                        background: "oklch(1 0 0 / 0.07)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${pct}%`,
+                          borderRadius: 99,
+                          background: barColor,
+                          transition: "width 0.6s ease",
+                        }}
+                      />
+                    </div>
+                    {/* People */}
+                    {p.people.length > 0 && (
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {p.people.map((person) => (
+                          <Avatar key={person} name={person} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Top 3 deals */}
-            {topDeals.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                {topDeals.map((d) => (
-                  <div
-                    key={d.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <span
-                      style={{
-                        flex: 1,
-                        fontSize: 12,
-                        color: "oklch(0.82 0.005 222)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {d.klient}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        letterSpacing: "0.05em",
-                        textTransform: "uppercase",
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: "oklch(0.62 0.27 265 / 0.12)",
-                        color: "oklch(0.75 0.2 265)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {d.faze}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "oklch(0.67 0.155 155)",
-                        fontFamily: "var(--font-outfit)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {fmt(d.hodnota)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
             <Link
-              href="/pipeline"
+              href="/ukoly"
               style={{
                 display: "block",
-                marginTop: 14,
+                marginTop: 16,
                 fontSize: 12,
                 color: "oklch(0.45 0.005 222)",
                 fontWeight: 600,
                 textDecoration: "none",
               }}
             >
-              Zobrazit vše →
+              Všechny úkoly →
             </Link>
           </div>
 
-          {/* Column 3: Ke schválení */}
+          {/* Column 3: Tým */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <div
+            <p
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                fontFamily: "var(--font-heading)",
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                fontSize: 14,
+                color: "oklch(0.92 0.005 222)",
                 marginBottom: 16,
               }}
             >
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  fontSize: 14,
-                  color: "oklch(0.92 0.005 222)",
-                }}
-              >
-                Čeká na schválení
-              </p>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "2px 8px",
-                  borderRadius: 99,
-                  background: "oklch(0.68 0.18 275 / 0.12)",
-                  color: "oklch(0.78 0.16 275)",
-                }}
-              >
-                {pendingApprovals.length}
-              </span>
-            </div>
+              Tým
+            </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-              {pendingApprovals.slice(0, 5).map((a) => (
-                <div
-                  key={a.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 9,
-                    padding: "9px 11px",
-                    borderRadius: 8,
-                    background: "oklch(1 0 0 / 0.025)",
-                    border: "1px solid oklch(1 0 0 / 0.06)",
-                  }}
-                >
-                  <TypBadge typ={a.typ} />
-                  <span
-                    style={{
-                      flex: 1,
-                      fontSize: 12,
-                      color: "oklch(0.82 0.005 222)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {a.klient}
-                  </span>
-                  {a.castka !== undefined && a.castka > 0 && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "oklch(0.68 0.18 275)",
-                        fontFamily: "var(--font-outfit)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {fmt(a.castka)}
-                    </span>
-                  )}
-                </div>
-              ))}
-              {pendingApprovals.length === 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 80,
-                    color: "oklch(0.40 0.005 222)",
-                    fontSize: 13,
-                  }}
-                >
-                  Nic nečeká na schválení
-                </div>
-              )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {teamStats.map((member) => {
+                const isOverloaded = member.urgent > 0;
+                return (
+                  <div key={member.name} style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {/* Header row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <Avatar name={member.name} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "oklch(0.90 0.005 222)",
+                            }}
+                          >
+                            {member.name}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            {isOverloaded && (
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  letterSpacing: "0.06em",
+                                  textTransform: "uppercase",
+                                  padding: "1px 5px",
+                                  borderRadius: 4,
+                                  background: "oklch(0.62 0.22 25 / 0.15)",
+                                  color: "oklch(0.70 0.20 25)",
+                                }}
+                              >
+                                {member.urgent} urgent
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "oklch(0.45 0.005 222)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {member.total} úkolů
+                            </span>
+                          </div>
+                        </div>
+                        {/* Nearest deadline task */}
+                        {member.nearestTask && (
+                          <p
+                            style={{
+                              fontSize: 11,
+                              color: "oklch(0.50 0.005 222)",
+                              marginTop: 3,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {member.nearestDays <= 0
+                              ? "⚠ dnes — "
+                              : member.nearestDays === 1
+                              ? "zítra — "
+                              : `za ${member.nearestDays} d — `}
+                            {member.nearestTask.nazev}
+                          </p>
+                        )}
+                        {!member.nearestTask && member.total === 0 && (
+                          <p style={{ fontSize: 11, color: "oklch(0.38 0.005 222)", marginTop: 3 }}>
+                            Žádné aktivní úkoly
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Workload bar */}
+                    {member.total > 0 && (
+                      <div
+                        style={{
+                          height: 2,
+                          borderRadius: 99,
+                          background: "oklch(1 0 0 / 0.06)",
+                          overflow: "hidden",
+                          marginLeft: 34,
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${Math.min(100, (member.total / 10) * 100)}%`,
+                            borderRadius: 99,
+                            background: isOverloaded
+                              ? "oklch(0.62 0.22 25)"
+                              : "oklch(0.62 0.27 265)",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-
-            <Link
-              href="/schvaleni"
-              style={{
-                display: "block",
-                marginTop: 14,
-                fontSize: 12,
-                color: "oklch(0.45 0.005 222)",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Zobrazit vše →
-            </Link>
           </div>
         </motion.div>
       </motion.div>
