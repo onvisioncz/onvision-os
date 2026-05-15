@@ -4,8 +4,82 @@ import { useState } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckSquare, Square, AlertCircle, ChevronDown, X, Calendar, User,
+  CheckSquare, Square, X, Calendar, User,
 } from "lucide-react";
+
+/* ── Deadline helpers ───────────────────────────────────────────────────────── */
+function parseDeadline(str: string): Date | null {
+  const m = str.match(/(\d+)\.\s*(\d+)\.?(?:\s*(\d{4}))?/);
+  if (!m) return null;
+  const day = parseInt(m[1]);
+  const month = parseInt(m[2]) - 1;
+  const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+  const d = new Date(year, month, day);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function daysUntil(d: Date): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const t = new Date(d);
+  t.setHours(0, 0, 0, 0);
+  return Math.round((t.getTime() - today.getTime()) / 86_400_000);
+}
+
+function DeadlineChip({ deadline, done }: { deadline: string; done: boolean }) {
+  if (done) {
+    return (
+      <span className="flex items-center gap-1 text-[11px] text-[--muted-foreground]">
+        <Calendar className="w-3 h-3" />
+        {deadline}
+      </span>
+    );
+  }
+  const d = parseDeadline(deadline);
+  if (!d) {
+    return (
+      <span className="flex items-center gap-1 text-[11px] text-[--muted-foreground]">
+        <Calendar className="w-3 h-3" />
+        {deadline}
+      </span>
+    );
+  }
+  const days = daysUntil(d);
+
+  let color: string, bg: string, border: string, label: string;
+  if (days < 0) {
+    color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.13)"; border = "oklch(0.65 0.22 25 / 0.30)";
+    label = `${Math.abs(days)}d po deadline`;
+  } else if (days === 0) {
+    color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.13)"; border = "oklch(0.65 0.22 25 / 0.30)";
+    label = "Dnes!";
+  } else if (days === 1) {
+    color = "oklch(0.76 0.16 45)"; bg = "oklch(0.74 0.18 45 / 0.11)"; border = "oklch(0.74 0.18 45 / 0.28)";
+    label = "Zítra";
+  } else if (days <= 3) {
+    color = "oklch(0.80 0.14 65)"; bg = "oklch(0.80 0.14 65 / 0.09)"; border = "oklch(0.80 0.14 65 / 0.22)";
+    label = `za ${days} dny`;
+  } else {
+    color = "oklch(0.42 0.005 222)"; bg = "transparent"; border = "transparent";
+    label = deadline;
+    return (
+      <span className="flex items-center gap-1 text-[11px]" style={{ color }}>
+        <Calendar className="w-3 h-3" />
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-[4px]"
+      style={{ color, background: bg, border: `1px solid ${border}`, letterSpacing: "0.02em", fontFamily: "var(--font-outfit)" }}
+    >
+      <Calendar className="w-2.5 h-2.5" />
+      {label}
+    </span>
+  );
+}
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type Priorita = "Nízká" | "Střední" | "Vysoká" | "Urgentní";
@@ -71,6 +145,155 @@ function PriorityBadge({ p }: { p: Priorita }) {
   );
 }
 
+/* ── Shared task form fields ────────────────────────────────────────────────── */
+function TaskForm({
+  form,
+  setForm,
+  isNew,
+}: {
+  form: Task;
+  setForm: (fn: (prev: Task) => Task) => void;
+  isNew?: boolean;
+}) {
+  void isNew;
+  return (
+    <>
+      {(["nazev", "projekt"] as const).map(field => (
+        <div key={field}>
+          <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">
+            {field === "nazev" ? "Název úkolu" : "Projekt / klient"}
+          </label>
+          <input
+            value={form[field]}
+            onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
+            placeholder={field === "nazev" ? "Co je potřeba udělat?" : "Název projektu"}
+            className="w-full px-3 py-2 rounded-[8px] text-[13px] text-[--foreground] outline-none"
+            style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
+          />
+        </div>
+      ))}
+
+      {/* Deadline — prominent */}
+      <div>
+        <label className="block text-[11px] font-semibold mb-1.5 uppercase tracking-[0.05em]"
+          style={{ color: "oklch(0.74 0.18 45)" }}>
+          Deadline (termín odevzdání)
+        </label>
+        <input
+          value={form.deadline}
+          onChange={e => setForm(prev => ({ ...prev, deadline: e.target.value }))}
+          placeholder="15. 5."
+          className="w-full px-3 py-2 rounded-[8px] text-[13px] font-semibold outline-none"
+          style={{
+            background: "oklch(0.74 0.18 45 / 0.06)",
+            border: "1px solid oklch(0.74 0.18 45 / 0.25)",
+            color: "oklch(0.80 0.14 65)",
+            fontFamily: "var(--font-outfit)",
+          }}
+        />
+        <p className="text-[10px] mt-1" style={{ color: "oklch(0.40 0.005 222)" }}>
+          Formát: den. měsíc. (např. 20. 5.)
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {(["prirazeno", "priorita", "status"] as const).map(field => (
+          <div key={field}>
+            <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">
+              {field === "prirazeno" ? "Přiřazeno" : field === "priorita" ? "Priorita" : "Stav"}
+            </label>
+            <select
+              value={form[field]}
+              onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value as never }))}
+              className="w-full px-2 py-2 rounded-[8px] text-[12px] text-[--foreground] outline-none"
+              style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
+            >
+              {field === "prirazeno" && ["Adam", "Zdeněk", "Matěj", "Monika", "Patrik"].map(v => <option key={v}>{v}</option>)}
+              {field === "priorita" && (["Nízká", "Střední", "Vysoká", "Urgentní"] as Priorita[]).map(v => <option key={v}>{v}</option>)}
+              {field === "status" && STATUSES.map(v => <option key={v}>{v}</option>)}
+            </select>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">Poznámka</label>
+        <textarea
+          value={form.popis ?? ""}
+          onChange={e => setForm(prev => ({ ...prev, popis: e.target.value }))}
+          rows={2}
+          placeholder="Volitelný popis, hodnota zakázky apod."
+          className="w-full px-3 py-2 rounded-[8px] text-[13px] text-[--foreground] outline-none resize-none"
+          style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
+        />
+      </div>
+    </>
+  );
+}
+
+/* ── Add modal ──────────────────────────────────────────────────────────────── */
+const EMPTY_TASK: Omit<Task, "id"> = {
+  nazev: "", projekt: "", prirazeno: "Adam",
+  priorita: "Střední", status: "Nové", deadline: "", popis: "",
+};
+
+function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Omit<Task, "id">) => void }) {
+  const [form, setForm] = useState<Task>({ id: 0, ...EMPTY_TASK });
+
+  const canSave = form.nazev.trim().length > 0 && form.deadline.trim().length > 0;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="absolute inset-0" style={{ background: "oklch(0 0 0 / 0.65)" }} onClick={onClose} />
+      <motion.div
+        className="card relative w-full max-w-md p-6 space-y-4"
+        initial={{ scale: 0.95, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 16 }}
+        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.02em", color: "var(--foreground)" }}>
+            Nový úkol
+          </h2>
+          <button onClick={onClose} className="btn-tactile p-1.5 rounded-[6px]" style={{ color: "oklch(0.45 0.005 222)" }}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <TaskForm form={form} setForm={setForm} isNew />
+
+        <div className="flex gap-2 justify-end pt-1">
+          <button
+            onClick={onClose}
+            className="btn-tactile px-4 py-2 rounded-[8px] text-[13px] font-medium"
+            style={{ color: "oklch(0.45 0.005 222)", background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+          >
+            Zrušit
+          </button>
+          <button
+            onClick={() => { if (canSave) { onAdd(form); onClose(); } }}
+            disabled={!canSave}
+            className="btn-tactile px-4 py-2 rounded-[8px] text-[13px] font-semibold"
+            style={{
+              background: canSave ? ACCENT : "oklch(1 0 0 / 0.06)",
+              color: canSave ? "oklch(0.09 0.008 222)" : "oklch(0.40 0.005 222)",
+              cursor: canSave ? "pointer" : "not-allowed",
+            }}
+          >
+            Přidat úkol
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ── Edit modal ─────────────────────────────────────────────────────────────── */
 function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (t: Task) => void }) {
   const [form, setForm] = useState<Task>({ ...task });
@@ -99,50 +322,7 @@ function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void;
           </button>
         </div>
 
-        {(["nazev", "projekt", "deadline"] as const).map(field => (
-          <div key={field}>
-            <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">
-              {field === "nazev" ? "Název" : field === "projekt" ? "Projekt" : "Deadline"}
-            </label>
-            <input
-              value={form[field]}
-              onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
-              className="w-full px-3 py-2 rounded-[8px] text-[13px] text-[--foreground] outline-none"
-              style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
-            />
-          </div>
-        ))}
-
-        <div className="grid grid-cols-3 gap-3">
-          {(["prirazeno", "priorita", "status"] as const).map(field => (
-            <div key={field}>
-              <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">
-                {field === "prirazeno" ? "Přiřazeno" : field === "priorita" ? "Priorita" : "Stav"}
-              </label>
-              <select
-                value={form[field]}
-                onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value as never }))}
-                className="w-full px-2 py-2 rounded-[8px] text-[12px] text-[--foreground] outline-none"
-                style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
-              >
-                {field === "prirazeno" && ["Adam", "Zdeněk", "Matěj", "Monika", "Patrik"].map(v => <option key={v}>{v}</option>)}
-                {field === "priorita" && (["Nízká", "Střední", "Vysoká", "Urgentní"] as Priorita[]).map(v => <option key={v}>{v}</option>)}
-                {field === "status" && STATUSES.map(v => <option key={v}>{v}</option>)}
-              </select>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">Poznámka</label>
-          <textarea
-            value={form.popis ?? ""}
-            onChange={e => setForm(prev => ({ ...prev, popis: e.target.value }))}
-            rows={2}
-            className="w-full px-3 py-2 rounded-[8px] text-[13px] text-[--foreground] outline-none resize-none"
-            style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", fontFamily: "var(--font-jakarta)" }}
-          />
-        </div>
+        <TaskForm form={form} setForm={setForm} />
 
         <div className="flex gap-2 justify-end pt-1">
           <button
@@ -203,14 +383,13 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
         >
           {task.nazev}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[11px] text-[--muted-foreground]">{task.projekt}</span>
           <span className="w-0.5 h-0.5 rounded-full bg-[oklch(0.35_0.005_222)]" />
           <User className="w-3 h-3 text-[oklch(0.40_0.005_222)]" />
           <span className="text-[11px] text-[--muted-foreground]">{task.prirazeno}</span>
           <span className="w-0.5 h-0.5 rounded-full bg-[oklch(0.35_0.005_222)]" />
-          <Calendar className="w-3 h-3 text-[oklch(0.40_0.005_222)]" />
-          <span className="text-[11px] text-[--muted-foreground]">{task.deadline}</span>
+          <DeadlineChip deadline={task.deadline} done={done} />
           {task.popis && (
             <>
               <span className="w-0.5 h-0.5 rounded-full bg-[oklch(0.35_0.005_222)]" />
@@ -231,6 +410,7 @@ export default function UkolyPage() {
   const [assigneeFilter, setAssigneeFilter] = useState("Vše");
   const [statusFilter, setStatusFilter] = useState<TStatus | "Vše">("Vše");
   const [editing, setEditing] = useState<Task | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const toggle = (id: number) => {
     setTasks(prev => prev.map(t =>
@@ -240,6 +420,11 @@ export default function UkolyPage() {
 
   const save = (updated: Task) => {
     setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+  };
+
+  const addTask = (t: Omit<Task, "id">) => {
+    const newId = Math.max(0, ...tasks.map(x => x.id)) + 1;
+    setTasks(prev => [{ id: newId, ...t }, ...prev]);
   };
 
   const filtered = tasks.filter(t => {
@@ -286,19 +471,38 @@ export default function UkolyPage() {
     >
       {/* Header */}
       <motion.div
+        className="flex items-start justify-between"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
       >
-        <h1
-          className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
-          style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}
+        <div>
+          <h1
+            className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
+            style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}
+          >
+            Úkoly
+          </h1>
+          <p className="text-[12px] md:text-[13px] text-[--muted-foreground] mt-1.5">
+            OnVision s.r.o. · Správa úkolů týmu
+          </p>
+        </div>
+        <motion.button
+          onClick={() => setAdding(true)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.12 }}
+          className="flex items-center gap-2 px-4 py-2 rounded-[9px] text-[13px] font-semibold"
+          style={{
+            background: ACCENT,
+            color: "oklch(0.09 0.008 222)",
+            fontFamily: "var(--font-jakarta)",
+            boxShadow: `0 0 16px oklch(0.67 0.155 155 / 0.2)`,
+          }}
         >
-          Úkoly
-        </h1>
-        <p className="text-[12px] md:text-[13px] text-[--muted-foreground] mt-1.5">
-          OnVision s.r.o. · Správa úkolů týmu
-        </p>
+          <span style={{ fontSize: 16, lineHeight: 1, marginTop: -1 }}>+</span>
+          Nový úkol
+        </motion.button>
       </motion.div>
 
       {/* Stats bar */}
@@ -388,10 +592,15 @@ export default function UkolyPage() {
         )}
       </div>
 
-      {/* Edit modal */}
+      {/* Modals */}
       <AnimatePresence>
         {editing && (
           <EditModal task={editing} onClose={() => setEditing(null)} onSave={save} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {adding && (
+          <AddModal onClose={() => setAdding(false)} onAdd={addTask} />
         )}
       </AnimatePresence>
     </div>

@@ -81,6 +81,26 @@ function fmtShort(n: number) {
   return String(n);
 }
 
+/** Parse "15. 5." or "15. 5. 2026" → Date. Returns null on failure. */
+function parseDeadline(str: string): Date | null {
+  const m = str.match(/(\d+)\.\s*(\d+)\.?(?:\s*(\d{4}))?/);
+  if (!m) return null;
+  const day = parseInt(m[1]);
+  const month = parseInt(m[2]) - 1;
+  const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+  const d = new Date(year, month, day);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Calendar days from today (negative = overdue). */
+function daysUntil(d: Date): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const t = new Date(d);
+  t.setHours(0, 0, 0, 0);
+  return Math.round((t.getTime() - today.getTime()) / 86_400_000);
+}
+
 const MONTH_SHORT: Record<string, string> = {
   Leden: "Led",
   Únor: "Úno",
@@ -269,6 +289,66 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
+/* ── Deadline pill ──────────────────────────────────────────────────────────── */
+function DeadlinePill({ deadline }: { deadline: string }) {
+  const d = parseDeadline(deadline);
+
+  // Always show a pill — never invisible plain text
+  let color: string, bg: string, border: string, label: string, sublabel: string | null = null;
+
+  if (!d) {
+    color = "oklch(0.50 0.005 222)"; bg = "oklch(1 0 0 / 0.05)"; border = "oklch(1 0 0 / 0.10)";
+    label = deadline;
+  } else {
+    const days = daysUntil(d);
+    if (days < 0) {
+      color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.16)"; border = "oklch(0.65 0.22 25 / 0.38)";
+      label = deadline; sublabel = `${Math.abs(days)}d po splatnosti`;
+    } else if (days === 0) {
+      color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.16)"; border = "oklch(0.65 0.22 25 / 0.38)";
+      label = deadline; sublabel = "Dnes!";
+    } else if (days === 1) {
+      color = "oklch(0.82 0.16 45)"; bg = "oklch(0.74 0.18 45 / 0.14)"; border = "oklch(0.74 0.18 45 / 0.35)";
+      label = deadline; sublabel = "Zítra";
+    } else if (days <= 3) {
+      color = "oklch(0.84 0.14 75)"; bg = "oklch(0.80 0.14 75 / 0.11)"; border = "oklch(0.80 0.14 75 / 0.28)";
+      label = deadline; sublabel = `za ${days} dny`;
+    } else if (days <= 7) {
+      color = "oklch(0.70 0.08 222)"; bg = "oklch(0.62 0.27 265 / 0.09)"; border = "oklch(0.62 0.27 265 / 0.20)";
+      label = deadline; sublabel = `za ${days} dní`;
+    } else {
+      color = "oklch(0.55 0.005 222)"; bg = "oklch(1 0 0 / 0.05)"; border = "oklch(1 0 0 / 0.12)";
+      label = deadline; sublabel = null;
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 1 }}>
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.01em",
+          padding: "3px 8px",
+          borderRadius: 6,
+          color,
+          background: bg,
+          border: `1px solid ${border}`,
+          whiteSpace: "nowrap",
+          fontFamily: "var(--font-outfit)",
+        }}
+      >
+        {label}
+      </span>
+      {sublabel && (
+        <span style={{ fontSize: 9, color, opacity: 0.75, fontFamily: "var(--font-jakarta)", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+          {sublabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ── Faze pipeline order ────────────────────────────────────────────────────── */
 const FAZE_ORDER = ["Lead", "Kvalifikace", "Nabídka", "Jednání", "Realizace"];
 
@@ -279,7 +359,14 @@ export default function DashboardPage() {
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [deals] = useSupabaseData<Deal[]>("ov-pipeline-deals", () => []);
   const [approvals] = useSupabaseData<Approval[]>("ov-schvaleni-items", () => []);
-  const [summaries] = useSupabaseData<MonthSummary[]>("ov-finance-summaries", () => []);
+  // Read-only fetch — dashboard never seeds finance data (to avoid overwriting real data with [])
+  const [summaries, setSummaries] = useState<MonthSummary[]>([]);
+  useEffect(() => {
+    fetch("/api/sync?key=ov-finance-summaries")
+      .then((r) => r.json())
+      .then(({ value }) => { if (Array.isArray(value)) setSummaries(value); })
+      .catch(() => {});
+  }, []);
   const [oneoffs] = useSupabaseData<Oneoff[]>("ov-oneoffs-projects", () => []);
 
   /* ── Greeting (client-only to avoid SSR mismatch) ── */
@@ -367,9 +454,9 @@ export default function DashboardPage() {
     return { prijmy, vydaje, cisty };
   }, [summaries]);
 
-  /* ── Top tasks for right column ── */
+  /* ── Top tasks for right column — sorted by nearest deadline, then priority ── */
   const topTasks = useMemo(() => {
-    const order: Record<Task["priorita"], number> = {
+    const priorityOrder: Record<Task["priorita"], number> = {
       Urgentní: 0,
       Vysoká: 1,
       Střední: 2,
@@ -377,8 +464,15 @@ export default function DashboardPage() {
     };
     return tasks
       .filter((t) => t.status !== "Hotovo")
-      .sort((a, b) => order[a.priorita] - order[b.priorita])
-      .slice(0, 6);
+      .sort((a, b) => {
+        const da = parseDeadline(a.deadline);
+        const db = parseDeadline(b.deadline);
+        const daysA = da ? daysUntil(da) : 9999;
+        const daysB = db ? daysUntil(db) : 9999;
+        if (daysA !== daysB) return daysA - daysB;
+        return priorityOrder[a.priorita] - priorityOrder[b.priorita];
+      })
+      .slice(0, 7);
   }, [tasks]);
 
   /* ── Active clients (max 5) ── */
@@ -836,22 +930,28 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right: Urgent tasks */}
+          {/* Right: Tasks by deadline */}
           <div style={{ ...cardStyle, padding: "22px 20px" }}>
-            <p
-              style={{
-                fontFamily: "var(--font-outfit)",
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                fontSize: 15,
-                color: "oklch(0.92 0.005 222)",
-                marginBottom: 4,
-              }}
-            >
-              Urgentní úkoly
-            </p>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  fontSize: 15,
+                  color: "oklch(0.92 0.005 222)",
+                }}
+              >
+                Nejbližší deadliny
+              </p>
+              {topTasks.length > 0 && (
+                <span style={{ fontSize: 11, color: "oklch(0.42 0.005 222)" }}>
+                  {topTasks.filter(t => { const d = parseDeadline(t.deadline); return d && daysUntil(d) <= 3; }).length} blíží se
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginBottom: 16 }}>
-              Prioritizováno podle důležitosti
+              Seřazeno podle termínu odevzdání
             </p>
 
             {topTasks.length === 0 ? (
@@ -868,46 +968,66 @@ export default function DashboardPage() {
                 Žádné otevřené úkoly
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", maxHeight: 300 }}>
-                {topTasks.map((t) => (
-                  <div
-                    key={t.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "9px 12px",
-                      borderRadius: 8,
-                      background: "oklch(1 0 0 / 0.025)",
-                      border: "1px solid oklch(1 0 0 / 0.06)",
-                    }}
-                  >
-                    <PriorityBadge p={t.priorita} />
-                    <span
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", maxHeight: 340 }}>
+                {topTasks.map((t) => {
+                  const d = parseDeadline(t.deadline);
+                  const days = d ? daysUntil(d) : null;
+                  const isUrgent = days !== null && days <= 1;
+                  return (
+                    <div
+                      key={t.id}
                       style={{
-                        flex: 1,
-                        fontSize: 12,
-                        color: "oklch(0.88 0.005 222)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "9px 12px",
+                        borderRadius: 8,
+                        background: isUrgent
+                          ? "oklch(0.65 0.22 25 / 0.06)"
+                          : "oklch(1 0 0 / 0.025)",
+                        border: `1px solid ${isUrgent ? "oklch(0.65 0.22 25 / 0.18)" : "oklch(1 0 0 / 0.06)"}`,
                       }}
                     >
-                      {t.nazev}
-                    </span>
-                    <Avatar name={t.prirazeno} />
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: "oklch(0.40 0.005 222)",
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {t.deadline}
-                    </span>
-                  </div>
-                ))}
+                      {/* Left: task info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "oklch(0.90 0.005 222)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            fontFamily: "var(--font-outfit)",
+                            letterSpacing: "-0.01em",
+                            marginBottom: 3,
+                          }}
+                        >
+                          {t.nazev}
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "oklch(0.40 0.005 222)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t.projekt}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Right: priority + avatar + deadline */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <PriorityBadge p={t.priorita} />
+                        <Avatar name={t.prirazeno} />
+                        <DeadlinePill deadline={t.deadline} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

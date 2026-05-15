@@ -411,7 +411,19 @@ function ChartTip({ active, payload, label }: { active?: boolean; payload?: Arra
 }
 
 /* ── PŘEHLED tab ────────────────────────────────────────────────────────────── */
-function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
+const SCHVALITEL = ["—", "Adam", "Honza", "Dominika"] as const;
+const MONTH_STATUSES: MonthStatus[] = ["UZAVŘENO", "PROBÍHÁ", "NEPROBĚHLO"];
+
+function PrehledTab({
+  summaries,
+  setSummaries,
+}: {
+  summaries: MonthSummary[];
+  setSummaries: (fn: (prev: MonthSummary[]) => MonthSummary[]) => void;
+}) {
+  function updateRow(mesic: string, patch: Partial<MonthSummary>) {
+    setSummaries(prev => prev.map(s => s.mesic === mesic ? { ...s, ...patch } : s));
+  }
   const chartData = summaries.filter(s => s.prijemCelkovy > 0).map(s => ({
     m: s.mesic.slice(0, 3),
     "Příjmy":  s.prijemCelkovy / 1000,
@@ -498,13 +510,46 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
                     <td className="px-4 py-3 num text-[13px]" style={{ color: s.vydaje ? "oklch(0.65 0.22 25)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.vydaje)}</td>
                     <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.62 0.27 265)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
                     <td className="px-4 py-3 num text-[12px] hidden md:table-cell" style={{ color: marze ? "var(--foreground)" : "oklch(0.30 0.005 222)" }}>{marze ? `${marze}%` : "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[10px] font-bold tracking-[0.05em]"
-                        style={{ color: ss.color, background: ss.bg, border: `1px solid ${ss.border}` }}>
-                        {s.stav}
-                      </span>
+                    {/* Stav — inline select */}
+                    <td className="px-4 py-2.5">
+                      <div className="relative inline-flex items-center">
+                        <select
+                          value={s.stav}
+                          onChange={e => updateRow(s.mesic, { stav: e.target.value as MonthStatus })}
+                          className="appearance-none pl-2 pr-6 py-0.5 rounded-[5px] text-[10px] font-bold tracking-[0.05em] outline-none cursor-pointer transition-opacity hover:opacity-80"
+                          style={{
+                            color: ss.color,
+                            background: ss.bg,
+                            border: `1px solid ${ss.border}`,
+                            fontFamily: "var(--font-jakarta)",
+                          }}
+                        >
+                          {MONTH_STATUSES.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <svg className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5" viewBox="0 0 10 6" fill="none">
+                          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ color: ss.color }} />
+                        </svg>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden md:table-cell">{s.schvaleno || "—"}</td>
+                    {/* Schváleno — inline select */}
+                    <td className="px-4 py-2.5 hidden md:table-cell">
+                      <select
+                        value={s.schvaleno.replace(" ✅", "") || "—"}
+                        onChange={e => {
+                          const val = e.target.value;
+                          updateRow(s.mesic, { schvaleno: val === "—" ? "" : val + (s.stav === "UZAVŘENO" ? " ✅" : "") });
+                        }}
+                        className="appearance-none px-2 py-0.5 rounded-[5px] text-[11px] outline-none cursor-pointer bg-transparent transition-opacity hover:opacity-80"
+                        style={{
+                          color: s.schvaleno ? "oklch(0.67 0.155 155)" : "oklch(0.38 0.005 222)",
+                          border: `1px solid ${s.schvaleno ? "oklch(0.67 0.155 155 / 0.2)" : "oklch(1 0 0 / 0.08)"}`,
+                          background: s.schvaleno ? "oklch(0.67 0.155 155 / 0.07)" : "oklch(1 0 0 / 0.03)",
+                          fontFamily: "var(--font-jakarta)",
+                        }}
+                      >
+                        {SCHVALITEL.map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </td>
                   </tr>
                 );
               })}
@@ -1441,7 +1486,7 @@ export default function FinancePage() {
         <motion.div key={tab}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}>
-          {tab === "prehled" && <PrehledTab summaries={summaries} />}
+          {tab === "prehled" && <PrehledTab summaries={summaries} setSummaries={fn => setSummaries(fn)} />}
           {tab === "prijmy"  && <PrijmyTab  items={incomes}  setItems={fn => setIncomes(fn)} />}
           {tab === "vydaje"  && <VydajeTab  items={expenses} setItems={fn => setExpenses(fn)} />}
           {tab === "bilance" && <BilanceTab incomes={incomes} expenses={expenses} />}
