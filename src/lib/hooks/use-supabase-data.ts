@@ -3,23 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-/**
- * Drop-in replacement for useState that persists to Supabase (shared across all devices)
- * and caches locally in localStorage for instant first render.
- *
- * Flow:
- *  1. Render immediately from localStorage cache (fast, no flash)
- *  2. Fetch latest data from Supabase in background and update if different
- *  3. Every state change → write to localStorage + debounced write to Supabase
- *
- * Usage:
- *   const [clients, setClients, loading] = useSupabaseData("monthly_clients", makeSeed);
- */
+// ── Global sync status (communicated to TopBar via custom events) ────────────
+export type SyncStatus = "idle" | "syncing" | "ok" | "error";
+
+function emitSync(status: SyncStatus, detail?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("ov-sync", { detail: { status, detail } })
+  );
+}
+
 export function useSupabaseData<T>(
   key: string,
   seed: () => T
 ): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
-  // Capture initial value via ref so we can seed Supabase on first run
   const initialValueRef = useRef<T | null>(null);
 
   const [value, setValueRaw] = useState<T>(() => {
@@ -44,13 +41,16 @@ export function useSupabaseData<T>(
       .eq("key", key)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (!error && data?.value != null) {
-          // Server has data — update local state (but don't re-save to Supabase)
+        if (error) {
+          // Log so developer can see it in browser console
+          console.error(`[ov-sync] Load error for "${key}":`, error.message, error.code);
+          emitSync("error", error.message);
+        } else if (data?.value != null) {
           skipNextSave.current = true;
           setValueRaw(data.value as T);
           writeCache(key, data.value);
-        } else if (!error && data == null) {
-          // Nothing in DB yet — seed it with the current cached/seed value
+        } else {
+          // Nothing in DB yet — seed it
           saveToSupabase(key, initialValueRef.current);
         }
         initialized.current = true;
@@ -67,10 +67,8 @@ export function useSupabaseData<T>(
       return;
     }
 
-    // Write to localStorage cache immediately
     writeCache(key, value);
 
-    // Debounce Supabase write (avoid hammering on rapid changes)
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       saveToSupabase(key, value);
@@ -83,11 +81,9 @@ export function useSupabaseData<T>(
 
   const setValue: React.Dispatch<React.SetStateAction<T>> = useCallback(
     (action) => {
-      setValueRaw((prev) => {
-        return typeof action === "function"
-          ? (action as (prev: T) => T)(prev)
-          : action;
-      });
+      setValueRaw((prev) =>
+        typeof action === "function" ? (action as (prev: T) => T)(prev) : action
+      );
     },
     []
   );
@@ -110,21 +106,37 @@ function readCache<T>(key: string): T | null {
 function writeCache(key: string, value: unknown) {
   try {
     window.localStorage.setItem(`ov-cache-${key}`, JSON.stringify(value));
-  } catch {
-    // Storage full — ignore
-  }
+  } catch {}
 }
 
 async function saveToSupabase(key: string, value: unknown) {
+  emitSync("syncing");
   try {
     const supabase = createClient();
-    await supabase
+
+    // Check session first
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error(`[ov-sync] No active session — cannot save "${key}"`);
+      emitSync("error", "No session");
+      return;
+    }
+
+    const { error } = await supabase
       .from("app_data")
       .upsert(
         { key, value, updated_at: new Date().toISOString() },
         { onConflict: "key" }
       );
-  } catch {
-    // Network error — silently ignore, localStorage cache still works
+
+    if (error) {
+      console.error(`[ov-sync] Save error for "${key}":`, error.message, error.code);
+      emitSync("error", error.message);
+    } else {
+      emitSync("ok");
+    }
+  } catch (e) {
+    console.error(`[ov-sync] Network error for "${key}":`, e);
+    emitSync("error", "Network error");
   }
 }

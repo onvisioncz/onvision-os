@@ -3,14 +3,31 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2, LogOut, Check } from "lucide-react";
+import { Undo2, LogOut, Check, Cloud, CloudOff, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { SyncStatus } from "@/lib/hooks/use-supabase-data";
 
 export function TopBar() {
   const router = useRouter();
   const [undoFeedback, setUndoFeedback] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const syncResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track last focused editable element so we can refocus before execCommand
   const lastInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  // Listen for sync events from useSupabaseData
+  useEffect(() => {
+    function onSync(e: Event) {
+      const status = (e as CustomEvent<{ status: SyncStatus }>).detail.status;
+      setSyncStatus(status);
+      if (syncResetTimer.current) clearTimeout(syncResetTimer.current);
+      if (status === "ok") {
+        syncResetTimer.current = setTimeout(() => setSyncStatus("idle"), 2500);
+      }
+    }
+    window.addEventListener("ov-sync", onSync);
+    return () => window.removeEventListener("ov-sync", onSync);
+  }, []);
 
   useEffect(() => {
     function onFocusin(e: FocusEvent) {
@@ -98,6 +115,31 @@ export function TopBar() {
           )}
         </AnimatePresence>
       </motion.button>
+
+      {/* Sync status indicator */}
+      <AnimatePresence mode="wait">
+        {syncStatus !== "idle" && (
+          <motion.div
+            key={syncStatus}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium"
+            style={{
+              color: syncStatus === "ok" ? "oklch(0.67 0.155 155)" : syncStatus === "error" ? "oklch(0.65 0.22 25)" : "oklch(0.62 0.27 265)",
+              background: syncStatus === "ok" ? "oklch(0.67 0.155 155 / 0.08)" : syncStatus === "error" ? "oklch(0.65 0.22 25 / 0.08)" : "oklch(0.62 0.27 265 / 0.08)",
+              border: `1px solid ${syncStatus === "ok" ? "oklch(0.67 0.155 155 / 0.2)" : syncStatus === "error" ? "oklch(0.65 0.22 25 / 0.2)" : "oklch(0.62 0.27 265 / 0.2)"}`,
+              fontFamily: "var(--font-jakarta)",
+            }}
+          >
+            {syncStatus === "syncing" && <Loader className="w-3 h-3 animate-spin" />}
+            {syncStatus === "ok" && <Cloud className="w-3 h-3" />}
+            {syncStatus === "error" && <CloudOff className="w-3 h-3" />}
+            {syncStatus === "syncing" ? "Ukládám..." : syncStatus === "ok" ? "Uloženo" : "Chyba sync"}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Divider */}
       <div className="w-px h-4" style={{ background: "oklch(1 0 0 / 0.08)" }} />
