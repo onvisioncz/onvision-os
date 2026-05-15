@@ -37,28 +37,48 @@ export function SidebarNav() {
       style={{ background: "var(--sidebar)", borderColor: "var(--sidebar-border)" }}
     >
       {/* Wordmark */}
-      <div className="px-4 py-5 flex items-center gap-2.5">
-        {/* OnVision "On" circle mark */}
-        <div className="shrink-0 w-7 h-7">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
-            <circle cx="14" cy="14" r="14" fill="oklch(0.62 0.27 265)" />
-            <circle cx="14" cy="14" r="14" fill="none" stroke="oklch(0.72 0.27 265)" strokeWidth="0.6" />
-            {/* "O" — hollow ring */}
-            <circle cx="9.8" cy="14" r="3.5" fill="none" stroke="white" strokeWidth="1.8" />
-            {/* "n" — vertical stem */}
-            <line x1="15.4" y1="10.6" x2="15.4" y2="17.4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-            {/* "n" — arch + right stem */}
-            <path d="M15.4 13.8 Q15.6 10.6 18.8 10.6 Q21.8 10.6 21.8 13.8 L21.8 17.4" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <div className="px-4 py-[18px] flex items-center gap-3">
+        {/* OnVision "On" logomark — pulsing glow */}
+        <motion.div
+          className="shrink-0"
+          animate={{
+            filter: [
+              "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
+              "drop-shadow(0 0 10px rgba(80, 80, 255, 0.85))",
+              "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
+            ],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="OnVision logo">
+            {/* Circle background */}
+            <circle cx="18" cy="18" r="18" fill="oklch(0.62 0.27 265)" />
+            {/* Subtle inner rim */}
+            <circle cx="18" cy="18" r="17.2" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+
+            {/* "O" — bold oval ring using filled outer + knockout inner */}
+            <ellipse cx="11.5" cy="18" rx="7" ry="9" fill="white" />
+            <ellipse cx="11.5" cy="18" rx="3.9" ry="5.8" fill="oklch(0.62 0.27 265)" />
+
+            {/* "n" — left stem (filled rect) */}
+            <rect x="20.8" y="9" width="3.4" height="18" rx="1.6" fill="white" />
+            {/* "n" — arch body: filled compound shape */}
+            <path
+              d="M24.2 16 C24.2 9 31 9 31 16 L31 27 L27.6 27 L27.6 17 C27.6 14.2 24.2 14.2 24.2 17 Z"
+              fill="white"
+            />
           </svg>
-        </div>
-        <div className="flex flex-col leading-none gap-[1px]">
+        </motion.div>
+
+        {/* Wordmark text */}
+        <div className="flex flex-col leading-none gap-[3px]">
           <span
             style={{
               fontFamily: "var(--font-outfit)",
               fontWeight: 800,
-              fontSize: "13.5px",
+              fontSize: "14px",
               letterSpacing: "-0.04em",
-              color: "oklch(0.95 0.008 265)",
+              color: "oklch(0.96 0.01 265)",
               lineHeight: 1,
             }}
           >
@@ -67,15 +87,15 @@ export function SidebarNav() {
           <span
             style={{
               fontFamily: "var(--font-jakarta)",
-              fontWeight: 600,
-              fontSize: "9px",
-              letterSpacing: "0.14em",
+              fontWeight: 500,
+              fontSize: "8.5px",
+              letterSpacing: "0.16em",
               textTransform: "uppercase",
-              color: "oklch(0.38 0.008 265)",
+              color: "oklch(0.35 0.01 265)",
               lineHeight: 1,
             }}
           >
-            OS
+            OS Platform
           </span>
         </div>
       </div>
@@ -163,6 +183,21 @@ export function SidebarNav() {
             style={{ background: "var(--success)" }}
           />
         </div>
+
+        {/* Brand tagline */}
+        <p
+          className="mt-3 text-center"
+          style={{
+            fontFamily: "var(--font-jakarta)",
+            fontSize: "8px",
+            fontWeight: 500,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "oklch(0.26 0.01 265)",
+          }}
+        >
+          OnVision Kreativní Agentura
+        </p>
       </div>
     </aside>
   );

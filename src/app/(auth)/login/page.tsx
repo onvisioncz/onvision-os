@@ -65,18 +65,34 @@ export default function LoginPage() {
           <motion.div
             className="mb-4"
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
+            animate={{
+              scale: 1,
+              opacity: 1,
+              filter: [
+                "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
+                "drop-shadow(0 0 18px rgba(80, 80, 255, 0.85))",
+                "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
+              ],
+            }}
+            transition={{
+              scale: { duration: 0.4, delay: 0.1, ease: [0.23, 1, 0.32, 1] },
+              opacity: { duration: 0.4, delay: 0.1 },
+              filter: { duration: 3, delay: 0.5, repeat: Infinity, ease: "easeInOut" },
+            }}
           >
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden>
-              <circle cx="26" cy="26" r="26" fill="oklch(0.62 0.27 265)" />
-              <circle cx="26" cy="26" r="26" fill="none" stroke="oklch(0.72 0.27 265)" strokeWidth="1" />
-              {/* "O" ring */}
-              <circle cx="18.5" cy="26" r="6.8" fill="none" stroke="white" strokeWidth="3.2" />
-              {/* "n" stem */}
-              <line x1="29" y1="19.5" x2="29" y2="33" stroke="white" strokeWidth="3.2" strokeLinecap="round" />
-              {/* "n" arch + right stem */}
-              <path d="M29 26 Q29 19.5 35.5 19.5 Q41.5 19.5 41.5 26 L41.5 33" stroke="white" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="OnVision logo">
+              <circle cx="32" cy="32" r="32" fill="oklch(0.62 0.27 265)" />
+              <circle cx="32" cy="32" r="31" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+              {/* "O" — bold filled donut */}
+              <ellipse cx="20.5" cy="32" rx="11.5" ry="14.5" fill="white" />
+              <ellipse cx="20.5" cy="32" rx="6.5" ry="9.8" fill="oklch(0.62 0.27 265)" />
+              {/* "n" — left stem */}
+              <rect x="35" y="17" width="5.5" height="30" rx="2.5" fill="white" />
+              {/* "n" — arch + right stem */}
+              <path
+                d="M40.5 26.5 C40.5 17 51.5 17 51.5 26.5 L51.5 47 L46 47 L46 28 C46 24 40.5 24 40.5 28 Z"
+                fill="white"
+              />
             </svg>
           </motion.div>
           <h1
