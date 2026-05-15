@@ -563,7 +563,7 @@ export default function DashboardPage() {
               }}
             >
               {greeting},{" "}
-              <span style={{ color: "oklch(0.76 0.18 200)" }}>Adame.</span>
+              <span style={{ color: "oklch(0.96 0.005 222)" }}>Adame.</span>
             </h1>
             <p
               style={{
