@@ -148,59 +148,81 @@ export function SidebarNav() {
 }
 
 /* ── Mobile bottom nav ──────────────────────────────────────────────────────── */
-const mobileNav = nav.slice(0, 5); // Dashboard, Jednorázovky, Měsíční klienti, Finance, Kalendář
-
 export function MobileNav() {
   const path = usePathname();
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: "oklch(0.10 0.008 222)",
         borderTop: "1px solid oklch(1 0 0 / 0.08)",
-        paddingTop: "10px",
-        paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)",
       }}
     >
-      {mobileNav.map(({ short, href, icon: Icon }) => {
-        const active = path === href || path.startsWith(href + "/");
-        return (
-          <Link key={href} href={href} className="flex-1">
-            <motion.div
-              className="flex flex-col items-center gap-1"
-              whileTap={{ scale: 0.88 }}
-              transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+      {/* Scrollable row — hide native scrollbar */}
+      <div
+        className="flex items-stretch overflow-x-auto"
+        style={{
+          paddingTop: "8px",
+          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 10px)",
+          scrollbarWidth: "none",          /* Firefox */
+          msOverflowStyle: "none",         /* IE/Edge */
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {/* Hide webkit scrollbar via inline style trick */}
+        <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
+
+        {[...nav, { label: "Nastavení", short: "Nastavení", href: "/settings", icon: Settings }].map(({ short, href, icon: Icon }) => {
+          const active = path === href || path.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex-shrink-0"
+              style={{ minWidth: 68 }}
             >
-              <div className="relative">
-                {active && (
-                  <motion.span
-                    layoutId="mobile-nav-glow"
-                    className="absolute inset-0 rounded-full -m-1"
-                    style={{ background: "oklch(0.81 0.155 200 / 0.15)" }}
-                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              <motion.div
+                className="flex flex-col items-center gap-[5px] px-2 py-1"
+                whileTap={{ scale: 0.85 }}
+                transition={{ duration: 0.1, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <div className="relative flex items-center justify-center w-8 h-8 rounded-[8px]"
+                  style={active ? {
+                    background: "oklch(0.81 0.155 200 / 0.14)",
+                    border: "1px solid oklch(0.81 0.155 200 / 0.22)",
+                  } : {
+                    border: "1px solid transparent",
+                  }}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="mobile-nav-bg"
+                      className="absolute inset-0 rounded-[8px]"
+                      style={{ background: "oklch(0.81 0.155 200 / 0.14)" }}
+                      transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                    />
+                  )}
+                  <Icon
+                    className="w-[15px] h-[15px] relative"
+                    style={{ color: active ? "oklch(0.81 0.155 200)" : "oklch(0.42 0.005 222)" }}
                   />
-                )}
-                <Icon
-                  className="w-5 h-5 relative"
+                </div>
+                <span
+                  className="text-[9px] font-semibold leading-none text-center whitespace-nowrap"
                   style={{
                     color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)",
+                    fontFamily: "var(--font-jakarta)",
+                    letterSpacing: "0.01em",
                   }}
-                />
-              </div>
-              <span
-                className="text-[9px] font-medium leading-none"
-                style={{
-                  color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)",
-                  fontFamily: "var(--font-jakarta)",
-                }}
-              >
-                {short}
-              </span>
-            </motion.div>
-          </Link>
-        );
-      })}
+                >
+                  {short}
+                </span>
+              </motion.div>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
