@@ -547,27 +547,64 @@ export default function DashboardPage() {
         {/* ── 1. Header ── */}
         <motion.div
           variants={item}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}
         >
-          {/* OnVision logo */}
-          <img
-            src="/onvision-logo.svg"
-            alt="OnVision"
-            style={{ height: 28, width: "auto", display: "block" }}
-          />
+          {/* Greeting */}
+          <div>
+            <h1
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontWeight: 700,
+                fontSize: 30,
+                letterSpacing: "-0.035em",
+                lineHeight: 1,
+                margin: 0,
+                color: "oklch(0.96 0.005 222)",
+              }}
+            >
+              {greeting},{" "}
+              <span style={{ color: "oklch(0.76 0.18 200)" }}>Adame.</span>
+            </h1>
+            <p
+              style={{
+                fontSize: 12,
+                color: "oklch(0.4 0.005 222)",
+                marginTop: 7,
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              {todayLabel}
+            </p>
+          </div>
 
-          {/* Date */}
-          <p
-            style={{
-              fontSize: 12,
-              color: "oklch(0.48 0.005 222)",
-              fontFamily: "var(--font-jakarta)",
-              textAlign: "right",
-              lineHeight: 1.4,
-            }}
-          >
-            {todayLabel}
-          </p>
+          {/* Live indicator */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 2 }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "oklch(0.72 0.2 155)",
+                boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)",
+                display: "block",
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "oklch(0.45 0.005 222)",
+                fontFamily: "var(--font-sans)",
+              }}
+            >
+              Live
+            </span>
+          </div>
         </motion.div>
 
         {/* ── 2. KPI Strip ── */}
