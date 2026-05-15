@@ -1,18 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 // ── Global sync status (communicated to TopBar via custom events) ────────────
 export type SyncStatus = "idle" | "syncing" | "ok" | "error";
 
-function emitSync(status: SyncStatus, detail?: string) {
+function emitSync(status: SyncStatus) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("ov-sync", { detail: { status, detail } })
-  );
+  window.dispatchEvent(new CustomEvent("ov-sync", { detail: { status } }));
 }
 
+/**
+ * Drop-in replacement for useState that persists to Supabase via /api/sync
+ * and caches locally in localStorage for instant first render.
+ *
+ * Uses a Next.js API route (server-side) for all Supabase calls so that
+ * the server's cookie-based session is used — no browser-client auth issues.
+ */
 export function useSupabaseData<T>(
   key: string,
   seed: () => T
@@ -31,28 +35,27 @@ export function useSupabaseData<T>(
   const skipNextSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Load from Supabase on mount ────────────────────────────────────────────
+  // ── Load from server on mount ──────────────────────────────────────────────
   useEffect(() => {
-    const supabase = getSupabase();
-
-    supabase
-      .from("app_data")
-      .select("value")
-      .eq("key", key)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    fetch(`/api/sync?key=${encodeURIComponent(key)}`)
+      .then((r) => r.json())
+      .then(({ value: serverValue, error }) => {
         if (error) {
-          // Log so developer can see it in browser console
-          console.error(`[ov-sync] Load error for "${key}":`, error.message, error.code);
-          emitSync("error", error.message);
-        } else if (data?.value != null) {
+          console.error(`[ov-sync] Load error for "${key}":`, error);
+          emitSync("error");
+        } else if (serverValue != null) {
           skipNextSave.current = true;
-          setValueRaw(data.value as T);
-          writeCache(key, data.value);
+          setValueRaw(serverValue as T);
+          writeCache(key, serverValue);
         } else {
-          // Nothing in DB yet — seed it
-          saveToSupabase(key, initialValueRef.current);
+          // Nothing in DB yet — seed it immediately
+          saveToServer(key, initialValueRef.current);
         }
+        initialized.current = true;
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error(`[ov-sync] Network error loading "${key}":`, e);
         initialized.current = true;
         setLoading(false);
       });
@@ -71,7 +74,7 @@ export function useSupabaseData<T>(
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveToSupabase(key, value);
+      saveToServer(key, value);
     }, 600);
 
     return () => {
@@ -109,33 +112,23 @@ function writeCache(key: string, value: unknown) {
   } catch {}
 }
 
-// Singleton Supabase client — reused across all hook instances
-let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
-  if (!_supabase) _supabase = createClient();
-  return _supabase;
-}
-
-async function saveToSupabase(key: string, value: unknown) {
+async function saveToServer(key: string, value: unknown) {
   emitSync("syncing");
   try {
-    const supabase = getSupabase();
-
-    const { error } = await supabase
-      .from("app_data")
-      .upsert(
-        { key, value, updated_at: new Date().toISOString() },
-        { onConflict: "key" }
-      );
-
-    if (error) {
-      console.error(`[ov-sync] Save error for "${key}":`, error.message, error.code, error.details);
-      emitSync("error", error.message);
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) {
+      console.error(`[ov-sync] Save error for "${key}":`, json.error);
+      emitSync("error");
     } else {
       emitSync("ok");
     }
   } catch (e) {
-    console.error(`[ov-sync] Network error for "${key}":`, e);
-    emitSync("error", "Network error");
+    console.error(`[ov-sync] Network error saving "${key}":`, e);
+    emitSync("error");
   }
 }
