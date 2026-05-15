@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, LogOut, Check, Cloud, CloudOff, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { SyncStatus } from "@/lib/hooks/use-supabase-data";
+import { globalUndo, type SyncStatus } from "@/lib/hooks/use-supabase-data";
 
 export function TopBar() {
   const router = useRouter();
@@ -48,12 +48,18 @@ export function TopBar() {
   }
 
   function handleUndo() {
-    const target = lastInputRef.current;
-    if (target && document.body.contains(target)) {
-      // Refocus the last edited field, then undo
-      target.focus();
-      document.execCommand("undo");
+    // 1. Try global undo (card moves, checkboxes, state changes)
+    const didUndo = globalUndo();
+
+    // 2. If nothing in global history, fall back to text-field undo
+    if (!didUndo) {
+      const target = lastInputRef.current;
+      if (target && document.body.contains(target)) {
+        target.focus();
+        document.execCommand("undo");
+      }
     }
+
     setUndoFeedback(true);
     setTimeout(() => setUndoFeedback(false), 900);
   }

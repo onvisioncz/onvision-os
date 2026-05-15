@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-// ── Global sync status (communicated to TopBar via custom events) ────────────
+// ── Sync status ────────────────────────────────────────────────────────────
 export type SyncStatus = "idle" | "syncing" | "ok" | "error";
 
 function emitSync(status: SyncStatus) {
@@ -10,18 +10,41 @@ function emitSync(status: SyncStatus) {
   window.dispatchEvent(new CustomEvent("ov-sync", { detail: { status } }));
 }
 
-/**
- * Drop-in replacement for useState that persists to Supabase via /api/sync
- * and caches locally in localStorage for instant first render.
- *
- * Uses a Next.js API route (server-side) for all Supabase calls so that
- * the server's cookie-based session is used — no browser-client auth issues.
- */
+// ── Global undo registry ───────────────────────────────────────────────────
+// Each useSupabaseData instance registers an undo handler.
+// globalUndo() calls the most recently registered one that has history.
+
+type UndoFn = () => boolean;
+const undoRegistry: UndoFn[] = [];
+
+function registerUndoHandler(fn: UndoFn): () => void {
+  undoRegistry.push(fn);
+  return () => {
+    const idx = undoRegistry.lastIndexOf(fn);
+    if (idx !== -1) undoRegistry.splice(idx, 1);
+  };
+}
+
+/** Call from TopBar "Zpět" button — undoes last state change on the current page. */
+export function globalUndo(): boolean {
+  // Try handlers from most recently registered (= active page) to oldest
+  for (let i = undoRegistry.length - 1; i >= 0; i--) {
+    if (undoRegistry[i]()) return true;
+  }
+  return false;
+}
+
+const MAX_HISTORY = 30;
+
+// ── Hook ───────────────────────────────────────────────────────────────────
+
 export function useSupabaseData<T>(
   key: string,
   seed: () => T
 ): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
   const initialValueRef = useRef<T | null>(null);
+  // History stack for undo — stores previous values
+  const historyRef = useRef<T[]>([]);
 
   const [value, setValueRaw] = useState<T>(() => {
     const fromCache = readCache<T>(key);
@@ -35,6 +58,21 @@ export function useSupabaseData<T>(
   const skipNextSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Register undo handler for this data instance ──────────────────────────
+  useEffect(() => {
+    return registerUndoHandler(() => {
+      if (historyRef.current.length === 0) return false;
+      const prev = historyRef.current.pop()!;
+      // Apply previous value directly (bypasses history tracking)
+      setValueRaw(prev);
+      // Immediately persist the undone state
+      writeCache(key, prev);
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => saveToServer(key, prev), 200);
+      return true;
+    });
+  }, [key]);
+
   // ── Load from server on mount ──────────────────────────────────────────────
   useEffect(() => {
     fetch(`/api/sync?key=${encodeURIComponent(key)}`)
@@ -44,11 +82,12 @@ export function useSupabaseData<T>(
           console.error(`[ov-sync] Load error for "${key}":`, error);
           emitSync("error");
         } else if (serverValue != null) {
+          // Server data — don't re-save and don't add to undo history
           skipNextSave.current = true;
           setValueRaw(serverValue as T);
           writeCache(key, serverValue);
         } else {
-          // Nothing in DB yet — seed it immediately
+          // Nothing in DB yet — upload current seed/cache
           saveToServer(key, initialValueRef.current);
         }
         initialized.current = true;
@@ -61,7 +100,7 @@ export function useSupabaseData<T>(
       });
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Persist whenever value changes ────────────────────────────────────────
+  // ── Persist to server whenever value changes ───────────────────────────────
   useEffect(() => {
     if (!initialized.current) return;
 
@@ -73,20 +112,30 @@ export function useSupabaseData<T>(
     writeCache(key, value);
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveToServer(key, value);
-    }, 600);
+    saveTimer.current = setTimeout(() => saveToServer(key, value), 600);
 
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [key, value]);
 
+  // ── Wrapped setter — records history on every user-driven change ───────────
   const setValue: React.Dispatch<React.SetStateAction<T>> = useCallback(
     (action) => {
-      setValueRaw((prev) =>
-        typeof action === "function" ? (action as (prev: T) => T)(prev) : action
-      );
+      setValueRaw((prev) => {
+        const next =
+          typeof action === "function"
+            ? (action as (p: T) => T)(prev)
+            : action;
+        // Record previous value in history so it can be undone
+        if (initialized.current) {
+          historyRef.current = [
+            ...historyRef.current.slice(-(MAX_HISTORY - 1)),
+            prev,
+          ];
+        }
+        return next;
+      });
     },
     []
   );
