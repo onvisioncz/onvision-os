@@ -549,41 +549,12 @@ export default function DashboardPage() {
           variants={item}
           style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
         >
-          {/* Logo mark + wordmark */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img
-              src="/onvision-mark.svg"
-              alt="OnVision"
-              style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }}
-            />
-            <div>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 800,
-                  fontSize: 22,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                  color: "oklch(0.97 0.005 222)",
-                  margin: 0,
-                }}
-              >
-                OnVision
-              </p>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: "oklch(0.42 0.005 222)",
-                  marginTop: 3,
-                  fontFamily: "var(--font-jakarta)",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Operační přehled
-              </p>
-            </div>
-          </div>
+          {/* OnVision logo */}
+          <img
+            src="/onvision-logo.svg"
+            alt="OnVision"
+            style={{ height: 28, width: "auto", display: "block" }}
+          />
 
           {/* Date */}
           <p
