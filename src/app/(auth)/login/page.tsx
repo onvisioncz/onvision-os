@@ -80,18 +80,22 @@ export default function LoginPage() {
               filter: { duration: 3, delay: 0.5, repeat: Infinity, ease: "easeInOut" },
             }}
           >
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="OnVision logo">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="OnVision">
+              {/* Background circle */}
               <circle cx="32" cy="32" r="32" fill="oklch(0.62 0.27 265)" />
-              <circle cx="32" cy="32" r="31" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-              {/* "O" — bold filled donut */}
-              <ellipse cx="20.5" cy="32" rx="11.5" ry="14.5" fill="white" />
-              <ellipse cx="20.5" cy="32" rx="6.5" ry="9.8" fill="oklch(0.62 0.27 265)" />
-              {/* "n" — left stem */}
-              <rect x="35" y="17" width="5.5" height="30" rx="2.5" fill="white" />
-              {/* "n" — arch + right stem */}
+
+              {/* "O" — perfect circle ring */}
+              <circle
+                cx="19.8" cy="32" r="10.4"
+                stroke="white" strokeWidth="4.6" fill="none"
+              />
+
+              {/* "n" — left-stem → cubic arch → right-stem */}
               <path
-                d="M40.5 26.5 C40.5 17 51.5 17 51.5 26.5 L51.5 47 L46 47 L46 28 C46 24 40.5 24 40.5 28 Z"
-                fill="white"
+                d="M37.4 47 L37.4 20.5 C37.4 16 53 16 53 31 L53 47"
+                stroke="white" strokeWidth="4.6"
+                strokeLinecap="round" strokeLinejoin="round"
+                fill="none"
               />
             </svg>
           </motion.div>

@@ -43,29 +43,35 @@ export function SidebarNav() {
           className="shrink-0"
           animate={{
             filter: [
-              "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
-              "drop-shadow(0 0 10px rgba(80, 80, 255, 0.85))",
-              "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
+              "drop-shadow(0 0 0px rgba(90, 80, 255, 0))",
+              "drop-shadow(0 0 9px rgba(90, 80, 255, 0.9))",
+              "drop-shadow(0 0 0px rgba(90, 80, 255, 0))",
             ],
           }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="OnVision logo">
-            {/* Circle background */}
+          {/*
+           * OnVision "On" logomark — stroke-based, matches actual brand logo:
+           * – "O": perfect circle ring, uniform stroke, round caps
+           * – "n": left stem + smooth cubic-bezier arch + right stem, same stroke weight
+           */}
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="OnVision">
+            {/* Background circle */}
             <circle cx="18" cy="18" r="18" fill="oklch(0.62 0.27 265)" />
-            {/* Subtle inner rim */}
-            <circle cx="18" cy="18" r="17.2" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
 
-            {/* "O" — bold oval ring using filled outer + knockout inner */}
-            <ellipse cx="11.5" cy="18" rx="7" ry="9" fill="white" />
-            <ellipse cx="11.5" cy="18" rx="3.9" ry="5.8" fill="oklch(0.62 0.27 265)" />
+            {/* "O" — perfect circle ring, same stroke weight as n */}
+            <circle
+              cx="11.2" cy="18" r="5.8"
+              stroke="white" strokeWidth="2.6" fill="none"
+            />
 
-            {/* "n" — left stem (filled rect) */}
-            <rect x="20.8" y="9" width="3.4" height="18" rx="1.6" fill="white" />
-            {/* "n" — arch body: filled compound shape */}
+            {/* "n" — single connected path: left-stem → cubic arch → right-stem */}
+            {/* M = bottom-left, L up to stem top, C = cubic bezier arch to right-stem top, L down */}
             <path
-              d="M24.2 16 C24.2 9 31 9 31 16 L31 27 L27.6 27 L27.6 17 C27.6 14.2 24.2 14.2 24.2 17 Z"
-              fill="white"
+              d="M21 26.5 L21 11.5 C21 9 29.8 9 29.8 17.5 L29.8 26.5"
+              stroke="white" strokeWidth="2.6"
+              strokeLinecap="round" strokeLinejoin="round"
+              fill="none"
             />
           </svg>
         </motion.div>
