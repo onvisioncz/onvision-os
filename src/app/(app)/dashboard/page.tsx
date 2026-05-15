@@ -547,40 +547,52 @@ export default function DashboardPage() {
         {/* ── 1. Header ── */}
         <motion.div
           variants={item}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
         >
-          <div>
-            <h1
-              style={{
-                fontFamily: "var(--font-outfit)",
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                fontSize: "clamp(22px, 3.5vw, 30px)",
-                lineHeight: 1.1,
-                color: "oklch(0.96 0.005 222)",
-                margin: 0,
-              }}
-            >
-              {greeting ? `${greeting}, Adame 👋` : "Dashboard"}
-            </h1>
-            <p
-              style={{
-                fontSize: 13,
-                color: "oklch(0.45 0.005 222)",
-                marginTop: 6,
-                fontFamily: "var(--font-jakarta)",
-              }}
-            >
-              OnVision s.r.o. · Operační přehled
-            </p>
+          {/* Logo mark + wordmark */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <img
+              src="/onvision-mark.svg"
+              alt="OnVision"
+              style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }}
+            />
+            <div>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 800,
+                  fontSize: 22,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1,
+                  color: "oklch(0.97 0.005 222)",
+                  margin: 0,
+                }}
+              >
+                OnVision
+              </p>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "oklch(0.42 0.005 222)",
+                  marginTop: 3,
+                  fontFamily: "var(--font-jakarta)",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Operační přehled
+              </p>
+            </div>
           </div>
+
+          {/* Date */}
           <p
             style={{
-              fontSize: 13,
-              color: "oklch(0.50 0.005 222)",
+              fontSize: 12,
+              color: "oklch(0.48 0.005 222)",
               fontFamily: "var(--font-jakarta)",
               textAlign: "right",
-              marginTop: 4,
+              lineHeight: 1.4,
             }}
           >
             {todayLabel}
