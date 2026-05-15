@@ -92,8 +92,8 @@ export default function GrowthPage() {
           onClick={() => setShowForm(v => !v)}
           className="btn-tactile flex items-center gap-2 px-4 py-2 rounded-[8px] text-[13px] font-semibold"
           style={{
-            background: "oklch(0.81 0.155 200)",
-            color: "oklch(0.09 0.008 222)",
+            background: "oklch(0.62 0.27 265)",
+            color: "oklch(0.97 0.004 265)",
           }}
           whileHover={{ filter: "brightness(1.08)" }}
           transition={{ duration: 0.15 }}
@@ -111,8 +111,8 @@ export default function GrowthPage() {
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
       >
         {[
-          { label: "Celkem dnů",        value: total,   icon: Calendar, color: "oklch(0.81 0.155 200)" },
-          { label: "Měsíční klienti",   value: monthly, icon: Users,    color: "oklch(0.81 0.155 200)" },
+          { label: "Celkem dnů",        value: total,   icon: Calendar, color: "oklch(0.62 0.27 265)" },
+          { label: "Měsíční klienti",   value: monthly, icon: Users,    color: "oklch(0.62 0.27 265)" },
           { label: "Jednorázovky",      value: oneoff,  icon: Film,     color: "oklch(0.64 0.21 290)"  },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="px-6 py-4 flex items-center gap-4">
@@ -207,7 +207,7 @@ export default function GrowthPage() {
             <motion.button
               onClick={addDay}
               className="btn-tactile px-4 py-2 rounded-[7px] text-[13px] font-semibold"
-              style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)" }}
+              style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }}
               whileHover={{ filter: "brightness(1.08)" }}
             >
               Uložit
@@ -238,7 +238,7 @@ export default function GrowthPage() {
             .sort((a, b) => b.date.localeCompare(a.date))
             .map((day, i) => {
               const isMonthly = day.type === "monthly";
-              const accentColor = isMonthly ? "oklch(0.81 0.155 200)" : "oklch(0.64 0.21 290)";
+              const accentColor = isMonthly ? "oklch(0.62 0.27 265)" : "oklch(0.64 0.21 290)";
               const dateObj = new Date(day.date);
               const dateStr = dateObj.toLocaleDateString("cs-CZ", { day: "numeric", month: "short", year: "numeric" });
 
@@ -289,9 +289,9 @@ export default function GrowthPage() {
       {/* Info box — Supabase pairing */}
       <div
         className="flex items-start gap-3 px-4 py-3.5 rounded-[10px] text-[12px]"
-        style={{ background: "oklch(0.81 0.155 200 / 0.05)", border: "1px solid oklch(0.81 0.155 200 / 0.12)" }}
+        style={{ background: "oklch(0.62 0.27 265 / 0.05)", border: "1px solid oklch(0.62 0.27 265 / 0.12)" }}
       >
-        <div className="w-1.5 h-1.5 rounded-full mt-1 shrink-0 pulse" style={{ background: "oklch(0.81 0.155 200)" }} />
+        <div className="w-1.5 h-1.5 rounded-full mt-1 shrink-0 pulse" style={{ background: "oklch(0.62 0.27 265)" }} />
         <div className="text-[--muted-foreground]">
           <span className="text-[--foreground] font-medium">Plánované propojení: </span>
           Data zde budou uložena do Supabase tabulky{" "}

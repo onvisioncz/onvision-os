@@ -35,7 +35,7 @@ export default function LoginPage() {
       style={{
         background: `
           radial-gradient(ellipse 80% 60% at 50% -10%,
-            oklch(0.81 0.155 200 / 0.08) 0%,
+            oklch(0.62 0.27 265 / 0.08) 0%,
             transparent 60%
           ),
           oklch(0.09 0.008 222)
@@ -47,8 +47,8 @@ export default function LoginPage() {
         className="pointer-events-none fixed inset-0 opacity-[0.025]"
         style={{
           backgroundImage: `
-            linear-gradient(oklch(0.81 0.155 200) 1px, transparent 1px),
-            linear-gradient(90deg, oklch(0.81 0.155 200) 1px, transparent 1px)
+            linear-gradient(oklch(0.62 0.27 265) 1px, transparent 1px),
+            linear-gradient(90deg, oklch(0.62 0.27 265) 1px, transparent 1px)
           `,
           backgroundSize: "48px 48px",
         }}
@@ -63,20 +63,20 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <motion.div
-            className="w-12 h-12 rounded-[14px] flex items-center justify-center mb-4"
-            style={{ background: "oklch(0.81 0.155 200)" }}
+            className="mb-4"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
           >
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-              <polygon
-                points="11,2 20,6.5 20,15.5 11,20 2,15.5 2,6.5"
-                fill="none"
-                stroke="oklch(0.09 0.008 222)"
-                strokeWidth="2.2"
-                strokeLinejoin="round"
-              />
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden>
+              <circle cx="26" cy="26" r="26" fill="oklch(0.62 0.27 265)" />
+              <circle cx="26" cy="26" r="26" fill="none" stroke="oklch(0.72 0.27 265)" strokeWidth="1" />
+              {/* "O" ring */}
+              <circle cx="18.5" cy="26" r="6.8" fill="none" stroke="white" strokeWidth="3.2" />
+              {/* "n" stem */}
+              <line x1="29" y1="19.5" x2="29" y2="33" stroke="white" strokeWidth="3.2" strokeLinecap="round" />
+              {/* "n" arch + right stem */}
+              <path d="M29 26 Q29 19.5 35.5 19.5 Q41.5 19.5 41.5 26 L41.5 33" stroke="white" strokeWidth="3.2" strokeLinecap="round" fill="none" />
             </svg>
           </motion.div>
           <h1
@@ -131,7 +131,7 @@ export default function LoginPage() {
                   border: "1px solid oklch(1 0 0 / 0.09)",
                   fontFamily: "var(--font-jakarta)",
                 }}
-                onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+                onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
                 onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
               />
             </div>
@@ -154,7 +154,7 @@ export default function LoginPage() {
                     border: "1px solid oklch(1 0 0 / 0.09)",
                     fontFamily: "var(--font-jakarta)",
                   }}
-                  onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+                  onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
                   onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
                 />
                 <button
@@ -176,8 +176,8 @@ export default function LoginPage() {
               disabled={loading}
               className="btn-tactile w-full py-2.5 rounded-[8px] text-[13px] font-semibold mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: "oklch(0.81 0.155 200)",
-                color: "oklch(0.09 0.008 222)",
+                background: "oklch(0.62 0.27 265)",
+                color: "oklch(0.97 0.004 265)",
                 fontFamily: "var(--font-outfit)",
               }}
               whileHover={!loading ? { filter: "brightness(1.08)" } : {}}

@@ -138,7 +138,7 @@ function TaskRow({ text, type, urgent }: { text: string; type: string; urgent: b
     >
       <motion.button
         className="shrink-0 text-[--muted-foreground] btn-tactile"
-        whileHover={{ color: "oklch(0.81 0.155 200)" }}
+        whileHover={{ color: "oklch(0.62 0.27 265)" }}
         transition={{ duration: 0.12 }}
       >
         <Circle className="w-[13px] h-[13px]" />
@@ -157,7 +157,7 @@ export default function DashboardPage() {
       style={{
         background: `
           radial-gradient(ellipse 60% 40% at 100% 0%,
-            oklch(0.81 0.155 200 / 0.04) 0%,
+            oklch(0.62 0.27 265 / 0.04) 0%,
             transparent 70%
           ),
           var(--background)
@@ -289,7 +289,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-4 text-[12px] text-[--muted-foreground]">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-[2px] rounded" style={{ background: "oklch(0.81 0.155 200)" }} />
+                  <span className="w-3 h-[2px] rounded" style={{ background: "oklch(0.62 0.27 265)" }} />
                   Tržby
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -302,8 +302,8 @@ export default function DashboardPage() {
               <AreaChart data={revenue} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="oklch(0.81 0.155 200)" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="oklch(0.81 0.155 200)" stopOpacity={0} />
+                    <stop offset="0%"   stopColor="oklch(0.62 0.27 265)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="oklch(0.62 0.27 265)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%"   stopColor="oklch(0.64 0.21 290)" stopOpacity={0.15} />
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                   tickFormatter={(v: number) => `${v}k`}
                 />
                 <Tooltip content={<ChartTip />} cursor={{ stroke: "oklch(1 0 0 / 0.06)", strokeWidth: 1 }} />
-                <Area type="monotone" dataKey="rev" stroke="oklch(0.81 0.155 200)" strokeWidth={2}
+                <Area type="monotone" dataKey="rev" stroke="oklch(0.62 0.27 265)" strokeWidth={2}
                   fill="url(#gRev)" dot={false} />
                 <Area type="monotone" dataKey="exp" stroke="oklch(0.64 0.21 290)" strokeWidth={2}
                   fill="url(#gExp)" dot={false} />
@@ -350,9 +350,9 @@ export default function DashboardPage() {
                 href="/growth"
                 className="btn-tactile flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-[6px] transition-colors"
                 style={{
-                  background: "oklch(0.81 0.155 200 / 0.1)",
-                  color: "oklch(0.81 0.155 200)",
-                  border: "1px solid oklch(0.81 0.155 200 / 0.2)",
+                  background: "oklch(0.62 0.27 265 / 0.1)",
+                  color: "oklch(0.62 0.27 265)",
+                  border: "1px solid oklch(0.62 0.27 265 / 0.2)",
                 }}
               >
                 + Přidat den
@@ -361,7 +361,7 @@ export default function DashboardPage() {
             {/* Legenda */}
             <div className="flex items-center gap-4 mb-4 text-[11px] text-[--muted-foreground]">
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "oklch(0.81 0.155 200 / 0.85)" }} />
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "oklch(0.62 0.27 265 / 0.85)" }} />
                 Měsíční klienti
               </span>
               <span className="flex items-center gap-1.5">
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                   labelStyle={{ color: "oklch(0.40 0.005 222)", marginBottom: 4 }}
                 />
                 <Bar dataKey="monthly" name="Měsíční klienti" stackId="a"
-                  fill="oklch(0.81 0.155 200 / 0.85)" radius={[0, 0, 0, 0]} />
+                  fill="oklch(0.62 0.27 265 / 0.85)" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="oneoff"  name="Jednorázovky"    stackId="a"
                   fill="oklch(0.64 0.21 290 / 0.85)" radius={[3, 3, 0, 0]} />
               </BarChart>
@@ -414,7 +414,7 @@ export default function DashboardPage() {
             animate="show"
           >
             {[
-              { label: "Dnes",        icon: Clock,        color: "oklch(0.81 0.155 200)", tasks: todayTasks },
+              { label: "Dnes",        icon: Clock,        color: "oklch(0.62 0.27 265)", tasks: todayTasks },
               { label: "Tento týden", icon: CheckCircle2, color: "oklch(0.64 0.21 290)",  tasks: weekTasks  },
               { label: "Tento měsíc", icon: Film,         color: "oklch(0.74 0.165 75)",  tasks: monthTasks },
             ].map(({ label, icon: Icon, color, tasks }) => (
@@ -458,7 +458,7 @@ export default function DashboardPage() {
           >
             {starred.map(p => {
               const color = p.type === "monthly"
-                ? "oklch(0.81 0.155 200)"
+                ? "oklch(0.62 0.27 265)"
                 : "oklch(0.64 0.21 290)";
               return (
                 <motion.div key={p.id} variants={stagger.item} whileHover={{ y: -1 }}
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                 className="card w-full px-5 py-3.5 text-[13px] text-[--muted-foreground]
                            transition-colors hover:text-[--foreground] btn-tactile"
                 style={{ borderStyle: "dashed" }}
-                whileHover={{ borderColor: "oklch(0.81 0.155 200 / 0.3)" }}
+                whileHover={{ borderColor: "oklch(0.62 0.27 265 / 0.3)" }}
                 transition={{ duration: 0.15 }}
               >
                 + Přidat projekt
@@ -527,7 +527,7 @@ export default function DashboardPage() {
               <p className="text-[11px] text-[--muted-foreground]">Aktivní Meta kampaně · Květen 2026</p>
             </div>
             <a href="/ads" className="ml-auto text-[11px] font-semibold flex items-center gap-1 btn-tactile px-2 py-1 rounded-[5px]"
-              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+              style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.08)",border:"1px solid oklch(0.62 0.27 265 / 0.18)"}}>
               Vše <ArrowUpRight className="w-3 h-3"/>
             </a>
           </div>
@@ -562,15 +562,15 @@ export default function DashboardPage() {
         <SpotlightCard className="p-5">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
-              style={{background:"oklch(0.81 0.155 200 / 0.12)",border:"1px solid oklch(0.81 0.155 200 / 0.2)"}}>
-              <Camera className="w-3.5 h-3.5" style={{color:"oklch(0.81 0.155 200)"}}/>
+              style={{background:"oklch(0.62 0.27 265 / 0.12)",border:"1px solid oklch(0.62 0.27 265 / 0.2)"}}>
+              <Camera className="w-3.5 h-3.5" style={{color:"oklch(0.62 0.27 265)"}}/>
             </div>
             <div>
               <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Produkční mapa</p>
               <p className="text-[11px] text-[--muted-foreground]">Nadcházející natáčecí dny · Květen</p>
             </div>
             <a href="/calendar" className="ml-auto text-[11px] font-semibold flex items-center gap-1 btn-tactile px-2 py-1 rounded-[5px]"
-              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+              style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.08)",border:"1px solid oklch(0.62 0.27 265 / 0.18)"}}>
               Kalendář <ArrowUpRight className="w-3 h-3"/>
             </a>
           </div>
@@ -583,7 +583,7 @@ export default function DashboardPage() {
               { datum:"29. 5.", klient:"EFFECT Clinic — brand content",     typ:"Focení",   clenove:["Adam","Matěj"] },
             ].map(ev=>{
               const isShoot = ev.typ==="Natáčení";
-              const c = isShoot?"oklch(0.81 0.155 200)":"oklch(0.67 0.155 155)";
+              const c = isShoot?"oklch(0.62 0.27 265)":"oklch(0.67 0.155 155)";
               return (
                 <div key={ev.datum} className="flex items-center gap-3">
                   <div className="w-10 shrink-0 text-center">
@@ -622,7 +622,7 @@ export default function DashboardPage() {
           {[
             { label:"Příjmy",  value:134000, color:"oklch(0.67 0.155 155)", pct:100 },
             { label:"Výdaje",  value:48000,  color:"oklch(0.65 0.22 25)",   pct:35.8 },
-            { label:"Zisk",    value:86000,  color:"oklch(0.81 0.155 200)", pct:64.2 },
+            { label:"Zisk",    value:86000,  color:"oklch(0.62 0.27 265)", pct:64.2 },
           ].map(({label,value,color,pct})=>(
             <div key={label}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[--muted-foreground] mb-2">{label}</p>
@@ -642,10 +642,10 @@ export default function DashboardPage() {
         <div className="mt-4 pt-4 flex items-center gap-3 border-t" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
           <span className="text-[11px] text-[--muted-foreground]">Čistá marže</span>
           <div className="flex-1 h-[4px] rounded-full overflow-hidden" style={{background:"oklch(1 0 0 / 0.07)"}}>
-            <motion.div className="h-full rounded-full" style={{background:"oklch(0.81 0.155 200)"}}
+            <motion.div className="h-full rounded-full" style={{background:"oklch(0.62 0.27 265)"}}
               initial={{width:0}} animate={{width:"64.2%"}} transition={{duration:1,delay:0.5,ease:[0.23,1,0.32,1]}}/>
           </div>
-          <span className="num text-[13px] font-bold shrink-0" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.81 0.155 200)"}}>64,2%</span>
+          <span className="num text-[13px] font-bold shrink-0" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.62 0.27 265)"}}>64,2%</span>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.67 0.155 155 / 0.12)",color:"oklch(0.67 0.155 155)"}}>+38,7% vs. Duben</span>
         </div>
       </SpotlightCard>

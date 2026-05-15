@@ -40,7 +40,7 @@ interface Project {
 /* ── Column definitions ─────────────────────────────────────────────────────── */
 const COLUMNS: { id: ColumnId; label: string; tint: string; border: string }[] = [
   { id: "poptavka",     label: "Poptávka",      tint: "oklch(0.64 0.21 290 / 0.08)",  border: "oklch(0.64 0.21 290 / 0.22)" },
-  { id: "nabidka",      label: "Nabídka",       tint: "oklch(0.81 0.155 200 / 0.08)", border: "oklch(0.81 0.155 200 / 0.22)" },
+  { id: "nabidka",      label: "Nabídka",       tint: "oklch(0.62 0.27 265 / 0.08)", border: "oklch(0.62 0.27 265 / 0.22)" },
   { id: "potvrzeno",    label: "Potvrzeno",     tint: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.22)" },
   { id: "preprodukce",  label: "Pre-produkce",  tint: "oklch(0.74 0.165 75 / 0.08)",  border: "oklch(0.74 0.165 75 / 0.22)" },
   { id: "nataceni",     label: "Natáčení",      tint: "oklch(0.65 0.22 25 / 0.08)",   border: "oklch(0.65 0.22 25 / 0.22)" },
@@ -170,7 +170,7 @@ function fKc(n: number) {
 }
 
 function fmtStyleByTyp(typ: Typ) {
-  if (typ === "VIDEO")        return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)",  border: "oklch(0.81 0.155 200 / 0.25)" };
+  if (typ === "VIDEO")        return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",  border: "oklch(0.62 0.27 265 / 0.25)" };
   if (typ === "FOTO")         return { color: "oklch(0.74 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.09)",  border: "oklch(0.74 0.165 75 / 0.22)" };
   if (typ === "VIDEO + FOTO") return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.1)",   border: "oklch(0.64 0.21 290 / 0.22)" };
   if (typ === "BTS")          return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.07)",  border: "oklch(0.74 0.165 75 / 0.18)" };
@@ -184,7 +184,7 @@ function prioritaStyle(p: Priorita) {
 }
 
 const AVATAR_COLORS: Record<string, string> = {
-  Adam:  "oklch(0.81 0.155 200 / 0.85)",
+  Adam:  "oklch(0.62 0.27 265 / 0.85)",
   Honza: "oklch(0.67 0.155 155 / 0.85)",
 };
 
@@ -323,7 +323,7 @@ export default function OneoffsPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <KanbanSquare className="w-6 h-6" style={{ color: "oklch(0.81 0.155 200)" }} />
+          <KanbanSquare className="w-6 h-6" style={{ color: "oklch(0.62 0.27 265)" }} />
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.95 0.005 222)" }}>
             Jednorázovky
           </h1>
@@ -331,7 +331,7 @@ export default function OneoffsPage() {
         <button
           onClick={() => addToColumn("poptavka")}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-          style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)" }}
+          style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }}
         >
           <Plus className="w-4 h-4" />
           Nový projekt
@@ -350,7 +350,7 @@ export default function OneoffsPage() {
             style={{ background: "oklch(0.13 0.008 222)", border: "1px solid oklch(1 0 0 / 0.07)" }}
           >
             <span style={{ color: "oklch(0.45 0.005 222)" }}>{s.label}</span>
-            <span className="font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}>
+            <span className="font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
               {s.value}
             </span>
           </div>
@@ -367,7 +367,7 @@ export default function OneoffsPage() {
             className="px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
             style={
               filterTyp === t
-                ? { background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)" }
+                ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }
                 : { background: "oklch(0.13 0.008 222)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }
             }
           >
@@ -383,7 +383,7 @@ export default function OneoffsPage() {
             className="px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
             style={
               filterClen === c
-                ? { background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)" }
+                ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }
                 : { background: "oklch(0.13 0.008 222)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }
             }
           >
@@ -672,7 +672,7 @@ function ProjectModal({
             {editing ? (
               <input
                 className="w-full text-lg font-bold bg-transparent outline-none border-b pb-0.5"
-                style={{ color: "oklch(0.93 0.005 222)", borderColor: "oklch(0.81 0.155 200 / 0.4)", fontFamily: "var(--font-outfit)" }}
+                style={{ color: "oklch(0.93 0.005 222)", borderColor: "oklch(0.62 0.27 265 / 0.4)", fontFamily: "var(--font-outfit)" }}
                 value={editDraft?.title ?? ""}
                 onChange={(e) => field("title", e.target.value)}
               />
@@ -923,7 +923,7 @@ function ProjectModal({
               <button
                 onClick={onEditSave}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-                style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)" }}
+                style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }}
               >
                 <Check className="w-4 h-4" /> Uložit
               </button>
@@ -992,13 +992,13 @@ function ColumnSelect({ current, onSelect }: { current: ColumnId; onSelect: (c: 
                 key={col.id}
                 className="w-full flex items-center px-3 py-2 text-sm text-left hover:opacity-80 transition-opacity"
                 style={{
-                  color: col.id === current ? "oklch(0.81 0.155 200)" : "oklch(0.7 0.005 222)",
-                  background: col.id === current ? "oklch(0.81 0.155 200 / 0.08)" : "transparent",
+                  color: col.id === current ? "oklch(0.62 0.27 265)" : "oklch(0.7 0.005 222)",
+                  background: col.id === current ? "oklch(0.62 0.27 265 / 0.08)" : "transparent",
                 }}
                 onClick={() => { onSelect(col.id); setOpen(false); }}
               >
                 {col.label}
-                {col.id === current && <Check className="w-3.5 h-3.5 ml-auto" style={{ color: "oklch(0.81 0.155 200)" }} />}
+                {col.id === current && <Check className="w-3.5 h-3.5 ml-auto" style={{ color: "oklch(0.62 0.27 265)" }} />}
               </button>
             ))}
           </motion.div>

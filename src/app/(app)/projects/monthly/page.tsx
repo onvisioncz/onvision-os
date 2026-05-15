@@ -59,7 +59,7 @@ function makeSeed(): RetainerClient[] {
       id: 1,
       name: "SENIMED s.r.o.",
       logo: "SE",
-      color: "oklch(0.81 0.155 200)",
+      color: "oklch(0.62 0.27 265)",
       pausal: 35000,
       aktivni: true,
       mesic: "Květen",
@@ -157,9 +157,9 @@ const CAT_META: Record<
   "sociální sítě": {
     label: "Soc. sítě",
     icon: <Share2 className="w-3 h-3" />,
-    color: "oklch(0.81 0.155 200)",
-    bg: "oklch(0.81 0.155 200 / 0.1)",
-    border: "oklch(0.81 0.155 200 / 0.2)",
+    color: "oklch(0.62 0.27 265)",
+    bg: "oklch(0.62 0.27 265 / 0.1)",
+    border: "oklch(0.62 0.27 265 / 0.2)",
   },
   video: {
     label: "Video",
@@ -214,7 +214,7 @@ function fKc(n: number): string {
 
 function progressColor(pct: number): string {
   if (pct === 100) return "oklch(0.67 0.155 155)";
-  if (pct >= 60)   return "oklch(0.81 0.155 200)";
+  if (pct >= 60)   return "oklch(0.62 0.27 265)";
   if (pct >= 30)   return "oklch(0.78 0.165 75)";
   return "oklch(0.65 0.22 25)";
 }
@@ -246,7 +246,7 @@ function FInput({
       onChange={(e) => onChange(e.target.value)}
       className={iCls}
       style={iSty}
-      onFocus={(e) => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+      onFocus={(e) => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
       onBlur={(e) => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
     />
   );
@@ -269,7 +269,7 @@ function FTextarea({
       rows={3}
       className={`${iCls} resize-none`}
       style={iSty}
-      onFocus={(e) => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+      onFocus={(e) => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
       onBlur={(e) => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
     />
   );
@@ -388,8 +388,8 @@ function ModalWrap({
             whileTap={{ scale: 0.96 }}
             className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
             style={{
-              background: "oklch(0.81 0.155 200)",
-              color: "oklch(0.09 0.008 222)",
+              background: "oklch(0.62 0.27 265)",
+              color: "oklch(0.97 0.004 265)",
               fontFamily: "var(--font-outfit)",
             }}
           >
@@ -940,7 +940,7 @@ type ClientFormState = Omit<RetainerClient, "id" | "deliverables"> & { id?: numb
 const EMPTY_CLIENT: ClientFormState = {
   name: "",
   logo: "",
-  color: "oklch(0.81 0.155 200)",
+  color: "oklch(0.62 0.27 265)",
   pausal: 0,
   aktivni: true,
   mesic: "Květen",
@@ -950,7 +950,7 @@ const EMPTY_CLIENT: ClientFormState = {
 };
 
 const PRESET_COLORS = [
-  "oklch(0.81 0.155 200)",
+  "oklch(0.62 0.27 265)",
   "oklch(0.67 0.155 155)",
   "oklch(0.78 0.165 75)",
   "oklch(0.72 0.18 290)",
@@ -1103,7 +1103,7 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
             fontWeight: 700,
             fontSize: "26px",
             letterSpacing: "-0.025em",
-            color: "oklch(0.81 0.155 200)",
+            color: "oklch(0.62 0.27 265)",
           }}
         >
           {fKc(totalPausal)}
@@ -1176,8 +1176,8 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
       <div
         className="card p-4"
         style={{
-          background: "oklch(0.81 0.155 200 / 0.05)",
-          borderColor: "oklch(0.81 0.155 200 / 0.15)",
+          background: "oklch(0.62 0.27 265 / 0.05)",
+          borderColor: "oklch(0.62 0.27 265 / 0.15)",
         }}
       >
         <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
@@ -1185,7 +1185,7 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
         </p>
         <p
           className="num text-[18px] font-bold leading-none"
-          style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}
+          style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}
         >
           {fKc(totalPausal)}
         </p>
@@ -1327,7 +1327,7 @@ export default function MonthlyPage() {
     <div
       className="p-4 md:p-7 min-h-screen"
       style={{
-        background: `radial-gradient(ellipse 55% 40% at 100% 0%, oklch(0.81 0.155 200 / 0.04) 0%, transparent 70%), var(--background)`,
+        background: `radial-gradient(ellipse 55% 40% at 100% 0%, oklch(0.62 0.27 265 / 0.04) 0%, transparent 70%), var(--background)`,
       }}
     >
       {/* ── Page header ── */}
@@ -1341,11 +1341,11 @@ export default function MonthlyPage() {
           <div
             className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
             style={{
-              background: "oklch(0.81 0.155 200 / 0.12)",
-              border: "1px solid oklch(0.81 0.155 200 / 0.2)",
+              background: "oklch(0.62 0.27 265 / 0.12)",
+              border: "1px solid oklch(0.62 0.27 265 / 0.2)",
             }}
           >
-            <Users className="w-4 h-4" style={{ color: "oklch(0.81 0.155 200)" }} />
+            <Users className="w-4 h-4" style={{ color: "oklch(0.62 0.27 265)" }} />
           </div>
           <div>
             <h1
@@ -1365,9 +1365,9 @@ export default function MonthlyPage() {
           <div
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
             style={{
-              background: "oklch(0.81 0.155 200 / 0.09)",
-              border: "1px solid oklch(0.81 0.155 200 / 0.2)",
-              color: "oklch(0.81 0.155 200)",
+              background: "oklch(0.62 0.27 265 / 0.09)",
+              border: "1px solid oklch(0.62 0.27 265 / 0.2)",
+              color: "oklch(0.62 0.27 265)",
             }}
           >
             <span className="pulse w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
@@ -1380,8 +1380,8 @@ export default function MonthlyPage() {
             whileTap={{ scale: 0.95 }}
             className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[12px] font-semibold"
             style={{
-              background: "oklch(0.81 0.155 200)",
-              color: "oklch(0.09 0.008 222)",
+              background: "oklch(0.62 0.27 265)",
+              color: "oklch(0.97 0.004 265)",
               fontFamily: "var(--font-outfit)",
             }}
           >
@@ -1412,9 +1412,9 @@ export default function MonthlyPage() {
                 style={
                   active
                     ? {
-                        background: "oklch(0.81 0.155 200 / 0.1)",
-                        color: "oklch(0.81 0.155 200)",
-                        border: "1px solid oklch(0.81 0.155 200 / 0.25)",
+                        background: "oklch(0.62 0.27 265 / 0.1)",
+                        color: "oklch(0.62 0.27 265)",
+                        border: "1px solid oklch(0.62 0.27 265 / 0.25)",
                       }
                     : {
                         background: "transparent",
@@ -1428,8 +1428,8 @@ export default function MonthlyPage() {
                   <span
                     className="ml-1.5 inline-flex items-center px-1 py-0 rounded text-[9px] font-bold"
                     style={{
-                      background: "oklch(0.81 0.155 200 / 0.15)",
-                      color: "oklch(0.81 0.155 200)",
+                      background: "oklch(0.62 0.27 265 / 0.15)",
+                      color: "oklch(0.62 0.27 265)",
                     }}
                   >
                     aktuální
@@ -1519,7 +1519,7 @@ export default function MonthlyPage() {
           <motion.div variants={stagger.item}>
             <motion.button
               onClick={() => setEditClient("new")}
-              whileHover={{ borderColor: "oklch(0.81 0.155 200 / 0.3)" }}
+              whileHover={{ borderColor: "oklch(0.62 0.27 265 / 0.3)" }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.15 }}
               className="card w-full h-full min-h-[160px] flex flex-col items-center justify-center gap-3 btn-tactile"

@@ -45,14 +45,14 @@ const ACCENT = "oklch(0.67 0.155 155)";
 
 const PRIORITY_STYLE: Record<Priorita, { color: string; bg: string; border: string }> = {
   Urgentní: { color: "oklch(0.74 0.18 45)",   bg: "oklch(0.74 0.18 45 / 0.12)",  border: "oklch(0.74 0.18 45 / 0.25)" },
-  Vysoká:   { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.12)", border: "oklch(0.81 0.155 200 / 0.22)" },
+  Vysoká:   { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.12)", border: "oklch(0.62 0.27 265 / 0.22)" },
   Střední:  { color: "oklch(0.82 0.16 85)",   bg: "oklch(0.82 0.16 85 / 0.1)",   border: "oklch(0.82 0.16 85 / 0.22)" },
   Nízká:    { color: "oklch(0.45 0.005 222)", bg: "oklch(1 0 0 / 0.04)",          border: "oklch(1 0 0 / 0.1)" },
 };
 
 const STATUS_COLOR: Record<TStatus, string> = {
   Nové:    "oklch(0.45 0.005 222)",
-  Probíhá: "oklch(0.81 0.155 200)",
+  Probíhá: "oklch(0.62 0.27 265)",
   Review:  "oklch(0.82 0.16 85)",
   Hotovo:  "oklch(0.67 0.155 155)",
 };
@@ -309,7 +309,7 @@ export default function UkolyPage() {
         transition={{ duration: 0.35, delay: 0.06 }}
       >
         {[
-          { label: "Aktivní", value: active, color: "oklch(0.81 0.155 200)" },
+          { label: "Aktivní", value: active, color: "oklch(0.62 0.27 265)" },
           { label: "Urgentní", value: urgent, color: "oklch(0.74 0.18 45)" },
           { label: "Dokončeno", value: done, color: ACCENT },
         ].map(({ label, value, color }) => (

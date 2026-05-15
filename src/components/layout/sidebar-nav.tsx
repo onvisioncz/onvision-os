@@ -38,31 +38,46 @@ export function SidebarNav() {
     >
       {/* Wordmark */}
       <div className="px-4 py-5 flex items-center gap-2.5">
-        <div
-          className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
-          style={{ background: "oklch(0.81 0.155 200)" }}
-        >
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
-            <polygon
-              points="6.5,1.5 11.5,4.5 11.5,9 6.5,12 1.5,9 1.5,4.5"
-              fill="none"
-              stroke="oklch(0.09 0.008 222)"
-              strokeWidth="1.7"
-              strokeLinejoin="round"
-            />
+        {/* OnVision "On" circle mark */}
+        <div className="shrink-0 w-7 h-7">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
+            <circle cx="14" cy="14" r="14" fill="oklch(0.62 0.27 265)" />
+            <circle cx="14" cy="14" r="14" fill="none" stroke="oklch(0.72 0.27 265)" strokeWidth="0.6" />
+            {/* "O" — hollow ring */}
+            <circle cx="9.8" cy="14" r="3.5" fill="none" stroke="white" strokeWidth="1.8" />
+            {/* "n" — vertical stem */}
+            <line x1="15.4" y1="10.6" x2="15.4" y2="17.4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+            {/* "n" — arch + right stem */}
+            <path d="M15.4 13.8 Q15.6 10.6 18.8 10.6 Q21.8 10.6 21.8 13.8 L21.8 17.4" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
           </svg>
         </div>
-        <span
-          className="text-[15px] tracking-tight"
-          style={{
-            fontFamily: "var(--font-outfit)",
-            fontWeight: 700,
-            letterSpacing: "-0.03em",
-            color: "var(--foreground)",
-          }}
-        >
-          OnVision OS
-        </span>
+        <div className="flex flex-col leading-none gap-[1px]">
+          <span
+            style={{
+              fontFamily: "var(--font-outfit)",
+              fontWeight: 800,
+              fontSize: "13.5px",
+              letterSpacing: "-0.04em",
+              color: "oklch(0.95 0.008 265)",
+              lineHeight: 1,
+            }}
+          >
+            OnVision
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-jakarta)",
+              fontWeight: 600,
+              fontSize: "9px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "oklch(0.38 0.008 265)",
+              lineHeight: 1,
+            }}
+          >
+            OS
+          </span>
+        </div>
       </div>
 
       <div className="mx-4 h-px mb-4" style={{ background: "var(--sidebar-border)" }} />
@@ -80,8 +95,8 @@ export function SidebarNav() {
                   active ? "text-[--primary]" : "text-[--muted-foreground]"
                 )}
                 style={active ? {
-                  background: "oklch(0.81 0.155 200 / 0.12)",
-                  border: "1px solid oklch(0.81 0.155 200 / 0.18)",
+                  background: "oklch(0.62 0.27 265 / 0.12)",
+                  border: "1px solid oklch(0.62 0.27 265 / 0.18)",
                 } : { border: "1px solid transparent" }}
                 whileHover={!active ? { color: "oklch(0.82 0.005 222)" } : {}}
                 whileTap={{ scale: 0.97 }}
@@ -92,15 +107,15 @@ export function SidebarNav() {
                     layoutId="nav-active-bar"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
                     style={{
-                      background: "oklch(0.81 0.155 200)",
-                      boxShadow: "0 0 8px oklch(0.81 0.155 200 / 0.7)",
+                      background: "oklch(0.62 0.27 265)",
+                      boxShadow: "0 0 8px oklch(0.62 0.27 265 / 0.7)",
                     }}
                     transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
                   />
                 )}
                 <Icon
                   className="w-[14px] h-[14px] shrink-0"
-                  style={{ color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)" }}
+                  style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.38 0.005 222)" }}
                 />
                 {label}
               </motion.div>
@@ -131,8 +146,8 @@ export function SidebarNav() {
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
             style={{
-              background: "oklch(0.81 0.155 200)",
-              color: "oklch(0.09 0.008 222)",
+              background: "oklch(0.62 0.27 265)",
+              color: "oklch(0.97 0.004 265)",
               fontFamily: "var(--font-outfit)",
               fontWeight: 700,
             }}
@@ -195,8 +210,8 @@ export function MobileNav() {
               >
                 <div className="relative flex items-center justify-center w-8 h-8 rounded-[8px]"
                   style={active ? {
-                    background: "oklch(0.81 0.155 200 / 0.14)",
-                    border: "1px solid oklch(0.81 0.155 200 / 0.22)",
+                    background: "oklch(0.62 0.27 265 / 0.14)",
+                    border: "1px solid oklch(0.62 0.27 265 / 0.22)",
                   } : {
                     border: "1px solid transparent",
                   }}
@@ -205,19 +220,19 @@ export function MobileNav() {
                     <motion.span
                       layoutId="mobile-nav-bg"
                       className="absolute inset-0 rounded-[8px]"
-                      style={{ background: "oklch(0.81 0.155 200 / 0.14)" }}
+                      style={{ background: "oklch(0.62 0.27 265 / 0.14)" }}
                       transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                     />
                   )}
                   <Icon
                     className="w-[15px] h-[15px] relative"
-                    style={{ color: active ? "oklch(0.81 0.155 200)" : "oklch(0.42 0.005 222)" }}
+                    style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.42 0.005 222)" }}
                   />
                 </div>
                 <span
                   className="text-[9px] font-semibold leading-none text-center whitespace-nowrap"
                   style={{
-                    color: active ? "oklch(0.81 0.155 200)" : "oklch(0.38 0.005 222)",
+                    color: active ? "oklch(0.62 0.27 265)" : "oklch(0.38 0.005 222)",
                     fontFamily: "var(--font-jakarta)",
                     letterSpacing: "0.01em",
                   }}

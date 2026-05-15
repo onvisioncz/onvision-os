@@ -23,7 +23,7 @@ const ACCENT = "oklch(0.72 0.14 195)";
 type ViewMode = "Příjmy" | "Zisk" | "Náklady";
 
 const VIEW_CONFIG: Record<ViewMode, { key: keyof (typeof MESICE)[0]; color: string }> = {
-  Příjmy:  { key: "prijmy",  color: "oklch(0.81 0.155 200)" },
+  Příjmy:  { key: "prijmy",  color: "oklch(0.62 0.27 265)" },
   Zisk:    { key: "zisk",    color: "oklch(0.67 0.155 155)" },
   Náklady: { key: "naklady", color: "oklch(0.74 0.18 45)" },
 };
@@ -174,7 +174,7 @@ export default function ReportyPage() {
             unit: "Kč",
             sub: "Leden–Duben 2026",
             icon: TrendingUp,
-            color: "oklch(0.81 0.155 200)",
+            color: "oklch(0.62 0.27 265)",
           },
           {
             label: "YTD Zisk",
@@ -299,7 +299,7 @@ export default function ReportyPage() {
 
               <div className="space-y-2">
                 {([
-                  { label: "Příjmy",  value: m.prijmy,  color: "oklch(0.81 0.155 200)" },
+                  { label: "Příjmy",  value: m.prijmy,  color: "oklch(0.62 0.27 265)" },
                   { label: "Náklady", value: m.naklady, color: "oklch(0.74 0.18 45)" },
                   { label: "Zisk",    value: m.zisk,    color: "oklch(0.67 0.155 155)" },
                 ] as const).map(({ label, value, color }) => (
@@ -349,7 +349,7 @@ export default function ReportyPage() {
         </p>
         <div className="grid grid-cols-3 gap-6">
           {[
-            { label: "Celkové příjmy",   value: YTD_PRIJMY,  pct: 100,                                    color: "oklch(0.81 0.155 200)" },
+            { label: "Celkové příjmy",   value: YTD_PRIJMY,  pct: 100,                                    color: "oklch(0.62 0.27 265)" },
             { label: "Celkové náklady",  value: YTD_NAKLADY, pct: Math.round(YTD_NAKLADY / YTD_PRIJMY * 100), color: "oklch(0.74 0.18 45)" },
             { label: "Celkový zisk",     value: YTD_ZISK,    pct: Math.round(YTD_ZISK / YTD_PRIJMY * 100),   color: "oklch(0.67 0.155 155)" },
           ].map(({ label, value, pct, color }) => (

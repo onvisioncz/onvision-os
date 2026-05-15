@@ -161,7 +161,7 @@ export default function SchvaleniPage() {
         {[
           { label: "Čeká na schválení",     value: String(pending.length),                         unit: "",   color: ACCENT },
           { label: "Schváleno tento měsíc",  value: String(approvedThisMonth),                      unit: "",   color: "oklch(0.67 0.155 155)" },
-          { label: "Hodnota ke schválení",   value: pendingValue.toLocaleString("cs-CZ"),           unit: "Kč", color: "oklch(0.81 0.155 200)" },
+          { label: "Hodnota ke schválení",   value: pendingValue.toLocaleString("cs-CZ"),           unit: "Kč", color: "oklch(0.62 0.27 265)" },
         ].map(({ label, value, unit, color }) => (
           <div key={label} className="px-5 py-4" style={{ background: "var(--card)" }}>
             <p className="text-[11px] text-[--muted-foreground] uppercase tracking-[0.06em] font-medium mb-1">{label}</p>

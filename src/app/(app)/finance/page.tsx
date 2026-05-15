@@ -303,7 +303,7 @@ function fKcShort(n: number): string {
 /* ── Style helpers ──────────────────────────────────────────────────────────── */
 function monthStatusStyle(s: MonthStatus) {
   if (s === "UZAVŘENO")   return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.2)" };
-  if (s === "PROBÍHÁ")    return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.08)", border: "oklch(0.81 0.155 200 / 0.2)" };
+  if (s === "PROBÍHÁ")    return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.08)", border: "oklch(0.62 0.27 265 / 0.2)" };
   return                         { color: "oklch(0.35 0.005 222)", bg: "oklch(1 0 0 / 0.03)",          border: "oklch(1 0 0 / 0.07)" };
 }
 function itemStatusStyle(s: ItemStatus) {
@@ -312,14 +312,14 @@ function itemStatusStyle(s: ItemStatus) {
   return                        { color: "oklch(0.65 0.22 25)",   icon: <AlertCircle className="w-3 h-3" /> };
 }
 function incomeTypeStyle(t: string) {
-  if (t === "Měsíční klient") return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)", border: "oklch(0.81 0.155 200 / 0.2)" };
+  if (t === "Měsíční klient") return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)", border: "oklch(0.62 0.27 265 / 0.2)" };
   if (t === "Jednorázový")    return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.1)",  border: "oklch(0.64 0.21 290 / 0.2)" };
   return                             { color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)",          border: "oklch(1 0 0 / 0.1)" };
 }
 function expenseTypeStyle(t: string) {
   if (t === "Mzdy")      return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.08)", border: "oklch(0.64 0.21 290 / 0.18)" };
   if (t === "Provize")   return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.08)", border: "oklch(0.74 0.165 75 / 0.18)" };
-  if (t === "Software")  return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.08)",border: "oklch(0.81 0.155 200 / 0.18)" };
+  if (t === "Software")  return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.08)",border: "oklch(0.62 0.27 265 / 0.18)" };
   if (t === "Marketing") return { color: "oklch(0.72 0.18 340)",  bg: "oklch(0.72 0.18 340 / 0.08)", border: "oklch(0.72 0.18 340 / 0.18)" };
   return                        { color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)",          border: "oklch(1 0 0 / 0.1)" };
 }
@@ -347,7 +347,7 @@ function FInput({ value, onChange, placeholder }: { value: string; onChange: (v:
   return (
     <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
       className={iCls} style={iSty}
-      onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+      onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
       onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")} />
   );
 }
@@ -429,7 +429,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Příjmy YTD"   value={fKcShort(totalPrijem)} color="oklch(0.67 0.155 155)" sub={`${closed} uzavřených měsíců`} />
         <StatCard label="Výdaje YTD"   value={fKcShort(totalVydaje)} color="oklch(0.65 0.22 25)"   sub="Celkové náklady" />
-        <StatCard label="Čistý zisk YTD" value={fKcShort(totalCisty)} color="oklch(0.81 0.155 200)" sub={`Marže ${totalPrijem > 0 ? Math.round((totalCisty/totalPrijem)*100) : 0}%`} />
+        <StatCard label="Čistý zisk YTD" value={fKcShort(totalCisty)} color="oklch(0.62 0.27 265)" sub={`Marže ${totalPrijem > 0 ? Math.round((totalCisty/totalPrijem)*100) : 0}%`} />
         <StatCard label="Uzavřených měsíců" value={`${closed} / 12`} color="var(--foreground)" sub="2026" />
       </div>
 
@@ -442,7 +442,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
               <p className="text-[11px] text-[--muted-foreground] mt-0.5">tis. Kč · měsíčně</p>
             </div>
             <div className="flex items-center gap-4 text-[11px] text-[--muted-foreground]">
-              {[["Příjmy","oklch(0.67 0.155 155)"],["Výdaje","oklch(0.65 0.22 25)"],["Čistý","oklch(0.81 0.155 200)"]].map(([n, c]) => (
+              {[["Příjmy","oklch(0.67 0.155 155)"],["Výdaje","oklch(0.65 0.22 25)"],["Čistý","oklch(0.62 0.27 265)"]].map(([n, c]) => (
                 <span key={n} className="flex items-center gap-1.5">
                   <span className="w-3 h-[2px] rounded" style={{ background: c }} />{n}
                 </span>
@@ -452,7 +452,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
-                {[["gP","oklch(0.67 0.155 155)"],["gV","oklch(0.65 0.22 25)"],["gC","oklch(0.81 0.155 200)"]].map(([id, c]) => (
+                {[["gP","oklch(0.67 0.155 155)"],["gV","oklch(0.65 0.22 25)"],["gC","oklch(0.62 0.27 265)"]].map(([id, c]) => (
                   <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={c} stopOpacity={0.18} />
                     <stop offset="100%" stopColor={c} stopOpacity={0} />
@@ -465,7 +465,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
               <Tooltip content={<ChartTip />} cursor={{ stroke: "oklch(1 0 0 / 0.06)", strokeWidth: 1 }} />
               <Area type="monotone" dataKey="Příjmy" stroke="oklch(0.67 0.155 155)" strokeWidth={2} fill="url(#gP)" dot={false} />
               <Area type="monotone" dataKey="Výdaje" stroke="oklch(0.65 0.22 25)"   strokeWidth={2} fill="url(#gV)" dot={false} />
-              <Area type="monotone" dataKey="Čistý"  stroke="oklch(0.81 0.155 200)" strokeWidth={2} fill="url(#gC)" dot={false} />
+              <Area type="monotone" dataKey="Čistý"  stroke="oklch(0.62 0.27 265)" strokeWidth={2} fill="url(#gC)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -474,7 +474,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
       {/* Monthly summary table */}
       <div className="card overflow-hidden">
         <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ borderColor: "oklch(1 0 0 / 0.07)" }}>
-          <BarChart3 className="w-3.5 h-3.5" style={{ color: "oklch(0.81 0.155 200)" }} />
+          <BarChart3 className="w-3.5 h-3.5" style={{ color: "oklch(0.62 0.27 265)" }} />
           <p className="text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>Měsíční přehled 2026</p>
         </div>
         <div className="overflow-x-auto">
@@ -495,7 +495,7 @@ function PrehledTab({ summaries }: { summaries: MonthSummary[] }) {
                     <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>{s.mesic}</td>
                     <td className="px-4 py-3 num text-[13px] font-semibold" style={{ color: s.prijemCelkovy ? "oklch(0.67 0.155 155)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCelkovy)}</td>
                     <td className="px-4 py-3 num text-[13px]" style={{ color: s.vydaje ? "oklch(0.65 0.22 25)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.vydaje)}</td>
-                    <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.81 0.155 200)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
+                    <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.62 0.27 265)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
                     <td className="px-4 py-3 num text-[12px] hidden md:table-cell" style={{ color: marze ? "var(--foreground)" : "oklch(0.30 0.005 222)" }}>{marze ? `${marze}%` : "—"}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-[5px] text-[10px] font-bold tracking-[0.05em]"
@@ -555,7 +555,7 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Celkem příjmy"    value={fKcShort(total)}   color="oklch(0.67 0.155 155)" />
-        <StatCard label="Měsíční klienti"  value={fKcShort(monthly)} color="oklch(0.81 0.155 200)" />
+        <StatCard label="Měsíční klienti"  value={fKcShort(monthly)} color="oklch(0.62 0.27 265)" />
         <StatCard label="Jednorázové"      value={fKcShort(oneoff)}  color="oklch(0.72 0.18 290)" />
         <StatCard label="Čeká na platbu"   value={fKcShort(pending)} color="oklch(0.78 0.165 75)" />
       </div>
@@ -698,7 +698,7 @@ function VydajeTab({ items, setItems }: { items: ExpenseItem[]; setItems: (fn: (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Celkem výdaje" value={fKcShort(total)}   color="oklch(0.65 0.22 25)" />
         <StatCard label="Mzdy"          value={fKcShort(mzdy)}    color="oklch(0.72 0.18 290)" />
-        <StatCard label="Software"      value={fKcShort(soft)}    color="oklch(0.81 0.155 200)" />
+        <StatCard label="Software"      value={fKcShort(soft)}    color="oklch(0.62 0.27 265)" />
         <StatCard label="Provize"       value={fKcShort(provize)} color="oklch(0.78 0.165 75)" />
       </div>
 
@@ -822,7 +822,7 @@ function BilanceTab({ incomes, expenses }: { incomes: IncomeItem[]; expenses: Ex
   })).filter(x => x.val > 0).sort((a, b) => b.val - a.val);
 
   const TYPE_COLORS: Record<string, string> = {
-    Mzdy: "oklch(0.72 0.18 290)", Software: "oklch(0.81 0.155 200)", Provize: "oklch(0.78 0.165 75)",
+    Mzdy: "oklch(0.72 0.18 290)", Software: "oklch(0.62 0.27 265)", Provize: "oklch(0.78 0.165 75)",
     Pojištění: "oklch(0.67 0.155 155)", Marketing: "oklch(0.72 0.18 340)", Nájem: "oklch(0.65 0.22 25)", Ostatní: "oklch(0.45 0.005 222)",
   };
 
@@ -830,7 +830,7 @@ function BilanceTab({ incomes, expenses }: { incomes: IncomeItem[]; expenses: Ex
     <div className="space-y-4">
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Čistý zisk celkem"  value={fKcShort(totalNet)} color="oklch(0.81 0.155 200)" sub={`${avgMarze}% marže`} />
+        <StatCard label="Čistý zisk celkem"  value={fKcShort(totalNet)} color="oklch(0.62 0.27 265)" sub={`${avgMarze}% marže`} />
         <StatCard label="Celkem příjmy"      value={fKcShort(totalInc)} color="oklch(0.67 0.155 155)" />
         <StatCard label="Celkem výdaje"      value={fKcShort(totalExp)} color="oklch(0.65 0.22 25)" />
         <StatCard label="Nejlepší měsíc"     value={bestMonth ? fKcShort(bestMonth.net) : "—"} color="oklch(0.74 0.165 75)" sub={bestMonth?.mesic} />
@@ -854,7 +854,7 @@ function BilanceTab({ incomes, expenses }: { incomes: IncomeItem[]; expenses: Ex
                 {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.65 0.22 25 / 0.6)" />)}
               </Bar>
               <Bar dataKey="net" name="Čistý" radius={[3,3,0,0]}>
-                {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.81 0.155 200)" />)}
+                {byMonth.map((_, i) => <Cell key={i} fill="oklch(0.62 0.27 265)" />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -895,7 +895,7 @@ function BilanceTab({ incomes, expenses }: { incomes: IncomeItem[]; expenses: Ex
             {byMonth.map(d => (
               <div key={d.mesic} className="flex items-center justify-between">
                 <span className="text-[11px] text-[--muted-foreground]">{d.mesic}</span>
-                <span className="num text-[12px] font-bold" style={{ color: d.net >= 0 ? "oklch(0.81 0.155 200)" : "oklch(0.65 0.22 25)", fontFamily: "var(--font-outfit)" }}>
+                <span className="num text-[12px] font-bold" style={{ color: d.net >= 0 ? "oklch(0.62 0.27 265)" : "oklch(0.65 0.22 25)", fontFamily: "var(--font-outfit)" }}>
                   {fKcShort(d.net)}
                 </span>
               </div>
@@ -931,7 +931,7 @@ function ModalWrap({ title, onClose, onSave, children }: {
             style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>Zrušit</button>
           <motion.button onClick={onSave} whileHover={{ filter: "brightness(1.08)" }} whileTap={{ scale: 0.96 }}
             className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-            style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}>
+            style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
             Uložit
           </motion.button>
         </div>
@@ -977,7 +977,7 @@ function FileChip({ soubor }: { soubor: string }) {
   if (!soubor) return <span className="text-[--muted-foreground] opacity-30"><Paperclip className="w-3.5 h-3.5"/></span>;
   return (
     <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-[5px]"
-      style={{ color:"oklch(0.81 0.155 200)", background:"oklch(0.81 0.155 200 / 0.08)", border:"1px solid oklch(0.81 0.155 200 / 0.18)" }}>
+      style={{ color:"oklch(0.62 0.27 265)", background:"oklch(0.62 0.27 265 / 0.08)", border:"1px solid oklch(0.62 0.27 265 / 0.18)" }}>
       <Paperclip className="w-3 h-3"/>{soubor}
     </span>
   );
@@ -1026,7 +1026,7 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
         {[
-          { label:"Celkem YTD",       value:celkem,       color:"oklch(0.81 0.155 200)" },
+          { label:"Celkem YTD",       value:celkem,       color:"oklch(0.62 0.27 265)" },
           { label:"Zaplaceno",        value:zaplaceno,    color:"oklch(0.67 0.155 155)" },
           { label:"Čeká na platbu",   value:ceka,         color:"oklch(0.78 0.165 75)"  },
           { label:"Po splatnosti",    value:poSplatnosti, color:"oklch(0.65 0.22 25)"   },
@@ -1046,14 +1046,14 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
           <motion.button key={s} onClick={()=>setStavF(s)} whileTap={{scale:0.95}}
             className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
             style={stavF===s
-              ?{background:"oklch(0.81 0.155 200 / 0.1)",color:"oklch(0.81 0.155 200)",border:"1px solid oklch(0.81 0.155 200 / 0.25)"}
+              ?{background:"oklch(0.62 0.27 265 / 0.1)",color:"oklch(0.62 0.27 265)",border:"1px solid oklch(0.62 0.27 265 / 0.25)"}
               :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
             {s}
           </motion.button>
         ))}
         <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
           className="ml-auto btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           <Plus className="w-3.5 h-3.5"/> Nová faktura
         </motion.button>
       </div>
@@ -1077,7 +1077,7 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
                   <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden md:table-cell max-w-[200px] truncate">{f.popis}</td>
                   <td className="px-4 py-3 text-[12px] text-[--muted-foreground] whitespace-nowrap">{f.datum}</td>
                   <td className="px-4 py-3 text-[12px] whitespace-nowrap" style={{color: f.stav==="Po splatnosti"?"oklch(0.65 0.22 25)":"oklch(0.50 0.005 222)"}}>{f.splatnost}</td>
-                  <td className="px-4 py-3 num text-[13px] font-bold whitespace-nowrap" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.81 0.155 200)"}}>{fKc(f.castka)}</td>
+                  <td className="px-4 py-3 num text-[13px] font-bold whitespace-nowrap" style={{fontFamily:"var(--font-outfit)",color:"oklch(0.62 0.27 265)"}}>{fKc(f.castka)}</td>
                   <td className="px-4 py-3"><FakturaStavBadge stav={f.stav}/></td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {uploadSim[f.id]
@@ -1086,7 +1086,7 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
                           <FileChip soubor={f.soubor}/>
                           {!f.soubor&&(
                             <label className="cursor-pointer ml-1 text-[10px] px-2 py-0.5 rounded-[5px] inline-flex items-center gap-1"
-                              style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.06)",border:"1px solid oklch(0.81 0.155 200 / 0.15)"}}>
+                              style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.06)",border:"1px solid oklch(0.62 0.27 265 / 0.15)"}}>
                               <Plus className="w-2.5 h-2.5"/>
                               <input type="file" className="hidden" onChange={e=>{if(e.target.files?.[0])setUploadSim(p=>({...p,[f.id]:e.target.files![0].name}));}}/>
                               Nahrát
@@ -1167,7 +1167,7 @@ function FakturaForm({ initial, onSave, isNew }: { initial: Omit<Faktura,"id">&{
       <div className="md:col-span-2 flex justify-end pt-2 border-t" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
         <motion.button onClick={()=>onSave(f)} whileTap={{scale:0.96}}
           className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           {isNew?"Vytvořit fakturu":"Uložit změny"}
         </motion.button>
       </div>
@@ -1193,7 +1193,7 @@ function DokladyTab({ items, setItems }: { items:Doklad[]; setItems:(fn:(p:Dokla
   const ceka       = items.filter(d=>d.stav==="Čeká na zpracování").reduce((s,d)=>s+d.castka,0);
 
   const katColors: Record<string,string> = {
-    Software:"oklch(0.81 0.155 200)", Mzdy:"oklch(0.67 0.155 155)", Pojištění:"oklch(0.65 0.22 25)",
+    Software:"oklch(0.62 0.27 265)", Mzdy:"oklch(0.67 0.155 155)", Pojištění:"oklch(0.65 0.22 25)",
     Provize:"oklch(0.78 0.165 75)", Marketing:"oklch(0.74 0.165 75)", Vybavení:"oklch(0.72 0.18 290)", Jiné:"oklch(0.50 0.005 222)",
   };
 
@@ -1228,7 +1228,7 @@ function DokladyTab({ items, setItems }: { items:Doklad[]; setItems:(fn:(p:Dokla
           <motion.button key={k} onClick={()=>setKatF(k)} whileTap={{scale:0.95}}
             className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
             style={katF===k
-              ?{background:`${(katColors[k]||"oklch(0.81 0.155 200)").replace(")","/0.12)")}`,color:katColors[k]||"oklch(0.81 0.155 200)",border:`1px solid ${(katColors[k]||"oklch(0.81 0.155 200)").replace(")","/0.25)")}`}
+              ?{background:`${(katColors[k]||"oklch(0.62 0.27 265)").replace(")","/0.12)")}`,color:katColors[k]||"oklch(0.62 0.27 265)",border:`1px solid ${(katColors[k]||"oklch(0.62 0.27 265)").replace(")","/0.25)")}`}
               :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
             {k}
           </motion.button>
@@ -1373,7 +1373,7 @@ function DokladForm({ initial, onSave, isNew }: { initial: Omit<Doklad,"id">&{id
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: "prehled", label: "Přehled",  icon: <BarChart3 className="w-3.5 h-3.5" />,    color: "oklch(0.81 0.155 200)" },
+  { id: "prehled", label: "Přehled",  icon: <BarChart3 className="w-3.5 h-3.5" />,    color: "oklch(0.62 0.27 265)" },
   { id: "prijmy",  label: "Příjmy",   icon: <TrendingUp className="w-3.5 h-3.5" />,   color: "oklch(0.67 0.155 155)" },
   { id: "vydaje",  label: "Výdaje",   icon: <TrendingDown className="w-3.5 h-3.5" />, color: "oklch(0.65 0.22 25)" },
   { id: "bilance", label: "Bilance",  icon: <Wallet className="w-3.5 h-3.5" />,       color: "oklch(0.74 0.165 75)" },
@@ -1391,7 +1391,7 @@ export default function FinancePage() {
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
-      style={{ background: `radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.81 0.155 200 / 0.04) 0%, transparent 70%), var(--background)` }}>
+      style={{ background: `radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.62 0.27 265 / 0.04) 0%, transparent 70%), var(--background)` }}>
 
       {/* Header */}
       <motion.div className="flex items-start justify-between gap-3"
@@ -1399,8 +1399,8 @@ export default function FinancePage() {
         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.81 0.155 200 / 0.12)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
-            <Wallet className="w-4 h-4" style={{ color: "oklch(0.81 0.155 200)" }} />
+            style={{ background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}>
+            <Wallet className="w-4 h-4" style={{ color: "oklch(0.62 0.27 265)" }} />
           </div>
           <div>
             <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"

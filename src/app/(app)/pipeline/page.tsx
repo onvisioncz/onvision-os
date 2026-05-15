@@ -22,7 +22,7 @@ interface Deal {
 const FAZES: { id: DealFaze; color: string; bg: string; border: string }[] = [
   { id: "Lead",      color: "oklch(0.45 0.005 222)", bg: "oklch(1 0 0 / 0.04)",          border: "oklch(1 0 0 / 0.1)" },
   { id: "Nabídka",   color: "oklch(0.82 0.16 85)",   bg: "oklch(0.82 0.16 85 / 0.1)",   border: "oklch(0.82 0.16 85 / 0.22)" },
-  { id: "Jednání",   color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.12)", border: "oklch(0.81 0.155 200 / 0.22)" },
+  { id: "Jednání",   color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.12)", border: "oklch(0.62 0.27 265 / 0.22)" },
   { id: "Podpis",    color: "oklch(0.68 0.18 275)",  bg: "oklch(0.68 0.18 275 / 0.12)",  border: "oklch(0.68 0.18 275 / 0.22)" },
   { id: "Realizace", color: "oklch(0.72 0.2 330)",   bg: "oklch(0.72 0.2 330 / 0.1)",   border: "oklch(0.72 0.2 330 / 0.2)" },
   { id: "Dokončeno", color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.12)", border: "oklch(0.67 0.155 155 / 0.22)" },
@@ -285,7 +285,7 @@ export default function PipelinePage() {
       >
         {[
           { label: "Pipeline (vážená)", value: Math.round(weighted).toLocaleString("cs-CZ"), unit: "Kč", icon: TrendingUp, color: ACCENT },
-          { label: "Potenciál celkem",  value: total.toLocaleString("cs-CZ"),                unit: "Kč", icon: DollarSign, color: "oklch(0.81 0.155 200)" },
+          { label: "Potenciál celkem",  value: total.toLocaleString("cs-CZ"),                unit: "Kč", icon: DollarSign, color: "oklch(0.62 0.27 265)" },
           { label: "Uzavřeno",          value: closed.toLocaleString("cs-CZ"),               unit: "Kč", icon: CheckCircle, color: "oklch(0.67 0.155 155)" },
         ].map(({ label, value, unit, icon: Icon, color }) => (
           <div key={label} className="px-5 py-4 flex items-center gap-3" style={{ background: "var(--card)" }}>

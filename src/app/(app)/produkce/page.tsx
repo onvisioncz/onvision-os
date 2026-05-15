@@ -174,19 +174,19 @@ function fKc(n: number) { return n ? n.toLocaleString("cs-CZ") + " Kč" : "—";
 
 /* ── Format styles ──────────────────────────────────────────────────────────── */
 function fmtStyleZ(f: FormatZ) {
-  if (f === "CELODENNÍ") return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)",  border: "oklch(0.81 0.155 200 / 0.25)" };
+  if (f === "CELODENNÍ") return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",  border: "oklch(0.62 0.27 265 / 0.25)" };
   if (f === "3 HOD")     return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.09)", border: "oklch(0.67 0.155 155 / 0.22)" };
   return                        { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.09)",  border: "oklch(0.74 0.165 75 / 0.22)" };
 }
 function fmtStyleM(f: string) {
   if (f === "FOTO + VIDEO") return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.1)", border: "oklch(0.64 0.21 290 / 0.22)" };
-  if (f === "VIDEO")        return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)",border: "oklch(0.81 0.155 200 / 0.22)" };
+  if (f === "VIDEO")        return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",border: "oklch(0.62 0.27 265 / 0.22)" };
   if (f === "FOTO")         return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.09)",border: "oklch(0.74 0.165 75 / 0.22)" };
   return                           { color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)",        border: "oklch(1 0 0 / 0.1)" };
 }
 
 function poznamkaStyle(p: string) {
-  if (p === "NADPRACOVANÉ")     return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)", border: "oklch(0.81 0.155 200 / 0.25)" };
+  if (p === "NADPRACOVANÉ")     return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)", border: "oklch(0.62 0.27 265 / 0.25)" };
   if (p === "NEVYČERPANÉ")      return { color: "oklch(0.65 0.22 25)",   bg: "oklch(0.65 0.22 25 / 0.1)",   border: "oklch(0.65 0.22 25 / 0.25)" };
   if (p === "PROPLACENO")       return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.08)",border: "oklch(0.67 0.155 155 / 0.2)" };
   if (p.startsWith("NÁHRADA"))  return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.09)", border: "oklch(0.74 0.165 75 / 0.22)" };
@@ -231,7 +231,7 @@ const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] out
 const iSty = { background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.09)", fontFamily: "var(--font-jakarta)" };
 function FInput({ value, onChange, placeholder }: { value: string; onChange:(v:string)=>void; placeholder?:string }) {
   return <input value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} className={iCls} style={iSty}
-    onFocus={e=>(e.target.style.borderColor="oklch(0.81 0.155 200 / 0.5)")} onBlur={e=>(e.target.style.borderColor="oklch(1 0 0 / 0.09)")} />;
+    onFocus={e=>(e.target.style.borderColor="oklch(0.62 0.27 265 / 0.5)")} onBlur={e=>(e.target.style.borderColor="oklch(1 0 0 / 0.09)")} />;
 }
 function FSelect({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:string[] }) {
   return (
@@ -272,7 +272,7 @@ function ModalWrap({ title, onClose, onSave, children }: { title:string; onClose
           <button onClick={onClose} className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground] btn-tactile" style={{background:"oklch(1 0 0 / 0.04)",border:"1px solid oklch(1 0 0 / 0.08)"}}>Zrušit</button>
           <motion.button onClick={onSave} whileHover={{filter:"brightness(1.08)"}} whileTap={{scale:0.96}}
             className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-            style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+            style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
             Uložit
           </motion.button>
         </div>
@@ -289,12 +289,12 @@ function PausalBar({ done, total, label, color }: { done:number; total:number; l
     <div>
       <div className="flex items-center justify-between mb-1">
         <span className="text-[11px] text-[--muted-foreground]">{label}</span>
-        <span className="num text-[12px] font-bold" style={{ fontFamily:"var(--font-outfit)", color: over?"oklch(0.81 0.155 200)":done===total?"oklch(0.67 0.155 155)":color }}>
+        <span className="num text-[12px] font-bold" style={{ fontFamily:"var(--font-outfit)", color: over?"oklch(0.62 0.27 265)":done===total?"oklch(0.67 0.155 155)":color }}>
           {done}/{total}{over?` (+${done-total})`:""}
         </span>
       </div>
       <div className="h-[5px] rounded-full overflow-hidden" style={{background:"oklch(1 0 0 / 0.08)"}}>
-        <motion.div className="h-full rounded-full" style={{background: over?"oklch(0.81 0.155 200)":done===total?"oklch(0.67 0.155 155)":color}}
+        <motion.div className="h-full rounded-full" style={{background: over?"oklch(0.62 0.27 265)":done===total?"oklch(0.67 0.155 155)":color}}
           initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:0.6,ease:[0.23,1,0.32,1]}}/>
       </div>
     </div>
@@ -387,7 +387,7 @@ function PendingQueue({
       <span className="text-[12px] text-[--muted-foreground]">Fronta přesunů je prázdná — vše vyřešeno.</span>
       <motion.button onClick={()=>setAddModal(true)} whileTap={{scale:0.95}}
         className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
-        style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+        style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.08)",border:"1px solid oklch(0.62 0.27 265 / 0.18)"}}>
         <Plus className="w-3 h-3"/> Přidat
       </motion.button>
       <AnimatePresence>{addModal&&<AddPendingModal form={addForm} setForm={setAddForm} onSave={addItem} onClose={()=>setAddModal(false)}/>}</AnimatePresence>
@@ -400,17 +400,17 @@ function PendingQueue({
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
         <div className="flex items-center gap-2.5">
-          <RefreshCw className="w-3.5 h-3.5" style={{color:"oklch(0.81 0.155 200)"}}/>
+          <RefreshCw className="w-3.5 h-3.5" style={{color:"oklch(0.62 0.27 265)"}}/>
           <span className="text-[13px] font-bold" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em",color:"var(--foreground)"}}>
             Fronta přesunů
           </span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.81 0.155 200 / 0.12)",color:"oklch(0.81 0.155 200)"}}>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.62 0.27 265 / 0.12)",color:"oklch(0.62 0.27 265)"}}>
             {active.length}
           </span>
         </div>
         <motion.button onClick={()=>setAddModal(true)} whileTap={{scale:0.95}}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile"
-          style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.08)",border:"1px solid oklch(0.81 0.155 200 / 0.18)"}}>
+          style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.08)",border:"1px solid oklch(0.62 0.27 265 / 0.18)"}}>
           <Plus className="w-3 h-3"/> Přidat
         </motion.button>
       </div>
@@ -419,10 +419,10 @@ function PendingQueue({
         {/* NADPRACOVANÉ */}
         <div className="p-4 space-y-2 md:border-r" style={{borderColor:"oklch(1 0 0 / 0.07)"}}>
           <div className="flex items-center gap-2 mb-3">
-            <ArrowUpCircle className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.81 0.155 200)"}}/>
-            <span className="text-[10px] font-bold uppercase tracking-[0.09em]" style={{color:"oklch(0.81 0.155 200)"}}>Nadpracované</span>
+            <ArrowUpCircle className="w-3.5 h-3.5 shrink-0" style={{color:"oklch(0.62 0.27 265)"}}/>
+            <span className="text-[10px] font-bold uppercase tracking-[0.09em]" style={{color:"oklch(0.62 0.27 265)"}}>Nadpracované</span>
             <span className="text-[10px] text-[--muted-foreground]">· čeká na řešení</span>
-            {nad.length>0&&<span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.81 0.155 200 / 0.1)",color:"oklch(0.81 0.155 200)"}}>{nad.length}</span>}
+            {nad.length>0&&<span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{background:"oklch(0.62 0.27 265 / 0.1)",color:"oklch(0.62 0.27 265)"}}>{nad.length}</span>}
           </div>
           <AnimatePresence initial={false}>
             {nad.map(item=>(
@@ -430,7 +430,7 @@ function PendingQueue({
                 initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0,overflow:"hidden"}}
                 transition={{duration:0.28,ease:[0.23,1,0.32,1]}}>
                 <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] mb-2"
-                  style={{background:"oklch(0.81 0.155 200 / 0.06)",border:"1px solid oklch(0.81 0.155 200 / 0.15)"}}>
+                  style={{background:"oklch(0.62 0.27 265 / 0.06)",border:"1px solid oklch(0.62 0.27 265 / 0.15)"}}>
                   <FmtBadge label={item.format} {...fmtStyleZ(item.format)}/>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-semibold truncate" style={{fontFamily:"var(--font-outfit)",color:"var(--foreground)"}}>{item.projekt||"—"}</p>
@@ -442,7 +442,7 @@ function PendingQueue({
                       onClick={()=>setDropdownOpen(dropdownOpen===item.id?null:item.id)}
                       whileTap={{scale:0.92}}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
-                      style={{color:"oklch(0.81 0.155 200)",background:"oklch(0.81 0.155 200 / 0.09)",border:"1px solid oklch(0.81 0.155 200 / 0.22)"}}>
+                      style={{color:"oklch(0.62 0.27 265)",background:"oklch(0.62 0.27 265 / 0.09)",border:"1px solid oklch(0.62 0.27 265 / 0.22)"}}>
                       Vyřešit <ChevronDown className="w-3 h-3"/>
                     </motion.button>
                     <AnimatePresence>
@@ -628,7 +628,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
     setEntries(p=>[...p,{...data,id:Date.now()}]);
   }
 
-  const accentColor = "oklch(0.81 0.155 200)";
+  const accentColor = "oklch(0.62 0.27 265)";
 
   return (
     <div className="space-y-4">
@@ -636,7 +636,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
       <div className="card px-5 py-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold shrink-0"
-            style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
+            style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
           <div>
             <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Zdeněk Dolíhal</p>
             <p className="text-[11px] text-[--muted-foreground] mt-0.5">Kameraman &amp; fotograf · Měsíční paušál</p>
@@ -644,7 +644,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
         </div>
         <div className="md:ml-auto flex flex-wrap gap-2">
           {[
-            { label:"1× CELODENNÍ / měsíc", color:"oklch(0.81 0.155 200)", bg:"oklch(0.81 0.155 200 / 0.1)", border:"oklch(0.81 0.155 200 / 0.25)" },
+            { label:"1× CELODENNÍ / měsíc", color:"oklch(0.62 0.27 265)", bg:"oklch(0.62 0.27 265 / 0.1)", border:"oklch(0.62 0.27 265 / 0.25)" },
             { label:"2× 3 HOD / měsíc",     color:"oklch(0.67 0.155 155)", bg:"oklch(0.67 0.155 155 / 0.09)",border:"oklch(0.67 0.155 155 / 0.22)" },
             { label:"v rámci Brna",          color:"oklch(0.55 0.005 222)", bg:"oklch(1 0 0 / 0.05)",         border:"oklch(1 0 0 / 0.1)" },
           ].map(t=>(
@@ -662,7 +662,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
         {[
           {label:"Splněno celkem",   value:totalDone,  color:"oklch(0.67 0.155 155)"},
           {label:"Plánováno",        value:totalPlan,  color:"oklch(0.78 0.165 75)"},
-          {label:"Nadpracováno",     value:totalExtra, color:"oklch(0.81 0.155 200)"},
+          {label:"Nadpracováno",     value:totalExtra, color:"oklch(0.62 0.27 265)"},
         ].map(s=>(
           <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
             <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5 leading-tight">{s.label}</p>
@@ -678,7 +678,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
             <motion.button key={m} onClick={()=>setMesicF(m)} whileTap={{scale:0.95}}
               className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
               style={mesicF===m
-                ?{background:"oklch(0.81 0.155 200 / 0.1)",color:accentColor,border:`1px solid oklch(0.81 0.155 200 / 0.25)`}
+                ?{background:"oklch(0.62 0.27 265 / 0.1)",color:accentColor,border:`1px solid oklch(0.62 0.27 265 / 0.25)`}
                 :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
               {m}
             </motion.button>
@@ -713,7 +713,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
                         <MonthHeader mesic={group.mesic} count={monthTotal} color={accentColor}
                           right={
                             <div className="flex items-center gap-3 text-[11px]">
-                              <span style={{color:"oklch(0.81 0.155 200)"}}>{st.celodenni}/{PAUSAL_CELODENNI} cel.</span>
+                              <span style={{color:"oklch(0.62 0.27 265)"}}>{st.celodenni}/{PAUSAL_CELODENNI} cel.</span>
                               <span style={{color:"oklch(0.67 0.155 155)"}}>{st.hod3}/{PAUSAL_3HOD} × 3hod</span>
                               {st.bts>0&&<span style={{color:"oklch(0.78 0.165 75)"}}>{st.bts}× BTS</span>}
                             </div>
@@ -721,7 +721,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
                         />
                         {/* Paušál mini progress */}
                         <div className="grid grid-cols-2 gap-2 mb-3 mt-1">
-                          <PausalBar done={st.celodenni} total={PAUSAL_CELODENNI} label="Celodenní" color="oklch(0.81 0.155 200)"/>
+                          <PausalBar done={st.celodenni} total={PAUSAL_CELODENNI} label="Celodenní" color="oklch(0.62 0.27 265)"/>
                           <PausalBar done={st.hod3}      total={PAUSAL_3HOD}      label="3 HOD"     color="oklch(0.67 0.155 155)"/>
                         </div>
                       </td>
@@ -786,7 +786,7 @@ function ZForm({ entry, onSave }: { entry:ZEntry|null; onSave:(d:Omit<ZEntry,"id
       <div className="md:col-span-2 flex justify-end">
         <motion.button onClick={()=>onSave({...f,...(entry?{id:entry.id}:{})})} whileTap={{scale:0.96}}
           className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           {entry?"Uložit změny":"Přidat"}
         </motion.button>
       </div>
@@ -1223,14 +1223,14 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-              style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
+              style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
             <div>
               <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Zdeněk Dolíhal</p>
               <p className="text-[11px] text-[--muted-foreground]">Paušál · {currentMonth} 2026</p>
             </div>
           </div>
           <div className="space-y-2.5">
-            <PausalBar done={zCel} total={PAUSAL_CELODENNI} label="Celodenní produkční den" color="oklch(0.81 0.155 200)"/>
+            <PausalBar done={zCel} total={PAUSAL_CELODENNI} label="Celodenní produkční den" color="oklch(0.62 0.27 265)"/>
             <PausalBar done={zHod} total={PAUSAL_3HOD}      label="3 hodinové produkční dny" color="oklch(0.67 0.155 155)"/>
           </div>
           {zBts>0&&<p className="text-[11px] text-[--muted-foreground]">+ {zBts}× BTS natáčení</p>}
@@ -1358,8 +1358,8 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
 type ProdTab = "prehled" | "zdenek" | "matej" | "monika" | "patrik";
 
 const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
-  { id:"prehled", label:"Přehled",            short:"Přehled", color:"oklch(0.81 0.155 200)" },
-  { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.81 0.155 200)" },
+  { id:"prehled", label:"Přehled",            short:"Přehled", color:"oklch(0.62 0.27 265)" },
+  { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.62 0.27 265)" },
   { id:"matej",   label:"Matěj Hořák",        short:"Matěj",   color:"oklch(0.72 0.18 290)" },
   { id:"monika",  label:"Monika Kudličková",  short:"Monika",  color:"oklch(0.76 0.20 340)" },
   { id:"patrik",  label:"Patrik Petr",        short:"Patrik",  color:"oklch(0.79 0.19 55)"  },
@@ -1375,7 +1375,7 @@ export default function ProdukccePage() {
   const [pendingItems, setPendingItems] = useState<QPending[]>(Q_SEED);
   const [history,      setHistory]      = useState<HistorySnap[]>([]);
 
-  const activeColor = TABS.find(t=>t.id===tab)?.color ?? "oklch(0.81 0.155 200)";
+  const activeColor = TABS.find(t=>t.id===tab)?.color ?? "oklch(0.62 0.27 265)";
   const canUndo = history.length > 0;
 
   const pushHistory = useCallback(() => {
@@ -1401,15 +1401,15 @@ export default function ProdukccePage() {
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
-      style={{background:`radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.81 0.155 200 / 0.04) 0%, transparent 70%), var(--background)`}}>
+      style={{background:`radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.62 0.27 265 / 0.04) 0%, transparent 70%), var(--background)`}}>
 
       {/* Header */}
       <motion.div className="flex items-start justify-between gap-3"
         initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease:[0.23,1,0.32,1]}}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-            style={{background:"oklch(0.81 0.155 200 / 0.12)",border:"1px solid oklch(0.81 0.155 200 / 0.2)"}}>
-            <Layers className="w-4 h-4" style={{color:"oklch(0.81 0.155 200)"}}/>
+            style={{background:"oklch(0.62 0.27 265 / 0.12)",border:"1px solid oklch(0.62 0.27 265 / 0.2)"}}>
+            <Layers className="w-4 h-4" style={{color:"oklch(0.62 0.27 265)"}}/>
           </div>
           <div>
             <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"

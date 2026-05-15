@@ -42,7 +42,7 @@ function TypeIcon({ type }: { type: NotifType }) {
   const map: Record<NotifType, { icon: React.ElementType; color: string }> = {
     platba:     { icon: CreditCard,   color: "oklch(0.67 0.155 155)" },
     deadline:   { icon: Clock,        color: "oklch(0.82 0.16 85)" },
-    schvaleni:  { icon: FileCheck,    color: "oklch(0.81 0.155 200)" },
+    schvaleni:  { icon: FileCheck,    color: "oklch(0.62 0.27 265)" },
     upozorneni: { icon: AlertTriangle, color: "oklch(0.74 0.18 45)" },
     zprava:     { icon: MessageSquare, color: "oklch(0.45 0.005 222)" },
   };
@@ -209,7 +209,7 @@ export default function InboxPage() {
               <div
                 className="group relative flex items-start gap-3.5 px-5 py-4 cursor-pointer transition-colors"
                 style={{
-                  background: !notif.precten ? "oklch(0.81 0.155 200 / 0.03)" : "transparent",
+                  background: !notif.precten ? "oklch(0.62 0.27 265 / 0.03)" : "transparent",
                   borderBottom: idx < visible.length - 1 ? "1px solid var(--border)" : "none",
                 }}
                 onClick={() => markRead(notif.id)}
@@ -219,7 +219,7 @@ export default function InboxPage() {
                   <motion.span
                     layoutId={`dot-${notif.id}`}
                     className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: "oklch(0.81 0.155 200)" }}
+                    style={{ background: "oklch(0.62 0.27 265)" }}
                   />
                 )}
 

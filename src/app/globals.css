@@ -60,27 +60,27 @@
   --popover-foreground: oklch(0.93 0.004 222);
   --foreground:         oklch(0.92 0.005 222);
 
-  /* Brand: OnVision Blue */
-  --primary:            oklch(0.81 0.155 200);
-  --primary-foreground: oklch(0.09 0.008 222);
+  /* Brand: OnVision Indigo */
+  --primary:            oklch(0.62 0.27 265);
+  --primary-foreground: oklch(0.97 0.004 265);
 
   /* Neutrals */
   --secondary:            oklch(0.16 0.006 222);
   --secondary-foreground: oklch(0.62 0.006 222);
   --muted:                oklch(0.14 0.006 222);
   --muted-foreground:     oklch(0.40 0.005 222);
-  --accent:               oklch(0.81 0.155 200);
+  --accent:               oklch(0.62 0.27 265);
   --accent-foreground:    oklch(0.09 0.008 222);
 
   /* Semantic */
   --destructive:  oklch(0.62 0.22 25);
   --border:       oklch(1 0 0 / 0.07);
   --input:        oklch(1 0 0 / 0.05);
-  --ring:         oklch(0.81 0.155 200 / 0.4);
+  --ring:         oklch(0.62 0.27 265 / 0.4);
   --radius:       0.5rem;
 
   /* Charts */
-  --chart-1: oklch(0.81 0.155 200);
+  --chart-1: oklch(0.62 0.27 265);
   --chart-2: oklch(0.64 0.21 290);
   --chart-3: oklch(0.74 0.165 75);
   --chart-4: oklch(0.67 0.155 155);
@@ -139,7 +139,7 @@
   ::-webkit-scrollbar        { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track  { background: transparent; }
   ::-webkit-scrollbar-thumb  { background: oklch(1 0 0 / 0.1); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.81 0.155 200 / 0.3); }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.62 0.27 265 / 0.3); }
 }
 
 /* ── Utilities ─────────────────────────────────────────────────────────────── */
@@ -167,7 +167,7 @@
     transition: opacity 300ms var(--ease-out);
     background: radial-gradient(
       600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      oklch(0.81 0.155 200 / 0.06),
+      oklch(0.62 0.27 265 / 0.06),
       transparent 60%
     );
     pointer-events: none;
@@ -187,9 +187,9 @@
     display: inline-flex; align-items: center;
     font-size: 11px; font-weight: 500;
     padding: 2px 7px; border-radius: 4px;
-    background: oklch(0.81 0.155 200 / 0.1);
-    color: oklch(0.81 0.155 200);
-    border: 1px solid oklch(0.81 0.155 200 / 0.18);
+    background: oklch(0.62 0.27 265 / 0.1);
+    color: oklch(0.62 0.27 265);
+    border: 1px solid oklch(0.62 0.27 265 / 0.18);
     font-family: var(--font-jakarta), sans-serif;
   }
   .tag-purple {

@@ -27,7 +27,7 @@ interface CalEvent {
 
 /* ── Color map ───────────────────────────────────────────────────────────────── */
 const COLOR: Record<EventColor, { bg: string; text: string; border: string }> = {
-  blue:   { bg: "oklch(0.81 0.155 200 / 0.12)", text: "oklch(0.81 0.155 200)", border: "oklch(0.81 0.155 200 / 0.3)" },
+  blue:   { bg: "oklch(0.62 0.27 265 / 0.12)", text: "oklch(0.62 0.27 265)", border: "oklch(0.62 0.27 265 / 0.3)" },
   green:  { bg: "oklch(0.67 0.155 155 / 0.12)", text: "oklch(0.67 0.155 155)", border: "oklch(0.67 0.155 155 / 0.3)" },
   amber:  { bg: "oklch(0.74 0.165 75 / 0.12)",  text: "oklch(0.78 0.165 75)",  border: "oklch(0.74 0.165 75 / 0.3)"  },
   red:    { bg: "oklch(0.65 0.22 25 / 0.12)",   text: "oklch(0.65 0.22 25)",   border: "oklch(0.65 0.22 25 / 0.3)"   },
@@ -79,7 +79,7 @@ const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] text-[--foreground] out
 const iSty = { background:"oklch(1 0 0 / 0.04)", border:"1px solid oklch(1 0 0 / 0.09)", fontFamily:"var(--font-jakarta)" };
 function FInput({ value, onChange, placeholder }: { value:string; onChange:(v:string)=>void; placeholder?:string }) {
   return <input value={value} placeholder={placeholder} onChange={e=>onChange(e.target.value)} className={iCls} style={iSty}
-    onFocus={e=>(e.target.style.borderColor="oklch(0.81 0.155 200 / 0.5)")} onBlur={e=>(e.target.style.borderColor="oklch(1 0 0 / 0.09)")}/>;
+    onFocus={e=>(e.target.style.borderColor="oklch(0.62 0.27 265 / 0.5)")} onBlur={e=>(e.target.style.borderColor="oklch(1 0 0 / 0.09)")}/>;
 }
 function FSelect({ value, onChange, options }: { value:string; onChange:(v:string)=>void; options:string[] }) {
   return (
@@ -155,7 +155,7 @@ function EventModal({ event, onClose, onSave, onDelete }: {
                   <motion.button key={m} onClick={()=>toggleMember(m)} whileTap={{scale:0.94}}
                     className="px-2.5 py-1 rounded-[6px] text-[12px] font-semibold transition-colors"
                     style={f.clenove.includes(m)
-                      ?{background:"oklch(0.81 0.155 200 / 0.15)",color:"oklch(0.81 0.155 200)",border:"1px solid oklch(0.81 0.155 200 / 0.3)"}
+                      ?{background:"oklch(0.62 0.27 265 / 0.15)",color:"oklch(0.62 0.27 265)",border:"1px solid oklch(0.62 0.27 265 / 0.3)"}
                       :{background:"oklch(1 0 0 / 0.04)",color:"oklch(0.45 0.005 222)",border:"1px solid oklch(1 0 0 / 0.08)"}}>
                     {m}
                   </motion.button>
@@ -177,7 +177,7 @@ function EventModal({ event, onClose, onSave, onDelete }: {
           <button onClick={onClose} className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground]" style={{background:"oklch(1 0 0 / 0.04)",border:"1px solid oklch(1 0 0 / 0.08)"}}>Zrušit</button>
           <motion.button onClick={()=>onSave({...f,...(!isNew?{id:(event as CalEvent).id}:{})})} whileTap={{scale:0.96}}
             className="px-4 py-2 rounded-[7px] text-[13px] font-semibold"
-            style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+            style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
             {isNew ? "Přidat" : "Uložit"}
           </motion.button>
         </div>
@@ -240,15 +240,15 @@ export default function KalendarPage() {
 
   return (
     <div className="p-4 md:p-7 space-y-5 min-h-screen"
-      style={{background:`radial-gradient(ellipse 50% 40% at 50% 0%, oklch(0.81 0.155 200 / 0.03) 0%, transparent 70%), var(--background)`}}>
+      style={{background:`radial-gradient(ellipse 50% 40% at 50% 0%, oklch(0.62 0.27 265 / 0.03) 0%, transparent 70%), var(--background)`}}>
 
       {/* Header */}
       <motion.div className="flex items-center justify-between gap-3"
         initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease:[0.23,1,0.32,1]}}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-            style={{background:"oklch(0.81 0.155 200 / 0.12)",border:"1px solid oklch(0.81 0.155 200 / 0.2)"}}>
-            <CalendarDays className="w-4 h-4" style={{color:"oklch(0.81 0.155 200)"}}/>
+            style={{background:"oklch(0.62 0.27 265 / 0.12)",border:"1px solid oklch(0.62 0.27 265 / 0.2)"}}>
+            <CalendarDays className="w-4 h-4" style={{color:"oklch(0.62 0.27 265)"}}/>
           </div>
           <div>
             <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
@@ -258,7 +258,7 @@ export default function KalendarPage() {
         </div>
         <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
           className="flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
-          style={{background:"oklch(0.81 0.155 200)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           <Plus className="w-3.5 h-3.5"/> Přidat
         </motion.button>
       </motion.div>
@@ -268,7 +268,7 @@ export default function KalendarPage() {
         style={{background:"oklch(1 0 0 / 0.06)"}}
         initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.35,delay:0.05}}>
         {[
-          { label:`Akce v ${CZ_MONTHS[month]}`, value: String(upcomingThisMonth.length), color:"oklch(0.81 0.155 200)" },
+          { label:`Akce v ${CZ_MONTHS[month]}`, value: String(upcomingThisMonth.length), color:"oklch(0.62 0.27 265)" },
           { label:"Natáčení / Focení",           value: String(shootingDays),             color:"oklch(0.67 0.155 155)" },
           { label:"Meetingy",                    value: String(meetings),                 color:"oklch(0.78 0.165 75)"  },
         ].map(s=>(
@@ -325,7 +325,7 @@ export default function KalendarPage() {
                   onClick={()=>openNew(key)}>
                   {/* Day number */}
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-semibold mb-1 ${isToday?"text-[oklch(0.09_0.008_222)]":""}`}
-                    style={isToday?{background:"oklch(0.81 0.155 200)",fontFamily:"var(--font-outfit)"}:{color:isWeekend?"oklch(0.30 0.005 222)":"oklch(0.50 0.005 222)"}}>
+                    style={isToday?{background:"oklch(0.62 0.27 265)",fontFamily:"var(--font-outfit)"}:{color:isWeekend?"oklch(0.30 0.005 222)":"oklch(0.50 0.005 222)"}}>
                     {day}
                   </div>
                   {/* Events */}

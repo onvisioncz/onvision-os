@@ -70,7 +70,7 @@ const EMPTY_AD: Omit<Ad, "id"> = {
 
 /* ── Status helpers ─────────────────────────────────────────────────────────── */
 function statusStyle(s: AdStatus) {
-  if (s === "Probíhá")              return { color: "oklch(0.81 0.155 200)", bg: "oklch(0.81 0.155 200 / 0.1)",  border: "oklch(0.81 0.155 200 / 0.25)" };
+  if (s === "Probíhá")              return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",  border: "oklch(0.62 0.27 265 / 0.25)" };
   if (s === "Probíhá vyhodnocení")  return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.1)",   border: "oklch(0.74 0.165 75 / 0.25)" };
   return                                   { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.2)" };
 }
@@ -81,7 +81,7 @@ function statusIcon(s: AdStatus) {
 }
 function formatStyle(f: FormatType) {
   if (f.startsWith("VIDEO"))   return { color: "oklch(0.72 0.18 290)",   bg: "oklch(0.64 0.21 290 / 0.1)",   border: "oklch(0.64 0.21 290 / 0.2)" };
-  if (f === "GRAFIKA")         return { color: "oklch(0.81 0.155 200)",  bg: "oklch(0.81 0.155 200 / 0.08)", border: "oklch(0.81 0.155 200 / 0.18)" };
+  if (f === "GRAFIKA")         return { color: "oklch(0.62 0.27 265)",  bg: "oklch(0.62 0.27 265 / 0.08)", border: "oklch(0.62 0.27 265 / 0.18)" };
   return                              { color: "oklch(0.55 0.005 222)",  bg: "oklch(1 0 0 / 0.05)",          border: "oklch(1 0 0 / 0.1)" };
 }
 function payStyle(s: PayStatus) {
@@ -147,7 +147,7 @@ function Input({ value, onChange, placeholder, type = "text" }: {
       type={type} value={value} placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
       className={inputCls} style={inputStyle}
-      onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+      onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
       onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
     />
   );
@@ -180,7 +180,7 @@ function StatsStrip({ ads }: { ads: Ad[] }) {
 
   const stats = [
     { label: "Celkem reklam",       value: ads.length,    color: "var(--foreground)" },
-    { label: "Probíhá",             value: probiha,        color: "oklch(0.81 0.155 200)" },
+    { label: "Probíhá",             value: probiha,        color: "oklch(0.62 0.27 265)" },
     { label: "Probíhá vyhodnocení", value: vyhodnoceni,   color: "oklch(0.78 0.165 75)" },
     { label: "Dokončeno",           value: dokonceno,     color: "oklch(0.67 0.155 155)" },
     { label: "Neodesláno ❌",       value: neodesláno,   color: "oklch(0.65 0.22 25)" },
@@ -239,7 +239,7 @@ function InvestmentPanel({ ads }: { ads: Ad[] }) {
 
   // client colors cycling
   const CLIENT_COLORS = [
-    "oklch(0.81 0.155 200)", "oklch(0.64 0.21 290)", "oklch(0.74 0.165 75)",
+    "oklch(0.62 0.27 265)", "oklch(0.64 0.21 290)", "oklch(0.74 0.165 75)",
     "oklch(0.67 0.155 155)", "oklch(0.65 0.22 25)",  "oklch(0.72 0.18 340)",
   ];
 
@@ -249,8 +249,8 @@ function InvestmentPanel({ ads }: { ads: Ad[] }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.81 0.155 200 / 0.1)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
-            <TrendingUp className="w-3.5 h-3.5" style={{ color: "oklch(0.81 0.155 200)" }} />
+            style={{ background: "oklch(0.62 0.27 265 / 0.1)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}>
+            <TrendingUp className="w-3.5 h-3.5" style={{ color: "oklch(0.62 0.27 265)" }} />
           </div>
           <div>
             <p className="text-[14px] font-bold text-[--foreground] leading-none"
@@ -297,7 +297,7 @@ function InvestmentPanel({ ads }: { ads: Ad[] }) {
           <div className="mt-4 flex items-center gap-4">
             {[
               { label: "Dokončeno",  n: periodAds.filter(a => a.stav === "Dokončeno").length,           color: "oklch(0.67 0.155 155)" },
-              { label: "Probíhá",   n: periodAds.filter(a => a.stav !== "Dokončeno").length,             color: "oklch(0.81 0.155 200)" },
+              { label: "Probíhá",   n: periodAds.filter(a => a.stav !== "Dokončeno").length,             color: "oklch(0.62 0.27 265)" },
               { label: "Neodesláno",n: periodAds.filter(a => a.stavVyplaty === "Neodesláno").length,     color: "oklch(0.65 0.22 25)" },
             ].map(s => (
               <div key={s.label} className="text-center">
@@ -331,7 +331,7 @@ function InvestmentPanel({ ads }: { ads: Ad[] }) {
                       </span>
                       {active > 0 && (
                         <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px]"
-                          style={{ background: "oklch(0.81 0.155 200 / 0.1)", color: "oklch(0.81 0.155 200)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}>
+                          style={{ background: "oklch(0.62 0.27 265 / 0.1)", color: "oklch(0.62 0.27 265)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}>
                           {active} aktivní
                         </span>
                       )}
@@ -480,7 +480,7 @@ function AdRow({ ad, onEdit, onToggleDone }: {
           onClick={() => onEdit(ad)}
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-[5px] btn-tactile"
           style={{ color: "oklch(0.45 0.005 222)" }}
-          whileHover={{ color: "oklch(0.81 0.155 200)", background: "oklch(0.81 0.155 200 / 0.08)" }}
+          whileHover={{ color: "oklch(0.62 0.27 265)", background: "oklch(0.62 0.27 265 / 0.08)" }}
           whileTap={{ scale: 0.90 }}
           transition={{ duration: 0.12 }}
         >
@@ -661,7 +661,7 @@ function AdModal({
             <motion.button
               onClick={() => onSave({ ...form, ...(ad ? { id: ad.id } : {}) })}
               className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-              style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}
+              style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}
               whileHover={{ filter: "brightness(1.08)" }}
               whileTap={{ scale: 0.96 }}
               transition={{ duration: 0.12 }}
@@ -735,7 +735,7 @@ export default function AdsPage() {
       <div
         className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
         style={{
-          background: `radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.81 0.155 200 / 0.04) 0%, transparent 70%), var(--background)`,
+          background: `radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.62 0.27 265 / 0.04) 0%, transparent 70%), var(--background)`,
         }}
       >
         {/* Header */}
@@ -748,9 +748,9 @@ export default function AdsPage() {
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.81 0.155 200 / 0.12)", border: "1px solid oklch(0.81 0.155 200 / 0.2)" }}
+              style={{ background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}
             >
-              <Megaphone className="w-4 h-4" style={{ color: "oklch(0.81 0.155 200)" }} />
+              <Megaphone className="w-4 h-4" style={{ color: "oklch(0.62 0.27 265)" }} />
             </div>
             <div>
               <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
@@ -763,7 +763,7 @@ export default function AdsPage() {
           <motion.button
             onClick={() => setModal("new")}
             className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-            style={{ background: "oklch(0.81 0.155 200)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}
+            style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}
             whileHover={{ filter: "brightness(1.08)" }}
             whileTap={{ scale: 0.96 }}
             transition={{ duration: 0.12 }}
@@ -799,7 +799,7 @@ export default function AdsPage() {
               placeholder="Hledat klienta, téma..."
               className="w-full pl-8 pr-3 py-2 rounded-[8px] text-[13px] text-[--foreground] placeholder:text-[--muted-foreground] outline-none transition-all"
               style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.09)", fontFamily: "var(--font-jakarta)" }}
-              onFocus={e => (e.target.style.borderColor = "oklch(0.81 0.155 200 / 0.5)")}
+              onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
               onBlur={e  => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
             />
           </div>
@@ -867,11 +867,11 @@ export default function AdsPage() {
                           <div className="flex items-center gap-2.5">
                             <span
                               className="text-[11px] font-bold uppercase tracking-[0.1em]"
-                              style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}
+                              style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}
                             >
                               {group.mesic}
                             </span>
-                            <span className="flex-1 h-px" style={{ background: "oklch(0.81 0.155 200 / 0.15)" }} />
+                            <span className="flex-1 h-px" style={{ background: "oklch(0.62 0.27 265 / 0.15)" }} />
                             <span className="text-[10px] text-[--muted-foreground]">
                               {group.ads.length} {group.ads.length === 1 ? "kampaň" : group.ads.length < 5 ? "kampaně" : "kampaní"}
                               {" · "}
@@ -916,10 +916,10 @@ export default function AdsPage() {
                 {/* Month header mobile */}
                 <div className="flex items-center gap-2 pt-2 pb-0.5">
                   <span className="text-[11px] font-bold uppercase tracking-[0.1em]"
-                    style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.81 0.155 200)" }}>
+                    style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
                     {group.mesic}
                   </span>
-                  <span className="flex-1 h-px" style={{ background: "oklch(0.81 0.155 200 / 0.15)" }} />
+                  <span className="flex-1 h-px" style={{ background: "oklch(0.62 0.27 265 / 0.15)" }} />
                   <span className="text-[10px] text-[--muted-foreground]">
                     {formatKc(group.ads.reduce((s, a) => s + parseCastka(a.castka), 0))}
                   </span>
