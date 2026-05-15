@@ -33,7 +33,7 @@ export function useSupabaseData<T>(
 
   // ── Load from Supabase on mount ────────────────────────────────────────────
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = getSupabase();
 
     supabase
       .from("app_data")
@@ -109,18 +109,17 @@ function writeCache(key: string, value: unknown) {
   } catch {}
 }
 
+// Singleton Supabase client — reused across all hook instances
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) _supabase = createClient();
+  return _supabase;
+}
+
 async function saveToSupabase(key: string, value: unknown) {
   emitSync("syncing");
   try {
-    const supabase = createClient();
-
-    // Check session first
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error(`[ov-sync] No active session — cannot save "${key}"`);
-      emitSync("error", "No session");
-      return;
-    }
+    const supabase = getSupabase();
 
     const { error } = await supabase
       .from("app_data")
@@ -130,7 +129,7 @@ async function saveToSupabase(key: string, value: unknown) {
       );
 
     if (error) {
-      console.error(`[ov-sync] Save error for "${key}":`, error.message, error.code);
+      console.error(`[ov-sync] Save error for "${key}":`, error.message, error.code, error.details);
       emitSync("error", error.message);
     } else {
       emitSync("ok");
