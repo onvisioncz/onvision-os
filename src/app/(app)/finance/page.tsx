@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, TrendingUp, TrendingDown,
@@ -1383,11 +1384,11 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] =
 
 export default function FinancePage() {
   const [tab,       setTab]      = useState<Tab>("prehled");
-  const [summaries, setSummaries] = useState<MonthSummary[]>(SUMMARIES);
-  const [incomes,   setIncomes]  = useState<IncomeItem[]>(INCOME_SEED);
-  const [expenses,  setExpenses] = useState<ExpenseItem[]>(EXPENSE_SEED);
-  const [faktury,   setFaktury]  = useState<Faktura[]>(FAKTURY_SEED);
-  const [doklady,   setDoklady]  = useState<Doklad[]>(DOKLADY_SEED);
+  const [summaries, setSummaries] = useLocalStorage<MonthSummary[]>("ov-finance-summaries", () => SUMMARIES);
+  const [incomes,   setIncomes]  = useLocalStorage<IncomeItem[]>("ov-finance-incomes", () => INCOME_SEED);
+  const [expenses,  setExpenses] = useLocalStorage<ExpenseItem[]>("ov-finance-expenses", () => EXPENSE_SEED);
+  const [faktury,   setFaktury]  = useLocalStorage<Faktura[]>("ov-finance-faktury", () => FAKTURY_SEED);
+  const [doklady,   setDoklady]  = useLocalStorage<Doklad[]>("ov-finance-doklady", () => DOKLADY_SEED);
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"

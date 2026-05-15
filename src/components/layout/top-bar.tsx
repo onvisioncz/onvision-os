@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, LogOut, Check } from "lucide-react";
@@ -9,6 +9,19 @@ import { createClient } from "@/lib/supabase/client";
 export function TopBar() {
   const router = useRouter();
   const [undoFeedback, setUndoFeedback] = useState(false);
+  // Track last focused editable element so we can refocus before execCommand
+  const lastInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    function onFocusin(e: FocusEvent) {
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") {
+        lastInputRef.current = t as HTMLInputElement | HTMLTextAreaElement;
+      }
+    }
+    document.addEventListener("focusin", onFocusin);
+    return () => document.removeEventListener("focusin", onFocusin);
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -18,30 +31,12 @@ export function TopBar() {
   }
 
   function handleUndo() {
-    const focused = document.activeElement as HTMLElement;
-    const isEditable =
-      focused?.tagName === "INPUT" ||
-      focused?.tagName === "TEXTAREA" ||
-      focused?.getAttribute("contenteditable") === "true";
-
-    if (isEditable) {
-      // Undo text change in the focused field
+    const target = lastInputRef.current;
+    if (target && document.body.contains(target)) {
+      // Refocus the last edited field, then undo
+      target.focus();
       document.execCommand("undo");
-    } else {
-      // Dispatch Ctrl+Z to the document — picks up any custom undo handlers
-      document.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "z",
-          code: "KeyZ",
-          ctrlKey: true,
-          metaKey: false,
-          bubbles: true,
-          cancelable: true,
-        })
-      );
     }
-
-    // Brief visual feedback
     setUndoFeedback(true);
     setTimeout(() => setUndoFeedback(false), 900);
   }

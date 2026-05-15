@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CreditCard, Clock, FileCheck, AlertTriangle, MessageSquare,
@@ -59,7 +60,7 @@ function TypeIcon({ type }: { type: NotifType }) {
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function InboxPage() {
-  const [items, setItems] = useState<Notif[]>(SEED);
+  const [items, setItems] = useLocalStorage<Notif[]>("ov-inbox-items", () => SEED);
   const [tab, setTab] = useState<"vše" | "nepřečtené" | "archiv">("vše");
 
   const unreadCount = items.filter(i => !i.precten && !i.archivovano).length;

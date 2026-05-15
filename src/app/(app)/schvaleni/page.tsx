@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClipboardCheck, CheckCircle, XCircle, Clock, FileText, Palette, FileCheck, ScrollText, X } from "lucide-react";
 
@@ -110,7 +111,7 @@ function RejectModal({ item, onClose, onConfirm }: { item: SchvaleniItem; onClos
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function SchvaleniPage() {
-  const [items, setItems] = useState<SchvaleniItem[]>(SEED);
+  const [items, setItems] = useLocalStorage<SchvaleniItem[]>("ov-schvaleni-items", () => SEED);
   const [rejecting, setRejecting] = useState<SchvaleniItem | null>(null);
 
   const approve = (id: number) => {

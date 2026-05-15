@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback } from "react";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, RefreshCw, Users,
@@ -1199,7 +1200,7 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 export default function MonthlyPage() {
-  const [clients, setClients] = useState<RetainerClient[]>(makeSeed);
+  const [clients, setClients] = useLocalStorage<RetainerClient[]>("ov-monthly-clients", makeSeed);
   const [selectedMonth, setSelectedMonth] = useState("Květen");
   const [catFilter, setCatFilter] = useState<DeliverableCategory | "vše">("vše");
   const [editClient, setEditClient] = useState<RetainerClient | null | "new">(null);

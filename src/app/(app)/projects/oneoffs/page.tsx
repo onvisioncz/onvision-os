@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
@@ -212,7 +213,7 @@ const stagger = {
 
 /* ── Main page ────────────────────────────────────────────────────────────────── */
 export default function OneoffsPage() {
-  const [projects, setProjects] = useState<Project[]>(SEED);
+  const [projects, setProjects] = useLocalStorage<Project[]>("ov-oneoffs-projects", () => SEED);
   const [filterTyp, setFilterTyp] = useState<Typ | "">("");
   const [filterClen, setFilterClen] = useState<string>("");
   const [selected, setSelected] = useState<Project | null>(null);
