@@ -62,31 +62,67 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
+          {/* Logo with entrance + orbit ring effect */}
           <motion.div
-            className="mb-4"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{
-              scale: 1,
-              opacity: 1,
-              filter: [
-                "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
-                "drop-shadow(0 0 18px rgba(80, 80, 255, 0.85))",
-                "drop-shadow(0 0 0px rgba(80, 80, 255, 0))",
-              ],
-            }}
-            transition={{
-              scale: { duration: 0.4, delay: 0.1, ease: [0.23, 1, 0.32, 1] },
-              opacity: { duration: 0.4, delay: 0.1 },
-              filter: { duration: 3, delay: 0.5, repeat: Infinity, ease: "easeInOut" },
-            }}
+            className="relative mb-6"
+            style={{ width: 112, height: 112 }}
+            initial={{ scale: 0.75, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
           >
+            {/* Outer breathing glow */}
+            <motion.div
+              className="absolute"
+              style={{
+                inset: -14,
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(83,83,246,0.35) 0%, transparent 65%)",
+                pointerEvents: "none",
+              }}
+              animate={{ opacity: [0.4, 1, 0.4], scale: [0.92, 1.04, 0.92] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Spinning orbit arc */}
+            <motion.div
+              className="absolute"
+              style={{
+                inset: -5,
+                borderRadius: "50%",
+                background: "conic-gradient(from 0deg, transparent 0%, transparent 50%, rgba(83,83,246,0.25) 68%, rgba(120,100,255,0.8) 80%, rgba(200,185,255,1) 88%, rgba(120,100,255,0.8) 95%, transparent 100%)",
+                WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 4px), white calc(100% - 4px))",
+                mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), white calc(100% - 4px))",
+                filter: "blur(0.8px)",
+                pointerEvents: "none",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+            />
+
+            {/* Bright leading dot on the orbit */}
+            <motion.div
+              className="absolute"
+              style={{
+                inset: -5,
+                borderRadius: "50%",
+                background: "conic-gradient(from 0deg, transparent 0%, transparent 86%, rgba(255,255,255,0.95) 89%, transparent 92%, transparent 100%)",
+                WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 5px), white calc(100% - 5px))",
+                mask: "radial-gradient(farthest-side, transparent calc(100% - 5px), white calc(100% - 5px))",
+                filter: "blur(1.5px)",
+                pointerEvents: "none",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+            />
+
+            {/* Actual logo */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/onvision-mark.png"
               alt="OnVision"
-              width={80}
-              height={80}
-              style={{ display: "block", borderRadius: "50%" }}
+              width={112}
+              height={112}
+              style={{ display: "block", borderRadius: "50%", position: "relative", zIndex: 1 }}
             />
           </motion.div>
           <h1

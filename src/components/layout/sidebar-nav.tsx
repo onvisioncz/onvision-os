@@ -38,27 +38,32 @@ export function SidebarNav() {
     >
       {/* Wordmark */}
       <div className="px-4 py-[18px] flex items-center gap-3">
-        {/* OnVision "On" logomark — pulsing glow */}
-        <motion.div
-          className="shrink-0"
-          animate={{
-            filter: [
-              "drop-shadow(0 0 0px rgba(90, 80, 255, 0))",
-              "drop-shadow(0 0 9px rgba(90, 80, 255, 0.9))",
-              "drop-shadow(0 0 0px rgba(90, 80, 255, 0))",
-            ],
-          }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
+        {/* OnVision "On" logomark — spinning orbit */}
+        <div className="relative shrink-0" style={{ width: 36, height: 36 }}>
+          {/* Spinning orbit arc */}
+          <motion.div
+            className="absolute"
+            style={{
+              inset: -3,
+              borderRadius: "50%",
+              background: "conic-gradient(from 0deg, transparent 50%, rgba(83,83,246,0.3) 70%, rgba(180,165,255,1) 88%, rgba(83,83,246,0.3) 95%, transparent 100%)",
+              WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
+              mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
+              filter: "blur(0.5px)",
+              pointerEvents: "none",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/onvision-mark.png"
             alt="OnVision"
             width={36}
             height={36}
-            style={{ display: "block", borderRadius: "50%" }}
+            style={{ display: "block", borderRadius: "50%", position: "relative", zIndex: 1 }}
           />
-        </motion.div>
+        </div>
 
         {/* Wordmark text */}
         <div className="flex flex-col leading-none gap-[3px]">
