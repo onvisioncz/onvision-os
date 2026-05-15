@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Undo2, LogOut, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function TopBar() {
   const router = useRouter();
+  const [undoFeedback, setUndoFeedback] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -15,50 +17,102 @@ export function TopBar() {
     router.refresh();
   }
 
-  function handleBack() {
-    router.back();
+  function handleUndo() {
+    const focused = document.activeElement as HTMLElement;
+    const isEditable =
+      focused?.tagName === "INPUT" ||
+      focused?.tagName === "TEXTAREA" ||
+      focused?.getAttribute("contenteditable") === "true";
+
+    if (isEditable) {
+      // Undo text change in the focused field
+      document.execCommand("undo");
+    } else {
+      // Dispatch Ctrl+Z to the document — picks up any custom undo handlers
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "z",
+          code: "KeyZ",
+          ctrlKey: true,
+          metaKey: false,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    }
+
+    // Brief visual feedback
+    setUndoFeedback(true);
+    setTimeout(() => setUndoFeedback(false), 900);
   }
 
   return (
     <div
-      className="sticky top-0 z-40 flex items-center justify-end px-4 py-2.5 gap-2"
+      className="sticky top-0 z-40 flex items-center justify-end px-4 py-2 gap-2"
       style={{
-        background: "oklch(0.09 0.008 222 / 0.85)",
+        background: "oklch(0.09 0.008 222 / 0.88)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid oklch(1 0 0 / 0.055)",
       }}
     >
-      {/* Zpět */}
+      {/* Vrátit zpět (Undo) */}
       <motion.button
-        onClick={handleBack}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-medium"
+        onClick={handleUndo}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-medium overflow-hidden"
         style={{
-          color: "oklch(0.50 0.005 222)",
-          background: "oklch(1 0 0 / 0.04)",
-          border: "1px solid oklch(1 0 0 / 0.07)",
+          color: undoFeedback ? "oklch(0.67 0.155 155)" : "oklch(0.48 0.005 222)",
+          background: undoFeedback ? "oklch(0.67 0.155 155 / 0.1)" : "oklch(1 0 0 / 0.04)",
+          border: `1px solid ${undoFeedback ? "oklch(0.67 0.155 155 / 0.3)" : "oklch(1 0 0 / 0.07)"}`,
           fontFamily: "var(--font-jakarta)",
+          transition: "color 0.2s, background 0.2s, border-color 0.2s",
         }}
-        whileHover={{
-          color: "oklch(0.78 0.005 222)",
+        whileHover={!undoFeedback ? {
+          color: "oklch(0.75 0.005 222)",
           background: "oklch(1 0 0 / 0.07)",
-        }}
-        whileTap={{ scale: 0.96 }}
+        } : {}}
+        whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.12 }}
+        title="Vrátit zpět poslední změnu (Ctrl+Z)"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Zpět
+        <AnimatePresence mode="wait" initial={false}>
+          {undoFeedback ? (
+            <motion.span
+              key="check"
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Check className="w-3.5 h-3.5" />
+              Vráceno
+            </motion.span>
+          ) : (
+            <motion.span
+              key="undo"
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+              Zpět
+            </motion.span>
+          )}
+        </AnimatePresence>
       </motion.button>
 
       {/* Divider */}
-      <div className="w-px h-4" style={{ background: "oklch(1 0 0 / 0.09)" }} />
+      <div className="w-px h-4" style={{ background: "oklch(1 0 0 / 0.08)" }} />
 
       {/* Odhlásit */}
       <motion.button
         onClick={handleLogout}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-medium"
         style={{
-          color: "oklch(0.50 0.005 222)",
+          color: "oklch(0.48 0.005 222)",
           background: "oklch(1 0 0 / 0.04)",
           border: "1px solid oklch(1 0 0 / 0.07)",
           fontFamily: "var(--font-jakarta)",
@@ -66,9 +120,9 @@ export function TopBar() {
         whileHover={{
           color: "oklch(0.72 0.18 25)",
           background: "oklch(0.62 0.22 25 / 0.08)",
-          borderColor: "oklch(0.62 0.22 25 / 0.2)",
+          borderColor: "oklch(0.62 0.22 25 / 0.25)",
         }}
-        whileTap={{ scale: 0.96 }}
+        whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.12 }}
       >
         <LogOut className="w-3.5 h-3.5" />
