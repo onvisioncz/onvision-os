@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
@@ -213,7 +213,7 @@ const stagger = {
 
 /* ── Main page ────────────────────────────────────────────────────────────────── */
 export default function OneoffsPage() {
-  const [projects, setProjects] = useLocalStorage<Project[]>("ov-oneoffs-projects", () => SEED);
+  const [projects, setProjects] = useSupabaseData<Project[]>("ov-oneoffs-projects", () => SEED);
   const [filterTyp, setFilterTyp] = useState<Typ | "">("");
   const [filterClen, setFilterClen] = useState<string>("");
   const [selected, setSelected] = useState<Project | null>(null);

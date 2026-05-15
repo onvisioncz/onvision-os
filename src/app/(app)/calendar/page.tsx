@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarDays, Plus, X, ChevronLeft, ChevronRight,
@@ -192,7 +192,7 @@ export default function KalendarPage() {
   const today = new Date();
   const [year,   setYear]   = useState(today.getFullYear());
   const [month,  setMonth]  = useState(today.getMonth()); // 0-indexed
-  const [events, setEvents] = useLocalStorage<CalEvent[]>("ov-calendar-events", () => SEED);
+  const [events, setEvents] = useSupabaseData<CalEvent[]>("ov-calendar-events", () => SEED);
   const [modal,  setModal]  = useState<CalEvent|"new"|null>(null);
   const [newDate, setNewDate] = useState("");
 

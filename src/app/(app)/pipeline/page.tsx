@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import { GitMerge, Plus, X, TrendingUp, DollarSign, CheckCircle } from "lucide-react";
 
@@ -214,7 +214,7 @@ function DealCard({ deal, onClick }: { deal: Deal; onClick: () => void }) {
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function PipelinePage() {
-  const [deals, setDeals] = useLocalStorage<Deal[]>("ov-pipeline-deals", () => SEED);
+  const [deals, setDeals] = useSupabaseData<Deal[]>("ov-pipeline-deals", () => SEED);
   const [fazFilter, setFazFilter] = useState<DealFaze | "Vše">("Vše");
   const [editing, setEditing] = useState<Deal | null>(null);
   const [adding, setAdding] = useState(false);

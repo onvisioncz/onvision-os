@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, Search, Megaphone,
@@ -678,7 +678,7 @@ function AdModal({
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 export default function AdsPage() {
-  const [ads, setAds]           = useLocalStorage<Ad[]>("ov-ads", () => SEED);
+  const [ads, setAds]           = useSupabaseData<Ad[]>("ov-ads", () => SEED);
   const [filter, setFilter]     = useState<AdStatus | "Vše">("Vše");
   const [search, setSearch]     = useState("");
   const [modal, setModal]       = useState<Ad | null | "new">(null);

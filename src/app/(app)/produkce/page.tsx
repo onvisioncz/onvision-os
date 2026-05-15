@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, ChevronDown, Layers,
@@ -1370,10 +1370,10 @@ type HistorySnap = { zEntries: ZEntry[]; pendingItems: QPending[] };
 
 export default function ProdukccePage() {
   const [tab,          setTab]          = useState<ProdTab>("prehled");
-  const [zEntries,     setZEntries]     = useLocalStorage<ZEntry[]>("ov-produkce-zdenek", () => Z_SEED);
-  const [mEntries,     setMEntries]     = useLocalStorage<MEntry[]>("ov-produkce-matej", () => M_SEED);
-  const [gEntries,     setGEntries]     = useLocalStorage<GEntry[]>("ov-produkce-grafici", () => G_SEED);
-  const [pendingItems, setPendingItems] = useLocalStorage<QPending[]>("ov-produkce-pending", () => Q_SEED);
+  const [zEntries,     setZEntries]     = useSupabaseData<ZEntry[]>("ov-produkce-zdenek", () => Z_SEED);
+  const [mEntries,     setMEntries]     = useSupabaseData<MEntry[]>("ov-produkce-matej", () => M_SEED);
+  const [gEntries,     setGEntries]     = useSupabaseData<GEntry[]>("ov-produkce-grafici", () => G_SEED);
+  const [pendingItems, setPendingItems] = useSupabaseData<QPending[]>("ov-produkce-pending", () => Q_SEED);
   const [history,      setHistory]      = useState<HistorySnap[]>([]);
 
   const activeColor = TABS.find(t=>t.id===tab)?.color ?? "oklch(0.62 0.27 265)";

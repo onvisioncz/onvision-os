@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, Square, AlertCircle, ChevronDown, X, Calendar, User,
@@ -227,7 +227,7 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function UkolyPage() {
-  const [tasks, setTasks] = useLocalStorage<Task[]>("ov-ukoly-tasks", () => SEED);
+  const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => SEED);
   const [assigneeFilter, setAssigneeFilter] = useState("Vše");
   const [statusFilter, setStatusFilter] = useState<TStatus | "Vše">("Vše");
   const [editing, setEditing] = useState<Task | null>(null);
