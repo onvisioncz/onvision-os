@@ -52,11 +52,11 @@ export function SidebarNav() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/onvision-mark.svg"
+            src="/onvision-mark.png"
             alt="OnVision"
             width={36}
             height={36}
-            style={{ display: "block" }}
+            style={{ display: "block", borderRadius: "50%" }}
           />
         </motion.div>
 

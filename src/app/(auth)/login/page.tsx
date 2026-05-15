@@ -82,11 +82,11 @@ export default function LoginPage() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/onvision-mark.svg"
+              src="/onvision-mark.png"
               alt="OnVision"
-              width={72}
-              height={72}
-              style={{ display: "block" }}
+              width={80}
+              height={80}
+              style={{ display: "block", borderRadius: "50%" }}
             />
           </motion.div>
           <h1
