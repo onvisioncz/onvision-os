@@ -293,8 +293,8 @@ function Avatar({ name }: { name: string }) {
 function DeadlinePill({ deadline }: { deadline: string }) {
   const d = parseDeadline(deadline);
 
-  // Always show a pill — never invisible plain text
   let color: string, bg: string, border: string, label: string, sublabel: string | null = null;
+  let urgent = false; // triggers red pulse
 
   if (!d) {
     color = "oklch(0.50 0.005 222)"; bg = "oklch(1 0 0 / 0.05)"; border = "oklch(1 0 0 / 0.10)";
@@ -302,13 +302,16 @@ function DeadlinePill({ deadline }: { deadline: string }) {
   } else {
     const days = daysUntil(d);
     if (days < 0) {
-      color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.16)"; border = "oklch(0.65 0.22 25 / 0.38)";
+      urgent = true;
+      color = "oklch(0.72 0.22 25)"; bg = "oklch(0.55 0.22 25 / 0.20)"; border = "oklch(0.65 0.22 25 / 0.50)";
       label = deadline; sublabel = `${Math.abs(days)}d po splatnosti`;
     } else if (days === 0) {
-      color = "oklch(0.65 0.22 25)"; bg = "oklch(0.65 0.22 25 / 0.16)"; border = "oklch(0.65 0.22 25 / 0.38)";
+      urgent = true;
+      color = "oklch(0.72 0.22 25)"; bg = "oklch(0.55 0.22 25 / 0.20)"; border = "oklch(0.65 0.22 25 / 0.50)";
       label = deadline; sublabel = "Dnes!";
     } else if (days === 1) {
-      color = "oklch(0.82 0.16 45)"; bg = "oklch(0.74 0.18 45 / 0.14)"; border = "oklch(0.74 0.18 45 / 0.35)";
+      urgent = true;
+      color = "oklch(0.82 0.16 45)"; bg = "oklch(0.74 0.18 45 / 0.18)"; border = "oklch(0.74 0.18 45 / 0.45)";
       label = deadline; sublabel = "Zítra";
     } else if (days <= 3) {
       color = "oklch(0.84 0.14 75)"; bg = "oklch(0.80 0.14 75 / 0.11)"; border = "oklch(0.80 0.14 75 / 0.28)";
@@ -322,26 +325,38 @@ function DeadlinePill({ deadline }: { deadline: string }) {
     }
   }
 
+  const pillStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.01em",
+    padding: "3px 8px",
+    borderRadius: 6,
+    color,
+    background: bg,
+    border: `1px solid ${border}`,
+    whiteSpace: "nowrap",
+    fontFamily: "var(--font-outfit)",
+    display: "inline-block",
+  };
+
+  const d2 = d ? daysUntil(d) : 99;
+  const redGlow = ["0 0 0px 0px rgba(220,60,40,0)", "0 0 10px 3px rgba(220,60,40,0.55)", "0 0 0px 0px rgba(220,60,40,0)"];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 1 }}>
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "0.01em",
-          padding: "3px 8px",
-          borderRadius: 6,
-          color,
-          background: bg,
-          border: `1px solid ${border}`,
-          whiteSpace: "nowrap",
-          fontFamily: "var(--font-outfit)",
-        }}
-      >
-        {label}
-      </span>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 2 }}>
+      {urgent ? (
+        <motion.span
+          style={pillStyle}
+          animate={{ boxShadow: d2 <= 1 ? redGlow : "0 0 0px 0px rgba(220,60,40,0)" }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {label}
+        </motion.span>
+      ) : (
+        <span style={pillStyle}>{label}</span>
+      )}
       {sublabel && (
-        <span style={{ fontSize: 9, color, opacity: 0.75, fontFamily: "var(--font-jakarta)", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+        <span style={{ fontSize: 9, color, opacity: 0.8, fontFamily: "var(--font-jakarta)", whiteSpace: "nowrap", letterSpacing: "0.02em", fontWeight: 600 }}>
           {sublabel}
         </span>
       )}
