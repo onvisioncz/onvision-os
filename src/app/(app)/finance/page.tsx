@@ -510,45 +510,64 @@ function PrehledTab({
                     <td className="px-4 py-3 num text-[13px]" style={{ color: s.vydaje ? "oklch(0.65 0.22 25)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.vydaje)}</td>
                     <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.62 0.27 265)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
                     <td className="px-4 py-3 num text-[12px] hidden md:table-cell" style={{ color: marze ? "var(--foreground)" : "oklch(0.30 0.005 222)" }}>{marze ? `${marze}%` : "—"}</td>
-                    {/* Stav — inline select */}
+                    {/* Stav — inline select s viditelnou šipkou */}
                     <td className="px-4 py-2.5">
-                      <div className="relative inline-flex items-center">
+                      <div className="relative inline-flex items-center group">
                         <select
                           value={s.stav}
                           onChange={e => updateRow(s.mesic, { stav: e.target.value as MonthStatus })}
-                          className="appearance-none pl-2 pr-6 py-0.5 rounded-[5px] text-[10px] font-bold tracking-[0.05em] outline-none cursor-pointer transition-opacity hover:opacity-80"
+                          className="appearance-none pl-2.5 pr-7 py-1 rounded-[6px] text-[10px] font-bold tracking-[0.05em] outline-none cursor-pointer"
                           style={{
                             color: ss.color,
                             background: ss.bg,
                             border: `1px solid ${ss.border}`,
                             fontFamily: "var(--font-jakarta)",
+                            boxShadow: "inset 0 0 0 0 transparent",
                           }}
                         >
-                          {MONTH_STATUSES.map(v => <option key={v} value={v}>{v}</option>)}
+                          {MONTH_STATUSES.map(v => (
+                            <option key={v} value={v} style={{ background: "#111", color: "#eee" }}>{v}</option>
+                          ))}
                         </select>
-                        <svg className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5" viewBox="0 0 10 6" fill="none">
-                          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ color: ss.color }} />
+                        {/* Chevron — always visible, uses same color as badge */}
+                        <svg
+                          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-70"
+                          viewBox="0 0 10 6" fill="none"
+                          style={{ color: ss.color }}
+                        >
+                          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
                     </td>
                     {/* Schváleno — inline select */}
                     <td className="px-4 py-2.5 hidden md:table-cell">
-                      <select
-                        value={s.schvaleno.replace(" ✅", "") || "—"}
-                        onChange={e => {
-                          const val = e.target.value;
-                          updateRow(s.mesic, { schvaleno: val === "—" ? "" : val + (s.stav === "UZAVŘENO" ? " ✅" : "") });
-                        }}
-                        className="appearance-none px-2 py-0.5 rounded-[5px] text-[11px] outline-none cursor-pointer bg-transparent transition-opacity hover:opacity-80"
-                        style={{
-                          color: s.schvaleno ? "oklch(0.67 0.155 155)" : "oklch(0.38 0.005 222)",
-                          border: `1px solid ${s.schvaleno ? "oklch(0.67 0.155 155 / 0.2)" : "oklch(1 0 0 / 0.08)"}`,
-                          background: s.schvaleno ? "oklch(0.67 0.155 155 / 0.07)" : "oklch(1 0 0 / 0.03)",
-                          fontFamily: "var(--font-jakarta)",
-                        }}
-                      >
-                        {SCHVALITEL.map(v => <option key={v} value={v}>{v}</option>)}
-                      </select>
+                      <div className="relative inline-flex items-center">
+                        <select
+                          value={s.schvaleno.replace(" ✅", "") || "—"}
+                          onChange={e => {
+                            const val = e.target.value;
+                            updateRow(s.mesic, { schvaleno: val === "—" ? "" : val + (s.stav === "UZAVŘENO" ? " ✅" : "") });
+                          }}
+                          className="appearance-none pl-2.5 pr-7 py-1 rounded-[6px] text-[11px] font-semibold outline-none cursor-pointer"
+                          style={{
+                            color: s.schvaleno ? "oklch(0.72 0.155 155)" : "oklch(0.45 0.005 222)",
+                            border: `1px solid ${s.schvaleno ? "oklch(0.67 0.155 155 / 0.25)" : "oklch(1 0 0 / 0.12)"}`,
+                            background: s.schvaleno ? "oklch(0.67 0.155 155 / 0.09)" : "oklch(1 0 0 / 0.04)",
+                            fontFamily: "var(--font-jakarta)",
+                          }}
+                        >
+                          {SCHVALITEL.map(v => (
+                            <option key={v} value={v} style={{ background: "#111", color: "#eee" }}>{v}</option>
+                          ))}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-60"
+                          viewBox="0 0 10 6" fill="none"
+                          style={{ color: s.schvaleno ? "oklch(0.67 0.155 155)" : "oklch(0.45 0.005 222)" }}
+                        >
+                          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
                     </td>
                   </tr>
                 );
