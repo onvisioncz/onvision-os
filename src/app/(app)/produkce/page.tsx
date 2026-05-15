@@ -628,7 +628,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
     setEntries(p=>[...p,{...data,id:Date.now()}]);
   }
 
-  const accentColor = "oklch(0.62 0.27 265)";
+  const accentColor = "oklch(0.75 0.19 48)";
 
   return (
     <div className="space-y-4">
@@ -636,7 +636,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
       <div className="card px-5 py-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold shrink-0"
-            style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
+            style={{background:"oklch(0.75 0.19 48)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
           <div>
             <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Zdeněk Dolíhal</p>
             <p className="text-[11px] text-[--muted-foreground] mt-0.5">Kameraman &amp; fotograf · Měsíční paušál</p>
@@ -644,7 +644,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
         </div>
         <div className="md:ml-auto flex flex-wrap gap-2">
           {[
-            { label:"1× CELODENNÍ / měsíc", color:"oklch(0.62 0.27 265)", bg:"oklch(0.62 0.27 265 / 0.1)", border:"oklch(0.62 0.27 265 / 0.25)" },
+            { label:"1× CELODENNÍ / měsíc", color:"oklch(0.75 0.19 48)", bg:"oklch(0.75 0.19 48 / 0.1)", border:"oklch(0.75 0.19 48 / 0.25)" },
             { label:"2× 3 HOD / měsíc",     color:"oklch(0.67 0.155 155)", bg:"oklch(0.67 0.155 155 / 0.09)",border:"oklch(0.67 0.155 155 / 0.22)" },
             { label:"v rámci Brna",          color:"oklch(0.55 0.005 222)", bg:"oklch(1 0 0 / 0.05)",         border:"oklch(1 0 0 / 0.1)" },
           ].map(t=>(
@@ -662,7 +662,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
         {[
           {label:"Splněno celkem",   value:totalDone,  color:"oklch(0.67 0.155 155)"},
           {label:"Plánováno",        value:totalPlan,  color:"oklch(0.78 0.165 75)"},
-          {label:"Nadpracováno",     value:totalExtra, color:"oklch(0.62 0.27 265)"},
+          {label:"Nadpracováno",     value:totalExtra, color:"oklch(0.75 0.19 48)"},
         ].map(s=>(
           <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
             <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5 leading-tight">{s.label}</p>
@@ -678,7 +678,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
             <motion.button key={m} onClick={()=>setMesicF(m)} whileTap={{scale:0.95}}
               className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
               style={mesicF===m
-                ?{background:"oklch(0.62 0.27 265 / 0.1)",color:accentColor,border:`1px solid oklch(0.62 0.27 265 / 0.25)`}
+                ?{background:"oklch(0.75 0.19 48 / 0.1)",color:accentColor,border:`1px solid oklch(0.75 0.19 48 / 0.25)`}
                 :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
               {m}
             </motion.button>
@@ -713,7 +713,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
                         <MonthHeader mesic={group.mesic} count={monthTotal} color={accentColor}
                           right={
                             <div className="flex items-center gap-3 text-[11px]">
-                              <span style={{color:"oklch(0.62 0.27 265)"}}>{st.celodenni}/{PAUSAL_CELODENNI} cel.</span>
+                              <span style={{color:"oklch(0.75 0.19 48)"}}>{st.celodenni}/{PAUSAL_CELODENNI} cel.</span>
                               <span style={{color:"oklch(0.67 0.155 155)"}}>{st.hod3}/{PAUSAL_3HOD} × 3hod</span>
                               {st.bts>0&&<span style={{color:"oklch(0.78 0.165 75)"}}>{st.bts}× BTS</span>}
                             </div>
@@ -721,7 +721,7 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
                         />
                         {/* Paušál mini progress */}
                         <div className="grid grid-cols-2 gap-2 mb-3 mt-1">
-                          <PausalBar done={st.celodenni} total={PAUSAL_CELODENNI} label="Celodenní" color="oklch(0.62 0.27 265)"/>
+                          <PausalBar done={st.celodenni} total={PAUSAL_CELODENNI} label="Celodenní" color="oklch(0.75 0.19 48)"/>
                           <PausalBar done={st.hod3}      total={PAUSAL_3HOD}      label="3 HOD"     color="oklch(0.67 0.155 155)"/>
                         </div>
                       </td>
@@ -786,7 +786,7 @@ function ZForm({ entry, onSave }: { entry:ZEntry|null; onSave:(d:Omit<ZEntry,"id
       <div className="md:col-span-2 flex justify-end">
         <motion.button onClick={()=>onSave({...f,...(entry?{id:entry.id}:{})})} whileTap={{scale:0.96}}
           className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.75 0.19 48)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           {entry?"Uložit změny":"Přidat"}
         </motion.button>
       </div>
@@ -826,7 +826,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
   const totalPending  = realEntries.filter(e=>e.status==="❓").reduce((s,e)=>s+e.castka,0);
   const jobsDone      = realEntries.filter(e=>e.status==="✅").length;
 
-  const accentColor = "oklch(0.72 0.18 290)";
+  const accentColor = "oklch(0.65 0.22 25)";
 
   function save(data:Omit<MEntry,"id">&{id?:number}) {
     if(data.id!==undefined) setEntries(p=>p.map(e=>e.id===data.id?{...data,id:data.id!}:e));
@@ -840,7 +840,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
       <div className="card px-5 py-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold shrink-0"
-            style={{background:"oklch(0.72 0.18 290)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>MH</div>
+            style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>MH</div>
           <div>
             <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Matěj Hořák</p>
             <p className="text-[11px] text-[--muted-foreground] mt-0.5">Fotograf &amp; kameraman · Platba za zakázku</p>
@@ -848,7 +848,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
         </div>
         <div className="md:ml-auto">
           <span className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold"
-            style={{color:"oklch(0.72 0.18 290)",background:"oklch(0.64 0.21 290 / 0.1)",border:"1px solid oklch(0.64 0.21 290 / 0.25)"}}>
+            style={{color:"oklch(0.65 0.22 25)",background:"oklch(0.65 0.22 25 / 0.1)",border:"1px solid oklch(0.65 0.22 25 / 0.25)"}}>
             Bez paušálu — per zakázka
           </span>
         </div>
@@ -859,7 +859,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
         {[
           {label:"Celkem vyplaceno",  value:fKc(totalEarned),   color:"oklch(0.67 0.155 155)"},
           {label:"Čeká na vyplacení", value:fKc(totalPending),  color:"oklch(0.78 0.165 75)"},
-          {label:"Zakázek splněno",   value:String(jobsDone),   color:"oklch(0.72 0.18 290)"},
+          {label:"Zakázek splněno",   value:String(jobsDone),   color:"oklch(0.65 0.22 25)"},
         ].map(s=>(
           <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
             <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5 leading-tight">{s.label}</p>
@@ -875,7 +875,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
             <motion.button key={m} onClick={()=>setMesicF(m)} whileTap={{scale:0.95}}
               className="px-3 py-1.5 rounded-[6px] text-[11px] font-semibold btn-tactile whitespace-nowrap"
               style={mesicF===m
-                ?{background:"oklch(0.64 0.21 290 / 0.1)",color:accentColor,border:`1px solid oklch(0.64 0.21 290 / 0.25)`}
+                ?{background:"oklch(0.65 0.22 25 / 0.1)",color:accentColor,border:`1px solid oklch(0.65 0.22 25 / 0.25)`}
                 :{background:"transparent",color:"oklch(0.40 0.005 222)",border:"1px solid oklch(1 0 0 / 0.06)"}}>
               {m}
             </motion.button>
@@ -946,7 +946,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
                               </span>
                             </span>
                           </td>
-                          <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{color:"oklch(0.72 0.18 290)",fontFamily:"var(--font-outfit)"}}>{fKc(item.castka)}</td>
+                          <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{color:"oklch(0.65 0.22 25)",fontFamily:"var(--font-outfit)"}}>{fKc(item.castka)}</td>
                           <td className="px-4 py-3 hidden lg:table-cell">{item.poznamka?<PozBadge label={item.poznamka}/>:"—"}</td>
                           <td className="pr-4 pl-2 py-3 w-8">
                             <motion.button onClick={()=>setModal(item)} whileTap={{scale:0.9}}
@@ -994,7 +994,7 @@ function MForm({ entry, onSave }: { entry:MEntry|null; onSave:(d:Omit<MEntry,"id
       <div className="md:col-span-2 flex justify-end">
         <motion.button onClick={()=>onSave({...f,...(entry?{id:entry.id}:{})})} whileTap={{scale:0.96}}
           className="px-4 py-2 rounded-[7px] text-[13px] font-semibold btn-tactile"
-          style={{background:"oklch(0.72 0.18 290)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+          style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           {entry?"Uložit změny":"Přidat"}
         </motion.button>
       </div>
@@ -1005,7 +1005,7 @@ function MForm({ entry, onSave }: { entry:MEntry|null; onSave:(d:Omit<MEntry,"id
 /* ── GRAFIK colors ───────────────────────────────────────────────────────────── */
 const GRAFICI_COLORS: Record<"Monika"|"Patrik", { accent: string; accentBg: string; accentBorder: string; initials: string; fullName: string }> = {
   Monika: { accent: "oklch(0.76 0.20 340)", accentBg: "oklch(0.76 0.20 340 / 0.1)", accentBorder: "oklch(0.76 0.20 340 / 0.25)", initials: "MK", fullName: "Monika Kudličková" },
-  Patrik: { accent: "oklch(0.79 0.19 55)",  accentBg: "oklch(0.79 0.19 55 / 0.1)",  accentBorder: "oklch(0.79 0.19 55 / 0.25)",  initials: "PP", fullName: "Patrik Petr" },
+  Patrik: { accent: "oklch(0.70 0.20 290)", accentBg: "oklch(0.70 0.20 290 / 0.1)", accentBorder: "oklch(0.70 0.20 290 / 0.25)", initials: "PP", fullName: "Patrik Petr" },
 };
 
 /* ── Generic per-grafik tab (reused for Monika & Patrik) ─────────────────────── */
@@ -1223,14 +1223,14 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-              style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
+              style={{background:"oklch(0.75 0.19 48)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>ZD</div>
             <div>
               <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Zdeněk Dolíhal</p>
               <p className="text-[11px] text-[--muted-foreground]">Paušál · {currentMonth} 2026</p>
             </div>
           </div>
           <div className="space-y-2.5">
-            <PausalBar done={zCel} total={PAUSAL_CELODENNI} label="Celodenní produkční den" color="oklch(0.62 0.27 265)"/>
+            <PausalBar done={zCel} total={PAUSAL_CELODENNI} label="Celodenní produkční den" color="oklch(0.75 0.19 48)"/>
             <PausalBar done={zHod} total={PAUSAL_3HOD}      label="3 hodinové produkční dny" color="oklch(0.67 0.155 155)"/>
           </div>
           {zBts>0&&<p className="text-[11px] text-[--muted-foreground]">+ {zBts}× BTS natáčení</p>}
@@ -1250,7 +1250,7 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-              style={{background:"oklch(0.72 0.18 290)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>MH</div>
+              style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>MH</div>
             <div>
               <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Matěj Hořák</p>
               <p className="text-[11px] text-[--muted-foreground]">Per zakázka · {currentMonth} 2026</p>
@@ -1271,7 +1271,7 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
               <div key={e.id} className="flex items-center gap-2 text-[12px]">
                 {statusIcon(e.status)}
                 <span className="text-[--foreground] truncate flex-1">{e.projekt}</span>
-                <span className="num font-semibold shrink-0" style={{color:"oklch(0.72 0.18 290)",fontFamily:"var(--font-outfit)"}}>{fKc(e.castka)}</span>
+                <span className="num font-semibold shrink-0" style={{color:"oklch(0.65 0.22 25)",fontFamily:"var(--font-outfit)"}}>{fKc(e.castka)}</span>
               </div>
             ))}
           </div>
@@ -1290,7 +1290,7 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ring-2 ring-[var(--card)]"
                   style={{background:"oklch(0.76 0.20 340)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>MK</div>
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ring-2 ring-[var(--card)]"
-                  style={{background:"oklch(0.79 0.19 55)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>PP</div>
+                  style={{background:"oklch(0.70 0.20 290)",color:"oklch(0.97 0.004 265)",fontFamily:"var(--font-outfit)"}}>PP</div>
               </div>
               <div>
                 <p className="text-[14px] font-bold text-[--foreground]" style={{fontFamily:"var(--font-outfit)",letterSpacing:"-0.02em"}}>Grafici</p>
@@ -1359,10 +1359,10 @@ type ProdTab = "prehled" | "zdenek" | "matej" | "monika" | "patrik";
 
 const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
   { id:"prehled", label:"Přehled",            short:"Přehled", color:"oklch(0.62 0.27 265)" },
-  { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.62 0.27 265)" },
-  { id:"matej",   label:"Matěj Hořák",        short:"Matěj",   color:"oklch(0.72 0.18 290)" },
+  { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.75 0.19 48)"  },
+  { id:"matej",   label:"Matěj Hořák",        short:"Matěj",   color:"oklch(0.65 0.22 25)"  },
   { id:"monika",  label:"Monika Kudličková",  short:"Monika",  color:"oklch(0.76 0.20 340)" },
-  { id:"patrik",  label:"Patrik Petr",        short:"Patrik",  color:"oklch(0.79 0.19 55)"  },
+  { id:"patrik",  label:"Patrik Petr",        short:"Patrik",  color:"oklch(0.70 0.20 290)" },
 ];
 
 type HistorySnap = { zEntries: ZEntry[]; pendingItems: QPending[] };
