@@ -6,17 +6,23 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, TrendingUp, FolderLock, Settings, Megaphone, Clapperboard,
+  Inbox, CheckSquare, GitMerge, ClipboardCheck, BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { label: "Dashboard",       short: "Přehled",   href: "/dashboard",        icon: LayoutDashboard },
+  { label: "Inbox",           short: "Inbox",     href: "/inbox",            icon: Inbox },
+  { label: "Úkoly",           short: "Úkoly",     href: "/ukoly",            icon: CheckSquare },
   { label: "Jednorázovky",    short: "Projekt.",   href: "/projects/oneoffs", icon: FolderKanban },
   { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
+  { label: "Pipeline",        short: "Pipeline",  href: "/pipeline",         icon: GitMerge },
   { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
+  { label: "Schválení",       short: "Schválení", href: "/schvaleni",        icon: ClipboardCheck },
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
-  { label: "Kreativa",         short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
+  { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
+  { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
   { label: "Growth Hub",      short: "Growth",     href: "/growth",           icon: TrendingUp },
   { label: "Vault",           short: "Vault",      href: "/vault",            icon: FolderLock },
 ];
