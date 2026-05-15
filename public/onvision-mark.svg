@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="50" fill="#5353F6"/>
+
+  <!-- "O" — circle ring, centered left half -->
+  <circle cx="29" cy="50" r="20" stroke="white" stroke-width="8.5" fill="none" stroke-linecap="round"/>
+
+  <!-- "n" — left stem up, cubic bezier arch, right stem down -->
+  <path
+    d="M59 83 L59 25 C59 14 91 14 91 51 L91 83"
+    stroke="white"
+    stroke-width="8.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+</svg>

@@ -80,18 +80,14 @@ export default function LoginPage() {
               filter: { duration: 3, delay: 0.5, repeat: Infinity, ease: "easeInOut" },
             }}
           >
-            <svg width="64" height="64" viewBox="0 0 100 100" fill="none" aria-label="OnVision">
-              <circle cx="50" cy="50" r="50" fill="oklch(0.62 0.27 265)" />
-              {/* "O" ring */}
-              <circle cx="30" cy="50" r="21" stroke="white" strokeWidth="9" fill="none" />
-              {/* "n": up-stem → cubic arch → down-stem */}
-              <path
-                d="M60 84 L60 25 C60 15 93 15 93 52 L93 84"
-                stroke="white" strokeWidth="9"
-                strokeLinecap="round" strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/onvision-mark.svg"
+              alt="OnVision"
+              width={72}
+              height={72}
+              style={{ display: "block" }}
+            />
           </motion.div>
           <h1
             className="text-[24px] text-[--foreground] leading-none"
