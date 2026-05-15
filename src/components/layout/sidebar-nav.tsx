@@ -51,25 +51,20 @@ export function SidebarNav() {
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
           {/*
-           * OnVision "On" logomark — stroke-based, matches actual brand logo:
-           * – "O": perfect circle ring, uniform stroke, round caps
-           * – "n": left stem + smooth cubic-bezier arch + right stem, same stroke weight
+           * OnVision "On" logomark — viewBox 100×100 scaled to 36px
+           * Proportions matched to actual brand logo:
+           *   O  — ring centered at x=30, r=21 (~40% of circle width)
+           *   n  — left stem x=60, right x=93, arch peaks at y≈16
+           *   Both strokes sw=9 (≈9% of diameter), round caps/joins
            */}
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="OnVision">
-            {/* Background circle */}
-            <circle cx="18" cy="18" r="18" fill="oklch(0.62 0.27 265)" />
-
-            {/* "O" — perfect circle ring, same stroke weight as n */}
-            <circle
-              cx="11.2" cy="18" r="5.8"
-              stroke="white" strokeWidth="2.6" fill="none"
-            />
-
-            {/* "n" — single connected path: left-stem → cubic arch → right-stem */}
-            {/* M = bottom-left, L up to stem top, C = cubic bezier arch to right-stem top, L down */}
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" aria-label="OnVision">
+            <circle cx="50" cy="50" r="50" fill="oklch(0.62 0.27 265)" />
+            {/* "O" ring */}
+            <circle cx="30" cy="50" r="21" stroke="white" strokeWidth="9" fill="none" />
+            {/* "n": up-stem → cubic arch → down-stem */}
             <path
-              d="M21 26.5 L21 11.5 C21 9 29.8 9 29.8 17.5 L29.8 26.5"
-              stroke="white" strokeWidth="2.6"
+              d="M60 84 L60 25 C60 15 93 15 93 52 L93 84"
+              stroke="white" strokeWidth="9"
               strokeLinecap="round" strokeLinejoin="round"
               fill="none"
             />

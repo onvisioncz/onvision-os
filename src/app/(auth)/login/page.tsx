@@ -80,20 +80,14 @@ export default function LoginPage() {
               filter: { duration: 3, delay: 0.5, repeat: Infinity, ease: "easeInOut" },
             }}
           >
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="OnVision">
-              {/* Background circle */}
-              <circle cx="32" cy="32" r="32" fill="oklch(0.62 0.27 265)" />
-
-              {/* "O" — perfect circle ring */}
-              <circle
-                cx="19.8" cy="32" r="10.4"
-                stroke="white" strokeWidth="4.6" fill="none"
-              />
-
-              {/* "n" — left-stem → cubic arch → right-stem */}
+            <svg width="64" height="64" viewBox="0 0 100 100" fill="none" aria-label="OnVision">
+              <circle cx="50" cy="50" r="50" fill="oklch(0.62 0.27 265)" />
+              {/* "O" ring */}
+              <circle cx="30" cy="50" r="21" stroke="white" strokeWidth="9" fill="none" />
+              {/* "n": up-stem → cubic arch → down-stem */}
               <path
-                d="M37.4 47 L37.4 20.5 C37.4 16 53 16 53 31 L53 47"
-                stroke="white" strokeWidth="4.6"
+                d="M60 84 L60 25 C60 15 93 15 93 52 L93 84"
+                stroke="white" strokeWidth="9"
                 strokeLinecap="round" strokeLinejoin="round"
                 fill="none"
               />
