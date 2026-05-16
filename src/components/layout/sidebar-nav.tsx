@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
-  Inbox, CheckSquare, BarChart2, PackageOpen,
+  Inbox, CheckSquare, BarChart2, PackageOpen, Layers2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ const nav = [
   { label: "Investice",       short: "Investice",  href: "/investice",        icon: PackageOpen },
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
+  { label: "Content",         short: "Content",    href: "/obsah",            icon: Layers2 },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
 ];

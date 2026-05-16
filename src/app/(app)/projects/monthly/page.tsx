@@ -40,6 +40,8 @@ interface RetainerClient {
   poznamka: string;
   kontakt: string;
   zacatek: string;
+  hodinMesic?: number;        // allocated hours per month
+  hodinOdpracovano?: number;  // hours logged this month
 }
 
 /* ── Stagger ────────────────────────────────────────────────────────────────── */
@@ -752,6 +754,37 @@ function ClientCard({
         </div>
       </div>
 
+      {/* Retainer health — hours utilization */}
+      {client.hodinMesic && client.hodinMesic > 0 && (
+        <div className="px-4 pb-3 border-b" style={{ borderColor: "oklch(1 0 0 / 0.06)" }}>
+          {(() => {
+            const spent  = client.hodinOdpracovano ?? 0;
+            const alloc  = client.hodinMesic!;
+            const pct    = Math.round((spent / alloc) * 100);
+            const over   = pct > 100;
+            const barClr = over
+              ? "oklch(0.62 0.22 25)"
+              : pct >= 80
+              ? "oklch(0.74 0.18 55)"
+              : "oklch(0.67 0.155 155)";
+            return (
+              <>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.06em] font-medium">
+                    Hodinová kapacita
+                  </p>
+                  <span className="text-[11px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: barClr }}>
+                    {spent}h / {alloc}h
+                    {over && <span className="ml-1 text-[9px]">⚠ přetaženo</span>}
+                  </span>
+                </div>
+                <ProgressBar pct={Math.min(pct, 100)} color={barClr} height={3} />
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Category breakdown */}
       {Object.keys(catBreakdown).length > 0 && (
         <div className="px-4 py-2.5 flex flex-wrap gap-1.5 border-b" style={{ borderColor: "oklch(1 0 0 / 0.06)" }}>
@@ -1010,6 +1043,8 @@ const EMPTY_CLIENT: ClientFormState = {
   poznamka: "",
   kontakt: "",
   zacatek: "",
+  hodinMesic: undefined,
+  hodinOdpracovano: undefined,
 };
 
 const PRESET_COLORS = [
@@ -1046,6 +1081,8 @@ function ClientModal({
           poznamka: client.poznamka,
           kontakt: client.kontakt,
           zacatek: client.zacatek,
+          hodinMesic: client.hodinMesic,
+          hodinOdpracovano: client.hodinOdpracovano,
         }
       : { ...EMPTY_CLIENT }
   );
@@ -1080,6 +1117,20 @@ function ClientModal({
       </Field>
       <Field label="Začátek smlouvy">
         <FInput value={f.zacatek} onChange={set("zacatek")} placeholder="Leden 2026" />
+      </Field>
+      <Field label="Hodin v paušálu / měsíc">
+        <FInput
+          value={f.hodinMesic ? String(f.hodinMesic) : ""}
+          onChange={(v) => set("hodinMesic")(v ? Number(v.replace(/\D/g, "")) || 0 : undefined as unknown as number)}
+          placeholder="20 (volitelné)"
+        />
+      </Field>
+      <Field label="Hodiny odpracováno tento měsíc">
+        <FInput
+          value={f.hodinOdpracovano ? String(f.hodinOdpracovano) : ""}
+          onChange={(v) => set("hodinOdpracovano")(v ? Number(v.replace(/\D/g, "")) || 0 : undefined as unknown as number)}
+          placeholder="0"
+        />
       </Field>
       <Field label="Reklama / správa (Kč/měsíc)">
         <FInput
@@ -1386,6 +1437,8 @@ export default function MonthlyPage() {
                   poznamka: data.poznamka,
                   kontakt: data.kontakt,
                   zacatek: data.zacatek,
+                  hodinMesic: data.hodinMesic,
+                  hodinOdpracovano: data.hodinOdpracovano,
                 }
               : c
           )
