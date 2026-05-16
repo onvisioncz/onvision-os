@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
-  CalendarDays, TrendingUp, FolderLock, Settings, Megaphone, Clapperboard,
+  CalendarDays, FolderLock, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,6 @@ const nav = [
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
-  { label: "Growth Hub",      short: "Growth",     href: "/growth",           icon: TrendingUp },
   { label: "Vault",           short: "Vault",      href: "/vault",            icon: FolderLock },
 ];
 

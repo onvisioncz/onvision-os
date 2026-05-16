@@ -188,6 +188,14 @@ function EventModal({ event, onClose, onSave, onDelete }: {
 }
 
 /* ── Main page ───────────────────────────────────────────────────────────────── */
+type CalView = "vse" | "schuzky" | "produkce";
+
+const CAL_VIEWS: { id: CalView; label: string; types?: EventType[] }[] = [
+  { id: "vse",      label: "Vše" },
+  { id: "schuzky",  label: "Schůzky",       types: ["Meeting"] },
+  { id: "produkce", label: "Produkční dny", types: ["Natáčení", "Focení"] },
+];
+
 export default function KalendarPage() {
   const today = new Date();
   const [year,   setYear]   = useState(today.getFullYear());
@@ -195,27 +203,34 @@ export default function KalendarPage() {
   const [events, setEvents] = useSupabaseData<CalEvent[]>("ov-calendar-events", () => SEED);
   const [modal,  setModal]  = useState<CalEvent|"new"|null>(null);
   const [newDate, setNewDate] = useState("");
+  const [calView, setCalView] = useState<CalView>("vse");
 
   const days   = daysInMonth(year, month);
   const offset = firstDayOfMonth(year, month);
 
+  // Filter events by current view
+  const viewFilter = CAL_VIEWS.find(v => v.id === calView)?.types;
+  const filteredEvents = useMemo(() =>
+    viewFilter ? events.filter(e => viewFilter.includes(e.typ)) : events,
+  [events, calView, viewFilter]);
+
   // Build event map by date key
   const eventMap = useMemo(()=>{
     const m: Record<string, CalEvent[]> = {};
-    events.forEach(e=>{
+    filteredEvents.forEach(e=>{
       if(!m[e.datum]) m[e.datum]=[];
       m[e.datum].push(e);
     });
     return m;
-  },[events]);
+  },[filteredEvents]);
 
   // Upcoming events in current month
   const upcomingThisMonth = useMemo(()=>{
     const prefix = `${year}-${pad(month+1)}`;
-    return events
+    return filteredEvents
       .filter(e=>e.datum.startsWith(prefix))
       .sort((a,b)=>a.datum.localeCompare(b.datum));
-  },[events,year,month]);
+  },[filteredEvents,year,month]);
 
   function prevMonth() { if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }
   function nextMonth() { if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }
@@ -262,6 +277,24 @@ export default function KalendarPage() {
           style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
           <Plus className="w-3.5 h-3.5"/> Přidat
         </motion.button>
+      </motion.div>
+
+      {/* View tabs */}
+      <motion.div className="flex items-center gap-1.5"
+        initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} transition={{duration:0.3,delay:0.04}}>
+        {CAL_VIEWS.map(v => {
+          const active = calView === v.id;
+          return (
+            <motion.button key={v.id} onClick={()=>setCalView(v.id)} whileTap={{scale:0.95}}
+              className="px-3.5 py-1.5 rounded-[7px] text-[12px] font-semibold transition-colors"
+              style={active
+                ? { background:"oklch(0.62 0.27 265 / 0.12)", color:"oklch(0.75 0.20 265)", border:"1px solid oklch(0.62 0.27 265 / 0.25)" }
+                : { background:"transparent", color:"oklch(0.42 0.005 222)", border:"1px solid oklch(1 0 0 / 0.07)" }
+              }>
+              {v.label}
+            </motion.button>
+          );
+        })}
       </motion.div>
 
       {/* Stats strip */}
