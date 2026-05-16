@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, TrendingUp, TrendingDown,
   Wallet, BarChart3, CheckCircle2, Clock, AlertCircle,
-  FileText, Receipt, Paperclip, Download,
+  FileText, Receipt, Paperclip, Download, CreditCard,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
-type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance" | "faktury" | "doklady";
+type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance" | "faktury" | "doklady" | "predplatne";
 type MonthStatus  = "UZAVŘENO" | "PROBÍHÁ" | "NEPROBĚHLO";
 type ItemStatus   = "Zaplaceno" | "Čeká" | "Storno";
 type IncomeType   = "Měsíční klient" | "Jednorázový" | "Ostatní";
@@ -1437,13 +1437,201 @@ function DokladForm({ initial, onSave, isNew }: { initial: Omit<Doklad,"id">&{id
 }
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
+/* ── PŘEDPLATNÉ tab ─────────────────────────────────────────────────────────── */
+
+type SubKat = "AI" | "Úložiště" | "Hudba" | "Šablony" | "Foto" | "Pojištění" | "Sociální sítě" | "Jiné";
+
+interface Subscription {
+  id: number;
+  nazev: string;
+  popis: string;
+  kat: SubKat;
+  castka: number;
+  mena: "CZK" | "EUR";
+}
+
+const KAT_COLOR: Record<SubKat, { bg: string; text: string }> = {
+  "AI":            { bg: "oklch(0.65 0.18 310 / 0.14)", text: "oklch(0.76 0.15 310)" },
+  "Úložiště":      { bg: "oklch(0.62 0.27 265 / 0.14)", text: "oklch(0.75 0.20 265)" },
+  "Hudba":         { bg: "oklch(0.67 0.155 155 / 0.14)", text: "oklch(0.72 0.15 155)" },
+  "Šablony":       { bg: "oklch(0.72 0.18 55  / 0.14)", text: "oklch(0.78 0.15 55)"  },
+  "Foto":          { bg: "oklch(0.65 0.22 25  / 0.14)", text: "oklch(0.73 0.18 25)"  },
+  "Pojištění":     { bg: "oklch(0.70 0.18 200 / 0.14)", text: "oklch(0.72 0.15 200)" },
+  "Sociální sítě": { bg: "oklch(0.62 0.27 265 / 0.10)", text: "oklch(0.70 0.22 265)" },
+  "Jiné":          { bg: "oklch(1 0 0 / 0.06)",         text: "oklch(0.50 0.005 222)" },
+};
+
+const EUR_TO_CZK = 25.2; // approximate
+
+const SUBSCRIPTIONS: Subscription[] = [
+  { id: 1,  nazev: "Apple Meta Verified", popis: "Modrý štítek",  kat: "Sociální sítě", castka: 670,   mena: "CZK" },
+  { id: 2,  nazev: "Apple iCloud",        popis: "Úložiště",      kat: "Úložiště",      castka: 249,   mena: "CZK" },
+  { id: 3,  nazev: "Adobe PS + LG",       popis: "Edit fotek",    kat: "Foto",          castka: 608,   mena: "CZK" },
+  { id: 4,  nazev: "Freepik",             popis: "Šablony",       kat: "Šablony",       castka: 488,   mena: "CZK" },
+  { id: 5,  nazev: "Higgsfield",          popis: "AI video",      kat: "AI",            castka: 550,   mena: "CZK" },
+  { id: 6,  nazev: "Artlist.io",          popis: "Hudba & SFX",   kat: "Hudba",         castka: 484,   mena: "CZK" },
+  { id: 7,  nazev: "Google",              popis: "Úložiště",      kat: "Úložiště",      castka: 250,   mena: "CZK" },
+  { id: 8,  nazev: "Direct",              popis: "Pojištění",     kat: "Pojištění",     castka: 395,   mena: "CZK" },
+  { id: 9,  nazev: "Anthropic",           popis: "Claude AI",     kat: "AI",            castka: 21.78, mena: "EUR" },
+];
+
+function PredplatneTab() {
+  const totalCZK = SUBSCRIPTIONS.reduce((s, sub) => {
+    return s + (sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka);
+  }, 0);
+
+  const byKat = SUBSCRIPTIONS.reduce<Partial<Record<SubKat, number>>>((acc, sub) => {
+    const czk = sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka;
+    acc[sub.kat] = (acc[sub.kat] ?? 0) + czk;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-5">
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="card p-4">
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
+            Celkem / měsíc
+          </p>
+          <p className="num text-[22px] font-bold leading-none"
+            style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.025em", color: "oklch(0.65 0.22 25)" }}>
+            {fKc(totalCZK)}
+          </p>
+          <p className="text-[10px] text-[--muted-foreground] mt-1.5">
+            {fKc(totalCZK * 12)} / rok
+          </p>
+        </div>
+        <div className="card p-4">
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
+            Počet předplatných
+          </p>
+          <p className="num text-[22px] font-bold leading-none"
+            style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
+            {SUBSCRIPTIONS.length}
+          </p>
+          <p className="text-[10px] text-[--muted-foreground] mt-1.5">aktivních služeb</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
+            Největší položka
+          </p>
+          {(() => {
+            const biggest = SUBSCRIPTIONS.reduce((a, b) => {
+              const czk = (sub: Subscription) => sub.mena === "EUR" ? sub.castka * EUR_TO_CZK : sub.castka;
+              return czk(a) >= czk(b) ? a : b;
+            });
+            return (
+              <>
+                <p className="num text-[18px] font-bold leading-none"
+                  style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
+                  {biggest.mena === "EUR" ? fKc(Math.round(biggest.castka * EUR_TO_CZK)) : fKc(biggest.castka)}
+                </p>
+                <p className="text-[10px] text-[--muted-foreground] mt-1.5">{biggest.nazev}</p>
+              </>
+            );
+          })()}
+        </div>
+        <div className="card p-4">
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-2">
+            Kategorie
+          </p>
+          <div className="flex flex-col gap-1">
+            {(Object.entries(byKat) as [SubKat, number][])
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([kat, czk]) => (
+                <div key={kat} className="flex items-center justify-between">
+                  <span style={{ fontSize: 10, color: KAT_COLOR[kat].text, fontWeight: 600 }}>{kat}</span>
+                  <span style={{ fontSize: 10, color: "oklch(0.50 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(czk)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
+              {["Služba", "Popis", "Kategorie", "Cena / měsíc"].map((h) => (
+                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em]">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {SUBSCRIPTIONS.map((sub, i) => {
+              const czk = sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka;
+              const kc = KAT_COLOR[sub.kat];
+              return (
+                <tr
+                  key={sub.id}
+                  style={{ borderBottom: i < SUBSCRIPTIONS.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none" }}
+                  className="hover:bg-[oklch(1_0_0_/_0.02)] transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <span className="text-[13px] font-semibold text-[--foreground]">{sub.nazev}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-[12px] text-[--muted-foreground]">{sub.popis}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="inline-flex px-2 py-0.5 rounded-[5px] text-[10px] font-bold"
+                      style={{ background: kc.bg, color: kc.text }}
+                    >
+                      {sub.kat}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div>
+                      <span className="num text-[13px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
+                        {fKc(czk)}
+                      </span>
+                      {sub.mena === "EUR" && (
+                        <span className="ml-1.5 text-[10px] text-[--muted-foreground]">
+                          (€{sub.castka})
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop: "1px solid oklch(1 0 0 / 0.09)", background: "oklch(1 0 0 / 0.02)" }}>
+              <td colSpan={3} className="px-4 py-3 text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">
+                Celkem
+              </td>
+              <td className="px-4 py-3">
+                <span className="num text-[15px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
+                  {fKc(totalCZK)}
+                </span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p className="text-[11px] text-[--muted-foreground]" style={{ paddingLeft: 2 }}>
+        Kurz EUR/CZK: ~{EUR_TO_CZK} Kč · Ceny jsou orientační, fakturace v EUR se může lišit dle aktuálního kurzu.
+      </p>
+    </div>
+  );
+}
+
 const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [
   { id: "prehled", label: "Přehled",  icon: <BarChart3 className="w-3.5 h-3.5" />,    color: "oklch(0.62 0.27 265)" },
   { id: "prijmy",  label: "Příjmy",   icon: <TrendingUp className="w-3.5 h-3.5" />,   color: "oklch(0.67 0.155 155)" },
   { id: "vydaje",  label: "Výdaje",   icon: <TrendingDown className="w-3.5 h-3.5" />, color: "oklch(0.65 0.22 25)" },
   { id: "bilance", label: "Bilance",  icon: <Wallet className="w-3.5 h-3.5" />,       color: "oklch(0.74 0.165 75)" },
   { id: "faktury", label: "Faktury",  icon: <FileText className="w-3.5 h-3.5" />,     color: "oklch(0.72 0.18 290)" },
-  { id: "doklady", label: "Doklady",  icon: <Receipt className="w-3.5 h-3.5" />,      color: "oklch(0.72 0.18 340)" },
+  { id: "doklady",    label: "Doklady",      icon: <Receipt className="w-3.5 h-3.5" />,     color: "oklch(0.72 0.18 340)" },
+  { id: "predplatne", label: "Předplatné",  icon: <CreditCard className="w-3.5 h-3.5" />, color: "oklch(0.65 0.18 310)" },
 ];
 
 export default function FinancePage() {
@@ -1510,7 +1698,8 @@ export default function FinancePage() {
           {tab === "vydaje"  && <VydajeTab  items={expenses} setItems={fn => setExpenses(fn)} />}
           {tab === "bilance" && <BilanceTab incomes={incomes} expenses={expenses} />}
           {tab === "faktury" && <FakturyTab items={faktury}  setItems={fn => setFaktury(fn)} />}
-          {tab === "doklady" && <DokladyTab items={doklady}  setItems={fn => setDoklady(fn)} />}
+          {tab === "doklady"    && <DokladyTab    items={doklady}  setItems={fn => setDoklady(fn)} />}
+          {tab === "predplatne" && <PredplatneTab />}
         </motion.div>
       </AnimatePresence>
     </div>
