@@ -740,7 +740,7 @@ function ClientCard({
                   : { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)" }
               }
             >
-              {client.fakturace === "s.r.o." ? "s.r.o." : `IČO · ${client.zodpovedna ?? ""}`}
+              {client.fakturace === "s.r.o." ? "OnVision s.r.o." : `IČO · ${client.zodpovedna ?? ""}`}
             </span>
           </div>
           <p
