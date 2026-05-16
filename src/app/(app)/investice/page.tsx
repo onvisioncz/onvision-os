@@ -34,6 +34,7 @@ const vlastnene: OwnedItem[] = [
     kategorie: "Drony",
     misto: "DATART",
     datum: "1. 4. 2026",
+    cena: 27890,
   },
 ];
 
@@ -116,13 +117,16 @@ const sectionLabel: React.CSSProperties = {
 };
 
 /* ── Budget summary ─────────────────────────────────────────────────────────── */
-// Sum of the "doporuceno" option for each planned item
+const vlastneneTotal = vlastnene.reduce((s, i) => s + (i.cena ?? 0), 0);
+
+// Cheapest combo (alternativa if cheaper than doporuceno)
 const budgetMin = planovane.reduce((s, p) => {
   const rec = p.moznosti.find((m) => m.doporuceno) ?? p.moznosti[0];
   const alt = p.alternativa?.cena;
   return s + (alt && alt < rec.cena ? alt : rec.cena);
 }, 0);
 
+// Max combo (most expensive option per item)
 const budgetMax = planovane.reduce((s, p) => {
   return s + Math.max(...p.moznosti.map((m) => m.cena));
 }, 0);
@@ -203,7 +207,18 @@ export default function InvesticePage() {
               nejlevnější kombinace / maximální varianta
             </p>
           </div>
-          <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            {vlastneneTotal > 0 && (
+              <>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontSize: 11, color: "oklch(0.38 0.005 222)", marginBottom: 3 }}>Hodnota majetku</p>
+                  <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 18, color: "oklch(0.72 0.2 155)", lineHeight: 1 }}>
+                    {fmt(vlastneneTotal)}
+                  </p>
+                </div>
+                <div style={{ width: 1, background: "oklch(1 0 0 / 0.07)", alignSelf: "stretch" }} />
+              </>
+            )}
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: 11, color: "oklch(0.38 0.005 222)", marginBottom: 3 }}>V majetku</p>
               <p style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 20, color: "oklch(0.72 0.2 155)", lineHeight: 1 }}>
@@ -266,21 +281,36 @@ export default function InvesticePage() {
                     {item_.datum}
                   </p>
                 </div>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    background: "oklch(0.72 0.2 155 / 0.12)",
-                    color: "oklch(0.72 0.2 155)",
-                    flexShrink: 0,
-                  }}
-                >
-                  Pořízeno
-                </span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
+                  {item_.cena && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        fontWeight: 700,
+                        fontSize: 16,
+                        letterSpacing: "-0.02em",
+                        color: "oklch(0.72 0.2 155)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {fmt(item_.cena)}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.07em",
+                      textTransform: "uppercase",
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      background: "oklch(0.72 0.2 155 / 0.12)",
+                      color: "oklch(0.72 0.2 155)",
+                    }}
+                  >
+                    Pořízeno
+                  </span>
+                </div>
               </div>
             ))}
           </div>
