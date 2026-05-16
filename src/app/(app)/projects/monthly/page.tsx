@@ -31,6 +31,9 @@ interface RetainerClient {
   logo: string;
   color: string;
   pausal: number;
+  reklama?: number;           // separate ad management fee (e.g. SENIMED)
+  fakturace: "s.r.o." | "IČO";
+  zodpovedna?: string;        // who is responsible (for IČO clients)
   aktivni: boolean;
   mesic: string;
   deliverables: Deliverable[];
@@ -51,101 +54,140 @@ const stagger = {
 /* ── Seed data ──────────────────────────────────────────────────────────────── */
 const MONTHS_LIST = ["Březen", "Duben", "Květen"];
 
-let _id = 1;
-const nid = () => _id++;
-
 function makeSeed(): RetainerClient[] {
+  // Sorted largest → smallest paušál
   return [
     {
       id: 1,
-      name: "SENIMED s.r.o.",
+      name: "SENIMED",
       logo: "SE",
       color: "oklch(0.62 0.27 265)",
-      pausal: 35000,
+      pausal: 45000,
+      reklama: 5000,
+      fakturace: "s.r.o.",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "Lékárny + zdravotnické centrum. Obsah zaměřený na produkty a edukaci.",
-      kontakt: "Radek Novotný",
-      zacatek: "Leden 2026",
-      deliverables: [
-        { id: nid(), text: "8× Instagram post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "20× Instagram Stories", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "2× Reel video", done: true,  category: "video" },
-        { id: nid(), text: "1× Facebook kampaň", done: false, category: "reklama" },
-        { id: nid(), text: "1× Google Ads správa", done: false, category: "reklama" },
-      ],
+      poznamka: "Zdravotnické centrum + lékárny. Obsah na soc. sítě, reklamy a edukace.",
+      kontakt: "",
+      zacatek: "Únor 2026",
+      deliverables: [],
     },
     {
       id: 2,
-      name: "EASTGATE Brno",
-      logo: "EA",
+      name: "IMTOS",
+      logo: "IM",
       color: "oklch(0.67 0.155 155)",
-      pausal: 18000,
+      pausal: 35000,
+      fakturace: "s.r.o.",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "Bytový komplex v Brně. Průběh stavby, záběry z výstavby a propagace prodeje.",
-      kontakt: "Tomáš Blaha",
-      zacatek: "Únor 2026",
-      deliverables: [
-        { id: nid(), text: "4× Instagram post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "12× Stories", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "1× progress video (stavba)", done: false, category: "video" },
-        { id: nid(), text: "1× newsletter", done: false, category: "newsletter" },
-      ],
+      poznamka: "",
+      kontakt: "",
+      zacatek: "Leden 2026",
+      deliverables: [],
     },
     {
       id: 3,
-      name: "Power Plate Česko",
-      logo: "PP",
-      color: "oklch(0.78 0.165 75)",
-      pausal: 25000,
+      name: "EASTGATE BRNO",
+      logo: "EG",
+      color: "oklch(0.65 0.22 25)",
+      pausal: 30000,
+      fakturace: "s.r.o.",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "Distributor vibrační fitness technologie. Produktové videa a lifestyle obsah.",
-      kontakt: "Markéta Svobodová",
-      zacatek: "Leden 2026",
-      deliverables: [
-        { id: nid(), text: "6× Instagram post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "15× Stories", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "2× produktové video", done: true,  category: "video" },
-        { id: nid(), text: "1× e-mail kampaň", done: false, category: "newsletter" },
-      ],
+      poznamka: "Bytový komplex v Brně. Průběh stavby a propagace prodeje.",
+      kontakt: "",
+      zacatek: "Červen 2025",
+      deliverables: [],
     },
     {
       id: 4,
-      name: "BehejBrno",
-      logo: "BB",
-      color: "oklch(0.72 0.18 290)",
-      pausal: 12000,
+      name: "MTBCZ",
+      logo: "MB",
+      color: "oklch(0.74 0.18 55)",
+      pausal: 30000,
+      fakturace: "IČO",
+      zodpovedna: "Adam",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "Organizátor běžeckých závodů v Brně a okolí.",
-      kontakt: "Pavel Dvořák",
-      zacatek: "Leden 2026",
-      deliverables: [
-        { id: nid(), text: "4× event post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "8× Stories", done: false, category: "sociální sítě" },
-        { id: nid(), text: "1× race recap video", done: false, category: "video" },
-        { id: nid(), text: "1× newsletter", done: false, category: "newsletter" },
-      ],
+      poznamka: "",
+      kontakt: "",
+      zacatek: "Červen 2025",
+      deliverables: [],
     },
     {
       id: 5,
-      name: "TEKMA s.r.o.",
-      logo: "TK",
-      color: "oklch(0.64 0.21 290)",
-      pausal: 22000,
+      name: "TOFFI",
+      logo: "TO",
+      color: "oklch(0.70 0.18 290)",
+      pausal: 30000,
+      fakturace: "IČO",
+      zodpovedna: "Honza",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "Průmyslová firma, strojírenství. B2B obsah pro LinkedIn a promo videa.",
-      kontakt: "Jiří Krejčí",
-      zacatek: "Březen 2026",
-      deliverables: [
-        { id: nid(), text: "5× LinkedIn post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "3× Instagram post", done: true,  category: "sociální sítě" },
-        { id: nid(), text: "1× promo video", done: false, category: "video" },
-        { id: nid(), text: "1× newsletter", done: false, category: "newsletter" },
-      ],
+      poznamka: "",
+      kontakt: "",
+      zacatek: "Červen 2025",
+      deliverables: [],
+    },
+    {
+      id: 6,
+      name: "FIRESTA",
+      logo: "FI",
+      color: "oklch(0.72 0.18 310)",
+      pausal: 28500,
+      fakturace: "s.r.o.",
+      aktivni: true,
+      mesic: "Květen",
+      poznamka: "",
+      kontakt: "",
+      zacatek: "Duben 2025",
+      deliverables: [],
+    },
+    {
+      id: 7,
+      name: "BEHEJ BRNO",
+      logo: "BB",
+      color: "oklch(0.67 0.20 175)",
+      pausal: 18000,
+      fakturace: "IČO",
+      zodpovedna: "Honza",
+      aktivni: true,
+      mesic: "Květen",
+      poznamka: "Organizátor běžeckých závodů v Brně a okolí.",
+      kontakt: "",
+      zacatek: "Duben 2025",
+      deliverables: [],
+    },
+    {
+      id: 8,
+      name: "POWERPLATE",
+      logo: "PP",
+      color: "oklch(0.78 0.165 75)",
+      pausal: 12000,
+      fakturace: "IČO",
+      zodpovedna: "Adam",
+      aktivni: true,
+      mesic: "Květen",
+      poznamka: "Vibrační fitness technologie.",
+      kontakt: "",
+      zacatek: "Únor 2025",
+      deliverables: [],
+    },
+    {
+      id: 9,
+      name: "SK STAVOS BRNO SLATINA",
+      logo: "SK",
+      color: "oklch(0.65 0.18 240)",
+      pausal: 12000,
+      fakturace: "IČO",
+      zodpovedna: "Adam",
+      aktivni: true,
+      mesic: "Květen",
+      poznamka: "",
+      kontakt: "",
+      zacatek: "Říjen 2024",
+      deliverables: [],
     },
   ];
 }
@@ -667,6 +709,11 @@ function ClientCard({
             >
               {fKc(client.pausal)}
             </p>
+            {client.reklama && (
+              <p className="text-[10px] mt-0.5" style={{ color: "oklch(0.75 0.16 55)" }}>
+                + {fKc(client.reklama)} reklama
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-[10px] text-[--muted-foreground] mb-0.5">Splněno</p>
@@ -681,9 +728,21 @@ function ClientCard({
         </div>
         <ProgressBar pct={pct} color={pColor} delay={0.1} />
         <div className="flex items-center justify-between mt-1.5">
-          <p className="text-[10px] text-[--muted-foreground]">
-            {client.mesic} · od {client.zacatek}
-          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-[10px] text-[--muted-foreground]">
+              {client.mesic} · od {client.zacatek}
+            </p>
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+              style={
+                client.fakturace === "s.r.o."
+                  ? { background: "oklch(0.62 0.27 265 / 0.1)", color: "oklch(0.70 0.20 265)" }
+                  : { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)" }
+              }
+            >
+              {client.fakturace === "s.r.o." ? "s.r.o." : `IČO · ${client.zodpovedna ?? ""}`}
+            </span>
+          </div>
           <p
             className="num text-[11px] font-semibold"
             style={{ fontFamily: "var(--font-outfit)", color: pColor }}
@@ -943,6 +1002,9 @@ const EMPTY_CLIENT: ClientFormState = {
   logo: "",
   color: "oklch(0.62 0.27 265)",
   pausal: 0,
+  reklama: undefined,
+  fakturace: "s.r.o.",
+  zodpovedna: "",
   aktivni: true,
   mesic: "Květen",
   poznamka: "",
@@ -976,6 +1038,9 @@ function ClientModal({
           logo: client.logo,
           color: client.color,
           pausal: client.pausal,
+          reklama: client.reklama,
+          fakturace: client.fakturace ?? "s.r.o.",
+          zodpovedna: client.zodpovedna ?? "",
           aktivni: client.aktivni,
           mesic: client.mesic,
           poznamka: client.poznamka,
@@ -1015,6 +1080,27 @@ function ClientModal({
       </Field>
       <Field label="Začátek smlouvy">
         <FInput value={f.zacatek} onChange={set("zacatek")} placeholder="Leden 2026" />
+      </Field>
+      <Field label="Reklama / správa (Kč/měsíc)">
+        <FInput
+          value={f.reklama ? String(f.reklama) : ""}
+          onChange={(v) => set("reklama")(v ? Number(v.replace(/\D/g, "")) || 0 : undefined as unknown as number)}
+          placeholder="5000 (volitelné)"
+        />
+      </Field>
+      <Field label="Fakturace">
+        <FSelect
+          value={f.fakturace}
+          onChange={(v) => set("fakturace")(v as "s.r.o." | "IČO")}
+          options={["s.r.o.", "IČO"]}
+        />
+      </Field>
+      <Field label="Zodpovídá (pro IČO)">
+        <FSelect
+          value={f.zodpovedna ?? ""}
+          onChange={set("zodpovedna")}
+          options={["", "Adam", "Honza", "Dominika"]}
+        />
       </Field>
       <Field label="Aktuální měsíc">
         <FSelect
@@ -1292,6 +1378,9 @@ export default function MonthlyPage() {
                   logo: data.logo,
                   color: data.color,
                   pausal: data.pausal,
+                  reklama: data.reklama,
+                  fakturace: data.fakturace,
+                  zodpovedna: data.zodpovedna,
                   aktivni: data.aktivni,
                   mesic: data.mesic,
                   poznamka: data.poznamka,
@@ -1310,6 +1399,9 @@ export default function MonthlyPage() {
             logo: data.logo,
             color: data.color,
             pausal: data.pausal,
+            reklama: data.reklama,
+            fakturace: data.fakturace,
+            zodpovedna: data.zodpovedna,
             aktivni: data.aktivni,
             mesic: data.mesic,
             poznamka: data.poznamka,
