@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, TrendingUp, FolderLock, Settings, Megaphone, Clapperboard,
-  Inbox, CheckSquare, GitMerge, ClipboardCheck, BarChart2, PackageOpen,
+  Inbox, CheckSquare, ClipboardCheck, BarChart2, PackageOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,6 @@ const nav = [
   { label: "Úkoly",           short: "Úkoly",     href: "/ukoly",            icon: CheckSquare },
   { label: "Jednorázovky",    short: "Projekt.",   href: "/projects/oneoffs", icon: FolderKanban },
   { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
-  { label: "Pipeline",        short: "Pipeline",  href: "/pipeline",         icon: GitMerge },
   { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
   { label: "Investice",       short: "Investice",  href: "/investice",        icon: PackageOpen },
   { label: "Schválení",       short: "Schválení", href: "/schvaleni",        icon: ClipboardCheck },
