@@ -11,9 +11,13 @@ import { mesicNominativ } from "@/lib/invoice";
 export function InvoiceDownloadButton({
   data,
   fileName,
+  onDownload,
+  label,
 }: {
   data: InvoiceData;
   fileName: string;
+  onDownload?: () => void;
+  label?: string;
 }) {
   const [instance] = usePDF({ document: <InvoicePDF data={data} /> });
 
@@ -25,10 +29,15 @@ export function InvoiceDownloadButton({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    onDownload?.();
   };
 
   const loading = instance.loading;
   const hasError = !!instance.error;
+
+  const defaultLabel = data.mesicSluzby
+    ? `Stáhnout PDF — ${mesicNominativ(data.mesicSluzby)} ${data.rokSluzby}`
+    : "Stáhnout PDF";
 
   return (
     <motion.button
@@ -56,7 +65,7 @@ export function InvoiceDownloadButton({
         ? "Chyba generování"
         : loading
           ? "Generuji PDF..."
-          : `Stáhnout PDF — ${mesicNominativ(data.mesicSluzby)} ${data.rokSluzby}`}
+          : (label ?? defaultLabel)}
     </motion.button>
   );
 }

@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Download, X, ChevronDown,
-  CheckCircle2, AlertCircle, Edit2,
+  CheckCircle2, AlertCircle, Edit2, History,
+  Clock, TrendingUp, Trash2, CheckCheck,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import {
@@ -27,7 +28,59 @@ const InvoiceDownloadButton = dynamic(
   )}
 );
 
-/* ── Retainer client shape (minimal — read from monthly clients) ─────────── */
+/* ── Issued invoice record ───────────────────────────────────────────────── */
+export interface IssuedInvoice {
+  id: number;
+  cislo: string;
+  klient: string;           // display / brand name
+  klientNazev: string;      // legal name
+  castka: number;
+  datumVystaveni: string;
+  mesicSluzby: number;      // 0 = one-time
+  rokSluzby: number;        // 0 = one-time
+  vystavovatel: DodavatelKlic;
+  stav: "Zaplacena" | "Čeká na platbu";
+  datumZaplaceni?: string;
+  typ: "Měsíční" | "Jednorázová";
+}
+
+/* ── Finance income helper ───────────────────────────────────────────────── */
+const MONTHS_LONG = [
+  "Leden","Únor","Březen","Duben","Květen","Červen",
+  "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+];
+
+async function addIncomeToFinance(invoice: IssuedInvoice): Promise<boolean> {
+  try {
+    const res = await fetch("/api/sync?key=ov-finance-incomes");
+    const { value } = await res.json();
+    const incomes: Array<Record<string, unknown>> = Array.isArray(value) ? value : [];
+    const maxId = incomes.length > 0 ? Math.max(...incomes.map(i => Number(i.id) || 0)) : 0;
+    const mesicName = invoice.mesicSluzby > 0
+      ? MONTHS_LONG[invoice.mesicSluzby - 1]
+      : new Date().toLocaleString("cs-CZ", { month: "long" }).replace(/^\w/, c => c.toUpperCase());
+    const newItem = {
+      id: maxId + 1,
+      mesic: mesicName,
+      klient: invoice.klientNazev || invoice.klient,
+      typ: invoice.typ === "Měsíční" ? "Měsíční klient" : "Jednorázový",
+      datumZaplaceni: "—",
+      castka: invoice.castka,
+      stav: "Čeká",
+    };
+    const updated = [...incomes, newItem];
+    const saveRes = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "ov-finance-incomes", value: updated }),
+    });
+    return saveRes.ok;
+  } catch {
+    return false;
+  }
+}
+
+/* ── Retainer client shape ───────────────────────────────────────────────── */
 interface RetainerClient {
   id: number;
   name: string;
@@ -38,24 +91,20 @@ interface RetainerClient {
   aktivni: boolean;
   fakturace: "s.r.o." | "IČO";
   zodpovedna?: string;
-  /* Invoice extras — set when ready */
   fakturaRada?: number;
   ico?: string;
   dic?: string;
-  adresa?: string;       // "Ulice 1"
-  pscMesto?: string;     // "664 48 Moravany"
+  adresa?: string;
+  pscMesto?: string;
   zeme?: string;
-  popisSluzby?: string;  // main service description
+  popisSluzby?: string;
 }
 
 /* ── Known client data ───────────────────────────────────────────────────── */
-// popisDetailSablona: optional template for the 2nd description line.
-// Use {MM} for zero-padded month and {RRRR} for 4-digit year of the service period.
-// Falls back to "pro {nazev} ({MM}/{RRRR})" if omitted.
 interface ClientInvoiceEntry extends Partial<InvoiceClient> {
   popisDetailSablona?: string;
-  dodavatelKlic?: DodavatelKlic;  // defaults to "onvision"
-  splatnostDni?: number;          // defaults to 7
+  dodavatelKlic?: DodavatelKlic;
+  splatnostDni?: number;
 }
 const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
   "IMTOS": {
@@ -141,7 +190,7 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
   },
 };
 
-/* ── Resolve detail line from template + month/year ─────────────────────── */
+/* ── Resolve detail line from template ───────────────────────────────────── */
 function resolvePopisDetail(sablona: string | undefined, nazev: string, mesic: number, rok: number): string {
   const mm = String(mesic).padStart(2, "0");
   const template = sablona ?? `pro ${nazev} ({MM}/{RRRR})`;
@@ -185,6 +234,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/* ── Vystavovatel badge ───────────────────────────────────────────────────── */
+const DODAVATEL_LABELS: Record<DodavatelKlic, { label: string; color: string }> = {
+  onvision: { label: "OnVision", color: "oklch(0.62 0.27 265)" },
+  jan:      { label: "Jan K.",   color: "oklch(0.67 0.155 155)" },
+  adam:     { label: "Adam M.",  color: "oklch(0.74 0.165 75)" },
+};
+
+function DodavatelBadge({ klic }: { klic: DodavatelKlic }) {
+  const { label, color } = DODAVATEL_LABELS[klic];
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+      style={{ background: `${color.replace(")", " / 0.12)")}`, color, border: `1px solid ${color.replace(")", " / 0.22)")}` }}>
+      {label}
+    </span>
+  );
+}
+
 /* ── Invoice row card ────────────────────────────────────────────────────── */
 function InvoiceCard({
   client,
@@ -204,7 +270,6 @@ function InvoiceCard({
       className="card flex items-center gap-4 px-5 py-4"
       style={{ borderLeft: `3px solid ${client.color}` }}
     >
-      {/* Avatar */}
       <div
         className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 font-bold text-[13px]"
         style={{
@@ -217,7 +282,6 @@ function InvoiceCard({
         {client.logo}
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-bold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>
           {client.name}
@@ -230,7 +294,6 @@ function InvoiceCard({
         </p>
       </div>
 
-      {/* Status */}
       {ready ? (
         <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full"
           style={{ background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }}>
@@ -245,7 +308,6 @@ function InvoiceCard({
         </span>
       )}
 
-      {/* Action */}
       <motion.button
         onClick={() => onIssue(client)}
         whileTap={{ scale: 0.95 }}
@@ -266,18 +328,19 @@ function InvoiceCard({
 function IssueModal({
   client,
   onClose,
+  onDownloaded,
 }: {
   client: RetainerClient;
   onClose: () => void;
+  onDownloaded: (invoice: IssuedInvoice) => void;
 }) {
   const now = new Date();
-  const defaultMesic = now.getMonth() === 0 ? 12 : now.getMonth(); // previous month
+  const defaultMesic = now.getMonth() === 0 ? 12 : now.getMonth();
   const defaultRok = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
   const [mesic, setMesic] = useState(defaultMesic);
   const [rok, setRok] = useState(defaultRok);
 
-  // Merge known data
   const knownKey = Object.keys(CLIENT_INVOICE_DATA).find(
     k => client.name.toUpperCase().includes(k)
   );
@@ -299,17 +362,19 @@ function IssueModal({
   const [zeme, setZeme] = useState(known?.zeme ?? "Česká republika");
   const [pdfReady, setPdfReady] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
-  // popisDetail: null = auto (resolved from template + month/year), string = manually overridden
   const [popisDetail, setPopisDetail] = useState<string | null>(null);
+
+  // Post-download state
+  const [downloaded, setDownloaded] = useState(false);
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [incomeAdded, setIncomeAdded] = useState(false);
 
   const isManualNumber = known?.fakturaRada === 0;
 
-  // Auto-resolve detail from template whenever month/year changes (resets manual override)
   const autoDetail = useMemo(
     () => resolvePopisDetail(known?.popisDetailSablona, nazev, mesic, rok),
     [known?.popisDetailSablona, nazev, mesic, rok],
   );
-  // Reset manual override when month or year changes so auto-value updates
   const prevMesicRok = `${mesic}/${rok}`;
   useEffect(() => { setPopisDetail(null); }, [prevMesicRok]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -332,7 +397,6 @@ function IssueModal({
       popisSluzby: popis,
     };
     const base = buildInvoice(invoiceClient, mesic, rok, dodavatelKlic);
-    // Override splatnost if custom
     if (splatnostDni !== 7) {
       const vystaveniParts = base.datumVystaveni.split(".");
       const vystaveniDate = new Date(
@@ -350,7 +414,6 @@ function IssueModal({
     return base;
   }, [mesic, rok, castka, popis, fakturaRada, ico, dic, nazev, ulice, psc, mesto, zeme, manualCislo, isManualNumber, dodavatelKlic, splatnostDni]);
 
-  // Generate QR Platba data URL whenever invoice data changes
   useEffect(() => {
     if (!baseInvoiceData) { setQrDataUrl(undefined); return; }
     const spd = buildSpdString(
@@ -366,11 +429,7 @@ function IssueModal({
 
   const invoiceData = useMemo<InvoiceData | null>(() => {
     if (!baseInvoiceData) return null;
-    return {
-      ...baseInvoiceData,
-      popisDetail: popisDetail ?? autoDetail,
-      qrDataUrl,
-    };
+    return { ...baseInvoiceData, popisDetail: popisDetail ?? autoDetail, qrDataUrl };
   }, [baseInvoiceData, popisDetail, autoDetail, qrDataUrl]);
 
   const fileName = invoiceData
@@ -378,6 +437,46 @@ function IssueModal({
     : "faktura.pdf";
 
   const canGenerate = isManualNumber ? (!!ico && !!manualCislo) : (!!fakturaRada && !!ico);
+
+  const handleDownloaded = useCallback(() => {
+    if (!invoiceData) return;
+    const issuedInvoice: IssuedInvoice = {
+      id: Date.now(),
+      cislo: invoiceData.cislo,
+      klient: client.name,
+      klientNazev: nazev,
+      castka: invoiceData.odberatel.castka,
+      datumVystaveni: invoiceData.datumVystaveni,
+      mesicSluzby: mesic,
+      rokSluzby: rok,
+      vystavovatel: dodavatelKlic,
+      stav: "Čeká na platbu",
+      typ: "Měsíční",
+    };
+    setDownloaded(true);
+    onDownloaded(issuedInvoice);
+  }, [invoiceData, client.name, nazev, mesic, rok, dodavatelKlic, onDownloaded]);
+
+  const handleAddToIncome = useCallback(async () => {
+    if (!invoiceData) return;
+    setIncomeLoading(true);
+    const issuedInvoice: IssuedInvoice = {
+      id: Date.now(),
+      cislo: invoiceData.cislo,
+      klient: client.name,
+      klientNazev: nazev,
+      castka: invoiceData.odberatel.castka,
+      datumVystaveni: invoiceData.datumVystaveni,
+      mesicSluzby: mesic,
+      rokSluzby: rok,
+      vystavovatel: dodavatelKlic,
+      stav: "Čeká na platbu",
+      typ: "Měsíční",
+    };
+    const ok = await addIncomeToFinance(issuedInvoice);
+    setIncomeLoading(false);
+    if (ok) setIncomeAdded(true);
+  }, [invoiceData, client.name, nazev, mesic, rok, dodavatelKlic]);
 
   return (
     <motion.div
@@ -434,7 +533,7 @@ function IssueModal({
             </Field>
           </div>
 
-          {/* Invoice number — auto preview or manual input */}
+          {/* Invoice number */}
           {isManualNumber ? (
             <Field label="Číslo faktury">
               <FInput value={manualCislo} onChange={v => { setManualCislo(v); setPdfReady(false); }} placeholder={`${new Date().getFullYear()}001`} />
@@ -481,7 +580,6 @@ function IssueModal({
               placeholder="Kreativní produkce a digitální strategie obsahu..." />
           </Field>
 
-          {/* Detail line — auto from template, editable */}
           <Field label="Detail (2. řádek popisu)">
             <FInput
               value={popisDetail ?? autoDetail}
@@ -528,21 +626,57 @@ function IssueModal({
         {/* Footer */}
         <div className="flex items-center justify-end gap-2.5 px-5 py-4 border-t sticky bottom-0"
           style={{ borderColor: "oklch(1 0 0 / 0.08)", background: "oklch(0.11 0.008 222)" }}>
-          <button onClick={onClose}
-            className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground] btn-tactile"
-            style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
-            Zrušit
-          </button>
 
-          {invoiceData ? (
-            <InvoiceDownloadButton data={invoiceData} fileName={fileName} />
+          {downloaded ? (
+            /* Post-download state */
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="flex items-center gap-2 text-[12px] font-medium mr-auto"
+                style={{ color: "oklch(0.67 0.155 155)" }}>
+                <CheckCheck className="w-3.5 h-3.5" />
+                {incomeAdded ? "Přidáno do Finance/Příjmy" : "Faktura stažena a uložena do historie"}
+              </div>
+              {!incomeAdded && (
+                <motion.button
+                  onClick={handleAddToIncome}
+                  disabled={incomeLoading}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-[7px] text-[12px] font-semibold disabled:opacity-50"
+                  style={{ background: "oklch(0.67 0.155 155 / 0.12)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.25)", fontFamily: "var(--font-outfit)" }}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {incomeLoading ? "Ukládám..." : "Přidat do příjmů"}
+                </motion.button>
+              )}
+              <button onClick={onClose}
+                className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground] btn-tactile"
+                style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+                Zavřít
+              </button>
+            </div>
           ) : (
-            <button disabled
-              className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
-              style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
-              <Download className="w-3.5 h-3.5" />
-              {!canGenerate ? "Vyplňte IČ a číslo faktury" : "Připravuji..."}
-            </button>
+            /* Normal state */
+            <>
+              <button onClick={onClose}
+                className="px-4 py-2 rounded-[7px] text-[13px] font-medium text-[--muted-foreground] btn-tactile"
+                style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+                Zrušit
+              </button>
+
+              {invoiceData ? (
+                <InvoiceDownloadButton
+                  data={invoiceData}
+                  fileName={fileName}
+                  onDownload={handleDownloaded}
+                />
+              ) : (
+                <button disabled
+                  className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
+                  style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
+                  <Download className="w-3.5 h-3.5" />
+                  {!canGenerate ? "Vyplňte IČ a číslo faktury" : "Připravuji..."}
+                </button>
+              )}
+            </>
           )}
         </div>
       </motion.div>
@@ -551,7 +685,7 @@ function IssueModal({
 }
 
 /* ── One-time invoice section ────────────────────────────────────────────── */
-function OneTimeSection() {
+function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoice) => void }) {
   const today = fmtDate(new Date());
   const todayPlus7 = fmtDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
   const yearPrefix = `${new Date().getFullYear()}`;
@@ -564,7 +698,6 @@ function OneTimeSection() {
   const [popisSluzby, setPopisSluzby] = useState("");
   const [popisDetail, setPopisDetail] = useState("");
   const [castka, setCastka] = useState("");
-  // Odberatel
   const [nazev, setNazev] = useState("");
   const [ico, setIco] = useState("");
   const [dic, setDic] = useState("");
@@ -572,8 +705,12 @@ function OneTimeSection() {
   const [psc, setPsc] = useState("");
   const [mesto, setMesto] = useState("");
   const [zeme, setZeme] = useState("Česká republika");
-
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
+
+  // Post-download state
+  const [downloaded, setDownloaded] = useState(false);
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [incomeAdded, setIncomeAdded] = useState(false);
 
   const isValid = !!(cislo && ico && nazev && castka);
 
@@ -586,28 +723,20 @@ function OneTimeSection() {
       popisSluzby,
     };
     return buildOneTimeInvoice(
-      cislo,
-      odberatel,
-      dodavatelKlic,
-      datumVystaveni,
-      datumSplatnosti,
-      datumPlneni,
+      cislo, odberatel, dodavatelKlic,
+      datumVystaveni, datumSplatnosti, datumPlneni,
       popisDetail || popisSluzby,
     );
   }, [isValid, cislo, nazev, ulice, psc, mesto, zeme, ico, dic, castka, popisSluzby, popisDetail, dodavatelKlic, datumVystaveni, datumSplatnosti, datumPlneni]);
 
-  // QR generation
   useEffect(() => {
     if (!invoiceData) { setQrDataUrl(undefined); return; }
     const spd = buildSpdString(
-      invoiceData.dodavatel,
-      invoiceData.odberatel.castka,
-      invoiceData.variabilniSymbol,
-      `Faktura ${invoiceData.cislo}`,
+      invoiceData.dodavatel, invoiceData.odberatel.castka,
+      invoiceData.variabilniSymbol, `Faktura ${invoiceData.cislo}`,
     );
     QRCode.toDataURL(spd, { errorCorrectionLevel: "M", margin: 1, width: 200 })
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(undefined));
+      .then(setQrDataUrl).catch(() => setQrDataUrl(undefined));
   }, [invoiceData]);
 
   const invoiceWithQr = useMemo<InvoiceData | null>(() => {
@@ -618,6 +747,46 @@ function OneTimeSection() {
   const fileName = invoiceWithQr
     ? `${invoiceWithQr.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
     : "faktura.pdf";
+
+  const handleDownloaded = useCallback(() => {
+    if (!invoiceWithQr) return;
+    const issuedInvoice: IssuedInvoice = {
+      id: Date.now(),
+      cislo,
+      klient: nazev,
+      klientNazev: nazev,
+      castka: parseInt(castka) || 0,
+      datumVystaveni,
+      mesicSluzby: 0,
+      rokSluzby: 0,
+      vystavovatel: dodavatelKlic,
+      stav: "Čeká na platbu",
+      typ: "Jednorázová",
+    };
+    setDownloaded(true);
+    onDownloaded(issuedInvoice);
+  }, [invoiceWithQr, cislo, nazev, castka, datumVystaveni, dodavatelKlic, onDownloaded]);
+
+  const handleAddToIncome = useCallback(async () => {
+    if (!invoiceWithQr) return;
+    setIncomeLoading(true);
+    const issuedInvoice: IssuedInvoice = {
+      id: Date.now(),
+      cislo,
+      klient: nazev,
+      klientNazev: nazev,
+      castka: parseInt(castka) || 0,
+      datumVystaveni,
+      mesicSluzby: 0,
+      rokSluzby: 0,
+      vystavovatel: dodavatelKlic,
+      stav: "Čeká na platbu",
+      typ: "Jednorázová",
+    };
+    const ok = await addIncomeToFinance(issuedInvoice);
+    setIncomeLoading(false);
+    if (ok) setIncomeAdded(true);
+  }, [invoiceWithQr, cislo, nazev, castka, datumVystaveni, dodavatelKlic]);
 
   return (
     <div className="rounded-[12px] p-5 space-y-5"
@@ -632,15 +801,11 @@ function OneTimeSection() {
         </p>
       </div>
 
-      {/* Vystavovatel */}
       <Field label="Vystavovatel">
         <div className="relative">
-          <select
-            value={dodavatelKlic}
-            onChange={e => setDodavatelKlic(e.target.value as DodavatelKlic)}
+          <select value={dodavatelKlic} onChange={e => setDodavatelKlic(e.target.value as DodavatelKlic)}
             className={`${iCls} appearance-none pr-8 cursor-pointer`}
-            style={{ ...iSty, color: "var(--foreground)" }}
-          >
+            style={{ ...iSty, color: "var(--foreground)" }}>
             <option value="onvision" style={{ background: "oklch(0.12 0.008 222)" }}>OnVision s.r.o.</option>
             <option value="jan" style={{ background: "oklch(0.12 0.008 222)" }}>Jan Kříž</option>
             <option value="adam" style={{ background: "oklch(0.12 0.008 222)" }}>Adam Mendrek</option>
@@ -649,97 +814,278 @@ function OneTimeSection() {
         </div>
       </Field>
 
-      {/* Číslo faktury */}
       <Field label="Číslo faktury">
         <FInput value={cislo} onChange={setCislo} placeholder={`${yearPrefix}001`} />
       </Field>
 
-      {/* Dates */}
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Datum vystavení">
-          <FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} />
-        </Field>
-        <Field label="Datum splatnosti">
-          <FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} />
-        </Field>
-        <Field label="Datum plnění">
-          <FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} />
-        </Field>
+        <Field label="Datum vystavení"><FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} /></Field>
+        <Field label="Datum splatnosti"><FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} /></Field>
+        <Field label="Datum plnění"><FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} /></Field>
       </div>
 
-      {/* Popis */}
       <Field label="Popis služby">
         <FInput value={popisSluzby} onChange={setPopisSluzby} placeholder="Kreativní produkce a digitální strategie obsahu..." />
       </Field>
       <Field label="Detail (2. řádek)">
         <FInput value={popisDetail} onChange={setPopisDetail} placeholder="Volitelný upřesňující text..." />
       </Field>
-
-      {/* Částka */}
       <Field label="Částka (Kč)">
         <FInput value={castka} onChange={v => setCastka(v.replace(/\D/g, ""))} placeholder="10000" />
       </Field>
 
-      {/* Odběratel */}
       <div>
         <p className="text-[10px] font-bold text-[--muted-foreground] uppercase tracking-[0.08em] mb-3 flex items-center gap-2">
           <Edit2 className="w-3 h-3" /> Fakturační údaje odběratele
         </p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <Field label="Název firmy">
-              <FInput value={nazev} onChange={setNazev} placeholder="Název s.r.o." />
-            </Field>
-          </div>
-          <Field label="IČ">
-            <FInput value={ico} onChange={setIco} placeholder="12345678" />
-          </Field>
-          <Field label="DIČ (volitelné)">
-            <FInput value={dic} onChange={setDic} placeholder="CZ12345678" />
-          </Field>
-          <Field label="Ulice">
-            <FInput value={ulice} onChange={setUlice} placeholder="Ulice 1/2" />
-          </Field>
+          <div className="col-span-2"><Field label="Název firmy"><FInput value={nazev} onChange={setNazev} placeholder="Název s.r.o." /></Field></div>
+          <Field label="IČ"><FInput value={ico} onChange={setIco} placeholder="12345678" /></Field>
+          <Field label="DIČ (volitelné)"><FInput value={dic} onChange={setDic} placeholder="CZ12345678" /></Field>
+          <Field label="Ulice"><FInput value={ulice} onChange={setUlice} placeholder="Ulice 1/2" /></Field>
           <Field label="PSČ Město">
             <div className="flex gap-2">
               <FInput value={psc} onChange={setPsc} placeholder="600 00" />
               <FInput value={mesto} onChange={setMesto} placeholder="Brno" />
             </div>
           </Field>
-          <div className="col-span-2">
-            <Field label="Země">
-              <FInput value={zeme} onChange={setZeme} placeholder="Česká republika" />
-            </Field>
-          </div>
+          <div className="col-span-2"><Field label="Země"><FInput value={zeme} onChange={setZeme} placeholder="Česká republika" /></Field></div>
         </div>
       </div>
 
-      {/* Download button */}
-      <div className="flex justify-end pt-1">
-        {invoiceWithQr ? (
-          <InvoiceDownloadButton data={invoiceWithQr} fileName={fileName} />
+      {/* Post-download banner or download button */}
+      <AnimatePresence mode="wait">
+        {downloaded ? (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 px-4 py-3 rounded-[8px]"
+            style={{ background: "oklch(0.67 0.155 155 / 0.08)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }}
+          >
+            <CheckCheck className="w-4 h-4 shrink-0" style={{ color: "oklch(0.67 0.155 155)" }} />
+            <p className="text-[12px] font-medium flex-1" style={{ color: "oklch(0.67 0.155 155)" }}>
+              {incomeAdded ? "Přidáno do Finance/Příjmy" : "Faktura stažena a uložena do historie"}
+            </p>
+            {!incomeAdded && (
+              <motion.button
+                onClick={handleAddToIncome}
+                disabled={incomeLoading}
+                whileTap={{ scale: 0.96 }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-[12px] font-semibold disabled:opacity-50 shrink-0"
+                style={{ background: "oklch(0.67 0.155 155 / 0.15)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.3)", fontFamily: "var(--font-outfit)" }}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                {incomeLoading ? "Ukládám..." : "Přidat do příjmů"}
+              </motion.button>
+            )}
+          </motion.div>
         ) : (
-          <button disabled
-            className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
-            style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
-            <Download className="w-3.5 h-3.5" />
-            Vyplňte povinné údaje
-          </button>
+          <motion.div key="download" className="flex justify-end pt-1">
+            {invoiceWithQr ? (
+              <InvoiceDownloadButton data={invoiceWithQr} fileName={fileName} onDownload={handleDownloaded} label="Stáhnout PDF" />
+            ) : (
+              <button disabled
+                className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
+                style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
+                <Download className="w-3.5 h-3.5" />
+                Vyplňte povinné údaje
+              </button>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
+  );
+}
+
+/* ── Issued invoices tab ─────────────────────────────────────────────────── */
+function IssuedInvoicesTab({
+  invoices,
+  onChange,
+}: {
+  invoices: IssuedInvoice[];
+  onChange: (next: IssuedInvoice[]) => void;
+}) {
+  const sorted = useMemo(
+    () => [...invoices].sort((a, b) => b.id - a.id),
+    [invoices],
+  );
+
+  const toggleStav = useCallback((id: number) => {
+    onChange(invoices.map(inv =>
+      inv.id !== id ? inv : {
+        ...inv,
+        stav: inv.stav === "Zaplacena" ? "Čeká na platbu" : "Zaplacena",
+        datumZaplaceni: inv.stav === "Čeká na platbu" ? fmtDate(new Date()) : undefined,
+      }
+    ));
+  }, [invoices, onChange]);
+
+  const remove = useCallback((id: number) => {
+    onChange(invoices.filter(inv => inv.id !== id));
+  }, [invoices, onChange]);
+
+  if (sorted.length === 0) {
+    return (
+      <motion.div
+        className="flex flex-col items-center justify-center py-20 gap-4"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      >
+        <div className="w-14 h-14 rounded-[14px] flex items-center justify-center"
+          style={{ background: "oklch(0.62 0.27 265 / 0.08)", border: "1px solid oklch(0.62 0.27 265 / 0.15)" }}>
+          <History className="w-6 h-6" style={{ color: "oklch(0.62 0.27 265 / 0.5)" }} />
+        </div>
+        <div className="text-center">
+          <p className="text-[14px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>
+            Žádné vydané faktury
+          </p>
+          <p className="text-[12px] text-[--muted-foreground] mt-1">
+            Každá stažená faktura se automaticky uloží sem
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const pending = sorted.filter(i => i.stav === "Čeká na platbu");
+  const paid = sorted.filter(i => i.stav === "Zaplacena");
+  const totalPending = pending.reduce((s, i) => s + i.castka, 0);
+
+  return (
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Summary strip */}
+      {pending.length > 0 && (
+        <div className="flex items-center gap-4 px-5 py-3 rounded-[10px]"
+          style={{ background: "oklch(0.74 0.165 75 / 0.07)", border: "1px solid oklch(0.74 0.165 75 / 0.18)" }}>
+          <Clock className="w-4 h-4 shrink-0" style={{ color: "oklch(0.74 0.165 75)" }} />
+          <p className="text-[13px] font-semibold flex-1" style={{ color: "oklch(0.74 0.165 75)", fontFamily: "var(--font-outfit)" }}>
+            {pending.length} {pending.length === 1 ? "faktura čeká" : "faktury čekají"} na platbu
+          </p>
+          <p className="text-[13px] font-bold" style={{ color: "oklch(0.74 0.165 75)", fontFamily: "var(--font-outfit)" }}>
+            {fKc(totalPending)}
+          </p>
+        </div>
+      )}
+
+      {/* Invoice rows */}
+      <div className="flex flex-col gap-2">
+        {sorted.map((inv, i) => (
+          <motion.div
+            key={inv.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            className="card flex items-center gap-4 px-5 py-3.5"
+          >
+            {/* Number */}
+            <div className="shrink-0 min-w-[90px]">
+              <p className="text-[13px] font-bold text-[--foreground]"
+                style={{ fontFamily: "var(--font-outfit)", letterSpacing: "0.04em" }}>
+                {inv.cislo}
+              </p>
+              <p className="text-[10px] text-[--muted-foreground] mt-0.5">{inv.datumVystaveni}</p>
+            </div>
+
+            {/* Client */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)" }}>
+                {inv.klient}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <DodavatelBadge klic={inv.vystavovatel} />
+                {inv.mesicSluzby > 0 && (
+                  <span className="text-[10px] text-[--muted-foreground]">
+                    {String(inv.mesicSluzby).padStart(2,"0")}/{inv.rokSluzby}
+                  </span>
+                )}
+                <span className="text-[10px] text-[--muted-foreground]">{inv.typ}</span>
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div className="shrink-0 text-right">
+              <p className="text-[14px] font-bold text-[--foreground]"
+                style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>
+                {fKc(inv.castka)}
+              </p>
+              {inv.datumZaplaceni && inv.stav === "Zaplacena" && (
+                <p className="text-[10px] text-[--muted-foreground]">{inv.datumZaplaceni}</p>
+              )}
+            </div>
+
+            {/* Status toggle */}
+            <motion.button
+              onClick={() => toggleStav(inv.id)}
+              whileTap={{ scale: 0.92 }}
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+              title="Kliknutím změnit stav"
+              style={inv.stav === "Zaplacena"
+                ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
+                : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
+              }
+            >
+              {inv.stav === "Zaplacena"
+                ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
+                : <><Clock className="w-3 h-3" /> Čeká</>
+              }
+            </motion.button>
+
+            {/* Delete */}
+            <motion.button
+              onClick={() => remove(inv.id)}
+              whileTap={{ scale: 0.9 }}
+              className="shrink-0 p-1.5 rounded-[6px] text-[--muted-foreground] btn-tactile opacity-40 hover:opacity-100 transition-opacity"
+              title="Smazat záznam"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </motion.button>
+          </motion.div>
+        ))}
+      </div>
+
+      {paid.length > 0 && (
+        <p className="text-[11px] text-[--muted-foreground] text-center pt-1">
+          {paid.length} zaplacených · celkem {fKc(paid.reduce((s,i) => s+i.castka, 0))}
+        </p>
+      )}
+    </motion.div>
   );
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
 export default function FakturaPage() {
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
+  const [issuedInvoices, setIssuedInvoices] = useSupabaseData<IssuedInvoice[]>("ov-issued-invoices", () => []);
   const [issuing, setIssuing] = useState<RetainerClient | null>(null);
-  const [tab, setTab] = useState<"mesicni" | "jednorazove">("mesicni");
+  const [tab, setTab] = useState<"mesicni" | "jednorazove" | "vydane">("mesicni");
 
   const activeClients = useMemo(() => clients.filter(c => c.aktivni), [clients]);
 
+  const pendingCount = useMemo(
+    () => issuedInvoices.filter(i => i.stav === "Čeká na platbu").length,
+    [issuedInvoices],
+  );
+
   const handleIssue = useCallback((c: RetainerClient) => setIssuing(c), []);
+
+  const handleDownloaded = useCallback((invoice: IssuedInvoice) => {
+    setIssuedInvoices(prev => {
+      // Deduplicate: if same cislo already exists, update it
+      const exists = prev.some(i => i.cislo === invoice.cislo);
+      if (exists) return prev;
+      return [invoice, ...prev];
+    });
+  }, [setIssuedInvoices]);
+
+  const tabs = [
+    { key: "mesicni",    label: "Měsíční klienti", count: null },
+    { key: "jednorazove", label: "Jednorázovky",   count: null },
+    { key: "vydane",     label: "Vydané faktury",   count: pendingCount > 0 ? pendingCount : null },
+  ] as const;
 
   return (
     <div className="p-4 md:p-7 min-h-screen" style={{ background: "var(--background)" }}>
@@ -787,19 +1133,28 @@ export default function FakturaPage() {
 
       {/* Tab switcher */}
       <div className="flex gap-1 mb-5 p-1 rounded-[10px]" style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)", width: "fit-content" }}>
-        {[
-          { key: "mesicni", label: "Měsíční klienti" },
-          { key: "jednorazove", label: "Jednorázovky" },
-        ].map(t => (
+        {tabs.map(t => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key as typeof tab)}
-            className="px-4 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all"
+            onClick={() => setTab(t.key)}
+            className="relative px-4 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1.5"
             style={tab === t.key
               ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }
               : { color: "var(--muted-foreground)" }
             }
-          >{t.label}</button>
+          >
+            {t.key === "vydane" && <History className="w-3 h-3" />}
+            {t.label}
+            {t.count !== null && t.count > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                style={tab === t.key
+                  ? { background: "oklch(0 0 0 / 0.2)" }
+                  : { background: "oklch(0.74 0.165 75 / 0.18)", color: "oklch(0.74 0.165 75)" }
+                }>
+                {t.count}
+              </span>
+            )}
+          </button>
         ))}
       </div>
 
@@ -826,14 +1181,26 @@ export default function FakturaPage() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <OneTimeSection />
+          <OneTimeSection onDownloaded={handleDownloaded} />
         </motion.div>
+      )}
+
+      {tab === "vydane" && (
+        <IssuedInvoicesTab
+          invoices={issuedInvoices}
+          onChange={setIssuedInvoices}
+        />
       )}
 
       {/* Modal */}
       <AnimatePresence>
         {issuing && (
-          <IssueModal key="issue-modal" client={issuing} onClose={() => setIssuing(null)} />
+          <IssueModal
+            key="issue-modal"
+            client={issuing}
+            onClose={() => setIssuing(null)}
+            onDownloaded={handleDownloaded}
+          />
         )}
       </AnimatePresence>
     </div>

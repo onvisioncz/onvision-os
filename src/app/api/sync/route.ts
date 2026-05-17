@@ -1,12 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+async function getAuthenticatedClient() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { supabase: null, user: null };
+  return { supabase, user };
+}
+
 // GET /api/sync?key=ov-monthly-clients
 export async function GET(req: NextRequest) {
+  const { supabase } = await getAuthenticatedClient();
+  if (!supabase) return UNAUTHORIZED;
+
   const key = req.nextUrl.searchParams.get("key");
   if (!key) return NextResponse.json({ error: "Missing key" }, { status: 400 });
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("app_data")
     .select("value")
@@ -19,10 +30,12 @@ export async function GET(req: NextRequest) {
 
 // POST /api/sync  { key, value }
 export async function POST(req: NextRequest) {
+  const { supabase } = await getAuthenticatedClient();
+  if (!supabase) return UNAUTHORIZED;
+
   const { key, value } = await req.json();
   if (!key) return NextResponse.json({ error: "Missing key" }, { status: 400 });
 
-  const supabase = await createClient();
   const { error } = await supabase
     .from("app_data")
     .upsert(
