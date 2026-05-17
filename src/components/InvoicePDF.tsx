@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Document, Page, View, Text, StyleSheet, Font,
+  Document, Page, View, Text, StyleSheet, Font, Image,
 } from "@react-pdf/renderer";
 import { type InvoiceData, DODAVATEL, fmtKc } from "@/lib/invoice";
 
@@ -49,9 +49,9 @@ const s = StyleSheet.create({
   infoLeft:  { flex: 1, borderRightWidth: 1, borderRightColor: BORDER, padding: 7 },
   infoRight: { flex: 1, padding: 7 },
 
-  /* Logo box — blue rectangle with white "OnVision" text */
-  logoBox:  { backgroundColor: BLUE, width: 104, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 7 },
-  logoText: { color: "#ffffff", fontWeight: 700, fontSize: 13, letterSpacing: 0.5 },
+  /* Logo — PNG image, square, matching brand mark */
+  logoBox:  { width: 80, height: 80, marginBottom: 7 },
+  logoImg:  { width: 80, height: 80 },
 
   /* Supplier */
   labelMuted:   { color: MUTED, marginBottom: 4 },
@@ -189,7 +189,7 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           <View style={s.infoLeft}>
             <Text style={s.labelMuted}>{"Dodavatel:"}</Text>
             <View style={s.logoBox}>
-              <Text style={s.logoText}>{"OnVision"}</Text>
+              <Image src={`${origin}/onvision-mark.png`} style={s.logoImg} />
             </View>
             <Text style={s.supplierName}>{DODAVATEL.nazev}</Text>
             <Text style={s.supplierLine}>{DODAVATEL.ulice}</Text>
