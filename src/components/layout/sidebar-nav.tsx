@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
-  Inbox, CheckSquare, BarChart2, PackageOpen, Layers2,
+  Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 const nav = [
   { label: "Dashboard",       short: "Přehled",   href: "/dashboard",        icon: LayoutDashboard },
@@ -28,6 +30,28 @@ const nav = [
 /* ── Desktop sidebar ────────────────────────────────────────────────────────── */
 export function SidebarNav() {
   const path = usePathname();
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null);
+    });
+  }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  // Derive initials + display name from email
+  const displayName = userEmail
+    ? userEmail.startsWith("info@") ? "Adam" : userEmail.startsWith("fakturace@") ? "Dominika" : userEmail.split("@")[0]
+    : "—";
+  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <aside
@@ -165,16 +189,22 @@ export function SidebarNav() {
               fontWeight: 700,
             }}
           >
-            A
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-medium text-[--foreground] leading-tight">Adam</p>
-            <p className="text-[11px] text-[--muted-foreground] leading-tight">Admin</p>
+            <p className="text-[12px] font-medium text-[--foreground] leading-tight truncate">{displayName}</p>
+            <p className="text-[10px] text-[--muted-foreground] leading-tight truncate">{userEmail ?? "..."}</p>
           </div>
-          <span
-            className="pulse w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ background: "var(--success)" }}
-          />
+          <motion.button
+            onClick={handleLogout}
+            whileTap={{ scale: 0.88 }}
+            title="Odhlásit se"
+            className="shrink-0 p-1 rounded-[4px] transition-colors"
+            style={{ color: "oklch(0.35 0.005 222)" }}
+            whileHover={{ color: "oklch(0.65 0.22 25)" }}
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </motion.button>
         </div>
 
         {/* Brand tagline */}
