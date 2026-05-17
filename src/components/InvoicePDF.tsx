@@ -212,9 +212,11 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
               <Text style={s.varLabel}>{"Konstantní symbol:"}</Text>
               <Text style={s.varValue}>{DODAVATEL.konstantniSymbol}</Text>
             </View>
-            <View style={s.varRow}>
+            <View style={{ flexDirection: "row", marginBottom: 2 }}>
               <Text style={s.varLabel}>{"Objednávka č.:"}</Text>
+              <Text style={{ flex: 1 }} />
               <Text style={s.varLabel}>{"ze dne:"}</Text>
+              <Text style={{ width: 55 }} />
             </View>
             <View style={s.dividerH} />
             <Text style={s.labelMuted}>{"Odběratel:"}</Text>
@@ -234,16 +236,21 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           <View style={s.bankRow}>
             <Text style={s.bankLabel}>{"Banka:"}</Text>
             <Text style={s.bankValue}>{DODAVATEL.banka}</Text>
-            <Text style={[s.bankLabel, { marginLeft: 30 }]}>{"SWIFT:"}</Text>
+          </View>
+          <View style={s.bankRow}>
+            <Text style={s.bankLabel}>{"SWIFT:"}</Text>
+            <Text style={s.bankValue}>{DODAVATEL.swift}</Text>
           </View>
           <View style={s.bankRow}>
             <Text style={s.bankLabel}>{"IBAN:"}</Text>
             <Text style={s.bankValue}>{DODAVATEL.iban}</Text>
           </View>
-          <View style={[s.bankRow, { marginBottom: 0 }]}>
+          <View style={s.bankRow}>
             <Text style={s.bankLabel}>{"Číslo účtu:"}</Text>
             <Text style={s.bankValue}>{DODAVATEL.cisloUctu}</Text>
-            <Text style={[s.bankLabel, { marginLeft: 30 }]}>{"Kód banky:"}</Text>
+          </View>
+          <View style={[s.bankRow, { marginBottom: 0 }]}>
+            <Text style={s.bankLabel}>{"Kód banky:"}</Text>
             <Text style={s.bankValue}>{DODAVATEL.kodBanky}</Text>
           </View>
         </View>
@@ -290,20 +297,24 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           <Text style={s.colFinal}>{castkaFmt}</Text>
         </View>
 
-        {/* ── Součty ── */}
+        {/* ── Součty — label vlevo, hodnoty zarovnané pod sloupce tabulky ── */}
         <View style={s.totalsRow}>
-          <View style={s.totalSpacer} />
-          <Text style={s.totalLabelCell}>{"Součet položek"}</Text>
-          <Text style={s.totalValueCell}>{castkaFmt}</Text>
-          <Text style={s.totalVatCell}>{"0,00"}</Text>
-          <Text style={s.totalFinalCell}>{castkaFmt}</Text>
+          <View style={s.colDesc}>
+            <Text style={{ color: MUTED }}>{"Součet položek"}</Text>
+          </View>
+          <Text style={s.colQty}>{""}</Text>
+          <Text style={s.colPrice}>{""}</Text>
+          <Text style={s.colDisc}>{""}</Text>
+          <Text style={[s.colTotal, { color: MUTED }]}>{castkaFmt}</Text>
+          <Text style={s.colVat}>{""}</Text>
+          <Text style={[s.colVatAmt, { color: MUTED }]}>{"0,00"}</Text>
+          <Text style={[s.colFinal, { color: MUTED }]}>{castkaFmt}</Text>
         </View>
         <View style={[s.totalsRow, { borderTopWidth: 0 }]}>
-          <View style={s.totalSpacer} />
-          <Text style={s.grandLabelCell}>{"CELKEM K ÚHRADĚ"}</Text>
-          <Text style={{ width: 170, textAlign: "right", fontWeight: 700, fontSize: 10 }}>
-            {castkaFmt}
-          </Text>
+          <View style={{ flex: 3.5 + 0.7 + 1.1 + 0.7 + 1.1 + 0.6 + 0.7 }}>
+            <Text style={{ fontWeight: 700 }}>{"CELKEM K ÚHRADĚ"}</Text>
+          </View>
+          <Text style={[s.colFinal, { fontWeight: 700, fontSize: 10 }]}>{castkaFmt}</Text>
         </View>
 
         {/* ── Vystavil ── */}
