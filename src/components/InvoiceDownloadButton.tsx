@@ -1,9 +1,9 @@
 "use client";
 
-// This component is loaded ONLY on the client via dynamic() — never SSR
-import { PDFDownloadLink } from "@react-pdf/renderer";
+// Loaded ONLY client-side via dynamic() — never SSR
+import { usePDF } from "@react-pdf/renderer";
 import { InvoicePDF } from "./InvoicePDF";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { InvoiceData } from "@/lib/invoice";
 import { mesicNominativ } from "@/lib/invoice";
@@ -15,29 +15,48 @@ export function InvoiceDownloadButton({
   data: InvoiceData;
   fileName: string;
 }) {
+  const [instance] = usePDF({ document: <InvoicePDF data={data} /> });
+
+  const handleDownload = () => {
+    if (!instance.url) return;
+    const a = document.createElement("a");
+    a.href = instance.url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const loading = instance.loading;
+  const hasError = !!instance.error;
+
   return (
-    <PDFDownloadLink
-      document={<InvoicePDF data={data} />}
-      fileName={fileName}
+    <motion.button
+      onClick={handleDownload}
+      disabled={loading || hasError}
+      whileHover={!loading && !hasError ? { filter: "brightness(1.08)" } : {}}
+      whileTap={{ scale: 0.96 }}
+      className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+      style={{
+        background: hasError
+          ? "oklch(0.45 0.18 25)"
+          : loading
+            ? "oklch(0.45 0.005 222)"
+            : "oklch(0.62 0.27 265)",
+        color: "oklch(0.97 0.004 265)",
+        fontFamily: "var(--font-outfit)",
+      }}
     >
-      {({ loading }) => (
-        <motion.button
-          disabled={loading}
-          whileHover={!loading ? { filter: "brightness(1.08)" } : {}}
-          whileTap={{ scale: 0.96 }}
-          className="btn-tactile flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold disabled:opacity-60"
-          style={{
-            background: loading ? "oklch(0.45 0.005 222)" : "oklch(0.62 0.27 265)",
-            color: "oklch(0.97 0.004 265)",
-            fontFamily: "var(--font-outfit)",
-          }}
-        >
-          <Download className="w-3.5 h-3.5" />
-          {loading
-            ? "Generuji PDF..."
-            : `Stáhnout PDF — ${mesicNominativ(data.mesicSluzby)} ${data.rokSluzby}`}
-        </motion.button>
+      {loading ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Download className="w-3.5 h-3.5" />
       )}
-    </PDFDownloadLink>
+      {hasError
+        ? "Chyba generování"
+        : loading
+          ? "Generuji PDF..."
+          : `Stáhnout PDF — ${mesicNominativ(data.mesicSluzby)} ${data.rokSluzby}`}
+    </motion.button>
   );
 }
