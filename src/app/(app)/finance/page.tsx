@@ -410,6 +410,14 @@ function ChartTip({ active, payload, label }: { active?: boolean; payload?: Arra
   );
 }
 
+/* ── Marže health ───────────────────────────────────────────────────────────── */
+function marzeHealth(pct: number): { color: string; bg: string; label: string } {
+  if (pct >= 50) return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.12)", label: "Výborná" };
+  if (pct >= 35) return { color: "oklch(0.74 0.18 55)",  bg: "oklch(0.74 0.18 55  / 0.12)", label: "Dobrá"   };
+  if (pct >= 20) return { color: "oklch(0.74 0.165 75)", bg: "oklch(0.74 0.165 75 / 0.12)", label: "Průměrná" };
+  return              { color: "oklch(0.65 0.22 25)",    bg: "oklch(0.65 0.22 25  / 0.12)", label: "Nízká"    };
+}
+
 /* ── PŘEHLED tab ────────────────────────────────────────────────────────────── */
 const SCHVALITEL = ["—", "Adam", "Honza", "Dominika"] as const;
 const MONTH_STATUSES: MonthStatus[] = ["UZAVŘENO", "PROBÍHÁ", "NEPROBĚHLO"];
@@ -509,7 +517,17 @@ function PrehledTab({
                     <td className="px-4 py-3 num text-[13px] font-semibold" style={{ color: s.prijemCelkovy ? "oklch(0.67 0.155 155)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCelkovy)}</td>
                     <td className="px-4 py-3 num text-[13px]" style={{ color: s.vydaje ? "oklch(0.65 0.22 25)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.vydaje)}</td>
                     <td className="px-4 py-3 num text-[13px] font-bold" style={{ color: s.prijemCisty ? "oklch(0.62 0.27 265)" : "oklch(0.30 0.005 222)", fontFamily: "var(--font-outfit)" }}>{fKc(s.prijemCisty)}</td>
-                    <td className="px-4 py-3 num text-[12px] hidden md:table-cell" style={{ color: marze ? "var(--foreground)" : "oklch(0.30 0.005 222)" }}>{marze ? `${marze}%` : "—"}</td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {marze ? (() => {
+                        const h = marzeHealth(marze);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span className="num text-[12px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: h.color }}>{marze}%</span>
+                            <span className="px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold" style={{ background: h.bg, color: h.color }}>{h.label}</span>
+                          </div>
+                        );
+                      })() : <span style={{ color: "oklch(0.30 0.005 222)" }}>—</span>}
+                    </td>
                     {/* Stav — inline select s viditelnou šipkou */}
                     <td className="px-4 py-2.5">
                       <div className="relative inline-flex items-center group">
