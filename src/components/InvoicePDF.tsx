@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Document, Page, View, Text, StyleSheet, Font, Image,
+  Document, Page, View, Text, StyleSheet, Font, Image, Link,
 } from "@react-pdf/renderer";
 import { type InvoiceData, DODAVATEL, fmtKc } from "@/lib/invoice";
 
@@ -196,9 +196,15 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
             <Text style={s.supplierLine}>{DODAVATEL.psc} {DODAVATEL.mesto}</Text>
             <Text style={s.supplierIco}>{"IČ: "}{DODAVATEL.ico}</Text>
             <Text style={{ height: 5 }} />
-            <Text style={s.supplierLine}>{"Telefon: "}{DODAVATEL.telefon}</Text>
-            <Text style={s.supplierLine}>{"E-mail: "}{DODAVATEL.email}</Text>
-            <Text style={s.supplierLine}>{DODAVATEL.web}</Text>
+            <Link src={`tel:+420${DODAVATEL.telefon.replace(/\s/g, "")}`} style={s.supplierLine}>
+              <Text>{"Telefon: "}{DODAVATEL.telefon}</Text>
+            </Link>
+            <Link src={`mailto:${DODAVATEL.email}`} style={s.supplierLine}>
+              <Text>{"E-mail: "}{DODAVATEL.email}</Text>
+            </Link>
+            <Link src={`https://${DODAVATEL.web}`} style={s.supplierLine}>
+              <Text>{DODAVATEL.web}</Text>
+            </Link>
             <Text style={s.noVat}>{"Firma není plátce DPH"}</Text>
           </View>
 
