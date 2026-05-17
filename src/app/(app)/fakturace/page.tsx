@@ -36,6 +36,8 @@ export interface IssuedInvoice {
   klientNazev: string;      // legal name
   castka: number;
   datumVystaveni: string;
+  datumSplatnosti: string;
+  popis: string;            // service description line
   mesicSluzby: number;      // 0 = one-time
   rokSluzby: number;        // 0 = one-time
   vystavovatel: DodavatelKlic;
@@ -78,6 +80,45 @@ async function addIncomeToFinance(invoice: IssuedInvoice): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function addFakturaToFinance(invoice: IssuedInvoice): Promise<boolean> {
+  try {
+    const res = await fetch("/api/sync?key=ov-finance-faktury");
+    const { value } = await res.json();
+    const faktury: Array<Record<string, unknown>> = Array.isArray(value) ? value : [];
+    const maxId = faktury.length > 0 ? Math.max(...faktury.map(f => Number(f.id) || 0)) : 0;
+    const newFaktura = {
+      id: maxId + 1,
+      cislo: invoice.cislo,
+      klient: invoice.klientNazev || invoice.klient,
+      popis: invoice.popis,
+      castka: invoice.castka,
+      castkaBezvat: invoice.castka,   // not VAT registered
+      dph: 0,
+      datum: invoice.datumVystaveni,
+      splatnost: invoice.datumSplatnosti,
+      stav: "Čeká na platbu",
+      soubor: "",
+    };
+    const updated = [newFaktura, ...faktury];
+    const saveRes = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "ov-finance-faktury", value: updated }),
+    });
+    return saveRes.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function addToFinance(invoice: IssuedInvoice): Promise<boolean> {
+  const [incOk, fakOk] = await Promise.all([
+    addIncomeToFinance(invoice),
+    addFakturaToFinance(invoice),
+  ]);
+  return incOk && fakOk;
 }
 
 /* ── Retainer client shape ───────────────────────────────────────────────── */
@@ -438,45 +479,41 @@ function IssueModal({
 
   const canGenerate = isManualNumber ? (!!ico && !!manualCislo) : (!!fakturaRada && !!ico);
 
-  const handleDownloaded = useCallback(() => {
-    if (!invoiceData) return;
-    const issuedInvoice: IssuedInvoice = {
+  const buildIssuedInvoice = useCallback((): IssuedInvoice | null => {
+    if (!invoiceData) return null;
+    const mm = String(mesic).padStart(2, "0");
+    return {
       id: Date.now(),
       cislo: invoiceData.cislo,
       klient: client.name,
       klientNazev: nazev,
       castka: invoiceData.odberatel.castka,
       datumVystaveni: invoiceData.datumVystaveni,
+      datumSplatnosti: invoiceData.datumSplatnosti,
+      popis: `${invoiceData.odberatel.popisSluzby} — ${mm}/${rok}`,
       mesicSluzby: mesic,
       rokSluzby: rok,
       vystavovatel: dodavatelKlic,
       stav: "Čeká na platbu",
       typ: "Měsíční",
     };
+  }, [invoiceData, client.name, nazev, mesic, rok, dodavatelKlic]);
+
+  const handleDownloaded = useCallback(() => {
+    const inv = buildIssuedInvoice();
+    if (!inv) return;
     setDownloaded(true);
-    onDownloaded(issuedInvoice);
-  }, [invoiceData, client.name, nazev, mesic, rok, dodavatelKlic, onDownloaded]);
+    onDownloaded(inv);
+  }, [buildIssuedInvoice, onDownloaded]);
 
   const handleAddToIncome = useCallback(async () => {
-    if (!invoiceData) return;
+    const inv = buildIssuedInvoice();
+    if (!inv) return;
     setIncomeLoading(true);
-    const issuedInvoice: IssuedInvoice = {
-      id: Date.now(),
-      cislo: invoiceData.cislo,
-      klient: client.name,
-      klientNazev: nazev,
-      castka: invoiceData.odberatel.castka,
-      datumVystaveni: invoiceData.datumVystaveni,
-      mesicSluzby: mesic,
-      rokSluzby: rok,
-      vystavovatel: dodavatelKlic,
-      stav: "Čeká na platbu",
-      typ: "Měsíční",
-    };
-    const ok = await addIncomeToFinance(issuedInvoice);
+    const ok = await addToFinance(inv);
     setIncomeLoading(false);
     if (ok) setIncomeAdded(true);
-  }, [invoiceData, client.name, nazev, mesic, rok, dodavatelKlic]);
+  }, [buildIssuedInvoice]);
 
   return (
     <motion.div
@@ -633,7 +670,7 @@ function IssueModal({
               <div className="flex items-center gap-2 text-[12px] font-medium mr-auto"
                 style={{ color: "oklch(0.67 0.155 155)" }}>
                 <CheckCheck className="w-3.5 h-3.5" />
-                {incomeAdded ? "Přidáno do Finance/Příjmy" : "Faktura stažena a uložena do historie"}
+                {incomeAdded ? "Přidáno do Finance (Příjmy + Faktury)" : "Faktura stažena a uložena do historie"}
               </div>
               {!incomeAdded && (
                 <motion.button
@@ -644,7 +681,7 @@ function IssueModal({
                   style={{ background: "oklch(0.67 0.155 155 / 0.12)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.25)", fontFamily: "var(--font-outfit)" }}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
-                  {incomeLoading ? "Ukládám..." : "Přidat do příjmů"}
+                  {incomeLoading ? "Ukládám..." : "Přidat do Finance"}
                 </motion.button>
               )}
               <button onClick={onClose}
@@ -748,45 +785,40 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
     ? `${invoiceWithQr.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
     : "faktura.pdf";
 
-  const handleDownloaded = useCallback(() => {
-    if (!invoiceWithQr) return;
-    const issuedInvoice: IssuedInvoice = {
+  const buildIssuedInvoice = useCallback((): IssuedInvoice | null => {
+    if (!invoiceWithQr) return null;
+    return {
       id: Date.now(),
       cislo,
       klient: nazev,
       klientNazev: nazev,
       castka: parseInt(castka) || 0,
       datumVystaveni,
+      datumSplatnosti,
+      popis: popisSluzby || popisDetail || cislo,
       mesicSluzby: 0,
       rokSluzby: 0,
       vystavovatel: dodavatelKlic,
       stav: "Čeká na platbu",
       typ: "Jednorázová",
     };
+  }, [invoiceWithQr, cislo, nazev, castka, datumVystaveni, datumSplatnosti, popisSluzby, popisDetail, dodavatelKlic]);
+
+  const handleDownloaded = useCallback(() => {
+    const inv = buildIssuedInvoice();
+    if (!inv) return;
     setDownloaded(true);
-    onDownloaded(issuedInvoice);
-  }, [invoiceWithQr, cislo, nazev, castka, datumVystaveni, dodavatelKlic, onDownloaded]);
+    onDownloaded(inv);
+  }, [buildIssuedInvoice, onDownloaded]);
 
   const handleAddToIncome = useCallback(async () => {
-    if (!invoiceWithQr) return;
+    const inv = buildIssuedInvoice();
+    if (!inv) return;
     setIncomeLoading(true);
-    const issuedInvoice: IssuedInvoice = {
-      id: Date.now(),
-      cislo,
-      klient: nazev,
-      klientNazev: nazev,
-      castka: parseInt(castka) || 0,
-      datumVystaveni,
-      mesicSluzby: 0,
-      rokSluzby: 0,
-      vystavovatel: dodavatelKlic,
-      stav: "Čeká na platbu",
-      typ: "Jednorázová",
-    };
-    const ok = await addIncomeToFinance(issuedInvoice);
+    const ok = await addToFinance(inv);
     setIncomeLoading(false);
     if (ok) setIncomeAdded(true);
-  }, [invoiceWithQr, cislo, nazev, castka, datumVystaveni, dodavatelKlic]);
+  }, [buildIssuedInvoice]);
 
   return (
     <div className="rounded-[12px] p-5 space-y-5"
@@ -864,7 +896,7 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
           >
             <CheckCheck className="w-4 h-4 shrink-0" style={{ color: "oklch(0.67 0.155 155)" }} />
             <p className="text-[12px] font-medium flex-1" style={{ color: "oklch(0.67 0.155 155)" }}>
-              {incomeAdded ? "Přidáno do Finance/Příjmy" : "Faktura stažena a uložena do historie"}
+              {incomeAdded ? "Přidáno do Finance (Příjmy + Faktury)" : "Faktura stažena a uložena do historie"}
             </p>
             {!incomeAdded && (
               <motion.button
@@ -875,7 +907,7 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
                 style={{ background: "oklch(0.67 0.155 155 / 0.15)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.3)", fontFamily: "var(--font-outfit)" }}
               >
                 <TrendingUp className="w-3.5 h-3.5" />
-                {incomeLoading ? "Ukládám..." : "Přidat do příjmů"}
+                {incomeLoading ? "Ukládám..." : "Přidat do Finance"}
               </motion.button>
             )}
           </motion.div>
