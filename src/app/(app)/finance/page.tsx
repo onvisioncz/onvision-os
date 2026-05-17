@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, X, Edit2, ChevronDown, TrendingUp, TrendingDown,
+  Plus, X, Edit2, Trash2, ChevronDown, TrendingUp, TrendingDown,
   Wallet, BarChart3, CheckCircle2, Clock, AlertCircle,
   FileText, Receipt, Paperclip, Download, CreditCard,
 } from "lucide-react";
@@ -602,8 +602,9 @@ function PrehledTab({
 const EMPTY_INCOME: Omit<IncomeItem, "id"> = { mesic: "Leden", klient: "", typ: "Měsíční klient", datumZaplaceni: "", castka: 0, stav: "Zaplaceno" };
 
 function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p: IncomeItem[]) => IncomeItem[]) => void }) {
-  const [modal, setModal]   = useState<IncomeItem | null | "new">(null);
-  const [mesicF, setMesicF] = useState("Vše");
+  const [modal, setModal]     = useState<IncomeItem | null | "new">(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [mesicF, setMesicF]   = useState("Vše");
 
   const filtered = useMemo(() => {
     const base = mesicF === "Vše" ? items : items.filter(i => i.mesic === mesicF);
@@ -629,6 +630,11 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
     if (data.id !== undefined) setItems(p => p.map(i => i.id === data.id ? { ...data, id: data.id! } : i));
     else setItems(p => [...p, { ...data, id: Date.now() }]);
     setModal(null);
+  }
+
+  function confirmDelete(id: number) {
+    setItems(p => p.filter(i => i.id !== id));
+    setDeleteId(null);
   }
 
   const months = ["Vše", ...MONTHS_CZ];
@@ -695,11 +701,18 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
                           <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: is.color }}>{is.icon}{item.stav}</span>
                         </td>
                         <td className="pr-4 pl-2 py-3">
-                          <motion.button onClick={() => setModal(item)} whileTap={{ scale: 0.9 }}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
-                            style={{ color: "oklch(0.45 0.005 222)" }}>
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </motion.button>
+                          <div className="flex items-center gap-0.5">
+                            <motion.button onClick={() => setModal(item)} whileTap={{ scale: 0.9 }}
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
+                              style={{ color: "oklch(0.45 0.005 222)" }}>
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </motion.button>
+                            <motion.button onClick={() => setDeleteId(item.id)} whileTap={{ scale: 0.9 }}
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
+                              style={{ color: "oklch(0.55 0.18 25)" }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </motion.button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -714,7 +727,63 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Delete confirm dialog */}
+      <AnimatePresence>
+        {deleteId !== null && (() => {
+          const item = items.find(i => i.id === deleteId);
+          return (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ background: "oklch(0 0 0 / 0.6)", backdropFilter: "blur(4px)" }}
+              onClick={() => setDeleteId(null)}
+            >
+              <motion.div
+                className="w-full max-w-sm rounded-[14px] p-6 space-y-4"
+                style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
+                    style={{ background: "oklch(0.55 0.18 25 / 0.12)", border: "1px solid oklch(0.55 0.18 25 / 0.25)" }}>
+                    <Trash2 className="w-4 h-4" style={{ color: "oklch(0.65 0.18 25)" }} />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)" }}>
+                      Smazat příjem?
+                    </p>
+                    <p className="text-[12px] text-[--muted-foreground] mt-1">
+                      {item ? `${item.klient} · ${item.castka.toLocaleString("cs-CZ")} Kč` : ""}
+                    </p>
+                    <p className="text-[11px] mt-2" style={{ color: "oklch(0.65 0.18 25)" }}>
+                      Tuto akci nelze vrátit zpět.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setDeleteId(null)}
+                    className="flex-1 py-2 rounded-[8px] text-[13px] font-semibold btn-tactile"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.09)", color: "var(--muted-foreground)" }}>
+                    Ne, zachovat
+                  </button>
+                  <motion.button
+                    onClick={() => confirmDelete(deleteId)}
+                    whileTap={{ scale: 0.96 }}
+                    className="flex-1 py-2 rounded-[8px] text-[13px] font-bold"
+                    style={{ background: "oklch(0.55 0.18 25)", color: "oklch(0.97 0.01 25)", fontFamily: "var(--font-outfit)" }}>
+                    Ano, smazat
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Edit Modal */}
       <AnimatePresence>
         {modal !== null && (
           <IncomeModal item={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={save} />
