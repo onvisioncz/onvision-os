@@ -5,7 +5,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CreditCard, Clock, FileCheck, AlertTriangle,
-  Archive, CheckCheck, RefreshCw,
+  CheckCircle2, RotateCcw, CheckCheck, RefreshCw,
 } from "lucide-react";
 
 /* ── Source data types ──────────────────────────────────────────────────────── */
@@ -290,6 +290,13 @@ export default function InboxPage() {
     }));
   };
 
+  const unarchive = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      archived: prev.archived.filter(a => a !== id),
+    }));
+  };
+
   const markAllRead = () => {
     const allIds = allNotifs.map(n => n.id);
     setState(prev => ({ ...prev, read: [...new Set([...prev.read, ...allIds])] }));
@@ -453,8 +460,13 @@ export default function InboxPage() {
                     {/* Unread dot */}
                     {!notif.precten && (
                       <span
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-                        style={{ background: notif.urgency === 0 ? "oklch(0.65 0.22 25)" : "oklch(0.62 0.27 265)" }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
+                        style={{
+                          background: notif.urgency === 0 ? "oklch(0.65 0.22 25)" : "oklch(0.62 0.27 265)",
+                          boxShadow: notif.urgency === 0
+                            ? "0 0 6px oklch(0.65 0.22 25 / 0.7)"
+                            : "0 0 6px oklch(0.62 0.27 265 / 0.7)",
+                        }}
                       />
                     )}
 
@@ -493,16 +505,36 @@ export default function InboxPage() {
                       )}
                     </div>
 
-                    {tab !== "archiv" && (
+                    {tab === "archiv" ? (
+                      <motion.button
+                        onClick={e => { e.stopPropagation(); unarchive(notif.id); }}
+                        className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] transition-opacity btn-tactile text-[11px] font-semibold opacity-50 group-hover:opacity-100"
+                        style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+                        whileHover={{ color: "oklch(0.75 0.005 222)" }}
+                        whileTap={{ scale: 0.93 }}
+                        title="Obnovit"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Obnovit
+                      </motion.button>
+                    ) : (
                       <motion.button
                         onClick={e => { e.stopPropagation(); archive(notif.id); }}
-                        className="shrink-0 p-1.5 rounded-[6px] opacity-0 group-hover:opacity-100 transition-opacity btn-tactile"
-                        style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.45 0.005 222)" }}
-                        whileHover={{ color: ACCENT }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Archivovat"
+                        className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] btn-tactile text-[11px] font-semibold"
+                        style={{
+                          background: notif.precten ? "oklch(0.67 0.155 155 / 0.08)" : "oklch(0.62 0.27 265 / 0.08)",
+                          color: notif.precten ? "oklch(0.55 0.005 222)" : "oklch(0.67 0.155 155)",
+                          border: `1px solid ${notif.precten ? "oklch(1 0 0 / 0.07)" : "oklch(0.67 0.155 155 / 0.2)"}`,
+                        }}
+                        whileHover={{
+                          background: "oklch(0.67 0.155 155 / 0.15)",
+                          color: "oklch(0.67 0.155 155)",
+                        }}
+                        whileTap={{ scale: 0.93 }}
+                        title="Označit jako vyřešené"
                       >
-                        <Archive className="w-3.5 h-3.5" />
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Vyřešit
                       </motion.button>
                     )}
                   </div>
