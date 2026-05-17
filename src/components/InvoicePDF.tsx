@@ -189,7 +189,7 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           <View style={s.infoLeft}>
             <Text style={s.labelMuted}>{"Dodavatel:"}</Text>
             <View style={s.logoBox}>
-              <Image src={`${origin}/onvision-mark.png`} style={s.logoImg} />
+              <Image src={`${origin}/onvision-invoice-logo.png`} style={s.logoImg} />
             </View>
             <Text style={s.supplierName}>{DODAVATEL.nazev}</Text>
             <Text style={s.supplierLine}>{DODAVATEL.ulice}</Text>
