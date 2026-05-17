@@ -68,7 +68,7 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: LinkedIn, Facebook & Instagram",
     popisDetailSablona: "pro IMTOS, spol. s r.o. ({MM}/{RRRR})",
   },
-  "STAVOS": {
+  "EASTGATE": {
     dodavatelKlic: "onvision",
     fakturaRada: 12,
     nazev: "STAVOS Brno, a.s.",
@@ -99,7 +99,7 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: LinkedIn & Instagram",
     popisDetailSablona: "pro Firesta-Fišer, rekonstrukce, stavby a.s. ({MM}/{RRRR})",
   },
-  "DIAM": {
+  "TOFFI": {
     dodavatelKlic: "jan",
     fakturaRada: 2,
     nazev: "DIAM, s.r.o.",
@@ -109,7 +109,7 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
     popisDetailSablona: "pro cukrárnu TOFFI ({MM}/{RRRR})",
   },
-  "MARATON": {
+  "BEHEJ": {
     dodavatelKlic: "jan",
     fakturaRada: 3,
     nazev: "MARATON Brno, z.s.",
@@ -119,9 +119,9 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
     popisDetailSablona: "pro Behejbrno.com ({MM}/{RRRR})",
   },
-  "VIBE": {
+  "POWERPLATE": {
     dodavatelKlic: "adam",
-    fakturaRada: 0,  // Adam uses sequential numbering — modal shows number field
+    fakturaRada: 0,
     nazev: "VIBE 35 FITNESS, s.r.o.",
     ulice: "Mlýnská 495/8A", psc: "602 00", mesto: "Brno", zeme: "Česká republika",
     ico: "19417748",
@@ -129,7 +129,7 @@ const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
     popisDetailSablona: "pro Power plate Česko ({MM}/{RRRR})",
   },
-  "SK BRNO": {
+  "SLATINA": {
     dodavatelKlic: "adam",
     fakturaRada: 0,
     nazev: "SK Brno Slatina, z. s.",
