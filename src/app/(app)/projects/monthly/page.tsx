@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, RefreshCw, Users,
   Share2, Film, Camera, Mail, Megaphone, LayoutGrid,
-  CheckCircle2, Circle, Trash2, AlertTriangle,
+  CheckCircle2, Circle, Trash2, AlertTriangle, CalendarDays,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -23,6 +23,19 @@ interface Deliverable {
   text: string;
   done: boolean;
   category: DeliverableCategory;
+  deadline?: string;      // Czech format: "18. 5."
+  prirazeno?: string;     // "Adam" | "Honza" | "Dominika"
+  linkedTaskId?: number;  // id in ov-ukoly-tasks (set after sync)
+}
+
+interface Task {
+  id: number;
+  nazev: string;
+  projekt: string;
+  prirazeno: string;
+  priorita: "Nízká" | "Střední" | "Vysoká" | "Urgentní";
+  status: "Nové" | "Probíhá" | "Review" | "Hotovo";
+  deadline: string;
 }
 
 interface RetainerClient {
@@ -83,10 +96,13 @@ function makeSeed(): RetainerClient[] {
       fakturace: "s.r.o.",
       aktivni: true,
       mesic: "Květen",
-      poznamka: "",
+      poznamka: "Dceřiná firma Rematech — webový portál + logo.",
       kontakt: "",
       zacatek: "Leden 2026",
-      deliverables: [],
+      deliverables: [
+        { id: 20001, text: "Logo Rematech", done: false, category: "jiné" as DeliverableCategory, deadline: "18. 5.", prirazeno: "Adam" },
+        { id: 20002, text: "Webový portál Rematech", done: false, category: "jiné" as DeliverableCategory, deadline: "25. 5.", prirazeno: "Adam" },
+      ],
     },
     {
       id: 3,
@@ -255,6 +271,48 @@ const ALL_CATEGORIES: DeliverableCategory[] = [
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
 function fKc(n: number): string {
   return n.toLocaleString("cs-CZ") + " Kč";
+}
+
+/** ISO "2026-05-18" → Czech "18. 5." */
+function dateToCs(iso: string): string {
+  const parts = iso.split("-");
+  if (parts.length < 3) return iso;
+  return `${parseInt(parts[2])}. ${parseInt(parts[1])}.`;
+}
+
+/** Czech "18. 5." → days until (negative = overdue) */
+function daysUntilCs(cs: string): number | null {
+  const m = cs.match(/(\d+)\.\s*(\d+)\.?/);
+  if (!m) return null;
+  const d = new Date(new Date().getFullYear(), parseInt(m[2]) - 1, parseInt(m[1]));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86_400_000);
+}
+
+function DeadlineChip({ deadline }: { deadline: string }) {
+  const days = daysUntilCs(deadline);
+  let color = "oklch(0.55 0.005 222)";
+  let bg = "oklch(1 0 0 / 0.05)";
+  let border = "oklch(1 0 0 / 0.09)";
+  if (days !== null) {
+    if (days < 0)      { color = "oklch(0.72 0.22 25)";  bg = "oklch(0.55 0.22 25 / 0.18)";  border = "oklch(0.65 0.22 25 / 0.4)"; }
+    else if (days <= 1){ color = "oklch(0.82 0.16 45)";  bg = "oklch(0.74 0.18 45 / 0.16)";  border = "oklch(0.74 0.18 45 / 0.35)"; }
+    else if (days <= 4){ color = "oklch(0.84 0.14 75)";  bg = "oklch(0.80 0.14 75 / 0.10)";  border = "oklch(0.80 0.14 75 / 0.25)"; }
+    else if (days <= 10){ color = "oklch(0.70 0.12 222)"; bg = "oklch(0.62 0.27 265 / 0.08)"; border = "oklch(0.62 0.27 265 / 0.18)"; }
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1"
+      style={{
+        fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 4,
+        color, background: bg, border: `1px solid ${border}`,
+        whiteSpace: "nowrap", fontFamily: "var(--font-outfit)",
+      }}
+    >
+      <CalendarDays style={{ width: 9, height: 9 }} />
+      {deadline}
+    </span>
+  );
 }
 
 function progressColor(pct: number): string {
@@ -573,6 +631,8 @@ function CatBadge({
 }
 
 /* ── Client card ────────────────────────────────────────────────────────────── */
+const TEAM_MEMBERS = ["—", "Adam", "Honza", "Dominika"] as const;
+
 function ClientCard({
   client,
   catFilter,
@@ -585,13 +645,15 @@ function ClientCard({
   client: RetainerClient;
   catFilter: DeliverableCategory | "vše";
   onToggle: (clientId: number, delivId: number) => void;
-  onAddDeliverable: (clientId: number, text: string, cat: DeliverableCategory) => void;
+  onAddDeliverable: (clientId: number, text: string, cat: DeliverableCategory, deadline?: string, prirazeno?: string) => void;
   onDeleteDeliverable: (clientId: number, delivId: number) => void;
   onEdit: (client: RetainerClient) => void;
   onNewMonth: (clientId: number) => void;
 }) {
   const [addText, setAddText] = useState("");
   const [addCat, setAddCat] = useState<DeliverableCategory>("sociální sítě");
+  const [addDeadline, setAddDeadline] = useState("");
+  const [addPrirazeno, setAddPrirazeno] = useState<string>("—");
   const [showAdd, setShowAdd] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const addRef = useRef<HTMLInputElement>(null);
@@ -623,8 +685,12 @@ function ClientCard({
 
   function submitAdd() {
     if (!addText.trim()) return;
-    onAddDeliverable(client.id, addText.trim(), addCat);
+    const dl = addDeadline ? dateToCs(addDeadline) : undefined;
+    const pr = addPrirazeno !== "—" ? addPrirazeno : undefined;
+    onAddDeliverable(client.id, addText.trim(), addCat, dl, pr);
     setAddText("");
+    setAddDeadline("");
+    setAddPrirazeno("—");
     setShowAdd(false);
   }
 
@@ -859,17 +925,34 @@ function ClientCard({
                 </AnimatePresence>
               </motion.button>
 
-              <span
-                className="flex-1 text-[13px] leading-snug transition-all duration-200"
-                style={{
-                  color: d.done ? "oklch(0.35 0.005 222)" : "var(--foreground)",
-                  textDecoration: d.done ? "line-through" : "none",
-                  textDecorationColor: d.done ? "oklch(0.35 0.005 222)" : undefined,
-                }}
+              <div
+                className="flex-1 min-w-0 cursor-pointer"
                 onClick={() => onToggle(client.id, d.id)}
               >
-                {d.text}
-              </span>
+                <span
+                  className="block text-[13px] leading-snug transition-all duration-200 truncate"
+                  style={{
+                    color: d.done ? "oklch(0.35 0.005 222)" : "var(--foreground)",
+                    textDecoration: d.done ? "line-through" : "none",
+                    textDecorationColor: d.done ? "oklch(0.35 0.005 222)" : undefined,
+                  }}
+                >
+                  {d.text}
+                </span>
+                {(d.deadline || d.prirazeno) && !d.done && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {d.deadline && <DeadlineChip deadline={d.deadline} />}
+                    {d.prirazeno && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 600, color: "oklch(0.42 0.005 222)",
+                        fontFamily: "var(--font-jakarta)",
+                      }}>
+                        {d.prirazeno}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <motion.button
                 onClick={() => onDeleteDeliverable(client.id, d.id)}
@@ -895,6 +978,7 @@ function ClientCard({
               className="overflow-hidden"
             >
               <div className="pt-2 space-y-2">
+                {/* Row 1: text + add + close */}
                 <div className="flex gap-2">
                   <input
                     ref={addRef}
@@ -928,7 +1012,7 @@ function ClientCard({
                     Přidat
                   </motion.button>
                   <motion.button
-                    onClick={() => setShowAdd(false)}
+                    onClick={() => { setShowAdd(false); setAddDeadline(""); setAddPrirazeno("—"); }}
                     whileTap={{ scale: 0.9 }}
                     className="p-1.5 rounded-[6px] btn-tactile text-[--muted-foreground]"
                     style={{ border: "1px solid oklch(1 0 0 / 0.07)" }}
@@ -936,6 +1020,42 @@ function ClientCard({
                     <X className="w-3.5 h-3.5" />
                   </motion.button>
                 </div>
+                {/* Row 2: deadline + assignee */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <CalendarDays className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: addDeadline ? client.color : "oklch(0.38 0.005 222)" }} />
+                    <input
+                      type="date"
+                      value={addDeadline}
+                      onChange={(e) => setAddDeadline(e.target.value)}
+                      className="w-full pl-6 pr-2 py-1.5 rounded-[6px] text-[11px] text-[--foreground] outline-none"
+                      style={{
+                        background: "oklch(1 0 0 / 0.04)",
+                        border: `1px solid ${addDeadline ? client.color.replace(")", " / 0.3)") : "oklch(1 0 0 / 0.09)"}`,
+                        fontFamily: "var(--font-jakarta)",
+                        colorScheme: "dark",
+                      }}
+                    />
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={addPrirazeno}
+                      onChange={(e) => setAddPrirazeno(e.target.value)}
+                      className="appearance-none px-2.5 pr-6 py-1.5 rounded-[6px] text-[11px] text-[--foreground] outline-none cursor-pointer"
+                      style={{
+                        background: "oklch(1 0 0 / 0.04)",
+                        border: `1px solid ${addPrirazeno !== "—" ? client.color.replace(")", " / 0.3)") : "oklch(1 0 0 / 0.09)"}`,
+                        fontFamily: "var(--font-jakarta)",
+                      }}
+                    >
+                      {TEAM_MEMBERS.map((m) => (
+                        <option key={m} value={m} style={{ background: "oklch(0.12 0.008 222)" }}>{m}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[--muted-foreground]" />
+                  </div>
+                </div>
+                {/* Row 3: category */}
                 <div className="flex flex-wrap gap-1">
                   {ALL_CATEGORIES.map((c) => {
                     const m = CAT_META[c];
@@ -1338,9 +1458,13 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
 /* ── Page ───────────────────────────────────────────────────────────────────── */
 export default function MonthlyPage() {
   const [clients, setClients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", makeSeed);
+  const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [selectedMonth, setSelectedMonth] = useState("Květen");
   const [catFilter, setCatFilter] = useState<DeliverableCategory | "vše">("vše");
   const [editClient, setEditClient] = useState<RetainerClient | null | "new">(null);
+
+  // suppress lint — tasks is used only in setTasks writes
+  void tasks;
 
   /* ── Derived ── */
   const activeClients = useMemo(
@@ -1370,7 +1494,10 @@ export default function MonthlyPage() {
   }, []);
 
   const handleAddDeliverable = useCallback(
-    (clientId: number, text: string, cat: DeliverableCategory) => {
+    (clientId: number, text: string, cat: DeliverableCategory, deadline?: string, prirazeno?: string) => {
+      const newId = Date.now();
+      const client = clients.find((c) => c.id === clientId);
+
       setClients((prev) =>
         prev.map((c) =>
           c.id !== clientId
@@ -1379,13 +1506,28 @@ export default function MonthlyPage() {
                 ...c,
                 deliverables: [
                   ...c.deliverables,
-                  { id: Date.now(), text, done: false, category: cat },
+                  { id: newId, text, done: false, category: cat, deadline, prirazeno, linkedTaskId: deadline ? newId : undefined },
                 ],
               }
         )
       );
+
+      // If a deadline is set, also write to the global task list so it appears on the dashboard and calendar
+      if (deadline && client) {
+        const newTask: Task = {
+          id: newId,
+          nazev: text,
+          projekt: client.name,
+          prirazeno: prirazeno ?? "",
+          priorita: "Střední",
+          status: "Nové",
+          deadline,
+        };
+        setTasks((prev) => [...prev, newTask]);
+      }
     },
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clients]
   );
 
   const handleDeleteDeliverable = useCallback((clientId: number, delivId: number) => {
