@@ -9,9 +9,10 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import {
-  buildInvoice, buildCisloFaktury,
+  buildInvoice, buildCisloFaktury, buildSpdString,
   type InvoiceClient, type InvoiceData,
 } from "@/lib/invoice";
+import QRCode from "qrcode";
 
 /* ── Dynamic import — entire PDF stack is client-only ────────────────────── */
 const InvoiceDownloadButton = dynamic(
@@ -205,13 +206,14 @@ function IssueModal({
   const [mesto, setMesto] = useState(known?.mesto ?? "");
   const [zeme, setZeme] = useState(known?.zeme ?? "Česká republika");
   const [pdfReady, setPdfReady] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setPdfReady(true), 400);
     return () => clearTimeout(t);
   }, [mesic, rok, castka, popis, fakturaRada, ico]);
 
-  const invoiceData = useMemo<InvoiceData | null>(() => {
+  const baseInvoiceData = useMemo<InvoiceData | null>(() => {
     if (!fakturaRada || !ico) return null;
     const invoiceClient: InvoiceClient = {
       nazev, ulice, psc, mesto, zeme, ico, dic: dic || undefined,
@@ -221,6 +223,24 @@ function IssueModal({
     };
     return buildInvoice(invoiceClient, mesic, rok);
   }, [mesic, rok, castka, popis, fakturaRada, ico, dic, nazev, ulice, psc, mesto, zeme]);
+
+  // Generate QR Platba data URL whenever invoice data changes
+  useEffect(() => {
+    if (!baseInvoiceData) { setQrDataUrl(undefined); return; }
+    const spd = buildSpdString(
+      baseInvoiceData.odberatel.castka,
+      baseInvoiceData.variabilniSymbol,
+      `Faktura ${baseInvoiceData.cislo}`,
+    );
+    QRCode.toDataURL(spd, { errorCorrectionLevel: "M", margin: 1, width: 200 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(undefined));
+  }, [baseInvoiceData]);
+
+  const invoiceData = useMemo<InvoiceData | null>(() => {
+    if (!baseInvoiceData) return null;
+    return { ...baseInvoiceData, qrDataUrl };
+  }, [baseInvoiceData, qrDataUrl]);
 
   const fileName = invoiceData
     ? `${invoiceData.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`

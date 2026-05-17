@@ -71,12 +71,17 @@ const s = StyleSheet.create({
 
   /* Bank */
   bankSection: {
+    flexDirection: "row",
     borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
     paddingHorizontal: 6, paddingVertical: 5,
   },
+  bankRows:  { flex: 1 },
   bankRow:   { flexDirection: "row", marginBottom: 2 },
   bankLabel: { color: MUTED, width: 70 },
   bankValue: { fontWeight: 700 },
+  qrBox:     { width: 62, height: 62, alignSelf: "center", marginLeft: 8 },
+  qrImg:     { width: 62, height: 62 },
+  qrCaption: { fontSize: 6, color: MUTED, textAlign: "center", marginTop: 2 },
 
   /* Dates */
   datesRow: {
@@ -239,26 +244,34 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
 
         {/* ── Banka ── */}
         <View style={s.bankSection}>
-          <View style={s.bankRow}>
-            <Text style={s.bankLabel}>{"Banka:"}</Text>
-            <Text style={s.bankValue}>{DODAVATEL.banka}</Text>
+          <View style={s.bankRows}>
+            <View style={s.bankRow}>
+              <Text style={s.bankLabel}>{"Banka:"}</Text>
+              <Text style={s.bankValue}>{DODAVATEL.banka}</Text>
+            </View>
+            <View style={s.bankRow}>
+              <Text style={s.bankLabel}>{"SWIFT:"}</Text>
+              <Text style={s.bankValue}>{DODAVATEL.swift}</Text>
+            </View>
+            <View style={s.bankRow}>
+              <Text style={s.bankLabel}>{"IBAN:"}</Text>
+              <Text style={s.bankValue}>{DODAVATEL.iban}</Text>
+            </View>
+            <View style={s.bankRow}>
+              <Text style={s.bankLabel}>{"Číslo účtu:"}</Text>
+              <Text style={s.bankValue}>{DODAVATEL.cisloUctu}</Text>
+            </View>
+            <View style={[s.bankRow, { marginBottom: 0 }]}>
+              <Text style={s.bankLabel}>{"Kód banky:"}</Text>
+              <Text style={s.bankValue}>{DODAVATEL.kodBanky}</Text>
+            </View>
           </View>
-          <View style={s.bankRow}>
-            <Text style={s.bankLabel}>{"SWIFT:"}</Text>
-            <Text style={s.bankValue}>{DODAVATEL.swift}</Text>
-          </View>
-          <View style={s.bankRow}>
-            <Text style={s.bankLabel}>{"IBAN:"}</Text>
-            <Text style={s.bankValue}>{DODAVATEL.iban}</Text>
-          </View>
-          <View style={s.bankRow}>
-            <Text style={s.bankLabel}>{"Číslo účtu:"}</Text>
-            <Text style={s.bankValue}>{DODAVATEL.cisloUctu}</Text>
-          </View>
-          <View style={[s.bankRow, { marginBottom: 0 }]}>
-            <Text style={s.bankLabel}>{"Kód banky:"}</Text>
-            <Text style={s.bankValue}>{DODAVATEL.kodBanky}</Text>
-          </View>
+          {data.qrDataUrl && (
+            <View>
+              <Image src={data.qrDataUrl} style={s.qrImg} />
+              <Text style={s.qrCaption}>{"QR Platba"}</Text>
+            </View>
+          )}
         </View>
 
         {/* ── Datumy ── */}

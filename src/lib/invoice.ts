@@ -22,6 +22,14 @@ export interface InvoiceData {
   odberatel: InvoiceClient;
   mesicSluzby: number;   // 4
   rokSluzby: number;     // 2026
+  qrDataUrl?: string;    // pre-generated QR Platba data URL
+}
+
+/* ── Build Czech SPD QR payment string ──────────────────────────────────── */
+export function buildSpdString(castka: number, vs: string, msg: string): string {
+  const iban = DODAVATEL.iban.replace(/\s/g, "");
+  const amount = castka.toFixed(2);
+  return `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*MSG:${msg}*X-VS:${vs}`;
 }
 
 /* ── OnVision fixed supplier data ───────────────────────────────────────── */
