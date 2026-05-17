@@ -525,33 +525,28 @@ export default function DashboardPage() {
     [deals]
   );
 
-  /* suppress unused warning for pipeline/approvals (still used in KPI strip) */
+  /* suppress unused warning for pipeline deals (computed but not rendered on dashboard) */
   void deals;
-  void oneoffs;
 
-  /* ── Projekty: group active tasks by projekt ── */
-  const projectStats = useMemo(() => {
-    const map = new Map<string, { total: number; done: number; review: number; people: Set<string>; nearestDays: number }>();
-    for (const t of tasks) {
-      const proj = t.projekt || "Bez projektu";
-      if (!map.has(proj)) map.set(proj, { total: 0, done: 0, review: 0, people: new Set(), nearestDays: 9999 });
-      const s = map.get(proj)!;
-      s.total++;
-      if (t.status === "Hotovo") s.done++;
-      if (t.status === "Review") s.review++;
-      if (t.prirazeno) s.people.add(t.prirazeno);
-      const d = parseDeadline(t.deadline);
-      if (d && t.status !== "Hotovo") {
-        const days = daysUntil(d);
-        if (days < s.nearestDays) s.nearestDays = days;
-      }
-    }
-    return Array.from(map.entries())
-      .map(([name, s]) => ({ name, ...s, people: Array.from(s.people) }))
-      .filter((p) => p.total - p.done > 0)
-      .sort((a, b) => a.nearestDays - b.nearestDays)
+  /* ── Jednorázovky: active projects sorted by stage ── */
+  const COL_ORDER = ["poptavka","nabidka","potvrzeno","preprodukce","nataceni","postprodukce","schvaleni","dokonceno"] as const;
+  const COL_META: Record<string, { label: string; color: string; bg: string }> = {
+    poptavka:     { label: "Poptávka",      color: "oklch(0.70 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.12)"  },
+    nabidka:      { label: "Nabídka",       color: "oklch(0.75 0.2 265)",   bg: "oklch(0.62 0.27 265 / 0.12)"  },
+    potvrzeno:    { label: "Potvrzeno",     color: "oklch(0.72 0.14 155)",  bg: "oklch(0.67 0.155 155 / 0.12)" },
+    preprodukce:  { label: "Pre-produkce",  color: "oklch(0.80 0.14 75)",   bg: "oklch(0.74 0.165 75 / 0.12)"  },
+    nataceni:     { label: "Natáčení",      color: "oklch(0.72 0.20 25)",   bg: "oklch(0.65 0.22 25 / 0.12)"   },
+    postprodukce: { label: "Post-produkce", color: "oklch(0.72 0.18 290)",  bg: "oklch(0.72 0.18 290 / 0.12)"  },
+    schvaleni:    { label: "Schválení",     color: "oklch(0.82 0.16 55)",   bg: "oklch(0.74 0.165 75 / 0.12)"  },
+    dokonceno:    { label: "Dokončeno",     color: "oklch(0.72 0.14 155)",  bg: "oklch(0.67 0.155 155 / 0.12)" },
+  };
+  const activeOneoffs = useMemo(() => {
+    return oneoffs
+      .filter((o) => o.column !== "dokonceno")
+      .sort((a, b) => COL_ORDER.indexOf(b.column as typeof COL_ORDER[number]) - COL_ORDER.indexOf(a.column as typeof COL_ORDER[number]))
       .slice(0, 6);
-  }, [tasks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oneoffs]);
 
   /* ── Tým: per-person task stats ── */
   const TEAM = ["Adam", "Honza", "Dominika"] as const;
@@ -1262,119 +1257,108 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Column 2: Stav projektů */}
+          {/* Column 2: Jednorázovky */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <p
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                fontSize: 14,
-                color: "oklch(0.92 0.005 222)",
-                marginBottom: 16,
-              }}
-            >
-              Stav projektů
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  fontSize: 14,
+                  color: "oklch(0.92 0.005 222)",
+                }}
+              >
+                Jednorázovky
+              </p>
+              {activeOneoffs.length > 0 && (
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                  background: "oklch(0.67 0.155 155 / 0.12)", color: "oklch(0.72 0.14 155)",
+                }}>
+                  {activeOneoffs.length} aktivních
+                </span>
+              )}
+            </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {projectStats.length === 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {activeOneoffs.length === 0 && (
                 <p style={{ fontSize: 12, color: "oklch(0.40 0.005 222)" }}>
                   Žádné aktivní projekty
                 </p>
               )}
-              {projectStats.map((p) => {
-                const activeTasks = p.total - p.done;
-                const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
-                const isUrgent = p.nearestDays <= 2;
-                const isSoon = p.nearestDays <= 7;
-                const barColor = isUrgent
-                  ? "oklch(0.62 0.22 25)"
-                  : isSoon
-                  ? "oklch(0.72 0.18 55)"
-                  : "oklch(0.62 0.27 265)";
+              {activeOneoffs.map((o) => {
+                const meta = COL_META[o.column] ?? { label: o.column, color: "oklch(0.55 0.005 222)", bg: "oklch(1 0 0 / 0.05)" };
                 return (
-                  <div key={p.name} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "oklch(0.88 0.005 222)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          maxWidth: "60%",
-                        }}
-                      >
-                        {p.name}
+                  <div
+                    key={o.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "9px 11px",
+                      borderRadius: 8,
+                      background: "oklch(1 0 0 / 0.025)",
+                      border: "1px solid oklch(1 0 0 / 0.06)",
+                    }}
+                  >
+                    {/* Stage dot */}
+                    <div style={{
+                      width: 8, height: 8, borderRadius: "50%",
+                      background: meta.color, flexShrink: 0,
+                      boxShadow: `0 0 6px 1px ${meta.color}88`,
+                    }} />
+                    {/* Title + client */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        fontSize: 12, fontWeight: 600,
+                        color: "oklch(0.90 0.005 222)",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em",
+                        marginBottom: 2,
+                      }}>
+                        {o.title}
+                      </p>
+                      <p style={{ fontSize: 10, color: "oklch(0.42 0.005 222)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {o.klient}
+                      </p>
+                    </div>
+                    {/* Right: faze badge + amount */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.05em",
+                        textTransform: "uppercase", padding: "2px 6px", borderRadius: 4,
+                        background: meta.bg, color: meta.color,
+                        whiteSpace: "nowrap",
+                      }}>
+                        {meta.label}
                       </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {p.review > 0 && (
-                          <span
-                            style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              letterSpacing: "0.06em",
-                              textTransform: "uppercase",
-                              padding: "1px 5px",
-                              borderRadius: 4,
-                              background: "oklch(0.72 0.18 55 / 0.15)",
-                              color: "oklch(0.78 0.16 55)",
-                            }}
-                          >
-                            {p.review} review
-                          </span>
-                        )}
-                        <span style={{ fontSize: 11, color: "oklch(0.45 0.005 222)", fontWeight: 500 }}>
-                          {activeTasks} úkolů
+                      {o.castka > 0 && (
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, fontFamily: "var(--font-outfit)",
+                          color: "oklch(0.55 0.005 222)", letterSpacing: "-0.01em",
+                        }}>
+                          {fmt(o.castka)}
                         </span>
-                      </div>
+                      )}
                     </div>
-                    {/* Progress bar */}
-                    <div
-                      style={{
-                        height: 3,
-                        borderRadius: 99,
-                        background: "oklch(1 0 0 / 0.07)",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${pct}%`,
-                          borderRadius: 99,
-                          background: barColor,
-                          transition: "width 0.6s ease",
-                        }}
-                      />
-                    </div>
-                    {/* People */}
-                    {p.people.length > 0 && (
-                      <div style={{ display: "flex", gap: 4 }}>
-                        {p.people.map((person) => (
-                          <Avatar key={person} name={person} />
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
 
             <Link
-              href="/ukoly"
+              href="/projects/oneoffs"
               style={{
                 display: "block",
-                marginTop: 16,
+                marginTop: 14,
                 fontSize: 12,
                 color: "oklch(0.45 0.005 222)",
                 fontWeight: 600,
                 textDecoration: "none",
               }}
             >
-              Všechny úkoly →
+              Všechny projekty →
             </Link>
           </div>
 
