@@ -3,7 +3,7 @@
 import {
   Document, Page, View, Text, StyleSheet, Font, Image, Link,
 } from "@react-pdf/renderer";
-import { type InvoiceData, DODAVATEL, fmtKc } from "@/lib/invoice";
+import { type InvoiceData, fmtKc } from "@/lib/invoice";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Full Roboto TTF fonts served as static files from /public/fonts/.
@@ -173,17 +173,26 @@ function TableHeaderRow() {
 /* ── PDF Document ────────────────────────────────────────────────────────── */
 export function InvoicePDF({ data }: { data: InvoiceData }) {
   const { odberatel } = data;
+  const d = data.dodavatel;
   const castkaFmt  = fmtKc(odberatel.castka);
   const mm         = String(data.mesicSluzby).padStart(2, "0");
   const descDetail = data.popisDetail ?? `pro ${odberatel.nazev} (${mm}/${data.rokSluzby})`;
 
+  // Tel href: if number starts with "+" use as-is, else prefix "+420"
+  const telHref = d.telefon.startsWith("+")
+    ? `tel:${d.telefon.replace(/\s/g, "")}`
+    : `tel:+420${d.telefon.replace(/\s/g, "")}`;
+
   return (
-    <Document title={`Faktura ${data.cislo}`} author="OnVision s.r.o.">
+    <Document title={`Faktura ${data.cislo}`} author={d.nazev}>
       <Page size="A4" style={s.page}>
 
         {/* ── Header ── */}
         <View style={s.header}>
-          <Text style={s.headerBrand}>{"ONVISION"}</Text>
+          {d.showLogo
+            ? <Text style={s.headerBrand}>{"ONVISION"}</Text>
+            : <Text style={s.headerBrand}>{d.nazev}</Text>
+          }
           <Text style={s.headerTitle}>{"FAKTURA – DAŇOVÝ DOKLAD č. "}{data.cislo}</Text>
         </View>
 
@@ -193,24 +202,30 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           {/* Dodavatel */}
           <View style={s.infoLeft}>
             <Text style={s.labelMuted}>{"Dodavatel:"}</Text>
-            <View style={s.logoBox}>
-              <Image src={`${origin}/onvision-invoice-logo.png`} style={s.logoImg} />
-            </View>
-            <Text style={s.supplierName}>{DODAVATEL.nazev}</Text>
-            <Text style={s.supplierLine}>{DODAVATEL.ulice}</Text>
-            <Text style={s.supplierLine}>{DODAVATEL.psc} {DODAVATEL.mesto}</Text>
-            <Text style={s.supplierIco}>{"IČ: "}{DODAVATEL.ico}</Text>
+            {d.showLogo && (
+              <View style={s.logoBox}>
+                <Image src={`${origin}/onvision-invoice-logo.png`} style={s.logoImg} />
+              </View>
+            )}
+            <Text style={s.supplierName}>{d.nazev}</Text>
+            <Text style={s.supplierLine}>{d.ulice}</Text>
+            <Text style={s.supplierLine}>{d.psc} {d.mesto}</Text>
+            <Text style={s.supplierIco}>{"IČ: "}{d.ico}</Text>
             <Text style={{ height: 5 }} />
-            <Link src={`tel:+420${DODAVATEL.telefon.replace(/\s/g, "")}`} style={s.supplierLine}>
-              <Text>{"Telefon: "}{DODAVATEL.telefon}</Text>
+            <Link src={telHref} style={s.supplierLine}>
+              <Text>{"Telefon: "}{d.telefon}</Text>
             </Link>
-            <Link src={`mailto:${DODAVATEL.email}`} style={s.supplierLine}>
-              <Text>{"E-mail: "}{DODAVATEL.email}</Text>
-            </Link>
-            <Link src={`https://${DODAVATEL.web}`} style={s.supplierLine}>
-              <Text>{DODAVATEL.web}</Text>
-            </Link>
-            <Text style={s.noVat}>{"Firma není plátce DPH"}</Text>
+            {d.email && (
+              <Link src={`mailto:${d.email}`} style={s.supplierLine}>
+                <Text>{"E-mail: "}{d.email}</Text>
+              </Link>
+            )}
+            {d.web && (
+              <Link src={`https://${d.web}`} style={s.supplierLine}>
+                <Text>{d.web}</Text>
+              </Link>
+            )}
+            <Text style={s.noVat}>{d.vatText}</Text>
           </View>
 
           {/* Odběratel */}
@@ -219,10 +234,12 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
               <Text style={s.varLabel}>{"Variabilní symbol:"}</Text>
               <Text style={s.varValue}>{data.variabilniSymbol}</Text>
             </View>
-            <View style={s.varRow}>
-              <Text style={s.varLabel}>{"Konstantní symbol:"}</Text>
-              <Text style={s.varValue}>{DODAVATEL.konstantniSymbol}</Text>
-            </View>
+            {d.konstantniSymbol && (
+              <View style={s.varRow}>
+                <Text style={s.varLabel}>{"Konstantní symbol:"}</Text>
+                <Text style={s.varValue}>{d.konstantniSymbol}</Text>
+              </View>
+            )}
             <View style={{ flexDirection: "row", marginBottom: 2 }}>
               <Text style={s.varLabel}>{"Objednávka č.:"}</Text>
               <Text style={{ flex: 1 }} />
@@ -247,23 +264,25 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           <View style={s.bankRows}>
             <View style={s.bankRow}>
               <Text style={s.bankLabel}>{"Banka:"}</Text>
-              <Text style={s.bankValue}>{DODAVATEL.banka}</Text>
+              <Text style={s.bankValue}>{d.banka}</Text>
             </View>
-            <View style={s.bankRow}>
-              <Text style={s.bankLabel}>{"SWIFT:"}</Text>
-              <Text style={s.bankValue}>{DODAVATEL.swift}</Text>
-            </View>
+            {d.swift && (
+              <View style={s.bankRow}>
+                <Text style={s.bankLabel}>{"SWIFT:"}</Text>
+                <Text style={s.bankValue}>{d.swift}</Text>
+              </View>
+            )}
             <View style={s.bankRow}>
               <Text style={s.bankLabel}>{"IBAN:"}</Text>
-              <Text style={s.bankValue}>{DODAVATEL.iban}</Text>
+              <Text style={s.bankValue}>{d.iban}</Text>
             </View>
             <View style={s.bankRow}>
               <Text style={s.bankLabel}>{"Číslo účtu:"}</Text>
-              <Text style={s.bankValue}>{DODAVATEL.cisloUctu}</Text>
+              <Text style={s.bankValue}>{d.cisloUctu}</Text>
             </View>
             <View style={[s.bankRow, { marginBottom: 0 }]}>
               <Text style={s.bankLabel}>{"Kód banky:"}</Text>
-              <Text style={s.bankValue}>{DODAVATEL.kodBanky}</Text>
+              <Text style={s.bankValue}>{d.kodBanky}</Text>
             </View>
           </View>
           {data.qrDataUrl && (

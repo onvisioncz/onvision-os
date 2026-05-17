@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import {
-  buildInvoice, buildCisloFaktury, buildSpdString,
-  type InvoiceClient, type InvoiceData,
+  buildInvoice, buildCisloFaktury, buildSpdString, buildOneTimeInvoice,
+  fmtDate, DODAVATELE,
+  type InvoiceClient, type InvoiceData, type DodavatelKlic,
 } from "@/lib/invoice";
 import QRCode from "qrcode";
 
@@ -53,20 +54,90 @@ interface RetainerClient {
 // Falls back to "pro {nazev} ({MM}/{RRRR})" if omitted.
 interface ClientInvoiceEntry extends Partial<InvoiceClient> {
   popisDetailSablona?: string;
+  dodavatelKlic?: DodavatelKlic;  // defaults to "onvision"
+  splatnostDni?: number;          // defaults to 7
 }
 const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
   "IMTOS": {
+    dodavatelKlic: "onvision",
     fakturaRada: 14,
     nazev: "IMTOS, spol. s r.o.",
-    ulice: "Technická 818/4",
-    psc: "664 48",
-    mesto: "Moravany",
-    zeme: "Česká republika",
-    ico: "46967079",
-    dic: "CZ46967079",
+    ulice: "Technická 818/4", psc: "664 48", mesto: "Moravany", zeme: "Česká republika",
+    ico: "46967079", dic: "CZ46967079",
     castka: 35000,
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: LinkedIn, Facebook & Instagram",
     popisDetailSablona: "pro IMTOS, spol. s r.o. ({MM}/{RRRR})",
+  },
+  "STAVOS": {
+    dodavatelKlic: "onvision",
+    fakturaRada: 12,
+    nazev: "STAVOS Brno, a.s.",
+    ulice: "U Svitavy 1077/2", psc: "618 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "65277911", dic: "CZ65277911",
+    castka: 30000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro EASTGATE Brno ({MM}/{RRRR})",
+  },
+  "SENIMED": {
+    dodavatelKlic: "onvision",
+    fakturaRada: 15,
+    nazev: "SENIMED s.r.o.",
+    ulice: "Okruhová 1135/44", psc: "155 00", mesto: "Praha 13", zeme: "Česká republika",
+    ico: "27224988", dic: "CZ699004146",
+    castka: 47000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro SENIMED s.r.o. & Betaglukan ({MM}/{RRRR})",
+  },
+  "FIRESTA": {
+    dodavatelKlic: "onvision",
+    fakturaRada: 11,
+    nazev: "FIRESTA-Fišer, rekonstrukce, stavby a.s.",
+    ulice: "Mlýnská 388/68", psc: "602 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "25317628", dic: "CZ25317628",
+    castka: 28500,
+    splatnostDni: 21,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: LinkedIn & Instagram",
+    popisDetailSablona: "pro Firesta-Fišer, rekonstrukce, stavby a.s. ({MM}/{RRRR})",
+  },
+  "DIAM": {
+    dodavatelKlic: "jan",
+    fakturaRada: 2,
+    nazev: "DIAM, s.r.o.",
+    ulice: "Kaštanová 516/127C", psc: "620 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "25557866", dic: "CZ25557866",
+    castka: 30000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro cukrárnu TOFFI ({MM}/{RRRR})",
+  },
+  "MARATON": {
+    dodavatelKlic: "jan",
+    fakturaRada: 3,
+    nazev: "MARATON Brno, z.s.",
+    ulice: "Gorazdova 91/2", psc: "602 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "01417762", dic: "CZ01417762",
+    castka: 15000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro Behejbrno.com ({MM}/{RRRR})",
+  },
+  "VIBE": {
+    dodavatelKlic: "adam",
+    fakturaRada: 0,  // Adam uses sequential numbering — modal shows number field
+    nazev: "VIBE 35 FITNESS, s.r.o.",
+    ulice: "Mlýnská 495/8A", psc: "602 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "19417748",
+    castka: 12000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro Power plate Česko ({MM}/{RRRR})",
+  },
+  "SK BRNO": {
+    dodavatelKlic: "adam",
+    fakturaRada: 0,
+    nazev: "SK Brno Slatina, z. s.",
+    ulice: "U Svitavy 1077/2", psc: "618 00", mesto: "Brno", zeme: "Česká republika",
+    ico: "04747062", dic: "CZ04747062",
+    castka: 12000,
+    popisSluzby: "Kreativní produkce a digitální strategie obsahu: Facebook & Instagram",
+    popisDetailSablona: "pro SK Brno Slatina, z. s. ({MM}/{RRRR})",
   },
 };
 
@@ -124,7 +195,7 @@ function InvoiceCard({
 }) {
   const known = CLIENT_INVOICE_DATA[client.name.toUpperCase().split(" ")[0]] ??
                 CLIENT_INVOICE_DATA[client.name.split(" ")[0]];
-  const ready = !!(known?.fakturaRada && known?.ico);
+  const ready = !!(known?.fakturaRada !== undefined && known?.ico);
 
   return (
     <div
@@ -209,9 +280,14 @@ function IssueModal({
     k => client.name.toUpperCase().includes(k)
   );
   const known = knownKey ? CLIENT_INVOICE_DATA[knownKey] : {};
+
+  const dodavatelKlic: DodavatelKlic = (known?.dodavatelKlic ?? "onvision") as DodavatelKlic;
+  const splatnostDni = known?.splatnostDni ?? 7;
+
   const [castka, setCastka] = useState(String(known?.castka ?? client.pausal));
   const [popis, setPopis] = useState(known?.popisSluzby ?? "Kreativní produkce a digitální marketing");
   const [fakturaRada, setFakturaRada] = useState(String(known?.fakturaRada ?? ""));
+  const [manualCislo, setManualCislo] = useState("");
   const [ico, setIco] = useState(known?.ico ?? "");
   const [dic, setDic] = useState(known?.dic ?? "");
   const [nazev, setNazev] = useState(known?.nazev ?? client.name);
@@ -223,6 +299,8 @@ function IssueModal({
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
   // popisDetail: null = auto (resolved from template + month/year), string = manually overridden
   const [popisDetail, setPopisDetail] = useState<string | null>(null);
+
+  const isManualNumber = known?.fakturaRada === 0;
 
   // Auto-resolve detail from template whenever month/year changes (resets manual override)
   const autoDetail = useMemo(
@@ -236,23 +314,45 @@ function IssueModal({
   useEffect(() => {
     const t = setTimeout(() => setPdfReady(true), 400);
     return () => clearTimeout(t);
-  }, [mesic, rok, castka, popis, fakturaRada, ico]);
+  }, [mesic, rok, castka, popis, fakturaRada, ico, manualCislo]);
 
   const baseInvoiceData = useMemo<InvoiceData | null>(() => {
-    if (!fakturaRada || !ico) return null;
+    if (!ico) return null;
+    if (isManualNumber) {
+      if (!manualCislo) return null;
+    } else {
+      if (!fakturaRada) return null;
+    }
     const invoiceClient: InvoiceClient = {
       nazev, ulice, psc, mesto, zeme, ico, dic: dic || undefined,
-      fakturaRada: parseInt(fakturaRada),
+      fakturaRada: parseInt(fakturaRada) || 0,
       castka: parseInt(castka) || 0,
       popisSluzby: popis,
     };
-    return buildInvoice(invoiceClient, mesic, rok);
-  }, [mesic, rok, castka, popis, fakturaRada, ico, dic, nazev, ulice, psc, mesto, zeme]);
+    const base = buildInvoice(invoiceClient, mesic, rok, dodavatelKlic);
+    // Override splatnost if custom
+    if (splatnostDni !== 7) {
+      const vystaveniParts = base.datumVystaveni.split(".");
+      const vystaveniDate = new Date(
+        parseInt(vystaveniParts[2]),
+        parseInt(vystaveniParts[1]) - 1,
+        parseInt(vystaveniParts[0]),
+      );
+      const splatnost = new Date(vystaveniDate);
+      splatnost.setDate(splatnost.getDate() + splatnostDni);
+      base.datumSplatnosti = fmtDate(splatnost);
+    }
+    if (isManualNumber && manualCislo) {
+      return { ...base, cislo: manualCislo, variabilniSymbol: manualCislo };
+    }
+    return base;
+  }, [mesic, rok, castka, popis, fakturaRada, ico, dic, nazev, ulice, psc, mesto, zeme, manualCislo, isManualNumber, dodavatelKlic, splatnostDni]);
 
   // Generate QR Platba data URL whenever invoice data changes
   useEffect(() => {
     if (!baseInvoiceData) { setQrDataUrl(undefined); return; }
     const spd = buildSpdString(
+      baseInvoiceData.dodavatel,
       baseInvoiceData.odberatel.castka,
       baseInvoiceData.variabilniSymbol,
       `Faktura ${baseInvoiceData.cislo}`,
@@ -274,6 +374,8 @@ function IssueModal({
   const fileName = invoiceData
     ? `${invoiceData.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
     : "faktura.pdf";
+
+  const canGenerate = isManualNumber ? (!!ico && !!manualCislo) : (!!fakturaRada && !!ico);
 
   return (
     <motion.div
@@ -330,8 +432,12 @@ function IssueModal({
             </Field>
           </div>
 
-          {/* Invoice number preview */}
-          {fakturaRada && (
+          {/* Invoice number — auto preview or manual input */}
+          {isManualNumber ? (
+            <Field label="Číslo faktury">
+              <FInput value={manualCislo} onChange={v => { setManualCislo(v); setPdfReady(false); }} placeholder={`${new Date().getFullYear()}001`} />
+            </Field>
+          ) : fakturaRada ? (
             <div className="flex items-center gap-3 px-4 py-3 rounded-[8px]"
               style={{ background: "oklch(0.62 0.27 265 / 0.08)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}>
               <FileText className="w-4 h-4 shrink-0" style={{ color: "oklch(0.75 0.2 265)" }} />
@@ -350,16 +456,18 @@ function IssueModal({
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Amounts */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Částka (Kč)">
               <FInput value={castka} onChange={v => { setCastka(v.replace(/\D/g,"")); setPdfReady(false); }} placeholder="35000" />
             </Field>
-            <Field label="Řadová řada klienta">
-              <FInput value={fakturaRada} onChange={v => { setFakturaRada(v.replace(/\D/g,"")); setPdfReady(false); }} placeholder="14" />
-            </Field>
+            {!isManualNumber && (
+              <Field label="Řadová řada klienta">
+                <FInput value={fakturaRada} onChange={v => { setFakturaRada(v.replace(/\D/g,"")); setPdfReady(false); }} placeholder="14" />
+              </Field>
+            )}
           </div>
 
           {/* Service description */}
@@ -431,7 +539,7 @@ function IssueModal({
               className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
               style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
               <Download className="w-3.5 h-3.5" />
-              {!fakturaRada || !ico ? "Vyplňte IČ a řadovou řadu" : "Připravuji..."}
+              {!canGenerate ? "Vyplňte IČ a číslo faktury" : "Připravuji..."}
             </button>
           )}
         </div>
@@ -440,10 +548,192 @@ function IssueModal({
   );
 }
 
+/* ── One-time invoice section ────────────────────────────────────────────── */
+function OneTimeSection() {
+  const today = fmtDate(new Date());
+  const todayPlus7 = fmtDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  const yearPrefix = `${new Date().getFullYear()}`;
+
+  const [dodavatelKlic, setDodavatelKlic] = useState<DodavatelKlic>("onvision");
+  const [cislo, setCislo] = useState("");
+  const [datumVystaveni, setDatumVystaveni] = useState(today);
+  const [datumSplatnosti, setDatumSplatnosti] = useState(todayPlus7);
+  const [datumPlneni, setDatumPlneni] = useState(today);
+  const [popisSluzby, setPopisSluzby] = useState("");
+  const [popisDetail, setPopisDetail] = useState("");
+  const [castka, setCastka] = useState("");
+  // Odberatel
+  const [nazev, setNazev] = useState("");
+  const [ico, setIco] = useState("");
+  const [dic, setDic] = useState("");
+  const [ulice, setUlice] = useState("");
+  const [psc, setPsc] = useState("");
+  const [mesto, setMesto] = useState("");
+  const [zeme, setZeme] = useState("Česká republika");
+
+  const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
+
+  const isValid = !!(cislo && ico && nazev && castka);
+
+  const invoiceData = useMemo<InvoiceData | null>(() => {
+    if (!isValid) return null;
+    const odberatel: InvoiceClient = {
+      nazev, ulice, psc, mesto, zeme, ico, dic: dic || undefined,
+      fakturaRada: 0,
+      castka: parseInt(castka) || 0,
+      popisSluzby,
+    };
+    return buildOneTimeInvoice(
+      cislo,
+      odberatel,
+      dodavatelKlic,
+      datumVystaveni,
+      datumSplatnosti,
+      datumPlneni,
+      popisDetail || popisSluzby,
+    );
+  }, [isValid, cislo, nazev, ulice, psc, mesto, zeme, ico, dic, castka, popisSluzby, popisDetail, dodavatelKlic, datumVystaveni, datumSplatnosti, datumPlneni]);
+
+  // QR generation
+  useEffect(() => {
+    if (!invoiceData) { setQrDataUrl(undefined); return; }
+    const spd = buildSpdString(
+      invoiceData.dodavatel,
+      invoiceData.odberatel.castka,
+      invoiceData.variabilniSymbol,
+      `Faktura ${invoiceData.cislo}`,
+    );
+    QRCode.toDataURL(spd, { errorCorrectionLevel: "M", margin: 1, width: 200 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(undefined));
+  }, [invoiceData]);
+
+  const invoiceWithQr = useMemo<InvoiceData | null>(() => {
+    if (!invoiceData) return null;
+    return { ...invoiceData, qrDataUrl };
+  }, [invoiceData, qrDataUrl]);
+
+  const fileName = invoiceWithQr
+    ? `${invoiceWithQr.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
+    : "faktura.pdf";
+
+  return (
+    <div className="rounded-[12px] p-5 space-y-5"
+      style={{ background: "oklch(1 0 0 / 0.03)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+      <div>
+        <h2 className="text-[15px] font-bold text-[--foreground] mb-0.5"
+          style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>
+          Jednorázová faktura
+        </h2>
+        <p className="text-[11px] text-[--muted-foreground]">
+          Ad-hoc faktura s ručně zadanými údaji a datem
+        </p>
+      </div>
+
+      {/* Vystavovatel */}
+      <Field label="Vystavovatel">
+        <div className="relative">
+          <select
+            value={dodavatelKlic}
+            onChange={e => setDodavatelKlic(e.target.value as DodavatelKlic)}
+            className={`${iCls} appearance-none pr-8 cursor-pointer`}
+            style={{ ...iSty, color: "var(--foreground)" }}
+          >
+            <option value="onvision" style={{ background: "oklch(0.12 0.008 222)" }}>OnVision s.r.o.</option>
+            <option value="jan" style={{ background: "oklch(0.12 0.008 222)" }}>Jan Kříž</option>
+            <option value="adam" style={{ background: "oklch(0.12 0.008 222)" }}>Adam Mendrek</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[--muted-foreground]" />
+        </div>
+      </Field>
+
+      {/* Číslo faktury */}
+      <Field label="Číslo faktury">
+        <FInput value={cislo} onChange={setCislo} placeholder={`${yearPrefix}001`} />
+      </Field>
+
+      {/* Dates */}
+      <div className="grid grid-cols-3 gap-3">
+        <Field label="Datum vystavení">
+          <FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} />
+        </Field>
+        <Field label="Datum splatnosti">
+          <FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} />
+        </Field>
+        <Field label="Datum plnění">
+          <FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} />
+        </Field>
+      </div>
+
+      {/* Popis */}
+      <Field label="Popis služby">
+        <FInput value={popisSluzby} onChange={setPopisSluzby} placeholder="Kreativní produkce a digitální strategie obsahu..." />
+      </Field>
+      <Field label="Detail (2. řádek)">
+        <FInput value={popisDetail} onChange={setPopisDetail} placeholder="Volitelný upřesňující text..." />
+      </Field>
+
+      {/* Částka */}
+      <Field label="Částka (Kč)">
+        <FInput value={castka} onChange={v => setCastka(v.replace(/\D/g, ""))} placeholder="10000" />
+      </Field>
+
+      {/* Odběratel */}
+      <div>
+        <p className="text-[10px] font-bold text-[--muted-foreground] uppercase tracking-[0.08em] mb-3 flex items-center gap-2">
+          <Edit2 className="w-3 h-3" /> Fakturační údaje odběratele
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <Field label="Název firmy">
+              <FInput value={nazev} onChange={setNazev} placeholder="Název s.r.o." />
+            </Field>
+          </div>
+          <Field label="IČ">
+            <FInput value={ico} onChange={setIco} placeholder="12345678" />
+          </Field>
+          <Field label="DIČ (volitelné)">
+            <FInput value={dic} onChange={setDic} placeholder="CZ12345678" />
+          </Field>
+          <Field label="Ulice">
+            <FInput value={ulice} onChange={setUlice} placeholder="Ulice 1/2" />
+          </Field>
+          <Field label="PSČ Město">
+            <div className="flex gap-2">
+              <FInput value={psc} onChange={setPsc} placeholder="600 00" />
+              <FInput value={mesto} onChange={setMesto} placeholder="Brno" />
+            </div>
+          </Field>
+          <div className="col-span-2">
+            <Field label="Země">
+              <FInput value={zeme} onChange={setZeme} placeholder="Česká republika" />
+            </Field>
+          </div>
+        </div>
+      </div>
+
+      {/* Download button */}
+      <div className="flex justify-end pt-1">
+        {invoiceWithQr ? (
+          <InvoiceDownloadButton data={invoiceWithQr} fileName={fileName} />
+        ) : (
+          <button disabled
+            className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
+            style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
+            <Download className="w-3.5 h-3.5" />
+            Vyplňte povinné údaje
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 export default function FakturaPage() {
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
   const [issuing, setIssuing] = useState<RetainerClient | null>(null);
+  const [tab, setTab] = useState<"mesicni" | "jednorazove">("mesicni");
 
   const activeClients = useMemo(() => clients.filter(c => c.aktivni), [clients]);
 
@@ -493,21 +783,50 @@ export default function FakturaPage() {
         </div>
       </motion.div>
 
-      {/* Client list */}
-      <motion.div
-        className="flex flex-col gap-3"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
-      >
-        {activeClients.map(client => (
-          <InvoiceCard key={client.id} client={client} onIssue={handleIssue} />
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-5 p-1 rounded-[10px]" style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)", width: "fit-content" }}>
+        {[
+          { key: "mesicni", label: "Měsíční klienti" },
+          { key: "jednorazove", label: "Jednorázovky" },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key as typeof tab)}
+            className="px-4 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all"
+            style={tab === t.key
+              ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }
+              : { color: "var(--muted-foreground)" }
+            }
+          >{t.label}</button>
         ))}
-        {activeClients.length === 0 && (
-          <p className="text-[13px] text-[--muted-foreground] text-center py-12">
-            Žádní aktivní klienti
-          </p>
-        )}
-      </motion.div>
+      </div>
+
+      {/* Tab content */}
+      {tab === "mesicni" && (
+        <motion.div
+          className="flex flex-col gap-3"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          {activeClients.map(client => (
+            <InvoiceCard key={client.id} client={client} onIssue={handleIssue} />
+          ))}
+          {activeClients.length === 0 && (
+            <p className="text-[13px] text-[--muted-foreground] text-center py-12">
+              Žádní aktivní klienti
+            </p>
+          )}
+        </motion.div>
+      )}
+
+      {tab === "jednorazove" && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <OneTimeSection />
+        </motion.div>
+      )}
 
       {/* Modal */}
       <AnimatePresence>

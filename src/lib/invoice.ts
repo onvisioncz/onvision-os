@@ -13,6 +13,83 @@ export interface InvoiceClient {
   popisSluzby: string;  // "Kreativní produkce a digitální strategie obsahu: LinkedIn, Facebook & Instagram"
 }
 
+export type DodavatelKlic = "onvision" | "jan" | "adam";
+
+export interface Dodavatel {
+  nazev: string;
+  ulice: string;
+  psc: string;
+  mesto: string;
+  ico: string;
+  telefon: string;
+  email?: string;
+  web?: string;
+  banka: string;
+  swift?: string;
+  iban: string;
+  cisloUctu: string;
+  kodBanky: string;
+  konstantniSymbol?: string;
+  showLogo: boolean;     // true only for onvision
+  vatText: string;       // "Firma není plátce DPH" or "Nejsem plátce DPH"
+}
+
+export const DODAVATELE: Record<DodavatelKlic, Dodavatel> = {
+  onvision: {
+    nazev: "OnVision s.r.o.",
+    ulice: "Křenová 64/13",
+    psc: "602 00",
+    mesto: "Brno",
+    ico: "23052341",
+    telefon: "603 398 994",
+    email: "info@onvision.cz",
+    web: "www.onvision.cz",
+    banka: "Raiffeisenbank a.s.",
+    swift: "",
+    iban: "CZ60 5500 0000 0016 3853 7004",
+    cisloUctu: "1638537004",
+    kodBanky: "5500",
+    konstantniSymbol: "0308",
+    showLogo: true,
+    vatText: "Firma není plátce DPH",
+  },
+  jan: {
+    nazev: "Jan Kříž",
+    ulice: "Koutného 2270/5",
+    psc: "628 00",
+    mesto: "Brno 28",
+    ico: "08953775",
+    telefon: "731 768 605",
+    banka: "Fio banka, a.s.",
+    iban: "CZ05 2010 0000 0020 0176 9793",
+    cisloUctu: "2001769793",
+    kodBanky: "2010",
+    konstantniSymbol: "0308",
+    showLogo: false,
+    vatText: "Nejsem plátce DPH",
+  },
+  adam: {
+    nazev: "Adam Mendrek, OLY",
+    ulice: "Pazourková 2207/15",
+    psc: "644 34",
+    mesto: "Kuřim",
+    ico: "05667445",
+    telefon: "+420 603 398 994",
+    email: "adam@mendrek.cz",
+    web: "www.adammendrek.cz",
+    banka: "Raiffeisenbank a.s.",
+    swift: "RZBCCZPP",
+    iban: "CZ68 5500 0000 0085 3151 0217",
+    cisloUctu: "5831320227",
+    kodBanky: "5500",
+    showLogo: false,
+    vatText: "Nejsem plátce DPH",
+  },
+};
+
+// Keep backward compat
+export const DODAVATEL = DODAVATELE.onvision;
+
 export interface InvoiceData {
   cislo: string;
   variabilniSymbol: string;
@@ -23,33 +100,16 @@ export interface InvoiceData {
   mesicSluzby: number;   // 4
   rokSluzby: number;     // 2026
   popisDetail: string;   // editable second description line, e.g. "pro IMTOS (04/2026)"
+  dodavatel: Dodavatel;  // issuer
   qrDataUrl?: string;    // pre-generated QR Platba data URL
 }
 
 /* ── Build Czech SPD QR payment string ──────────────────────────────────── */
-export function buildSpdString(castka: number, vs: string, msg: string): string {
-  const iban = DODAVATEL.iban.replace(/\s/g, "");
+export function buildSpdString(dodavatel: Dodavatel, castka: number, vs: string, msg: string): string {
+  const iban = dodavatel.iban.replace(/\s/g, "");
   const amount = castka.toFixed(2);
   return `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*MSG:${msg}*X-VS:${vs}`;
 }
-
-/* ── OnVision fixed supplier data ───────────────────────────────────────── */
-export const DODAVATEL = {
-  nazev: "OnVision s.r.o.",
-  ulice: "Křenová 64/13",
-  psc: "602 00",
-  mesto: "Brno",
-  ico: "23052341",
-  telefon: "603 398 994",
-  email: "info@onvision.cz",
-  web: "www.onvision.cz",
-  banka: "Raiffeisenbank a.s.",
-  swift: "",
-  iban: "CZ60 5500 0000 0016 3853 7004",
-  cisloUctu: "1638537004",
-  kodBanky: "5500",
-  konstantniSymbol: "0308",
-} as const;
 
 /* ── Invoice number: YY + clientCode(2) + month(5-zero-padded) ─────────── */
 export function buildCisloFaktury(rok: number, rada: number, mesic: number): string {
@@ -111,6 +171,7 @@ export function buildInvoice(
   client: InvoiceClient,
   mesicSluzby: number,
   rokSluzby: number,
+  dodavatelKlic: DodavatelKlic = "onvision",
 ): InvoiceData {
   // Invoice is issued in the month AFTER the service month
   const invoiceMonth = mesicSluzby === 12 ? 1 : mesicSluzby + 1;
@@ -134,6 +195,31 @@ export function buildInvoice(
     mesicSluzby,
     rokSluzby,
     popisDetail: `pro ${client.nazev} (${mm}/${rokSluzby})`,
+    dodavatel: DODAVATELE[dodavatelKlic],
+  };
+}
+
+/* ── Build a one-time ad-hoc invoice with explicit dates ─────────────────── */
+export function buildOneTimeInvoice(
+  cislo: string,
+  odberatel: InvoiceClient,
+  dodavatelKlic: DodavatelKlic,
+  datumVystaveni: string,
+  datumSplatnosti: string,
+  datumPlneni: string,
+  popisDetail: string,
+): InvoiceData {
+  return {
+    cislo,
+    variabilniSymbol: cislo,
+    datumVystaveni,
+    datumSplatnosti,
+    datumPlneni,
+    odberatel,
+    mesicSluzby: 0,
+    rokSluzby: 0,
+    popisDetail,
+    dodavatel: DODAVATELE[dodavatelKlic],
   };
 }
 
