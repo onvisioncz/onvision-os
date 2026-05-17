@@ -4,17 +4,18 @@ import {
   Document, Page, View, Text, StyleSheet, Font,
 } from "@react-pdf/renderer";
 import { type InvoiceData, DODAVATEL, fmtKc } from "@/lib/invoice";
-import { INTER_400, INTER_700 } from "@/lib/invoice-fonts";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Register Inter with Czech support (latin-ext) via embedded base64 data URIs.
-   No network fetch required — works offline and on any domain.
+   Full Roboto TTF fonts served as static files from /public/fonts/.
+   Full (non-subsetted) fonts → all Latin + Czech diacritics supported.
+   Uses window.location.origin for absolute URL (module only loads client-side).
 ───────────────────────────────────────────────────────────────────────── */
+const origin = typeof window !== "undefined" ? window.location.origin : "";
 Font.register({
-  family: "Inter",
+  family: "Roboto",
   fonts: [
-    { src: INTER_400, fontWeight: 400 },
-    { src: INTER_700, fontWeight: 700 },
+    { src: `${origin}/fonts/Roboto-Regular.ttf`, fontWeight: 400 },
+    { src: `${origin}/fonts/Roboto-Bold.ttf`,    fontWeight: 700 },
   ],
 });
 
@@ -28,7 +29,7 @@ const LIGHT  = "#f2f2f2";
 /* ── Styles ──────────────────────────────────────────────────────────────── */
 const s = StyleSheet.create({
   page: {
-    fontFamily: "Inter",
+    fontFamily: "Roboto",
     fontWeight: 400,
     fontSize: 8.5,
     color: BLACK,
