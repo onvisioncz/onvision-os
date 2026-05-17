@@ -7,6 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
+  Building2, Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -16,12 +17,14 @@ const nav = [
   { label: "Dashboard",       short: "Přehled",   href: "/dashboard",        icon: LayoutDashboard },
   { label: "Inbox",           short: "Inbox",     href: "/inbox",            icon: Inbox },
   { label: "Úkoly",           short: "Úkoly",     href: "/ukoly",            icon: CheckSquare },
+  { label: "Klienti",         short: "Klienti",   href: "/klienti",          icon: Building2 },
   { label: "Jednorázovky",    short: "Projekt.",   href: "/projects/oneoffs", icon: FolderKanban },
-  { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
+  { label: "Měsíční klienti", short: "Měsíční",    href: "/projects/monthly", icon: Users },
   { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
   { label: "Fakturace",       short: "Faktury",    href: "/fakturace",        icon: FileText },
   { label: "Investice",       short: "Investice",  href: "/investice",        icon: PackageOpen },
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
+  { label: "Produkční plán",  short: "Produkce",   href: "/shooting",         icon: Film },
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
   { label: "Content",         short: "Content",    href: "/obsah",            icon: Layers2 },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },

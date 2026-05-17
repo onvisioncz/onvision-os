@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart,
   Area,
@@ -11,6 +11,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
@@ -68,6 +75,24 @@ interface Oneoff {
   column: string;
   castka: number;
   typ: string;
+}
+interface IssuedInvoice {
+  id: number;
+  klient: string;
+  castka: number;
+  stav: string;
+  mesicSluzby?: string;
+  rokSluzby?: number;
+  typ?: string;
+}
+interface FinanceIncome {
+  id: number;
+  klient?: string;
+  typ?: string;
+  castka?: number;
+  mesic?: string;
+  datumZaplaceni?: string;
+  stav?: string;
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────────────── */
@@ -364,6 +389,26 @@ function DeadlinePill({ deadline }: { deadline: string }) {
   );
 }
 
+/* ── Czech months (nominative) ─────────────────────────────────────────────── */
+const CZ_MONTHS_NOM = [
+  "Leden","Únor","Březen","Duben","Květen","Červen",
+  "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+];
+
+/* ── Quick-add input style ──────────────────────────────────────────────────── */
+const qaInputStyle: React.CSSProperties = {
+  background: "oklch(1 0 0 / 0.06)",
+  border: "1px solid oklch(1 0 0 / 0.12)",
+  color: "oklch(0.88 0.005 222)",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 13,
+  fontFamily: "var(--font-jakarta)",
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box" as const,
+};
+
 /* ── Faze pipeline order ────────────────────────────────────────────────────── */
 const FAZE_ORDER = ["Lead", "Kvalifikace", "Nabídka", "Jednání", "Realizace"];
 
@@ -528,6 +573,159 @@ export default function DashboardPage() {
   /* suppress unused warning for pipeline deals (computed but not rendered on dashboard) */
   void deals;
 
+  /* ── Quick Add state ── */
+  const [qaOpen, setQaOpen] = useState(false);
+  const [qaTab, setQaTab] = useState<"ukol" | "vydaj" | "faktura">("ukol");
+  const [qaSuccess, setQaSuccess] = useState<string | null>(null);
+
+  // Ukol form
+  const [qaUkolNazev, setQaUkolNazev] = useState("");
+  const [qaUkolProjekt, setQaUkolProjekt] = useState("Interní");
+  const [qaUkolPrirazeno, setQaUkolPrirazeno] = useState("Adam");
+  const [qaUkolPriority, setQaUkolPriority] = useState<Task["priorita"]>("Střední");
+  const [qaUkolDeadline, setQaUkolDeadline] = useState("");
+
+  // Vydaj form
+  const [qaVydajKlient, setQaVydajKlient] = useState("");
+  const [qaVydajTyp, setQaVydajTyp] = useState("Paušál");
+  const [qaVydajCastka, setQaVydajCastka] = useState("");
+  const currentMonthCz = CZ_MONTHS_NOM[new Date().getMonth()];
+  const [qaVydajMesic, setQaVydajMesic] = useState(currentMonthCz);
+  const [qaVydajDatum, setQaVydajDatum] = useState("");
+
+  const handleQaUkolSubmit = useCallback(async () => {
+    if (!qaUkolNazev.trim()) return;
+    try {
+      const res = await fetch("/api/sync?key=ov-ukoly-tasks");
+      const { value } = await res.json();
+      const existing: Task[] = Array.isArray(value) ? value : [];
+      const newTask: Task = {
+        id: Date.now(),
+        nazev: qaUkolNazev.trim(),
+        projekt: qaUkolProjekt,
+        prirazeno: qaUkolPrirazeno,
+        priorita: qaUkolPriority,
+        status: "Nové",
+        deadline: qaUkolDeadline || "",
+      };
+      await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "ov-ukoly-tasks", value: [...existing, newTask] }),
+      });
+      setQaSuccess("Ukol pridan!");
+      setQaUkolNazev("");
+      setQaUkolDeadline("");
+      setTimeout(() => setQaSuccess(null), 2500);
+    } catch {
+      setQaSuccess("Chyba pri ukladani.");
+      setTimeout(() => setQaSuccess(null), 2500);
+    }
+  }, [qaUkolNazev, qaUkolProjekt, qaUkolPrirazeno, qaUkolPriority, qaUkolDeadline]);
+
+  const handleQaVydajSubmit = useCallback(async () => {
+    if (!qaVydajKlient.trim() || !qaVydajCastka) return;
+    try {
+      const res = await fetch("/api/sync?key=ov-finance-incomes");
+      const { value } = await res.json();
+      const existing: FinanceIncome[] = Array.isArray(value) ? value : [];
+      const newEntry: FinanceIncome = {
+        id: Date.now(),
+        klient: qaVydajKlient.trim(),
+        typ: qaVydajTyp,
+        castka: Number(qaVydajCastka),
+        mesic: qaVydajMesic,
+        datumZaplaceni: qaVydajDatum || new Date().toISOString().slice(0, 10),
+        stav: "Zaplaceno",
+      };
+      await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "ov-finance-incomes", value: [...existing, newEntry] }),
+      });
+      setQaSuccess("Vydaj pridan!");
+      setQaVydajKlient("");
+      setQaVydajCastka("");
+      setQaVydajDatum("");
+      setTimeout(() => setQaSuccess(null), 2500);
+    } catch {
+      setQaSuccess("Chyba pri ukladani.");
+      setTimeout(() => setQaSuccess(null), 2500);
+    }
+  }, [qaVydajKlient, qaVydajTyp, qaVydajCastka, qaVydajMesic, qaVydajDatum]);
+
+  /* ── Monthly Closing state ── */
+  const [closingOpen, setClosingOpen] = useState(false);
+  const [closingInvoices, setClosingInvoices] = useState<IssuedInvoice[] | null>(null);
+  const [closingIncomes, setClosingIncomes] = useState<FinanceIncome[] | null>(null);
+  const [closingNote, setClosingNote] = useState("");
+  const [closingLoading, setClosingLoading] = useState(false);
+  const [closingDone, setClosingDone] = useState(false);
+
+  const fetchClosingData = useCallback(async () => {
+    setClosingLoading(true);
+    try {
+      const [invRes, incRes] = await Promise.all([
+        fetch("/api/sync?key=ov-issued-invoices"),
+        fetch("/api/sync?key=ov-finance-incomes"),
+      ]);
+      const invJson = await invRes.json();
+      const incJson = await incRes.json();
+      setClosingInvoices(Array.isArray(invJson.value) ? invJson.value : []);
+      setClosingIncomes(Array.isArray(incJson.value) ? incJson.value : []);
+    } catch {
+      setClosingInvoices([]);
+      setClosingIncomes([]);
+    } finally {
+      setClosingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (closingOpen) {
+      setClosingDone(false);
+      fetchClosingData();
+    }
+  }, [closingOpen, fetchClosingData]);
+
+  const now = new Date();
+  const currentMonthName = CZ_MONTHS_NOM[now.getMonth()];
+  const currentYear = now.getFullYear();
+
+  const closingChecks = useMemo(() => {
+    if (!closingInvoices || !closingIncomes) return null;
+
+    // 1. Fakturace
+    const monthlyInvoices = closingInvoices.filter(
+      (inv) => inv.mesicSluzby === currentMonthName && inv.rokSluzby === currentYear && inv.typ === "Měsíční"
+    );
+    const totalActiveClients = activeClients.length;
+    const invoicedCount = monthlyInvoices.length;
+    const invoicedClients = new Set(monthlyInvoices.map((inv) => inv.klient));
+    const missingClients = activeClients.filter((c) => !invoicedClients.has(c.name));
+    const faktStatus = invoicedCount === 0 ? "red" : invoicedCount >= totalActiveClients ? "green" : "amber";
+
+    // 2. Platby
+    const unpaidInvoices = closingInvoices.filter((inv) => inv.stav === "Čeká na platbu");
+    const platbyStatus = unpaidInvoices.length === 0 ? "green" : "red";
+
+    // 3. Vydaje
+    const monthIncomes = closingIncomes.filter((inc) => inc.mesic === currentMonthName);
+    const vydajeStatus = monthIncomes.length === 0 ? "red" : monthIncomes.length <= 3 ? "amber" : "green";
+
+    // 4. Obsah
+    const obsahStatus = delivPct >= 100 ? "green" : delivPct > 50 ? "amber" : "red";
+
+    return {
+      fakt: { status: faktStatus, invoicedCount, totalActiveClients, missingClients },
+      platby: { status: platbyStatus, unpaidInvoices },
+      vydaje: { status: vydajeStatus, count: monthIncomes.length },
+      obsah: { status: obsahStatus, pct: delivPct, done: delivDone, total: delivTotal },
+    };
+  }, [closingInvoices, closingIncomes, activeClients, delivPct, delivDone, delivTotal, currentMonthName, currentYear]);
+
+  const closingCanClose = closingChecks?.fakt.status === "green" && closingChecks?.platby.status === "green";
+
   /* ── Jednorázovky: active projects sorted by stage ── */
   const COL_ORDER = ["poptavka","nabidka","potvrzeno","preprodukce","nataceni","postprodukce","schvaleni","dokonceno"] as const;
   const COL_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -616,33 +814,301 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Live indicator */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 2 }}>
-            <span
+          {/* Right side: Live indicator + action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 2 }}>
+            {/* Live indicator */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "oklch(0.72 0.2 155)",
+                  boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)",
+                  display: "block",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  fontFamily: "var(--font-sans)",
+                }}
+              >
+                Live
+              </span>
+            </div>
+
+            {/* Uzavrit mesic button */}
+            <button
+              onClick={() => setClosingOpen(true)}
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "oklch(0.72 0.2 155)",
-                boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)",
-                display: "block",
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: 10,
+                background: "oklch(1 0 0 / 0.05)",
+                border: "1px solid oklch(1 0 0 / 0.10)",
+                color: "oklch(0.72 0.14 155)",
+                borderRadius: 8,
+                padding: "5px 12px",
+                fontSize: 12,
                 fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "oklch(0.45 0.005 222)",
-                fontFamily: "var(--font-sans)",
+                fontFamily: "var(--font-jakarta)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
-              Live
-            </span>
+              Uzavrit mesic
+            </button>
+
+            {/* Quick Add (+/x) button */}
+            <button
+              onClick={() => setQaOpen((v) => !v)}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
+                border: "none",
+                color: "#fff",
+                fontSize: 18,
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 400,
+              }}
+              aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
+            >
+              {qaOpen ? <X size={14} /> : "+"}
+            </button>
           </div>
         </motion.div>
+
+        {/* ── Quick Add Panel ── */}
+        <AnimatePresence>
+          {qaOpen && (
+            <motion.div
+              key="qa-panel"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              style={{
+                ...cardStyle,
+                padding: "18px 20px 20px",
+                position: "relative",
+              }}
+            >
+              {/* Tab strip */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
+                {(["ukol", "vydaj", "faktura"] as const).map((tab) => {
+                  const labels = { ukol: "Ukol", vydaj: "Vydaj", faktura: "Faktura poznamka" };
+                  const active = qaTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setQaTab(tab)}
+                      style={{
+                        padding: "5px 14px",
+                        borderRadius: 7,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        fontFamily: "var(--font-jakarta)",
+                        border: active ? "1px solid oklch(0.62 0.27 265 / 0.4)" : "1px solid transparent",
+                        background: active ? "oklch(0.62 0.27 265 / 0.14)" : "transparent",
+                        color: active ? "oklch(0.75 0.2 265)" : "oklch(0.45 0.005 222)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {labels[tab]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Success flash */}
+              <AnimatePresence>
+                {qaSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      position: "absolute",
+                      top: 14,
+                      right: 50,
+                      background: "oklch(0.67 0.155 155 / 0.18)",
+                      border: "1px solid oklch(0.67 0.155 155 / 0.4)",
+                      color: "oklch(0.72 0.14 155)",
+                      borderRadius: 8,
+                      padding: "6px 14px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "var(--font-jakarta)",
+                    }}
+                  >
+                    {qaSuccess}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Close button */}
+              <button
+                onClick={() => setQaOpen(false)}
+                style={{
+                  position: "absolute",
+                  top: 14,
+                  right: 14,
+                  background: "transparent",
+                  border: "none",
+                  color: "oklch(0.40 0.005 222)",
+                  cursor: "pointer",
+                  padding: 4,
+                  lineHeight: 1,
+                }}
+                aria-label="Zavrit"
+              >
+                <X size={16} />
+              </button>
+
+              {/* Ukol form */}
+              {qaTab === "ukol" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <input
+                      style={qaInputStyle}
+                      placeholder="Nazev ukolu"
+                      value={qaUkolNazev}
+                      onChange={(e) => setQaUkolNazev(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleQaUkolSubmit()}
+                    />
+                  </div>
+                  <select style={qaInputStyle} value={qaUkolProjekt} onChange={(e) => setQaUkolProjekt(e.target.value)}>
+                    {["SENIMED","IMTOS","EASTGATE BRNO","MTBCZ","TOFFI","FIRESTA","BEHEJ BRNO","POWERPLATE","SK STAVOS","Interni"].map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <select style={qaInputStyle} value={qaUkolPrirazeno} onChange={(e) => setQaUkolPrirazeno(e.target.value)}>
+                    {["Adam","Honza","Dominika"].map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <select style={qaInputStyle} value={qaUkolPriority} onChange={(e) => setQaUkolPriority(e.target.value as Task["priorita"])}>
+                    {(["Nizka","Stredni","Vysoka","Urgentni"] as const).map((p) => {
+                      const map: Record<string, string> = { Nizka: "Nizka", Stredni: "Stredni", Vysoka: "Vysoka", Urgentni: "Urgentni" };
+                      return <option key={p} value={p}>{map[p]}</option>;
+                    })}
+                  </select>
+                  <input
+                    type="date"
+                    style={qaInputStyle}
+                    value={qaUkolDeadline}
+                    onChange={(e) => setQaUkolDeadline(e.target.value)}
+                  />
+                  <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                    <button
+                      onClick={handleQaUkolSubmit}
+                      style={{
+                        background: "oklch(0.62 0.27 265)",
+                        border: "none",
+                        color: "#fff",
+                        borderRadius: 8,
+                        padding: "8px 22px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: "var(--font-jakarta)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Pridat ukol
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Vydaj form */}
+              {qaTab === "vydaj" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input
+                    style={qaInputStyle}
+                    placeholder="Klient"
+                    value={qaVydajKlient}
+                    onChange={(e) => setQaVydajKlient(e.target.value)}
+                  />
+                  <select style={qaInputStyle} value={qaVydajTyp} onChange={(e) => setQaVydajTyp(e.target.value)}>
+                    {["Pausal","Reklamy","Jine"].map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    style={qaInputStyle}
+                    placeholder="Castka (Kc)"
+                    value={qaVydajCastka}
+                    onChange={(e) => setQaVydajCastka(e.target.value)}
+                  />
+                  <input
+                    style={qaInputStyle}
+                    placeholder="Mesic"
+                    value={qaVydajMesic}
+                    onChange={(e) => setQaVydajMesic(e.target.value)}
+                  />
+                  <input
+                    type="date"
+                    style={qaInputStyle}
+                    value={qaVydajDatum}
+                    onChange={(e) => setQaVydajDatum(e.target.value)}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                    <button
+                      onClick={handleQaVydajSubmit}
+                      style={{
+                        background: "oklch(0.62 0.27 265)",
+                        border: "none",
+                        color: "#fff",
+                        borderRadius: 8,
+                        padding: "8px 22px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: "var(--font-jakarta)",
+                        cursor: "pointer",
+                        width: "100%",
+                      }}
+                    >
+                      Pridat vydaj
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Faktura tab */}
+              {qaTab === "faktura" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <p style={{ fontSize: 13, color: "oklch(0.50 0.005 222)", fontFamily: "var(--font-jakarta)" }}>
+                    Faktury se vystavuji v sekci Fakturace.
+                  </p>
+                  <Link
+                    href="/fakturace"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      color: "oklch(0.75 0.2 265)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: "var(--font-jakarta)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Prejit na Fakturaci
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>&#8594;</span>
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── 2. KPI Strip ── */}
         <motion.div
@@ -1481,6 +1947,362 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* ── Monthly Closing Modal ── */}
+      <AnimatePresence>
+        {closingOpen && (
+          <motion.div
+            key="closing-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "oklch(0 0 0 / 0.7)",
+              zIndex: 100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setClosingOpen(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.97 }}
+              transition={{ duration: 0.26, ease: "easeOut" }}
+              style={{
+                ...cardStyle,
+                background: "oklch(0.12 0.008 222)",
+                border: "1px solid oklch(1 0 0 / 0.10)",
+                borderRadius: 20,
+                width: "100%",
+                maxWidth: 520,
+                padding: "28px 28px 24px",
+                position: "relative",
+                maxHeight: "90vh",
+                overflowY: "auto",
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
+                <div>
+                  <h2 style={{
+                    fontFamily: "var(--font-outfit)",
+                    fontWeight: 700,
+                    fontSize: 20,
+                    letterSpacing: "-0.03em",
+                    color: "oklch(0.96 0.005 222)",
+                    margin: 0,
+                  }}>
+                    Uzaverka — {currentMonthName}
+                  </h2>
+                  <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginTop: 4, fontFamily: "var(--font-jakarta)" }}>
+                    Zkontroluj pred uzavrenim mesice
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={fetchClosingData}
+                    disabled={closingLoading}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid oklch(1 0 0 / 0.10)",
+                      borderRadius: 7,
+                      padding: "5px 8px",
+                      color: "oklch(0.50 0.005 222)",
+                      cursor: closingLoading ? "default" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: 11,
+                      fontFamily: "var(--font-jakarta)",
+                    }}
+                  >
+                    <RefreshCw size={12} style={{ opacity: closingLoading ? 0.4 : 1 }} />
+                    Obnovit
+                  </button>
+                  <button
+                    onClick={() => setClosingOpen(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "oklch(0.40 0.005 222)",
+                      cursor: "pointer",
+                      padding: 4,
+                      lineHeight: 1,
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "oklch(1 0 0 / 0.07)", margin: "16px 0" }} />
+
+              {/* Checklist */}
+              {closingDone ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "32px 0",
+                  }}
+                >
+                  <CheckCircle2 size={48} color="oklch(0.72 0.14 155)" />
+                  <p style={{
+                    fontFamily: "var(--font-outfit)",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: "oklch(0.96 0.005 222)",
+                    letterSpacing: "-0.02em",
+                  }}>
+                    Mesic uzavren
+                  </p>
+                </motion.div>
+              ) : (
+                <>
+                  {/* Items */}
+                  <motion.div
+                    variants={{ show: { transition: { staggerChildren: 0.07 } } }}
+                    initial="hidden"
+                    animate="show"
+                    style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                  >
+                    {/* 1. Fakturace */}
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.28 } } }}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        background: "oklch(1 0 0 / 0.03)",
+                        border: "1px solid oklch(1 0 0 / 0.07)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: closingLoading ? 0 : 6 }}>
+                        {closingLoading ? (
+                          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "oklch(1 0 0 / 0.07)", flexShrink: 0 }} />
+                        ) : closingChecks?.fakt.status === "green" ? (
+                          <CheckCircle2 size={18} color="oklch(0.72 0.14 155)" style={{ flexShrink: 0 }} />
+                        ) : closingChecks?.fakt.status === "amber" ? (
+                          <AlertTriangle size={18} color="oklch(0.82 0.16 85)" style={{ flexShrink: 0 }} />
+                        ) : (
+                          <XCircle size={18} color="oklch(0.65 0.22 25)" style={{ flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 600, fontSize: 13, color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", margin: 0 }}>
+                            Fakturace
+                          </p>
+                          <p style={{ fontSize: 11, color: "oklch(0.50 0.005 222)", marginTop: 2, fontFamily: "var(--font-jakarta)" }}>
+                            Vsichni klienti vyfakturovani?
+                          </p>
+                        </div>
+                        {!closingLoading && closingChecks && (
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fontFamily: "var(--font-outfit)",
+                            color: closingChecks.fakt.status === "green" ? "oklch(0.72 0.14 155)" : closingChecks.fakt.status === "amber" ? "oklch(0.82 0.16 85)" : "oklch(0.65 0.22 25)",
+                          }}>
+                            {closingChecks.fakt.invoicedCount}/{closingChecks.fakt.totalActiveClients}
+                          </span>
+                        )}
+                      </div>
+                      {!closingLoading && closingChecks && closingChecks.fakt.missingClients.length > 0 && (
+                        <p style={{ fontSize: 11, color: "oklch(0.65 0.22 25)", marginTop: 6, fontFamily: "var(--font-jakarta)", paddingLeft: 28 }}>
+                          Chybi: {closingChecks.fakt.missingClients.map((c) => c.name).join(", ")}
+                        </p>
+                      )}
+                    </motion.div>
+
+                    {/* 2. Platby */}
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.28 } } }}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        background: "oklch(1 0 0 / 0.03)",
+                        border: "1px solid oklch(1 0 0 / 0.07)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: (!closingLoading && closingChecks?.platby.unpaidInvoices.length) ? 6 : 0 }}>
+                        {closingLoading ? (
+                          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "oklch(1 0 0 / 0.07)", flexShrink: 0 }} />
+                        ) : closingChecks?.platby.status === "green" ? (
+                          <CheckCircle2 size={18} color="oklch(0.72 0.14 155)" style={{ flexShrink: 0 }} />
+                        ) : (
+                          <XCircle size={18} color="oklch(0.65 0.22 25)" style={{ flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 600, fontSize: 13, color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", margin: 0 }}>
+                            Platby
+                          </p>
+                          <p style={{ fontSize: 11, color: "oklch(0.50 0.005 222)", marginTop: 2, fontFamily: "var(--font-jakarta)" }}>
+                            Vsechny faktury zaplaceny?
+                          </p>
+                        </div>
+                        {!closingLoading && closingChecks && (
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fontFamily: "var(--font-outfit)",
+                            color: closingChecks.platby.status === "green" ? "oklch(0.72 0.14 155)" : "oklch(0.65 0.22 25)",
+                          }}>
+                            {closingChecks.platby.unpaidInvoices.length} ceka
+                          </span>
+                        )}
+                      </div>
+                      {!closingLoading && closingChecks && closingChecks.platby.unpaidInvoices.length > 0 && (
+                        <div style={{ paddingLeft: 28, marginTop: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+                          {closingChecks.platby.unpaidInvoices.slice(0, 3).map((inv) => (
+                            <p key={inv.id} style={{ fontSize: 11, color: "oklch(0.65 0.22 25)", fontFamily: "var(--font-jakarta)" }}>
+                              {inv.klient} — {inv.castka ? fmt(inv.castka) : "?"}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+
+                    {/* 3. Vydaje */}
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.28 } } }}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        background: "oklch(1 0 0 / 0.03)",
+                        border: "1px solid oklch(1 0 0 / 0.07)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {closingLoading ? (
+                          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "oklch(1 0 0 / 0.07)", flexShrink: 0 }} />
+                        ) : closingChecks?.vydaje.status === "green" ? (
+                          <CheckCircle2 size={18} color="oklch(0.72 0.14 155)" style={{ flexShrink: 0 }} />
+                        ) : closingChecks?.vydaje.status === "amber" ? (
+                          <AlertTriangle size={18} color="oklch(0.82 0.16 85)" style={{ flexShrink: 0 }} />
+                        ) : (
+                          <XCircle size={18} color="oklch(0.65 0.22 25)" style={{ flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 600, fontSize: 13, color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", margin: 0 }}>
+                            Vydaje
+                          </p>
+                          <p style={{ fontSize: 11, color: "oklch(0.50 0.005 222)", marginTop: 2, fontFamily: "var(--font-jakarta)" }}>
+                            Vydaje zadany?
+                          </p>
+                        </div>
+                        {!closingLoading && closingChecks && (
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fontFamily: "var(--font-outfit)",
+                            color: closingChecks.vydaje.status === "green" ? "oklch(0.72 0.14 155)" : closingChecks.vydaje.status === "amber" ? "oklch(0.82 0.16 85)" : "oklch(0.65 0.22 25)",
+                          }}>
+                            {closingChecks.vydaje.count} zaznamu
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+
+                    {/* 4. Obsah */}
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.28 } } }}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        background: "oklch(1 0 0 / 0.03)",
+                        border: "1px solid oklch(1 0 0 / 0.07)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {closingChecks?.obsah.status === "green" ? (
+                          <CheckCircle2 size={18} color="oklch(0.72 0.14 155)" style={{ flexShrink: 0 }} />
+                        ) : closingChecks?.obsah.status === "amber" ? (
+                          <AlertTriangle size={18} color="oklch(0.82 0.16 85)" style={{ flexShrink: 0 }} />
+                        ) : (
+                          <XCircle size={18} color="oklch(0.65 0.22 25)" style={{ flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 600, fontSize: 13, color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", margin: 0 }}>
+                            Obsah
+                          </p>
+                          <p style={{ fontSize: 11, color: "oklch(0.50 0.005 222)", marginTop: 2, fontFamily: "var(--font-jakarta)" }}>
+                            Deliverables splneny?
+                          </p>
+                        </div>
+                        {closingChecks && (
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fontFamily: "var(--font-outfit)",
+                            color: closingChecks.obsah.status === "green" ? "oklch(0.72 0.14 155)" : closingChecks.obsah.status === "amber" ? "oklch(0.82 0.16 85)" : "oklch(0.65 0.22 25)",
+                          }}>
+                            {closingChecks.obsah.done}/{closingChecks.obsah.total} ({closingChecks.obsah.pct}%)
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+
+                    {/* 5. Poznamky */}
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.28 } } }}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 12,
+                        background: "oklch(1 0 0 / 0.03)",
+                        border: "1px solid oklch(1 0 0 / 0.07)",
+                      }}
+                    >
+                      <p style={{ fontWeight: 600, fontSize: 13, color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", marginBottom: 10 }}>
+                        Poznamky
+                      </p>
+                      <textarea
+                        style={{
+                          ...qaInputStyle,
+                          resize: "vertical",
+                          minHeight: 72,
+                        }}
+                        placeholder="Volitelne poznamky k mesici..."
+                        value={closingNote}
+                        onChange={(e) => setClosingNote(e.target.value)}
+                      />
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Footer action */}
+                  <div style={{ marginTop: 18, display: "flex", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => { setClosingDone(true); setTimeout(() => setClosingOpen(false), 1800); }}
+                      disabled={!closingCanClose}
+                      style={{
+                        background: closingCanClose ? "oklch(0.67 0.155 155)" : "oklch(1 0 0 / 0.06)",
+                        border: "none",
+                        color: closingCanClose ? "#fff" : "oklch(0.40 0.005 222)",
+                        borderRadius: 10,
+                        padding: "10px 26px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: "var(--font-outfit)",
+                        cursor: closingCanClose ? "pointer" : "not-allowed",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      Uzavrit mesic
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
