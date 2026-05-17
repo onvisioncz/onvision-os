@@ -1,13 +1,14 @@
 "use client";
 
 import {
-  Document, Page, View, Text, StyleSheet, Image, Link, Font,
+  Document, Page, View, Text, StyleSheet, Font,
 } from "@react-pdf/renderer";
 import { type InvoiceData, DODAVATEL, fmtKc } from "@/lib/invoice";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Full Roboto TTF — all chars incl. Czech diacritics.
-   Absolute URL so react-pdf can fetch via XHR in the browser.
+   Full Roboto TTF fonts served as static files from /public/fonts/.
+   Full (non-subsetted) fonts → all Latin + Czech diacritics supported.
+   Uses window.location.origin for absolute URL (module only loads client-side).
 ───────────────────────────────────────────────────────────────────────── */
 const origin = typeof window !== "undefined" ? window.location.origin : "";
 Font.register({
@@ -19,23 +20,11 @@ Font.register({
 });
 
 /* ── Colors ──────────────────────────────────────────────────────────────── */
-const BLUE   = "#1852c9";   // OnVision invoice blue
+const BLUE   = "#1a52c9";
 const BLACK  = "#111111";
 const MUTED  = "#555555";
-const BORDER = "#aaaaaa";
-const LIGHT  = "#f4f4f4";
-
-/* ── Column flex values — must match table exactly ───────────────────────── */
-const COL = {
-  desc:   3.5,
-  qty:    0.7,
-  price:  1.1,
-  disc:   0.7,
-  total:  1.1,
-  vat:    0.6,
-  vatAmt: 0.7,
-  final:  1.1,
-} as const;
+const BORDER = "#999999";
+const LIGHT  = "#f2f2f2";
 
 /* ── Styles ──────────────────────────────────────────────────────────────── */
 const s = StyleSheet.create({
@@ -50,52 +39,58 @@ const s = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
 
-  /* ── Header ── */
-  header:      { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 },
+  /* Header */
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 },
   headerBrand: { fontSize: 17, fontWeight: 700, color: BLUE },
   headerTitle: { fontSize: 12, fontWeight: 700, color: BLUE, textAlign: "right" },
 
-  /* ── Main info box ── */
+  /* Main info box */
   infoBox:   { flexDirection: "row", borderWidth: 1, borderColor: BORDER },
   infoLeft:  { flex: 1, borderRightWidth: 1, borderRightColor: BORDER, padding: 7 },
   infoRight: { flex: 1, padding: 7 },
 
-  /* ── Logo ── */
-  logoBox:   { backgroundColor: BLUE, width: 100, height: 38, marginBottom: 8, justifyContent: "center", alignItems: "center" },
-  logoImage: { width: 82, height: 30, objectFit: "contain" },
+  /* Logo box — blue rectangle with white "OnVision" text */
+  logoBox:  { backgroundColor: BLUE, width: 104, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 7 },
+  logoText: { color: "#ffffff", fontWeight: 700, fontSize: 13, letterSpacing: 0.5 },
 
-  /* ── Supplier ── */
-  labelGray:    { color: MUTED, marginBottom: 5 },
+  /* Supplier */
+  labelMuted:   { color: MUTED, marginBottom: 4 },
   supplierName: { fontWeight: 700, fontSize: 9, marginBottom: 2 },
-  supplierLine: { color: MUTED, fontSize: 8.5, marginBottom: 1.5 },
-  supplierBlue: { color: BLUE, fontSize: 8.5, marginBottom: 1.5 },
-  noVat:        { fontWeight: 700, fontSize: 8.5, marginTop: 5 },
+  supplierLine: { color: MUTED, marginBottom: 1.5 },
+  supplierIco:  { color: BLUE, marginBottom: 1.5 },
+  noVat:        { fontWeight: 700, fontSize: 8, marginTop: 4 },
 
-  /* ── Right column ── */
+  /* Right column */
   varRow:     { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
   varLabel:   { color: MUTED },
   varValue:   { fontWeight: 700 },
-  divH:       { borderBottomWidth: 1, borderBottomColor: BORDER, marginVertical: 5 },
+  dividerH:   { borderBottomWidth: 1, borderBottomColor: BORDER, marginVertical: 5 },
   clientName: { fontWeight: 700, fontSize: 9, marginBottom: 2 },
   clientLine: { color: MUTED, marginBottom: 1.5 },
-  icoLine:    { color: MUTED, marginBottom: 1.5 },
+  icoRow:     { color: MUTED, marginBottom: 1.5 },
 
-  /* ── Bank section ── */
-  bankBox:   { borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER, paddingHorizontal: 6, paddingVertical: 5 },
+  /* Bank */
+  bankSection: {
+    borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
+    paddingHorizontal: 6, paddingVertical: 5,
+  },
   bankRow:   { flexDirection: "row", marginBottom: 2 },
-  bLabel:    { color: MUTED, width: 65 },
-  bValue:    { fontWeight: 700 },
+  bankLabel: { color: MUTED, width: 70 },
+  bankValue: { fontWeight: 700 },
 
-  /* ── Dates ── */
-  datesBox:  { flexDirection: "row", borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER },
-  datesL:    { flex: 1, borderRightWidth: 1, borderRightColor: BORDER, padding: 6 },
-  datesR:    { flex: 1, padding: 6 },
-  dRow:      { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
-  dLabel:    { color: MUTED },
-  dLabelBlue:{ color: BLUE },
-  dValue:    { fontWeight: 700 },
+  /* Dates */
+  datesRow: {
+    flexDirection: "row",
+    borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
+  },
+  datesLeft:     { flex: 1, borderRightWidth: 1, borderRightColor: BORDER, padding: 6 },
+  datesRight:    { flex: 1, padding: 6 },
+  dateRow:       { flexDirection: "row", justifyContent: "space-between", marginBottom: 2.5 },
+  dateLabel:     { color: MUTED },
+  dateLabelBlue: { color: BLUE },
+  dateValue:     { fontWeight: 700 },
 
-  /* ── Items table ── */
+  /* Table */
   tableHeader: {
     flexDirection: "row",
     borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
@@ -104,56 +99,68 @@ const s = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
-    paddingVertical: 5, paddingHorizontal: 4, minHeight: 40,
+    paddingVertical: 5, paddingHorizontal: 4, minHeight: 36,
   },
-  thText:  { fontWeight: 700, fontSize: 7.5, color: MUTED },
-  tdBlue:  { fontWeight: 700, color: BLUE },
-  tdDesc:  { color: MUTED, fontSize: 7.5, marginTop: 2 },
-  tdRight: { textAlign: "right" },
-  tdCenter:{ textAlign: "center" },
+  colDesc:   { flex: 3.5 },
+  colQty:    { flex: 0.7,  textAlign: "center" },
+  colPrice:  { flex: 1.1,  textAlign: "right" },
+  colDisc:   { flex: 0.7,  textAlign: "center" },
+  colTotal:  { flex: 1.1,  textAlign: "right" },
+  colVat:    { flex: 0.6,  textAlign: "center" },
+  colVatAmt: { flex: 0.7,  textAlign: "right" },
+  colFinal:  { flex: 1.1,  textAlign: "right" },
+  thText:    { fontWeight: 700, fontSize: 7.5, color: MUTED },
+  tdBlue:    { fontWeight: 700, color: BLUE },
+  tdDesc:    { color: MUTED, fontSize: 7.5, marginTop: 2 },
 
-  /* ── Totals ── */
+  /* Totals */
   totalsRow: {
     flexDirection: "row",
     borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
-    paddingVertical: 3, paddingHorizontal: 4,
+    paddingVertical: 4, paddingHorizontal: 4,
   },
+  totalSpacer:    { flex: 1 },
+  totalLabelCell: { width: 90, textAlign: "right", color: MUTED, paddingRight: 6 },
+  totalValueCell: { width: 55, textAlign: "right", color: MUTED },
+  totalVatCell:   { width: 45, textAlign: "right", color: MUTED },
+  totalFinalCell: { width: 70, textAlign: "right" },
+  grandLabelCell: { width: 90, textAlign: "right", fontWeight: 700, paddingRight: 6 },
 
-  /* ── Issued by ── */
+  /* Issued by */
   issuedRow: {
     borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: BORDER,
-    paddingHorizontal: 6, paddingVertical: 6, minHeight: 100,
+    paddingHorizontal: 6, paddingVertical: 8, minHeight: 100,
   },
 
-  /* ── Notes ── */
+  /* Notes */
   notesBox: { marginTop: 8 },
   noteText: { color: MUTED, fontSize: 7, marginBottom: 3, lineHeight: 1.5 },
 
-  /* ── DPH recap ── */
+  /* DPH recap */
   dphTitle:  { fontWeight: 700, fontSize: 8, marginBottom: 4, marginTop: 10, textAlign: "center" },
-  dphWrap:   { marginHorizontal: 20 },
+  dphWrap:   { marginHorizontal: 30 },
   dphRow:    { flexDirection: "row", paddingVertical: 2.5, borderBottomWidth: 0.5, borderBottomColor: BORDER },
   dphCellL:  { flex: 1, textAlign: "left",  color: MUTED, fontSize: 8 },
   dphCell:   { flex: 1, textAlign: "right", color: MUTED, fontSize: 8 },
-  dphHdr:    { fontWeight: 700, color: BLACK },
+  dphHeader: { fontWeight: 700, color: BLACK },
 
-  /* ── Bottom ── */
-  bottomRow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 16, paddingTop: 5, borderTopWidth: 1, borderTopColor: BORDER },
+  /* Bottom */
+  bottomRow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 16, paddingTop: 6, borderTopWidth: 1, borderTopColor: BORDER },
   bottomLabel: { color: MUTED },
 });
 
 /* ── Table header ────────────────────────────────────────────────────────── */
-function TH() {
+function TableHeaderRow() {
   return (
     <View style={s.tableHeader}>
-      <Text style={[{ flex: COL.desc  }, s.thText]}>{"Označení dodávky"}</Text>
-      <Text style={[{ flex: COL.qty   }, s.thText, s.tdCenter]}>{"Množství"}</Text>
-      <Text style={[{ flex: COL.price }, s.thText, s.tdRight]}>{"J.cena"}</Text>
-      <Text style={[{ flex: COL.disc  }, s.thText, s.tdCenter]}>{"Sleva"}</Text>
-      <Text style={[{ flex: COL.total }, s.thText, s.tdRight]}>{"Cena"}</Text>
-      <Text style={[{ flex: COL.vat   }, s.thText, s.tdCenter]}>{"%DPH"}</Text>
-      <Text style={[{ flex: COL.vatAmt}, s.thText, s.tdRight]}>{"DPH"}</Text>
-      <Text style={[{ flex: COL.final }, s.thText, s.tdRight]}>{"Kč Celkem"}</Text>
+      <Text style={[s.colDesc,   s.thText]}>{"Označení dodávky"}</Text>
+      <Text style={[s.colQty,    s.thText]}>{"Množství"}</Text>
+      <Text style={[s.colPrice,  s.thText]}>{"J.cena"}</Text>
+      <Text style={[s.colDisc,   s.thText]}>{"Sleva"}</Text>
+      <Text style={[s.colTotal,  s.thText]}>{"Cena"}</Text>
+      <Text style={[s.colVat,    s.thText]}>{"%DPH"}</Text>
+      <Text style={[s.colVatAmt, s.thText]}>{"DPH"}</Text>
+      <Text style={[s.colFinal,  s.thText]}>{"Kč Celkem"}</Text>
     </View>
   );
 }
@@ -165,52 +172,37 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
   const mm         = String(data.mesicSluzby).padStart(2, "0");
   const descDetail = `pro ${odberatel.nazev} (${mm}/${data.rokSluzby})`;
 
-  // Spacer flex for totals rows (all columns except from certain point onward)
-  const spacerSoucet  = COL.desc + COL.qty + COL.price + COL.disc; // before Cena
-  const spacerCelkem  = COL.desc + COL.qty + COL.price + COL.disc + COL.total + COL.vat + COL.vatAmt; // before final
-
   return (
     <Document title={`Faktura ${data.cislo}`} author="OnVision s.r.o.">
       <Page size="A4" style={s.page}>
 
-        {/* ── HEADER ── */}
+        {/* ── Header ── */}
         <View style={s.header}>
           <Text style={s.headerBrand}>{"ONVISION"}</Text>
           <Text style={s.headerTitle}>{"FAKTURA – DAŇOVÝ DOKLAD č. "}{data.cislo}</Text>
         </View>
 
-        {/* ── INFO BOX ── */}
+        {/* ── Info box ── */}
         <View style={s.infoBox}>
 
-          {/* LEFT: Dodavatel */}
+          {/* Dodavatel */}
           <View style={s.infoLeft}>
-            <Text style={s.labelGray}>{"Dodavatel:"}</Text>
-
-            {/* Logo */}
+            <Text style={s.labelMuted}>{"Dodavatel:"}</Text>
             <View style={s.logoBox}>
-              <Image src={`${origin}/onvision-mark.png`} style={s.logoImage} />
+              <Text style={s.logoText}>{"OnVision"}</Text>
             </View>
-
             <Text style={s.supplierName}>{DODAVATEL.nazev}</Text>
             <Text style={s.supplierLine}>{DODAVATEL.ulice}</Text>
             <Text style={s.supplierLine}>{DODAVATEL.psc} {DODAVATEL.mesto}</Text>
-            <Link src={`https://rejstrik.penize.cz/${DODAVATEL.ico}`} style={s.supplierBlue}>
-              {"IČ: "}{DODAVATEL.ico}
-            </Link>
-            <Text style={{ height: 4 }} />
-            <Link src={`tel:+420${DODAVATEL.telefon.replace(/\s/g, "")}`} style={s.supplierLine}>
-              {"Telefon: "}{DODAVATEL.telefon}
-            </Link>
-            <Link src={`mailto:${DODAVATEL.email}`} style={s.supplierBlue}>
-              {"E-mail: "}{DODAVATEL.email}
-            </Link>
-            <Link src={`https://${DODAVATEL.web}`} style={s.supplierBlue}>
-              {DODAVATEL.web}
-            </Link>
+            <Text style={s.supplierIco}>{"IČ: "}{DODAVATEL.ico}</Text>
+            <Text style={{ height: 5 }} />
+            <Text style={s.supplierLine}>{"Telefon: "}{DODAVATEL.telefon}</Text>
+            <Text style={s.supplierLine}>{"E-mail: "}{DODAVATEL.email}</Text>
+            <Text style={s.supplierLine}>{DODAVATEL.web}</Text>
             <Text style={s.noVat}>{"Firma není plátce DPH"}</Text>
           </View>
 
-          {/* RIGHT: VS + Odběratel */}
+          {/* Odběratel */}
           <View style={s.infoRight}>
             <View style={s.varRow}>
               <Text style={s.varLabel}>{"Variabilní symbol:"}</Text>
@@ -224,12 +216,10 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
               <Text style={s.varLabel}>{"Objednávka č.:"}</Text>
               <Text style={s.varLabel}>{"ze dne:"}</Text>
             </View>
-
-            <View style={s.divH} />
-
-            <Text style={s.labelGray}>{"Odběratel:"}</Text>
-            <Text style={s.icoLine}>{"IČ: "}{odberatel.ico}</Text>
-            {odberatel.dic && <Text style={s.icoLine}>{"DIČ: "}{odberatel.dic}</Text>}
+            <View style={s.dividerH} />
+            <Text style={s.labelMuted}>{"Odběratel:"}</Text>
+            <Text style={s.icoRow}>{"IČ: "}{odberatel.ico}</Text>
+            {odberatel.dic && <Text style={s.icoRow}>{"DIČ: "}{odberatel.dic}</Text>}
             <Text style={{ height: 4 }} />
             <Text style={s.clientName}>{odberatel.nazev}</Text>
             <Text style={s.clientLine}>{odberatel.ulice}</Text>
@@ -239,95 +229,89 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
 
         </View>
 
-        {/* ── BANK ── */}
-        <View style={s.bankBox}>
+        {/* ── Banka ── */}
+        <View style={s.bankSection}>
           <View style={s.bankRow}>
-            <Text style={s.bLabel}>{"Banka:"}</Text>
-            <Text style={[s.bValue, { flex: 1 }]}>{DODAVATEL.banka}</Text>
-            <Text style={[s.bLabel, { width: 50 }]}>{"SWIFT:"}</Text>
-            <Text style={s.bValue}>{DODAVATEL.swift}</Text>
+            <Text style={s.bankLabel}>{"Banka:"}</Text>
+            <Text style={s.bankValue}>{DODAVATEL.banka}</Text>
+            <Text style={[s.bankLabel, { marginLeft: 30 }]}>{"SWIFT:"}</Text>
           </View>
           <View style={s.bankRow}>
-            <Text style={s.bLabel}>{"IBAN:"}</Text>
-            <Text style={s.bValue}>{DODAVATEL.iban}</Text>
+            <Text style={s.bankLabel}>{"IBAN:"}</Text>
+            <Text style={s.bankValue}>{DODAVATEL.iban}</Text>
           </View>
           <View style={[s.bankRow, { marginBottom: 0 }]}>
-            <Text style={s.bLabel}>{"Číslo účtu:"}</Text>
-            <Text style={[s.bValue, { flex: 1 }]}>{DODAVATEL.cisloUctu}</Text>
-            <Text style={[s.bLabel, { width: 70 }]}>{"Kód banky:"}</Text>
-            <Text style={s.bValue}>{DODAVATEL.kodBanky}</Text>
+            <Text style={s.bankLabel}>{"Číslo účtu:"}</Text>
+            <Text style={s.bankValue}>{DODAVATEL.cisloUctu}</Text>
+            <Text style={[s.bankLabel, { marginLeft: 30 }]}>{"Kód banky:"}</Text>
+            <Text style={s.bankValue}>{DODAVATEL.kodBanky}</Text>
           </View>
         </View>
 
-        {/* ── DATES ── */}
-        <View style={s.datesBox}>
-          <View style={s.datesL}>
-            <View style={s.dRow}>
-              <Text style={s.dLabel}>{"Datum vystavení:"}</Text>
-              <Text style={s.dValue}>{data.datumVystaveni}</Text>
+        {/* ── Datumy ── */}
+        <View style={s.datesRow}>
+          <View style={s.datesLeft}>
+            <View style={s.dateRow}>
+              <Text style={s.dateLabel}>{"Datum vystavení:"}</Text>
+              <Text style={s.dateValue}>{data.datumVystaveni}</Text>
             </View>
-            <View style={s.dRow}>
-              <Text style={s.dLabel}>{"Datum splatnosti:"}</Text>
-              <Text style={s.dValue}>{data.datumSplatnosti}</Text>
+            <View style={s.dateRow}>
+              <Text style={s.dateLabel}>{"Datum splatnosti:"}</Text>
+              <Text style={s.dateValue}>{data.datumSplatnosti}</Text>
             </View>
-            <View style={s.dRow}>
-              <Text style={s.dLabelBlue}>{"Datum uskutečnění plnění:"}</Text>
-              <Text style={s.dValue}>{data.datumPlneni}</Text>
+            <View style={s.dateRow}>
+              <Text style={s.dateLabelBlue}>{"Datum uskutečnění plnění:"}</Text>
+              <Text style={s.dateValue}>{data.datumPlneni}</Text>
             </View>
-            <View style={[s.dRow, { marginBottom: 0 }]}>
-              <Text style={s.dLabel}>{"Forma úhrady:"}</Text>
-              <Text style={s.dValue}>{"Příkazem"}</Text>
+            <View style={[s.dateRow, { marginBottom: 0 }]}>
+              <Text style={s.dateLabel}>{"Forma úhrady:"}</Text>
+              <Text style={s.dateValue}>{"Příkazem"}</Text>
             </View>
           </View>
-          <View style={s.datesR}>
-            <Text style={s.labelGray}>{"Konečný příjemce:"}</Text>
+          <View style={s.datesRight}>
+            <Text style={s.labelMuted}>{"Konečný příjemce:"}</Text>
           </View>
         </View>
 
-        {/* ── ITEMS TABLE ── */}
-        <TH />
+        {/* ── Tabulka položek ── */}
+        <TableHeaderRow />
         <View style={s.tableRow}>
-          <View style={{ flex: COL.desc }}>
+          <View style={s.colDesc}>
             <Text style={s.tdBlue}>{"Fakturujeme Vám:"}</Text>
             <Text style={s.tdDesc}>{odberatel.popisSluzby}</Text>
             <Text style={s.tdDesc}>{descDetail}</Text>
           </View>
-          <Text style={[{ flex: COL.qty   }, s.tdCenter]}>{"1"}</Text>
-          <Text style={[{ flex: COL.price }, s.tdRight]}>{castkaFmt}</Text>
-          <Text style={[{ flex: COL.disc  }, s.tdCenter]}>{""}</Text>
-          <Text style={[{ flex: COL.total }, s.tdRight]}>{castkaFmt}</Text>
-          <Text style={[{ flex: COL.vat   }, s.tdCenter]}>{"0%"}</Text>
-          <Text style={[{ flex: COL.vatAmt}, s.tdRight]}>{"0,00"}</Text>
-          <Text style={[{ flex: COL.final }, s.tdRight]}>{castkaFmt}</Text>
+          <Text style={s.colQty}>{"1"}</Text>
+          <Text style={s.colPrice}>{castkaFmt}</Text>
+          <Text style={s.colDisc}>{""}</Text>
+          <Text style={s.colTotal}>{castkaFmt}</Text>
+          <Text style={s.colVat}>{"0%"}</Text>
+          <Text style={s.colVatAmt}>{"0,00"}</Text>
+          <Text style={s.colFinal}>{castkaFmt}</Text>
         </View>
 
-        {/* ── SOUČET POLOŽEK — aligned with table columns ── */}
+        {/* ── Součty ── */}
         <View style={s.totalsRow}>
-          <View style={{ flex: spacerSoucet }}>
-            <Text style={{ textAlign: "right", color: MUTED }}>{"Součet položek"}</Text>
-          </View>
-          <Text style={[{ flex: COL.total  }, s.tdRight, { color: MUTED }]}>{castkaFmt}</Text>
-          <Text style={[{ flex: COL.vat    }, s.tdCenter]}>{""}</Text>
-          <Text style={[{ flex: COL.vatAmt }, s.tdRight, { color: MUTED }]}>{"0,00"}</Text>
-          <Text style={[{ flex: COL.final  }, s.tdRight]}>{castkaFmt}</Text>
+          <View style={s.totalSpacer} />
+          <Text style={s.totalLabelCell}>{"Součet položek"}</Text>
+          <Text style={s.totalValueCell}>{castkaFmt}</Text>
+          <Text style={s.totalVatCell}>{"0,00"}</Text>
+          <Text style={s.totalFinalCell}>{castkaFmt}</Text>
         </View>
-
-        {/* ── CELKEM K ÚHRADĚ — aligned with last column only ── */}
         <View style={[s.totalsRow, { borderTopWidth: 0 }]}>
-          <View style={{ flex: spacerCelkem }}>
-            <Text style={{ textAlign: "right", fontWeight: 700 }}>{"CELKEM K ÚHRADĚ"}</Text>
-          </View>
-          <Text style={[{ flex: COL.final }, s.tdRight, { fontWeight: 700, fontSize: 10 }]}>
+          <View style={s.totalSpacer} />
+          <Text style={s.grandLabelCell}>{"CELKEM K ÚHRADĚ"}</Text>
+          <Text style={{ width: 170, textAlign: "right", fontWeight: 700, fontSize: 10 }}>
             {castkaFmt}
           </Text>
         </View>
 
-        {/* ── VYSTAVIL ── */}
+        {/* ── Vystavil ── */}
         <View style={s.issuedRow}>
-          <Text style={s.labelGray}>{"Vystavil:"}</Text>
+          <Text style={s.labelMuted}>{"Vystavil:"}</Text>
         </View>
 
-        {/* ── POZNÁMKY ── */}
+        {/* ── Poznámky ── */}
         <View style={s.notesBox}>
           <Text style={s.noteText}>
             {"*Děkujeme za úhradu faktury v datu splatnosti. Pomáhá nám to udržovat stabilní cashflow a plně se soustředit na naši práci pro Vás."}
@@ -337,14 +321,14 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           </Text>
         </View>
 
-        {/* ── DPH REKAPITULACE ── */}
+        {/* ── DPH rekapitulace ── */}
         <Text style={s.dphTitle}>{"Rekapitulace DPH v Kč:"}</Text>
         <View style={s.dphWrap}>
           <View style={s.dphRow}>
-            <Text style={[s.dphCellL, s.dphHdr]}>{"Základ v Kč"}</Text>
-            <Text style={[s.dphCell,  s.dphHdr]}>{"Sazba"}</Text>
-            <Text style={[s.dphCell,  s.dphHdr]}>{"DPH v Kč"}</Text>
-            <Text style={[s.dphCell,  s.dphHdr]}>{"Celkem s DPH v Kč"}</Text>
+            <Text style={[s.dphCellL, s.dphHeader]}>{"Základ v Kč"}</Text>
+            <Text style={[s.dphCell,  s.dphHeader]}>{"Sazba"}</Text>
+            <Text style={[s.dphCell,  s.dphHeader]}>{"DPH v Kč"}</Text>
+            <Text style={[s.dphCell,  s.dphHeader]}>{"Celkem s DPH v Kč"}</Text>
           </View>
           <View style={s.dphRow}>
             <Text style={s.dphCellL}>{castkaFmt}</Text>
@@ -362,7 +346,7 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
           ))}
         </View>
 
-        {/* ── PŘEVZAL / RAZÍTKO ── */}
+        {/* ── Dno ── */}
         <View style={s.bottomRow}>
           <Text style={s.bottomLabel}>{"Převzal:"}</Text>
           <Text style={s.bottomLabel}>{"Razítko:"}</Text>
