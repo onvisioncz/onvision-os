@@ -4,23 +4,25 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileText, Download, Plus, X, ChevronDown,
+  FileText, Download, X, ChevronDown,
   CheckCircle2, AlertCircle, Edit2,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import {
-  buildInvoice, buildCisloFaktury, mesicNominativ,
+  buildInvoice, buildCisloFaktury,
   type InvoiceClient, type InvoiceData,
 } from "@/lib/invoice";
 
-/* ── Dynamic import — react-pdf is client-only and large ─────────────────── */
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink),
-  { ssr: false, loading: () => null }
-);
-const InvoicePDFComponent = dynamic(
-  () => import("@/components/InvoicePDF").then((m) => m.InvoicePDF),
-  { ssr: false }
+/* ── Dynamic import — entire PDF stack is client-only ────────────────────── */
+const InvoiceDownloadButton = dynamic(
+  () => import("@/components/InvoiceDownloadButton").then((m) => m.InvoiceDownloadButton),
+  { ssr: false, loading: () => (
+    <button disabled className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
+      style={{ background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }}>
+      <Download className="w-3.5 h-3.5" />
+      Načítám...
+    </button>
+  )}
 );
 
 /* ── Retainer client shape (minimal — read from monthly clients) ─────────── */
@@ -364,28 +366,8 @@ function IssueModal({
             Zrušit
           </button>
 
-          {invoiceData && pdfReady && InvoicePDFComponent ? (
-            <PDFDownloadLink
-              document={<InvoicePDFComponent data={invoiceData} />}
-              fileName={fileName}
-            >
-              {({ loading }) => (
-                <motion.button
-                  disabled={loading}
-                  whileHover={!loading ? { filter: "brightness(1.08)" } : {}}
-                  whileTap={{ scale: 0.96 }}
-                  className="btn-tactile flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold disabled:opacity-60"
-                  style={{
-                    background: loading ? "oklch(0.45 0.005 222)" : "oklch(0.62 0.27 265)",
-                    color: "oklch(0.97 0.004 265)",
-                    fontFamily: "var(--font-outfit)",
-                  }}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  {loading ? "Generuji PDF..." : `Stáhnout PDF — ${mesicNominativ(mesic)} ${rok}`}
-                </motion.button>
-              )}
-            </PDFDownloadLink>
+          {invoiceData ? (
+            <InvoiceDownloadButton data={invoiceData} fileName={fileName} />
           ) : (
             <button disabled
               className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-[13px] font-semibold opacity-40 cursor-not-allowed"
