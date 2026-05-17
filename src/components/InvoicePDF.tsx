@@ -175,7 +175,7 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
   const { odberatel } = data;
   const castkaFmt  = fmtKc(odberatel.castka);
   const mm         = String(data.mesicSluzby).padStart(2, "0");
-  const descDetail = `pro ${odberatel.nazev} (${mm}/${data.rokSluzby})`;
+  const descDetail = data.popisDetail ?? `pro ${odberatel.nazev} (${mm}/${data.rokSluzby})`;
 
   return (
     <Document title={`Faktura ${data.cislo}`} author="OnVision s.r.o.">

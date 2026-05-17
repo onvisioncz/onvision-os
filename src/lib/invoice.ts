@@ -22,6 +22,7 @@ export interface InvoiceData {
   odberatel: InvoiceClient;
   mesicSluzby: number;   // 4
   rokSluzby: number;     // 2026
+  popisDetail: string;   // editable second description line, e.g. "pro IMTOS (04/2026)"
   qrDataUrl?: string;    // pre-generated QR Platba data URL
 }
 
@@ -121,6 +122,8 @@ export function buildInvoice(
 
   const cislo = buildCisloFaktury(rokSluzby, client.fakturaRada, mesicSluzby);
 
+  const mm = String(mesicSluzby).padStart(2, "0");
+
   return {
     cislo,
     variabilniSymbol: cislo,
@@ -130,6 +133,7 @@ export function buildInvoice(
     odberatel: client,
     mesicSluzby,
     rokSluzby,
+    popisDetail: `pro ${client.nazev} (${mm}/${rokSluzby})`,
   };
 }
 

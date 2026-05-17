@@ -207,6 +207,7 @@ function IssueModal({
   const [zeme, setZeme] = useState(known?.zeme ?? "Česká republika");
   const [pdfReady, setPdfReady] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
+  const [popisDetail, setPopisDetail] = useState<string | null>(null); // null = auto
 
   useEffect(() => {
     const t = setTimeout(() => setPdfReady(true), 400);
@@ -239,8 +240,12 @@ function IssueModal({
 
   const invoiceData = useMemo<InvoiceData | null>(() => {
     if (!baseInvoiceData) return null;
-    return { ...baseInvoiceData, qrDataUrl };
-  }, [baseInvoiceData, qrDataUrl]);
+    return {
+      ...baseInvoiceData,
+      popisDetail: popisDetail ?? baseInvoiceData.popisDetail,
+      qrDataUrl,
+    };
+  }, [baseInvoiceData, popisDetail, qrDataUrl]);
 
   const fileName = invoiceData
     ? `${invoiceData.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
@@ -340,6 +345,15 @@ function IssueModal({
               onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
               onBlur={e => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")}
               placeholder="Kreativní produkce a digitální strategie obsahu..." />
+          </Field>
+
+          {/* Detail line (auto-generated but editable) */}
+          <Field label="Detail (2. řádek popisu)">
+            <FInput
+              value={popisDetail ?? (baseInvoiceData?.popisDetail ?? "")}
+              onChange={v => { setPopisDetail(v); setPdfReady(false); }}
+              placeholder={baseInvoiceData?.popisDetail ?? `pro ${nazev || "klient"} (MM/RRRR)`}
+            />
           </Field>
 
           {/* Client legal info */}
