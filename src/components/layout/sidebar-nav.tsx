@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
-  Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut,
+  Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +19,7 @@ const nav = [
   { label: "Jednorázovky",    short: "Projekt.",   href: "/projects/oneoffs", icon: FolderKanban },
   { label: "Měsíční klienti", short: "Klienti",    href: "/projects/monthly", icon: Users },
   { label: "Finance",         short: "Finance",    href: "/finance",          icon: Receipt },
+  { label: "Fakturace",       short: "Faktury",    href: "/fakturace",        icon: FileText },
   { label: "Investice",       short: "Investice",  href: "/investice",        icon: PackageOpen },
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
