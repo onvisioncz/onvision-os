@@ -193,8 +193,10 @@ function InvoiceCard({
   client: RetainerClient;
   onIssue: (client: RetainerClient) => void;
 }) {
-  const known = CLIENT_INVOICE_DATA[client.name.toUpperCase().split(" ")[0]] ??
-                CLIENT_INVOICE_DATA[client.name.split(" ")[0]];
+  const knownKey = Object.keys(CLIENT_INVOICE_DATA).find(
+    k => client.name.toUpperCase().includes(k)
+  );
+  const known = knownKey ? CLIENT_INVOICE_DATA[knownKey] : undefined;
   const ready = !!(known?.fakturaRada !== undefined && known?.ico);
 
   return (
