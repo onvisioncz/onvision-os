@@ -48,7 +48,13 @@ interface RetainerClient {
 }
 
 /* ── Known client data ───────────────────────────────────────────────────── */
-const CLIENT_INVOICE_DATA: Record<string, Partial<InvoiceClient>> = {
+// popisDetailSablona: optional template for the 2nd description line.
+// Use {MM} for zero-padded month and {RRRR} for 4-digit year of the service period.
+// Falls back to "pro {nazev} ({MM}/{RRRR})" if omitted.
+interface ClientInvoiceEntry extends Partial<InvoiceClient> {
+  popisDetailSablona?: string;
+}
+const CLIENT_INVOICE_DATA: Record<string, ClientInvoiceEntry> = {
   "IMTOS": {
     fakturaRada: 14,
     nazev: "IMTOS, spol. s r.o.",
@@ -60,8 +66,16 @@ const CLIENT_INVOICE_DATA: Record<string, Partial<InvoiceClient>> = {
     dic: "CZ46967079",
     castka: 35000,
     popisSluzby: "Kreativní produkce a digitální strategie obsahu: LinkedIn, Facebook & Instagram",
+    popisDetailSablona: "pro IMTOS, spol. s r.o. ({MM}/{RRRR})",
   },
 };
+
+/* ── Resolve detail line from template + month/year ─────────────────────── */
+function resolvePopisDetail(sablona: string | undefined, nazev: string, mesic: number, rok: number): string {
+  const mm = String(mesic).padStart(2, "0");
+  const template = sablona ?? `pro ${nazev} ({MM}/{RRRR})`;
+  return template.replace("{MM}", mm).replace("{RRRR}", String(rok));
+}
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 function fKc(n: number) { return n.toLocaleString("cs-CZ") + " Kč"; }
@@ -207,7 +221,17 @@ function IssueModal({
   const [zeme, setZeme] = useState(known?.zeme ?? "Česká republika");
   const [pdfReady, setPdfReady] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
-  const [popisDetail, setPopisDetail] = useState<string | null>(null); // null = auto
+  // popisDetail: null = auto (resolved from template + month/year), string = manually overridden
+  const [popisDetail, setPopisDetail] = useState<string | null>(null);
+
+  // Auto-resolve detail from template whenever month/year changes (resets manual override)
+  const autoDetail = useMemo(
+    () => resolvePopisDetail(known?.popisDetailSablona, nazev, mesic, rok),
+    [known?.popisDetailSablona, nazev, mesic, rok],
+  );
+  // Reset manual override when month or year changes so auto-value updates
+  const prevMesicRok = `${mesic}/${rok}`;
+  useEffect(() => { setPopisDetail(null); }, [prevMesicRok]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const t = setTimeout(() => setPdfReady(true), 400);
@@ -242,10 +266,10 @@ function IssueModal({
     if (!baseInvoiceData) return null;
     return {
       ...baseInvoiceData,
-      popisDetail: popisDetail ?? baseInvoiceData.popisDetail,
+      popisDetail: popisDetail ?? autoDetail,
       qrDataUrl,
     };
-  }, [baseInvoiceData, popisDetail, qrDataUrl]);
+  }, [baseInvoiceData, popisDetail, autoDetail, qrDataUrl]);
 
   const fileName = invoiceData
     ? `${invoiceData.cislo}_${nazev.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
@@ -347,12 +371,12 @@ function IssueModal({
               placeholder="Kreativní produkce a digitální strategie obsahu..." />
           </Field>
 
-          {/* Detail line (auto-generated but editable) */}
+          {/* Detail line — auto from template, editable */}
           <Field label="Detail (2. řádek popisu)">
             <FInput
-              value={popisDetail ?? (baseInvoiceData?.popisDetail ?? "")}
+              value={popisDetail ?? autoDetail}
               onChange={v => { setPopisDetail(v); setPdfReady(false); }}
-              placeholder={baseInvoiceData?.popisDetail ?? `pro ${nazev || "klient"} (MM/RRRR)`}
+              placeholder={autoDetail}
             />
           </Field>
 
