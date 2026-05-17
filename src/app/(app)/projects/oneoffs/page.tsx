@@ -7,6 +7,19 @@ import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
   ChevronLeft, ChevronRight, User, Calendar, Banknote, Tag,
 } from "lucide-react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 type ColumnId =
@@ -219,6 +232,25 @@ export default function OneoffsPage() {
   const [selected, setSelected] = useState<Project | null>(null);
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState<Project | null>(null);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  function handleDragStart(e: DragStartEvent) {
+    setDraggingId(e.active.id as number);
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    setDraggingId(null);
+    const { active, over } = e;
+    if (!over) return;
+    const projectId = active.id as number;
+    const newCol = over.id as ColumnId;
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, column: newCol } : p));
+  }
 
   /* ── Filtered projects ──── */
   const visible = useMemo(() => {
@@ -400,75 +432,41 @@ export default function OneoffsPage() {
 
       {/* ── Kanban board ────────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-x-auto">
-        <div
-          className="flex gap-3 px-6 pb-6 h-full"
-          style={{ minWidth: `${COLUMNS.length * 260}px` }}
-        >
-          {COLUMNS.map((col) => {
-            const cards = visible.filter((p) => p.column === col.id);
-            const colTotal = cards.reduce((s, p) => s + p.castka, 0);
-            return (
-              <div
-                key={col.id}
-                className="flex flex-col rounded-xl"
-                style={{
-                  width: 240,
-                  minWidth: 240,
-                  background: col.tint,
-                  border: `1px solid ${col.border}`,
-                }}
-              >
-                {/* Column header */}
-                <div className="flex items-center justify-between px-3 py-2.5 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold" style={{ color: "oklch(0.88 0.005 222)" }}>
-                      {col.label}
-                    </span>
-                    <span
-                      className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                      style={{ background: col.border, color: "oklch(0.88 0.005 222)" }}
-                    >
-                      {cards.length}
-                    </span>
-                  </div>
-                  {colTotal > 0 && (
-                    <span className="text-xs font-semibold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.55 0.005 222)" }}>
-                      {(colTotal / 1000).toFixed(0)}k
-                    </span>
-                  )}
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div
+            className="flex gap-3 px-6 pb-6 h-full"
+            style={{ minWidth: `${COLUMNS.length * 260}px` }}
+          >
+            {COLUMNS.map((col) => {
+              const cards = visible.filter((p) => p.column === col.id);
+              const colTotal = cards.reduce((s, p) => s + p.castka, 0);
+              return (
+                <DroppableColumn
+                  key={col.id}
+                  col={col}
+                  cards={cards}
+                  colTotal={colTotal}
+                  draggingId={draggingId}
+                  onOpen={openModal}
+                  onMove={moveProject}
+                  onAdd={addToColumn}
+                />
+              );
+            })}
+          </div>
+
+          <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+            {draggingId != null && (() => {
+              const p = projects.find(pr => pr.id === draggingId);
+              if (!p) return null;
+              return (
+                <div className="rotate-2 opacity-95 pointer-events-none" style={{ width: 240 }}>
+                  <KanbanCardInner project={p} />
                 </div>
-
-                {/* Cards */}
-                <motion.div
-                  className="flex-1 overflow-y-auto flex flex-col gap-2 px-2 pb-2"
-                  variants={stagger.container}
-                  initial="hidden"
-                  animate="show"
-                >
-                  {cards.map((p) => (
-                    <KanbanCard
-                      key={p.id}
-                      project={p}
-                      colIdx={COLUMN_IDS.indexOf(p.column)}
-                      totalCols={COLUMN_IDS.length}
-                      onOpen={() => openModal(p)}
-                      onMove={(dir) => moveProject(p.id, dir)}
-                    />
-                  ))}
-                </motion.div>
-
-                {/* Add button */}
-                <button
-                  onClick={() => addToColumn(col.id)}
-                  className="flex items-center gap-1 mx-2 mb-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70 shrink-0"
-                  style={{ color: "oklch(0.45 0.005 222)", border: "1px dashed oklch(1 0 0 / 0.1)" }}
-                >
-                  <Plus className="w-3.5 h-3.5" /> Přidat
-                </button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })()}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       {/* ── Detail modal ────────────────────────────────────────────────────── */}
@@ -488,6 +486,160 @@ export default function OneoffsPage() {
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── Droppable column ────────────────────────────────────────────────────────── */
+function DroppableColumn({
+  col, cards, colTotal, draggingId, onOpen, onMove, onAdd,
+}: {
+  col: typeof COLUMNS[0];
+  cards: Project[];
+  colTotal: number;
+  draggingId: number | null;
+  onOpen: (p: Project) => void;
+  onMove: (id: number, dir: -1 | 1) => void;
+  onAdd: (col: ColumnId) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: col.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="flex flex-col rounded-xl transition-colors"
+      style={{
+        width: 240,
+        minWidth: 240,
+        background: isOver ? col.tint.replace("0.08", "0.18") : col.tint,
+        border: `1px solid ${isOver ? col.border.replace("0.22", "0.5") : col.border}`,
+        boxShadow: isOver ? `0 0 0 2px ${col.border}` : "none",
+        transition: "box-shadow 0.15s, border-color 0.15s, background 0.15s",
+      }}
+    >
+      {/* Column header */}
+      <div className="flex items-center justify-between px-3 py-2.5 shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold" style={{ color: "oklch(0.88 0.005 222)" }}>
+            {col.label}
+          </span>
+          <span
+            className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+            style={{ background: col.border, color: "oklch(0.88 0.005 222)" }}
+          >
+            {cards.length}
+          </span>
+        </div>
+        {colTotal > 0 && (
+          <span className="text-xs font-semibold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.55 0.005 222)" }}>
+            {(colTotal / 1000).toFixed(0)}k
+          </span>
+        )}
+      </div>
+
+      {/* Cards */}
+      <motion.div
+        className="flex-1 overflow-y-auto flex flex-col gap-2 px-2 pb-2"
+        variants={stagger.container}
+        initial="hidden"
+        animate="show"
+      >
+        {cards.map((p) => (
+          <DraggableCard
+            key={p.id}
+            project={p}
+            colIdx={COLUMN_IDS.indexOf(p.column)}
+            totalCols={COLUMN_IDS.length}
+            isDragging={draggingId === p.id}
+            onOpen={() => onOpen(p)}
+            onMove={(dir) => onMove(p.id, dir)}
+          />
+        ))}
+      </motion.div>
+
+      {/* Add button */}
+      <button
+        onClick={() => onAdd(col.id)}
+        className="flex items-center gap-1 mx-2 mb-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70 shrink-0"
+        style={{ color: "oklch(0.45 0.005 222)", border: "1px dashed oklch(1 0 0 / 0.1)" }}
+      >
+        <Plus className="w-3.5 h-3.5" /> Přidat
+      </button>
+    </div>
+  );
+}
+
+/* ── Draggable card wrapper ──────────────────────────────────────────────────── */
+function DraggableCard({
+  project, colIdx, totalCols, isDragging, onOpen, onMove,
+}: {
+  project: Project;
+  colIdx: number;
+  totalCols: number;
+  isDragging: boolean;
+  onOpen: () => void;
+  onMove: (dir: -1 | 1) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: project.id });
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      variants={stagger.item}
+      style={{ transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.3 : 1, touchAction: "none" }}
+      {...listeners}
+      {...attributes}
+    >
+      <KanbanCard
+        project={project}
+        colIdx={colIdx}
+        totalCols={totalCols}
+        onOpen={onOpen}
+        onMove={onMove}
+      />
+    </motion.div>
+  );
+}
+
+/* ── Card inner (shared between list and DragOverlay) ────────────────────────── */
+function KanbanCardInner({ project: p }: { project: Project }) {
+  const fmt = fmtStyleByTyp(p.typ);
+  const pri = prioritaStyle(p.priorita);
+  const done = p.checklist.filter((c) => c.done).length;
+  const total = p.checklist.length;
+
+  return (
+    <div
+      className="rounded-lg p-3 select-none"
+      style={{ background: "oklch(0.12 0.008 222)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+    >
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="inline-flex px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: pri.color, background: pri.bg, border: `1px solid ${pri.border}` }}>
+          {p.priorita}
+        </span>
+        <span className="inline-flex px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: fmt.color, background: fmt.bg, border: `1px solid ${fmt.border}` }}>
+          {p.typ}
+        </span>
+      </div>
+      <div className="mb-1.5">
+        <div className="text-sm font-semibold leading-snug" style={{ color: "oklch(0.92 0.005 222)" }}>{p.title}</div>
+        <div className="text-xs mt-0.5" style={{ color: "oklch(0.55 0.005 222)" }}>{p.klient}</div>
+      </div>
+      <div className="flex items-center gap-3 mb-2">
+        {p.datum && <span className="flex items-center gap-1 text-[11px]" style={{ color: "oklch(0.5 0.005 222)" }}><Calendar className="w-3 h-3" /> {p.datum}</span>}
+        {p.castka > 0 && <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.67 0.155 155)" }}><Banknote className="w-3 h-3" /> {(p.castka / 1000).toFixed(0)}k</span>}
+      </div>
+      {total > 0 && (
+        <div className="mb-2">
+          <span className="text-[10px]" style={{ color: "oklch(0.45 0.005 222)" }}>{done}/{total}</span>
+          <div className="h-1 rounded-full overflow-hidden mt-1" style={{ background: "oklch(1 0 0 / 0.07)" }}>
+            <div className="h-full rounded-full" style={{ width: `${(done / total) * 100}%`, background: "oklch(0.67 0.155 155)" }} />
+          </div>
+        </div>
+      )}
+      <div className="flex -space-x-1">
+        {p.clenove.map((c) => <Avatar key={c} name={c} />)}
+      </div>
     </div>
   );
 }
