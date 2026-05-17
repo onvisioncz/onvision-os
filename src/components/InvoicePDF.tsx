@@ -150,7 +150,7 @@ const s = StyleSheet.create({
   dphHeader: { fontWeight: 700, color: BLACK },
 
   /* Bottom */
-  bottomRow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 16, paddingTop: 6, borderTopWidth: 1, borderTopColor: BORDER },
+  bottomRow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: BORDER },
   bottomLabel: { color: MUTED },
 });
 
