@@ -28,6 +28,8 @@ interface SmmPost {
   note: string;
   aiBrief?: string;      // user's brief/instructions for AI
   aiCaption?: string;    // AI generated alternative
+  imageThumb?: string;   // compressed base64 preview (4:5)
+  mediaUrl?: string;     // link to actual media (Drive, video, etc.)
   createdAt: string;
 }
 
@@ -144,6 +146,45 @@ const SMM_CLIENTS = ["TOFFI", "BEHEJ BRNO", "SENIMED", "EASTGATE BRNO", "POWERPL
 
 const WEEK_DAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
+/* ── Image compression (4:5 crop, max 480px wide) ────────────────────────*/
+function compressSmmImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const TARGET_W = 480;
+      const RATIO = 4 / 5; // Instagram 4:5
+      const TARGET_H = Math.round(TARGET_W / RATIO);
+
+      // Center-crop to 4:5
+      const srcRatio = img.width / img.height;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (srcRatio > RATIO) {
+        sw = Math.round(img.height * RATIO);
+        sx = Math.round((img.width - sw) / 2);
+      } else {
+        sh = Math.round(img.width / RATIO);
+        sy = Math.round((img.height - sh) / 2);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.min(TARGET_W, sw);
+      canvas.height = Math.min(TARGET_H, sh);
+      canvas.getContext("2d")!.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (blob) {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        } else reject(new Error("compression failed"));
+      }, "image/webp", 0.75);
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 /* ── Helpers ─────────────────────────────────────────────────────────────*/
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
@@ -188,6 +229,9 @@ function PostChip({ post, onClick }: { post: SmmPost; onClick: () => void }) {
     >
       <span>{FORMAT_EMOJI[post.format]}</span>
       <span className="truncate">{post.klient}</span>
+      {post.imageThumb && (
+        <span className="ml-auto shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.72 0.19 155)" }} title="Má náhled" />
+      )}
     </motion.button>
   );
 }
@@ -237,6 +281,8 @@ function PostModal({
   const [aiError, setAiError] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [imgLoading, setImgLoading] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
 
   async function handleAI() {
     setAiLoading(true);
@@ -256,6 +302,18 @@ function PostModal({
       setForm(p => ({ ...p, tags: [...p.tags, t] }));
     }
     setTagInput("");
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImgLoading(true);
+    try {
+      const thumb = await compressSmmImage(file);
+      setForm(p => ({ ...p, imageThumb: thumb }));
+    } catch {}
+    setImgLoading(false);
+    e.target.value = "";
   }
 
   return (
@@ -466,6 +524,97 @@ function PostModal({
               className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
               style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
             />
+          </div>
+
+          {/* Media — thumbnail + link */}
+          <div className="space-y-3 pt-1">
+            <div className="h-px" style={{ background: "oklch(1 0 0 / 0.07)" }} />
+            <label className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: "oklch(0.42 0.005 222)" }}>
+              Médium
+            </label>
+
+            <div className="flex gap-3 items-start">
+              {/* Thumbnail upload */}
+              <div className="shrink-0">
+                <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => imgRef.current?.click()}
+                  disabled={imgLoading}
+                  className="relative flex items-center justify-center rounded-[8px] overflow-hidden"
+                  style={{
+                    width: 72,
+                    height: 90, // 4:5 ratio
+                    background: form.imageThumb ? "transparent" : "oklch(1 0 0 / 0.05)",
+                    border: form.imageThumb ? "none" : "2px dashed oklch(1 0 0 / 0.15)",
+                  }}
+                >
+                  {form.imageThumb ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.imageThumb}
+                        alt="náhled"
+                        className="w-full h-full object-cover rounded-[8px]"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-[8px]"
+                        style={{ background: "oklch(0 0 0 / 0.5)" }}>
+                        <span className="text-[9px] font-semibold text-white">Změnit</span>
+                      </div>
+                    </>
+                  ) : imgLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: "oklch(0.42 0.005 222)" }} />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-[18px]">📷</span>
+                      <span className="text-[8px] font-medium text-center leading-tight px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
+                        Náhled<br />4:5
+                      </span>
+                    </div>
+                  )}
+                </motion.button>
+                {form.imageThumb && (
+                  <button
+                    onClick={() => setForm(p => ({ ...p, imageThumb: undefined }))}
+                    className="w-full text-center text-[9px] mt-1"
+                    style={{ color: "oklch(0.42 0.005 222)" }}
+                  >
+                    Odstranit
+                  </button>
+                )}
+              </div>
+
+              {/* Media URL */}
+              <div className="flex-1 space-y-2">
+                <div className="space-y-1">
+                  <label className="text-[10px]" style={{ color: "oklch(0.38 0.005 222)" }}>
+                    Odkaz na médium
+                  </label>
+                  <input
+                    value={form.mediaUrl ?? ""}
+                    onChange={e => setForm(p => ({ ...p, mediaUrl: e.target.value }))}
+                    placeholder="https://drive.google.com/..."
+                    className="w-full px-3 py-2 rounded-[7px] text-[11px] outline-none"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                  />
+                </div>
+                {form.mediaUrl && (
+                  <a
+                    href={form.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium"
+                    style={{ color: "oklch(0.62 0.27 265)" }}
+                  >
+                    <span>Otevrit</span>
+                    <span style={{ fontSize: 10 }}>↗</span>
+                  </a>
+                )}
+                <p className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>
+                  {form.format === "reel" ? "Video na Drive/Dropbox — nahraj nahledovou fotku vlevo" : "Fotka na Drive — nebo vloz odkaz pro stahovani"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
