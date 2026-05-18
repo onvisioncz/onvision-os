@@ -535,9 +535,11 @@ function WorkspaceItem({
       whileTap={{ scale: 0.97 }}
       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-left transition-colors"
       style={active ? {
+        position: "relative",
         background: `${ws.color}14`,
         border: `1px solid ${ws.color}30`,
       } : {
+        position: "relative",
         border: "1px solid transparent",
       }}
     >
@@ -573,7 +575,8 @@ function WorkspaceItem({
 
       {active && (
         <motion.div
-          layoutId="ws-active-bar"
+          initial={{ opacity: 0, scaleY: 0.5 }}
+          animate={{ opacity: 1, scaleY: 1 }}
           className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
           style={{ background: ws.color, boxShadow: `0 0 8px ${ws.color}` }}
         />
