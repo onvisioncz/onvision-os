@@ -644,11 +644,21 @@ export default function OutputsPage() {
   const [filterProjekt, setFilterProjekt] = useState<string>("Vše");
   const [showFilter, setShowFilter] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [quickText, setQuickText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [quickText]);
 
   function sendMessage(partial: Omit<OutputMessage, "id" | "createdAt" | "readBy">) {
     if (!email) return;
@@ -658,6 +668,23 @@ export default function OutputsPage() {
       createdAt: new Date().toISOString(),
       readBy: [email],
     }]);
+  }
+
+  function sendQuick() {
+    if (!quickText.trim() || !email || !user) return;
+    sendMessage({
+      authorEmail: email,
+      authorName: user.displayName,
+      authorInitials: user.initials,
+      authorColor: user.color,
+      type: "zprava",
+      nazev: "",
+      popis: quickText.trim(),
+    });
+    setQuickText("");
+    setTimeout(() => {
+      textareaRef.current?.style && (textareaRef.current.style.height = "auto");
+    }, 0);
   }
 
   function markRead(id: string) {
@@ -700,62 +727,45 @@ export default function OutputsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Filter */}
-          <div className="relative">
-            <button
-              onClick={() => setShowFilter(p => !p)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] text-[12px] font-medium"
-              style={{
-                background: filterProjekt !== "Vše" ? "oklch(0.62 0.27 265 / 0.12)" : "oklch(1 0 0 / 0.05)",
-                border: filterProjekt !== "Vše" ? "1px solid oklch(0.62 0.27 265 / 0.25)" : "1px solid oklch(1 0 0 / 0.1)",
-                color: filterProjekt !== "Vše" ? "oklch(0.78 0.18 265)" : "oklch(0.55 0.005 222)",
-              }}
-            >
-              <Filter className="w-3 h-3" />
-              {filterProjekt}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            <AnimatePresence>
-              {showFilter && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.96 }}
-                  transition={{ duration: 0.12 }}
-                  className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[160px]"
-                  style={{
-                    background: "oklch(0.14 0.008 222)",
-                    border: "1px solid oklch(1 0 0 / 0.12)",
-                    boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
-                  }}
-                >
-                  {allProjects.map(p => (
-                    <button key={p} onClick={() => { setFilterProjekt(p); setShowFilter(false); }}
-                      className="w-full text-left px-4 py-2 text-[12px] font-medium hover:bg-white/5"
-                      style={{ color: filterProjekt === p ? "oklch(0.78 0.18 265)" : "oklch(0.62 0.005 222)" }}>
-                      {p}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Add button */}
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setComposerOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] text-[12px] font-semibold"
+        {/* Filter */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilter(p => !p)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] text-[12px] font-medium"
             style={{
-              background: "oklch(0.62 0.27 265 / 0.15)",
-              color: "oklch(0.78 0.18 265)",
-              border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+              background: filterProjekt !== "Vše" ? "oklch(0.62 0.27 265 / 0.12)" : "oklch(1 0 0 / 0.05)",
+              border: filterProjekt !== "Vše" ? "1px solid oklch(0.62 0.27 265 / 0.25)" : "1px solid oklch(1 0 0 / 0.1)",
+              color: filterProjekt !== "Vše" ? "oklch(0.78 0.18 265)" : "oklch(0.55 0.005 222)",
             }}
           >
-            <Plus className="w-3.5 h-3.5" />
-            Přidat výstup
-          </motion.button>
+            <Filter className="w-3 h-3" />
+            {filterProjekt}
+            <ChevronDown className="w-3 h-3" />
+          </button>
+          <AnimatePresence>
+            {showFilter && (
+              <motion.div
+                initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                transition={{ duration: 0.12 }}
+                className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[160px]"
+                style={{
+                  background: "oklch(0.14 0.008 222)",
+                  border: "1px solid oklch(1 0 0 / 0.12)",
+                  boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
+                }}
+              >
+                {allProjects.map(p => (
+                  <button key={p} onClick={() => { setFilterProjekt(p); setShowFilter(false); }}
+                    className="w-full text-left px-4 py-2 text-[12px] font-medium hover:bg-white/5"
+                    style={{ color: filterProjekt === p ? "oklch(0.78 0.18 265)" : "oklch(0.62 0.005 222)" }}>
+                    {p}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -791,6 +801,66 @@ export default function OutputsPage() {
           />
         ))}
         <div ref={bottomRef} />
+      </div>
+
+      {/* Bottom chat bar */}
+      <div
+        className="shrink-0 px-4 py-3 flex items-end gap-3"
+        style={{ borderTop: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+      >
+        {/* Composer trigger — structured outputs */}
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onClick={() => setComposerOpen(true)}
+          title="Přidat výstup (grafika, video, foto, dokument...)"
+          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center mb-0.5"
+          style={{
+            background: "oklch(0.62 0.27 265 / 0.14)",
+            border: "1px solid oklch(0.62 0.27 265 / 0.28)",
+            color: "oklch(0.72 0.18 265)",
+          }}
+        >
+          <Plus className="w-4 h-4" />
+        </motion.button>
+
+        {/* Text input */}
+        <div
+          className="flex-1 flex items-end gap-2 px-3 py-2 rounded-[14px]"
+          style={{
+            background: "oklch(1 0 0 / 0.05)",
+            border: "1px solid oklch(1 0 0 / 0.1)",
+          }}
+        >
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={quickText}
+            onChange={e => setQuickText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendQuick(); }
+            }}
+            placeholder="Napiš zprávu pro tým..."
+            className="flex-1 bg-transparent outline-none resize-none text-[13px] leading-relaxed"
+            style={{
+              color: "oklch(0.88 0.005 265)",
+              minHeight: "22px",
+              maxHeight: "120px",
+            }}
+          />
+
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={sendQuick}
+            disabled={!quickText.trim()}
+            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center mb-0.5 transition-all"
+            style={{
+              background: quickText.trim() ? "oklch(0.62 0.27 265)" : "oklch(0.62 0.27 265 / 0.15)",
+              color: quickText.trim() ? "oklch(0.97 0.004 265)" : "oklch(0.42 0.005 222)",
+            }}
+          >
+            <Send className="w-3.5 h-3.5" />
+          </motion.button>
+        </div>
       </div>
 
       {/* Composer modal */}
