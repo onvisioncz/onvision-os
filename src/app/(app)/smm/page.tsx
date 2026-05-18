@@ -26,6 +26,7 @@ interface SmmPost {
   autorName: string;
   tags: string[];
   note: string;
+  aiBrief?: string;      // user's brief/instructions for AI
   aiCaption?: string;    // AI generated alternative
   createdAt: string;
 }
@@ -192,7 +193,7 @@ function PostChip({ post, onClick }: { post: SmmPost; onClick: () => void }) {
 }
 
 /* ── AI Caption Generator ────────────────────────────────────────────── */
-async function generateCaption(klient: string, format: PostFormat, tags: string[], note: string): Promise<string> {
+async function generateCaption(klient: string, format: PostFormat, tags: string[], note: string, brief: string): Promise<string> {
   try {
     const res = await fetch("/api/ai", {
       method: "POST",
@@ -204,7 +205,8 @@ Piš přímo caption, bez uvozovek ani vysvětlení.`,
         userPrompt: `Klient: ${klient}
 Formát: ${FORMAT_LABELS[format]}
 Témata/tagy: ${tags.join(", ") || "nespecifikováno"}
-Poznámka: ${note || "—"}
+${brief ? `Zadání od týmu: ${brief}` : ""}
+${note ? `Interní poznámka: ${note}` : ""}
 
 Napiš jeden silný caption pro Instagram post.`,
         maxTokens: 300,
@@ -240,7 +242,7 @@ function PostModal({
     setAiLoading(true);
     setAiError("");
     try {
-      const caption = await generateCaption(form.klient, form.format, form.tags, form.note);
+      const caption = await generateCaption(form.klient, form.format, form.tags, form.note, form.aiBrief ?? "");
       setForm(p => ({ ...p, aiCaption: caption, caption: caption }));
     } catch (e: unknown) {
       setAiError(e instanceof Error ? e.message : "Chyba AI");
@@ -355,6 +357,28 @@ function PostModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* AI Brief */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>
+              Zadání pro AI
+            </label>
+            <textarea
+              value={form.aiBrief ?? ""}
+              onChange={e => setForm(p => ({ ...p, aiBrief: e.target.value }))}
+              placeholder="Popiš AI co má napsat... napr. Jarni kolekce dortu, energicky ton, CTA prijit do cukrarny, zminit vikendovy vyprodej"
+              rows={2}
+              className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none resize-none"
+              style={{
+                background: "oklch(0.72 0.2 310 / 0.06)",
+                border: "1px solid oklch(0.72 0.2 310 / 0.2)",
+                color: "oklch(0.88 0.005 265)",
+              }}
+            />
+            <p className="text-[10px] px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
+              Čím víc info, tím lepší výsledek. Piš česky, klidně heslovitě.
+            </p>
           </div>
 
           {/* Caption */}
