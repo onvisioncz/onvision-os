@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film,
+  Building2, Film, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -32,6 +32,7 @@ const ALL_NAV = [
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Výstupy",         short: "Výstupy",    href: "/outputs",          icon: PackageOpen },
   { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
+  { label: "AI Asistent",     short: "AI",         href: "/ai",               icon: Sparkles },
 ];
 
 /* ── Desktop sidebar ────────────────────────────────────────────────────── */
@@ -129,6 +130,7 @@ export function SidebarNav() {
         <p className="section-label px-3 mb-2">Navigace</p>
         {visibleNav.map(({ label, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");
+          const isAI = href === "/ai";
           return (
             <Link key={href} href={href} className="block">
               <motion.div
@@ -139,6 +141,9 @@ export function SidebarNav() {
                 style={active ? {
                   background: "oklch(0.62 0.27 265 / 0.12)",
                   border: "1px solid oklch(0.62 0.27 265 / 0.18)",
+                } : isAI ? {
+                  border: "1px solid oklch(0.62 0.27 265 / 0.14)",
+                  background: "oklch(0.62 0.27 265 / 0.05)",
                 } : { border: "1px solid transparent" }}
                 whileHover={!active ? { color: "oklch(0.82 0.005 222)" } : {}}
                 whileTap={{ scale: 0.97 }}
@@ -157,9 +162,17 @@ export function SidebarNav() {
                 )}
                 <Icon
                   className="w-[14px] h-[14px] shrink-0"
-                  style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.38 0.005 222)" }}
+                  style={{ color: active ? "oklch(0.62 0.27 265)" : isAI ? "oklch(0.55 0.15 265)" : "oklch(0.38 0.005 222)" }}
                 />
                 {label}
+                {isAI && !active && (
+                  <span
+                    className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.65 0.18 265)" }}
+                  >
+                    AI
+                  </span>
+                )}
               </motion.div>
             </Link>
           );
