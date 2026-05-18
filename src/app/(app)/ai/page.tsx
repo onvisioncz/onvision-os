@@ -11,7 +11,8 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import type { UserConfig } from "@/lib/roles";
 
 const MAX_MSGS_PER_WS = 200;  // stored in Supabase — months of history per workspace
-const CTX_MSGS = 40;          // how many recent messages Claude actually sees per request
+// Claude sees the FULL stored history — his 200K context handles it easily.
+// This is what makes "minule jsme řešili X" work even after a month.
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type WorkspaceCategory = "personal" | "internal" | "client";
@@ -654,10 +655,8 @@ export default function AiPage() {
       [activeWsId]: [...(prev[activeWsId] ?? []), { id: aiId, role: "assistant", content: "", ts: Date.now() }],
     }));
 
-    // Build context for Claude — last CTX_MSGS messages (keeps costs reasonable)
-    // Full history is stored in Supabase; Claude only needs recent context
-    const fullHistory = [...(allChats[activeWsId] ?? []), userMsg];
-    const history = fullHistory.slice(-CTX_MSGS).map(m => ({ role: m.role, content: m.content }));
+    // Send full history to Claude — he needs it to remember past conversations
+    const history = [...(allChats[activeWsId] ?? []), userMsg].map(m => ({ role: m.role, content: m.content }));
 
     abortRef.current = new AbortController();
 
