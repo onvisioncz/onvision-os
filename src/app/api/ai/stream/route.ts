@@ -13,13 +13,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Model pricing guide (per 1M tokens, input/output):
-  //   haiku-3-5:   $0.80 / $4    — fast, cheap, great for captions/briefs
-  //   sonnet-4-5:  $3    / $15   — balanced, good for strategy/analysis
-  //   opus-4-5:    $15   / $75   — most capable, expensive — use sparingly
+  //   haiku-3-5:  $0.80 / $4   — ⚡ fast, cheap, great for captions/briefs (~$0.60/month)
+  //   sonnet-4-5: $3    / $15  — ✨ balanced, better quality (~$8/month)
   const MODELS = {
     haiku:  "claude-haiku-3-5",
     sonnet: "claude-sonnet-4-5",
-    opus:   "claude-opus-4-5",
   } as const;
 
   let body: {
@@ -49,7 +47,7 @@ export async function POST(req: NextRequest) {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: MODELS[model] ?? MODELS.sonnet,
+      model: (model && model in MODELS) ? MODELS[model as keyof typeof MODELS] : MODELS.sonnet,
       max_tokens: Math.min(maxTokens, 4096),
       stream: true,
       system: systemPrompt ?? "Jsi asistent kreativní agentury OnVision.",

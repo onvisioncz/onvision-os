@@ -606,7 +606,7 @@ export default function AiPage() {
 
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
-  const [model, setModel] = useState<"haiku" | "sonnet" | "opus">("sonnet");
+  const [model, setModel] = useState<"haiku" | "sonnet">("sonnet");
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -872,32 +872,51 @@ export default function AiPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Model picker */}
-              <div className="flex items-center gap-0.5 p-0.5 rounded-[8px]" style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
-                {(["haiku", "sonnet", "opus"] as const).map(m => {
-                  const labels = { haiku: "Haiku", sonnet: "Sonnet", opus: "Opus" };
-                  const costs  = { haiku: "nejlevnější", sonnet: "vyvážený", opus: "nejlepší" };
-                  const colors = { haiku: "oklch(0.68 0.18 155)", sonnet: "oklch(0.72 0.18 265)", opus: "oklch(0.72 0.2 310)" };
-                  const active = model === m;
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => setModel(m)}
-                      title={costs[m]}
-                      className="px-2.5 py-1 rounded-[6px] text-[10px] font-semibold transition-all"
-                      style={active ? {
-                        background: `${colors[m]}18`,
-                        color: colors[m],
-                        border: `1px solid ${colors[m]}30`,
-                      } : {
-                        color: "oklch(0.38 0.005 222)",
-                        border: "1px solid transparent",
-                      }}
-                    >
-                      {labels[m]}
-                    </button>
-                  );
-                })}
+              {/* Model picker — Haiku vs Sonnet */}
+              <div className="flex items-center gap-1 p-1 rounded-[10px]" style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.09)" }}>
+                {/* Haiku — cheap */}
+                <button
+                  onClick={() => setModel("haiku")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] transition-all"
+                  style={model === "haiku" ? {
+                    background: "oklch(0.68 0.18 155 / 0.15)",
+                    border: "1px solid oklch(0.68 0.18 155 / 0.35)",
+                  } : {
+                    border: "1px solid transparent",
+                  }}
+                >
+                  <span className="text-[11px]">⚡</span>
+                  <div className="text-left">
+                    <p className="text-[11px] font-bold leading-none" style={{ color: model === "haiku" ? "oklch(0.68 0.18 155)" : "oklch(0.55 0.005 222)" }}>
+                      Haiku
+                    </p>
+                    <p className="text-[9px] leading-none mt-0.5" style={{ color: "oklch(0.68 0.18 155)" }}>
+                      ~$0.60/měs.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Sonnet — quality */}
+                <button
+                  onClick={() => setModel("sonnet")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] transition-all"
+                  style={model === "sonnet" ? {
+                    background: "oklch(0.72 0.18 265 / 0.15)",
+                    border: "1px solid oklch(0.72 0.18 265 / 0.35)",
+                  } : {
+                    border: "1px solid transparent",
+                  }}
+                >
+                  <span className="text-[11px]">✨</span>
+                  <div className="text-left">
+                    <p className="text-[11px] font-bold leading-none" style={{ color: model === "sonnet" ? "oklch(0.72 0.18 265)" : "oklch(0.55 0.005 222)" }}>
+                      Sonnet
+                    </p>
+                    <p className="text-[9px] leading-none mt-0.5" style={{ color: "oklch(0.72 0.18 265)" }}>
+                      ~$8/měs.
+                    </p>
+                  </div>
+                </button>
               </div>
 
               {messages.length > 0 && (
