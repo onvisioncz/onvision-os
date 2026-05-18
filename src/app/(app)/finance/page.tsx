@@ -17,6 +17,24 @@ import {
 type Tab          = "prehled" | "prijmy" | "vydaje" | "bilance" | "faktury" | "doklady" | "predplatne";
 type MonthStatus  = "UZAVŘENO" | "PROBÍHÁ" | "NEPROBĚHLO";
 type ItemStatus   = "Zaplaceno" | "Čeká" | "Storno";
+/* ── CSV export helper ──────────────────────────────────────────────────────── */
+function exportCSV(rows: Record<string, unknown>[], filename: string) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [
+    headers.join(";"),
+    ...rows.map(r => headers.map(h => {
+      const v = String(r[h] ?? "").replace(/"/g, '""');
+      return v.includes(";") || v.includes("\n") ? `"${v}"` : v;
+    }).join(";")),
+  ].join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 type IncomeType   = "Měsíční klient" | "Jednorázový" | "Ostatní";
 type ExpenseType  = "Software" | "Provize" | "Pojištění" | "Mzdy" | "Marketing" | "Nájem" | "Ostatní";
 
@@ -662,11 +680,21 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
             </motion.button>
           ))}
         </div>
-        <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
-          className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{ background: "oklch(0.67 0.155 155)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}>
-          <Plus className="w-3.5 h-3.5" /> Přidat příjem
-        </motion.button>
+        <div className="flex items-center gap-2 shrink-0">
+          <motion.button
+            onClick={() => exportCSV(filtered.map(i => ({ Měsíc: i.mesic, Klient: i.klient, Typ: i.typ, Datum: i.datumZaplaceni, "Částka (Kč)": i.castka, Stav: i.stav })), `prijmy-${new Date().toISOString().slice(0,7)}.csv`)}
+            whileTap={{ scale: 0.95 }}
+            className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+            style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </motion.button>
+          <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
+            className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
+            style={{ background: "oklch(0.67 0.155 155)", color: "oklch(0.09 0.008 222)", fontFamily: "var(--font-outfit)" }}>
+            <Plus className="w-3.5 h-3.5" /> Přidat příjem
+          </motion.button>
+        </div>
       </div>
 
       {/* Table */}
@@ -867,11 +895,21 @@ function VydajeTab({ items, setItems }: { items: ExpenseItem[]; setItems: (fn: (
             </motion.button>
           ))}
         </div>
-        <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
-          className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{ background: "oklch(0.65 0.22 25)", color: "oklch(0.98 0.005 222)", fontFamily: "var(--font-outfit)" }}>
-          <Plus className="w-3.5 h-3.5" /> Přidat výdaj
-        </motion.button>
+        <div className="flex items-center gap-2 shrink-0">
+          <motion.button
+            onClick={() => exportCSV(filtered.map(i => ({ Měsíc: i.mesic, Dodavatel: i.dodavatel, Typ: i.typ, Datum: i.datumZaplaceni, "Částka (Kč)": i.castka, Stav: i.stav, Poznámka: i.poznamka })), `vydaje-${new Date().toISOString().slice(0,7)}.csv`)}
+            whileTap={{ scale: 0.95 }}
+            className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+            style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </motion.button>
+          <motion.button onClick={() => setModal("new")} whileTap={{ scale: 0.96 }}
+            className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
+            style={{ background: "oklch(0.65 0.22 25)", color: "oklch(0.98 0.005 222)", fontFamily: "var(--font-outfit)" }}>
+            <Plus className="w-3.5 h-3.5" /> Přidat výdaj
+          </motion.button>
+        </div>
       </div>
 
       {/* Table */}
@@ -1203,11 +1241,21 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
             {s}
           </motion.button>
         ))}
-        <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
-          className="ml-auto btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
-          <Plus className="w-3.5 h-3.5"/> Nová faktura
-        </motion.button>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <motion.button
+            onClick={() => exportCSV(filtered.map(f => ({ Číslo: f.cislo, Klient: f.klient, Popis: f.popis, Datum: f.datum, Splatnost: f.splatnost, "Částka (Kč)": f.castka, Stav: f.stav })), `faktury-${new Date().toISOString().slice(0,7)}.csv`)}
+            whileTap={{ scale: 0.95 }}
+            className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+            style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </motion.button>
+          <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
+            className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
+            style={{background:"oklch(0.62 0.27 265)",color:"oklch(0.09 0.008 222)",fontFamily:"var(--font-outfit)"}}>
+            <Plus className="w-3.5 h-3.5"/> Nová faktura
+          </motion.button>
+        </div>
       </div>
 
       {/* Table */}
@@ -1385,11 +1433,21 @@ function DokladyTab({ items, setItems }: { items:Doklad[]; setItems:(fn:(p:Dokla
             {k}
           </motion.button>
         ))}
-        <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
-          className="ml-auto btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold shrink-0"
-          style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.98 0 0)",fontFamily:"var(--font-outfit)"}}>
-          <Plus className="w-3.5 h-3.5"/> Přidat doklad
-        </motion.button>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <motion.button
+            onClick={() => exportCSV(items.map(d => ({ Typ: d.typ, Dodavatel: d.dodavatel, Popis: d.popis, Datum: d.datum, Kategorie: d.kategorie, "Částka (Kč)": d.castka, Stav: d.stav })), `doklady-${new Date().toISOString().slice(0,7)}.csv`)}
+            whileTap={{ scale: 0.95 }}
+            className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+            style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </motion.button>
+          <motion.button onClick={()=>setModal("new")} whileTap={{scale:0.96}}
+            className="btn-tactile flex items-center gap-2 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
+            style={{background:"oklch(0.65 0.22 25)",color:"oklch(0.98 0 0)",fontFamily:"var(--font-outfit)"}}>
+            <Plus className="w-3.5 h-3.5"/> Přidat doklad
+          </motion.button>
+        </div>
       </div>
 
       {/* Table */}

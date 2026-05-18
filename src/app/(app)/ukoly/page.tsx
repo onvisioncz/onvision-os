@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckSquare, Square, X, Calendar, User,
+  CheckSquare, Square, X, Calendar, User, RefreshCw, ChevronDown, ChevronRight,
 } from "lucide-react";
+
+/* ── Czech month helper ─────────────────────────────────────────────────────── */
+function currentMonthDeadline(den: number): string {
+  const now = new Date();
+  return `${den}. ${now.getMonth() + 1}.`;
+}
 
 /* ── Deadline helpers ───────────────────────────────────────────────────────── */
 function parseDeadline(str: string): Date | null {
@@ -94,6 +100,9 @@ interface Task {
   status: TStatus;
   deadline: string;
   popis?: string;
+  opakujeSe?: boolean;
+  opakovaniDen?: number;
+  opakovaniSablona?: boolean;
 }
 
 /* ── Seed data ──────────────────────────────────────────────────────────────── */
@@ -110,6 +119,12 @@ const SEED: Task[] = [
   { id: 10, nazev: "SK Brno Extraliga — náborový leták",        projekt: "SK Brno Extraliga",   prirazeno: "Patrik", priorita: "Střední",  status: "Hotovo",  deadline: "14. 5." },
   { id: 11, nazev: "IMTOS OPENHOUSE grafika",                   projekt: "IMTOS",               prirazeno: "Monika", priorita: "Vysoká",   status: "Hotovo",  deadline: "12. 5." },
   { id: 12, nazev: "Fakturace FIRESTA duben",                   projekt: "FIRESTA",             prirazeno: "Adam",   priorita: "Střední",  status: "Hotovo",  deadline: "10. 5." },
+  { id: 9001, nazev: "Vystavit faktury klientům", projekt: "Fakturace", prirazeno: "Adam",
+    priorita: "Vysoká", status: "Nové", deadline: "1. 6.",
+    opakujeSe: true, opakovaniDen: 1, opakovaniSablona: true },
+  { id: 9002, nazev: "Měsíční report klientům", projekt: "Interní", prirazeno: "Adam",
+    priorita: "Střední", status: "Nové", deadline: "5. 6.",
+    opakujeSe: true, opakovaniDen: 5, opakovaniSablona: true },
 ];
 
 const STATUSES: TStatus[] = ["Nové", "Probíhá", "Review", "Hotovo"];
@@ -117,6 +132,7 @@ const ASSIGNEES = ["Vše", "Adam", "Zdeněk", "Matěj", "Monika", "Patrik"];
 const STATUS_FILTER: (TStatus | "Vše")[] = ["Vše", "Nové", "Probíhá", "Review", "Hotovo"];
 
 const ACCENT = "oklch(0.67 0.155 155)";
+const PURPLE = "oklch(0.72 0.2 310)";
 
 const PRIORITY_STYLE: Record<Priorita, { color: string; bg: string; border: string }> = {
   Urgentní: { color: "oklch(0.74 0.18 45)",   bg: "oklch(0.74 0.18 45 / 0.12)",  border: "oklch(0.74 0.18 45 / 0.25)" },
@@ -173,28 +189,30 @@ function TaskForm({
         </div>
       ))}
 
-      {/* Deadline — prominent */}
-      <div>
-        <label className="block text-[11px] font-semibold mb-1.5 uppercase tracking-[0.05em]"
-          style={{ color: "oklch(0.74 0.18 45)" }}>
-          Deadline (termín odevzdání)
-        </label>
-        <input
-          value={form.deadline}
-          onChange={e => setForm(prev => ({ ...prev, deadline: e.target.value }))}
-          placeholder="15. 5."
-          className="w-full px-3 py-2 rounded-[8px] text-[13px] font-semibold outline-none"
-          style={{
-            background: "oklch(0.74 0.18 45 / 0.06)",
-            border: "1px solid oklch(0.74 0.18 45 / 0.25)",
-            color: "oklch(0.80 0.14 65)",
-            fontFamily: "var(--font-outfit)",
-          }}
-        />
-        <p className="text-[10px] mt-1" style={{ color: "oklch(0.40 0.005 222)" }}>
-          Formát: den. měsíc. (např. 20. 5.)
-        </p>
-      </div>
+      {/* Deadline — prominent (hidden when recurring template, auto-computed) */}
+      {!form.opakovaniSablona && (
+        <div>
+          <label className="block text-[11px] font-semibold mb-1.5 uppercase tracking-[0.05em]"
+            style={{ color: "oklch(0.74 0.18 45)" }}>
+            Deadline (termín odevzdání)
+          </label>
+          <input
+            value={form.deadline}
+            onChange={e => setForm(prev => ({ ...prev, deadline: e.target.value }))}
+            placeholder="15. 5."
+            className="w-full px-3 py-2 rounded-[8px] text-[13px] font-semibold outline-none"
+            style={{
+              background: "oklch(0.74 0.18 45 / 0.06)",
+              border: "1px solid oklch(0.74 0.18 45 / 0.25)",
+              color: "oklch(0.80 0.14 65)",
+              fontFamily: "var(--font-outfit)",
+            }}
+          />
+          <p className="text-[10px] mt-1" style={{ color: "oklch(0.40 0.005 222)" }}>
+            Formát: den. měsíc. (např. 20. 5.)
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         {(["prirazeno", "priorita", "status"] as const).map(field => (
@@ -214,6 +232,79 @@ function TaskForm({
             </select>
           </div>
         ))}
+      </div>
+
+      {/* Recurrence fields */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={!!form.opakujeSe}
+            onChange={e => {
+              const checked = e.target.checked;
+              setForm(prev => ({
+                ...prev,
+                opakujeSe: checked,
+                opakovaniSablona: checked ? true : undefined,
+                opakovaniDen: checked ? (prev.opakovaniDen ?? 1) : undefined,
+                deadline: checked ? currentMonthDeadline(prev.opakovaniDen ?? 1) : prev.deadline,
+              }));
+            }}
+            className="w-3.5 h-3.5 rounded accent-purple-500"
+            style={{ accentColor: PURPLE }}
+          />
+          <span className="text-[12px] font-semibold" style={{ color: PURPLE, fontFamily: "var(--font-outfit)" }}>
+            Opakující se úkol
+          </span>
+          <RefreshCw className="w-3 h-3" style={{ color: PURPLE }} />
+        </label>
+
+        <AnimatePresence>
+          {form.opakujeSe && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div
+                className="p-3 rounded-[8px] space-y-2"
+                style={{ background: `${PURPLE.replace(")", " / 0.07)")}`, border: `1px solid ${PURPLE.replace(")", " / 0.18)")}` }}
+              >
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1.5 uppercase tracking-[0.05em]" style={{ color: PURPLE }}>
+                    Den v měsíci (1–28)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={form.opakovaniDen ?? 1}
+                    onChange={e => {
+                      const den = Math.min(28, Math.max(1, parseInt(e.target.value) || 1));
+                      setForm(prev => ({
+                        ...prev,
+                        opakovaniDen: den,
+                        deadline: currentMonthDeadline(den),
+                      }));
+                    }}
+                    className="w-24 px-3 py-2 rounded-[8px] text-[13px] font-semibold outline-none"
+                    style={{
+                      background: "oklch(1 0 0 / 0.04)",
+                      border: `1px solid ${PURPLE.replace(")", " / 0.25)")}`,
+                      color: PURPLE,
+                      fontFamily: "var(--font-outfit)",
+                    }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: "oklch(0.40 0.005 222)" }}>
+                    Deadline se automaticky nastaví na {currentMonthDeadline(form.opakovaniDen ?? 1)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div>
@@ -240,7 +331,7 @@ const EMPTY_TASK: Omit<Task, "id"> = {
 function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Omit<Task, "id">) => void }) {
   const [form, setForm] = useState<Task>({ id: 0, ...EMPTY_TASK });
 
-  const canSave = form.nazev.trim().length > 0 && form.deadline.trim().length > 0;
+  const canSave = form.nazev.trim().length > 0 && (form.opakovaniSablona || form.deadline.trim().length > 0);
 
   return (
     <motion.div
@@ -251,7 +342,7 @@ function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Omit<Tas
     >
       <div className="absolute inset-0" style={{ background: "oklch(0 0 0 / 0.65)" }} onClick={onClose} />
       <motion.div
-        className="card relative w-full max-w-md p-6 space-y-4"
+        className="card relative w-full max-w-md p-6 space-y-4 overflow-y-auto max-h-[90vh]"
         initial={{ scale: 0.95, y: 16 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 16 }}
@@ -307,7 +398,7 @@ function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void;
     >
       <div className="absolute inset-0" style={{ background: "oklch(0 0 0 / 0.6)" }} onClick={onClose} />
       <motion.div
-        className="card relative w-full max-w-md p-6 space-y-4"
+        className="card relative w-full max-w-md p-6 space-y-4 overflow-y-auto max-h-[90vh]"
         initial={{ scale: 0.95, y: 16 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 16 }}
@@ -348,6 +439,7 @@ function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void;
 /* ── Task row ───────────────────────────────────────────────────────────────── */
 function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void; onEdit: () => void }) {
   const done = task.status === "Hotovo";
+  const isRecurringInstance = task.opakujeSe === true && !task.opakovaniSablona;
   return (
     <motion.div
       layout
@@ -372,7 +464,7 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
 
       <div className="flex-1 min-w-0">
         <p
-          className="text-[13px] leading-snug truncate"
+          className="text-[13px] leading-snug truncate flex items-center gap-1.5"
           style={{
             fontFamily: "var(--font-outfit)",
             fontWeight: 600,
@@ -382,6 +474,12 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
           }}
         >
           {task.nazev}
+          {isRecurringInstance && (
+            <RefreshCw
+              className="shrink-0 inline-block"
+              style={{ width: 12, height: 12, color: PURPLE, opacity: 0.85 }}
+            />
+          )}
         </p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[11px] text-[--muted-foreground]">{task.projekt}</span>
@@ -404,6 +502,89 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
   );
 }
 
+/* ── Recurring templates section ────────────────────────────────────────────── */
+function RecurringSablony({ templates, onEdit }: { templates: Task[]; onEdit: (t: Task) => void }) {
+  const [open, setOpen] = useState(false);
+
+  if (templates.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <button
+        className="flex items-center gap-2 mb-2 w-full text-left btn-tactile"
+        onClick={() => setOpen(v => !v)}
+      >
+        <span
+          className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-[4px]"
+          style={{
+            color: PURPLE,
+            background: `${PURPLE.replace(")", " / 0.12)")}`,
+          }}
+        >
+          <RefreshCw className="w-3 h-3" />
+          Šablony opakujících se úkolů
+        </span>
+        <span className="text-[11px] text-[--muted-foreground]">{templates.length} šablon</span>
+        {open
+          ? <ChevronDown className="w-3.5 h-3.5 ml-auto" style={{ color: PURPLE }} />
+          : <ChevronRight className="w-3.5 h-3.5 ml-auto" style={{ color: PURPLE }} />
+        }
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            <div
+              className="card overflow-hidden mb-4"
+              style={{ border: `1px solid ${PURPLE.replace(")", " / 0.2)")}` }}
+            >
+              {templates.map((t, i) => (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[oklch(1_0_0/0.02)] transition-colors"
+                  style={{ borderBottom: i < templates.length - 1 ? "1px solid var(--border)" : "none" }}
+                  onClick={() => onEdit(t)}
+                >
+                  <RefreshCw className="w-4 h-4 shrink-0" style={{ color: PURPLE }} />
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-[13px] leading-snug truncate"
+                      style={{ fontFamily: "var(--font-outfit)", fontWeight: 600, color: "var(--foreground)", letterSpacing: "-0.01em" }}
+                    >
+                      {t.nazev}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[11px] text-[--muted-foreground]">{t.projekt}</span>
+                      <span className="w-0.5 h-0.5 rounded-full bg-[oklch(0.35_0.005_222)]" />
+                      <span
+                        className="text-[10px] font-semibold"
+                        style={{ color: PURPLE }}
+                      >
+                        Každý {t.opakovaniDen}. v měsíci
+                      </span>
+                    </div>
+                  </div>
+                  <PriorityBadge p={t.priorita} />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function UkolyPage() {
   const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => SEED);
@@ -411,6 +592,49 @@ export default function UkolyPage() {
   const [statusFilter, setStatusFilter] = useState<TStatus | "Vše">("Vše");
   const [editing, setEditing] = useState<Task | null>(null);
   const [adding, setAdding] = useState(false);
+  const autoGenRan = useRef(false);
+
+  /* ── Auto-generate recurring task instances ─────────────────────────────── */
+  useEffect(() => {
+    if (autoGenRan.current) return;
+    if (!tasks || tasks.length === 0) return;
+    autoGenRan.current = true;
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+
+    const templates = tasks.filter(t => t.opakujeSe === true && t.opakovaniSablona === true);
+    if (templates.length === 0) return;
+
+    const newInstances: Task[] = [];
+
+    for (const template of templates) {
+      const den = template.opakovaniDen ?? 1;
+      const targetDeadline = currentMonthDeadline(den);
+
+      const alreadyExists = tasks.some(
+        t =>
+          !t.opakovaniSablona &&
+          t.nazev === template.nazev &&
+          t.deadline.includes(`${currentMonth}.`)
+      );
+
+      if (!alreadyExists) {
+        const instance: Task = {
+          ...template,
+          id: Math.floor(Date.now() + Math.random() * 10000),
+          opakovaniSablona: false,
+          status: "Nové",
+          deadline: targetDeadline,
+        };
+        newInstances.push(instance);
+      }
+    }
+
+    if (newInstances.length > 0) {
+      setTasks(prev => [...prev, ...newInstances]);
+    }
+  }, [tasks, setTasks]);
 
   const toggle = (id: number) => {
     setTasks(prev => prev.map(t =>
@@ -427,7 +651,11 @@ export default function UkolyPage() {
     setTasks(prev => [{ id: newId, ...t }, ...prev]);
   };
 
-  const filtered = tasks.filter(t => {
+  /* Templates are excluded from the regular filtered list */
+  const nonTemplates = tasks.filter(t => !t.opakovaniSablona);
+  const templates = tasks.filter(t => t.opakovaniSablona === true);
+
+  const filtered = nonTemplates.filter(t => {
     if (assigneeFilter !== "Vše" && t.prirazeno !== assigneeFilter) return false;
     if (statusFilter !== "Vše" && t.status !== statusFilter) return false;
     return true;
@@ -438,9 +666,9 @@ export default function UkolyPage() {
     items: filtered.filter(t => t.status === s),
   })).filter(g => g.items.length > 0);
 
-  const active = tasks.filter(t => t.status !== "Hotovo").length;
-  const urgent = tasks.filter(t => t.priorita === "Urgentní" && t.status !== "Hotovo").length;
-  const done = tasks.filter(t => t.status === "Hotovo").length;
+  const active = nonTemplates.filter(t => t.status !== "Hotovo").length;
+  const urgent = nonTemplates.filter(t => t.priorita === "Urgentní" && t.status !== "Hotovo").length;
+  const done = nonTemplates.filter(t => t.status === "Hotovo").length;
 
   const filterChip = (
     label: string,
@@ -548,6 +776,9 @@ export default function UkolyPage() {
           ))}
         </div>
       </motion.div>
+
+      {/* Recurring templates section */}
+      <RecurringSablony templates={templates} onEdit={t => setEditing(t)} />
 
       {/* Grouped tasks */}
       <div className="space-y-4">

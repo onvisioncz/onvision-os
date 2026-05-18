@@ -29,22 +29,27 @@ interface Ad {
   vyhodnotil: string;
   stavVyplaty: PayStatus;
   mesicniVyplata: string;
+  dosah?: number;
+  kliky?: number;
+  konverze?: number;
+  cpm?: number;
+  cpc?: number;
 }
 
 /* ── Seed data (z Google Sheets) ────────────────────────────────────────────── */
 const SEED: Ad[] = [
-  { id:  1, mesic: "ÚNOR",          klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "4.2.2026",  datumUkonceni: "18.2.2026", format: "VIDEO",             tema: "Hlavní promo (Akviziční, Jonáš)",         cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 795 Kč",  vyhodnotil: "Jan KŘÍŽ",          stavVyplaty: "Odesláno",    mesicniVyplata: "" },
-  { id:  2, mesic: "ÚNOR",          klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "20.2.2026", datumUkonceni: "6.3.2026",  format: "GRAFIKA",           tema: "Západ slunce terasa EASTGATE",            cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 788 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026" },
-  { id:  3, mesic: "ÚNOR / BŘEZEN", klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "27.2.2026", datumUkonceni: "13.3.2026", format: "VIDEO",             tema: "Prodej léků SENIMED v AKESO Poliklinika", cilReklamy: "POVĚDOMÍ",          vysledek: "PROKLIK NA PROFIL FB + IG",           castka: "2 494 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026" },
-  { id:  4, mesic: "ÚNOR / BŘEZEN", klient: "BehejBrno.com",    stav: "Dokončeno",            datumZahajeni: "27.2.2026", datumUkonceni: "7.4.2026",  format: "VIDEO",             tema: "Pozvánka CRAFT Brněnský půlmaraton",      cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC + PŘIHLÁŠENÍ NA ZÁVOD (WEB)", castka: "5 051 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026" },
-  { id:  5, mesic: "BŘEZEN",        klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "11.3.2026", datumUkonceni: "25.3.2026", format: "VIDEO FB",          tema: "Byty 2+KK (Akviziční, Jonáš)",           cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 795 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026" },
+  { id:  1, mesic: "ÚNOR",          klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "4.2.2026",  datumUkonceni: "18.2.2026", format: "VIDEO",             tema: "Hlavní promo (Akviziční, Jonáš)",         cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 795 Kč",  vyhodnotil: "Jan KŘÍŽ",          stavVyplaty: "Odesláno",    mesicniVyplata: "",           dosah: 12400, kliky: 234, konverze: 8,  cpm: 225,  cpc: 11.9 },
+  { id:  2, mesic: "ÚNOR",          klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "20.2.2026", datumUkonceni: "6.3.2026",  format: "GRAFIKA",           tema: "Západ slunce terasa EASTGATE",            cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 788 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026", dosah:  8900, kliky: 156,              cpm: 313,  cpc: 17.8 },
+  { id:  3, mesic: "ÚNOR / BŘEZEN", klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "27.2.2026", datumUkonceni: "13.3.2026", format: "VIDEO",             tema: "Prodej léků SENIMED v AKESO Poliklinika", cilReklamy: "POVĚDOMÍ",          vysledek: "PROKLIK NA PROFIL FB + IG",           castka: "2 494 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026", dosah: 15200, kliky:  89, konverze: 12, cpm: 164,  cpc: 28.0 },
+  { id:  4, mesic: "ÚNOR / BŘEZEN", klient: "BehejBrno.com",    stav: "Dokončeno",            datumZahajeni: "27.2.2026", datumUkonceni: "7.4.2026",  format: "VIDEO",             tema: "Pozvánka CRAFT Brněnský půlmaraton",      cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC + PŘIHLÁŠENÍ NA ZÁVOD (WEB)", castka: "5 051 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026",  dosah: 22100, kliky: 892, konverze: 47, cpm: 228,  cpc:  5.6 },
+  { id:  5, mesic: "BŘEZEN",        klient: "EASTGATE Brno",    stav: "Dokončeno",            datumZahajeni: "11.3.2026", datumUkonceni: "25.3.2026", format: "VIDEO FB",          tema: "Byty 2+KK (Akviziční, Jonáš)",           cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "2 795 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "BŘEZEN 2026", dosah:  9800, kliky: 198,              cpm: 285,  cpc: 14.1 },
   { id:  6, mesic: "BŘEZEN / DUBEN",klient: "MTB CZ",           stav: "Dokončeno",            datumZahajeni: "19.3.2026", datumUkonceni: "9.4.2026",  format: "GRAFIKA",           tema: "Naše služby",                             cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "—",                                   castka: "3 142 Kč",  vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "" },
-  { id:  7, mesic: "BŘEZEN / DUBEN",klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "26.3.2026", datumUkonceni: "9.4.2026",  format: "VIDEO SWIPE",       tema: "Curenzym Anixi",                          cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "1 395 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026" },
-  { id:  8, mesic: "BŘEZEN / DUBEN",klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "27.3.2026", datumUkonceni: "10.4.2026", format: "VIDEO SWIPE",       tema: "BETAGLUKAN IMU",                          cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "1 395 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026" },
-  { id:  9, mesic: "DUBEN",         klient: "Cukrárna TOFFI",   stav: "Dokončeno",            datumZahajeni: "23.4.2026", datumUkonceni: "30.4.2026", format: "FOTO",              tema: "Pobočka Olympie Brno",                    cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "699 Kč",    vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "" },
+  { id:  7, mesic: "BŘEZEN / DUBEN",klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "26.3.2026", datumUkonceni: "9.4.2026",  format: "VIDEO SWIPE",       tema: "Curenzym Anixi",                          cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "1 395 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026",  dosah:  6200, kliky:  44, konverze:  6, cpm: 225,  cpc: 31.7 },
+  { id:  8, mesic: "BŘEZEN / DUBEN",klient: "SENIMED s.r.o.",   stav: "Dokončeno",            datumZahajeni: "27.3.2026", datumUkonceni: "10.4.2026", format: "VIDEO SWIPE",       tema: "BETAGLUKAN IMU",                          cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "1 395 Kč",  vyhodnotil: "Tomáš DANG",        stavVyplaty: "Odesláno",    mesicniVyplata: "DUBEN 2026",  dosah:  5900, kliky:  38, konverze:  4, cpm: 236,  cpc: 36.7 },
+  { id:  9, mesic: "DUBEN",         klient: "Cukrárna TOFFI",   stav: "Dokončeno",            datumZahajeni: "23.4.2026", datumUkonceni: "30.4.2026", format: "FOTO",              tema: "Pobočka Olympie Brno",                    cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "699 Kč",    vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "",           dosah:  3100, kliky:  67,              cpm: 225,  cpc: 10.4 },
   { id: 10, mesic: "DUBEN / KVĚTEN",klient: "SENIMED s.r.o.",   stav: "Probíhá vyhodnocení",  datumZahajeni: "24.4.2026", datumUkonceni: "12.5.2026", format: "VIDEO SOUTĚŽ IG",   tema: "Lactoflorene",                            cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "",          vyhodnotil: "Tomáš DANG",        stavVyplaty: "—",           mesicniVyplata: "KVĚTEN 2026" },
   { id: 11, mesic: "DUBEN / KVĚTEN",klient: "SENIMED s.r.o.",   stav: "Probíhá vyhodnocení",  datumZahajeni: "24.4.2026", datumUkonceni: "12.5.2026", format: "VIDEO SOUTĚŽ FB",   tema: "Lactoflorene",                            cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "",          vyhodnotil: "Tomáš DANG",        stavVyplaty: "—",           mesicniVyplata: "KVĚTEN 2026" },
-  { id: 12, mesic: "KVĚTEN",        klient: "SK Brno Slatina",  stav: "Dokončeno",            datumZahajeni: "3.5.2026",  datumUkonceni: "13.5.2026", format: "VIDEO FB & IG",     tema: "FINAL FOUR",                              cilReklamy: "POVĚDOMÍ",          vysledek: "—",                                   castka: "1 000 Kč",  vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "" },
+  { id: 12, mesic: "KVĚTEN",        klient: "SK Brno Slatina",  stav: "Dokončeno",            datumZahajeni: "3.5.2026",  datumUkonceni: "13.5.2026", format: "VIDEO FB & IG",     tema: "FINAL FOUR",                              cilReklamy: "POVĚDOMÍ",          vysledek: "—",                                   castka: "1 000 Kč",  vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "",           dosah:  4500, kliky:  23,              cpm: 222 },
   { id: 13, mesic: "KVĚTEN",        klient: "MTB CZ",           stav: "Probíhá",              datumZahajeni: "6.5.2026",  datumUkonceni: "20.5.2026", format: "VIDEO FB & IG",     tema: "FPV Dron",                                cilReklamy: "PROJEVENÝ ZÁJEM",   vysledek: "ENGAGEMENT",                          castka: "",          vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "" },
   { id: 14, mesic: "KVĚTEN",        klient: "EASTGATE Brno",    stav: "Probíhá",              datumZahajeni: "6.5.2026",  datumUkonceni: "20.5.2026", format: "VIDEO FB",          tema: "Byty 3+KK (Akviziční, Jonáš)",           cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC (NÁVŠTĚVNOST)",               castka: "",          vyhodnotil: "Tomáš DANG",        stavVyplaty: "—",           mesicniVyplata: "KVĚTEN 2026" },
   { id: 15, mesic: "KVĚTEN",        klient: "BehejBrno.com",    stav: "Probíhá",              datumZahajeni: "7.5.2026",  datumUkonceni: "18.5.2026", format: "GRAFIKA",           tema: "SUNRISE",                                 cilReklamy: "PROKLIK NA WEB",    vysledek: "TRAFFIC + PŘIHLÁŠENÍ NA ZÁVOD (WEB)", castka: "",          vyhodnotil: "Nevyhodnocuje se",  stavVyplaty: "Neodesláno",  mesicniVyplata: "" },
@@ -67,6 +72,7 @@ const EMPTY_AD: Omit<Ad, "id"> = {
   mesic: "", klient: "", stav: "Probíhá", datumZahajeni: "", datumUkonceni: "",
   format: "VIDEO", tema: "", cilReklamy: "PROKLIK NA WEB", vysledek: "TRAFFIC (NÁVŠTĚVNOST)",
   castka: "", vyhodnotil: "Jan KŘÍŽ", stavVyplaty: "—", mesicniVyplata: "",
+  dosah: undefined, kliky: undefined, konverze: undefined, cpm: undefined, cpc: undefined,
 };
 
 /* ── Status helpers ─────────────────────────────────────────────────────────── */
@@ -99,6 +105,15 @@ function parseCastka(s: string): number {
 function formatKc(n: number): string {
   if (!n) return "—";
   return n.toLocaleString("cs-CZ") + " Kč";
+}
+function parseSpend(castka: string): number {
+  return parseInt(castka.replace(/[^\d]/g, "") || "0");
+}
+function fmtNum(n: number): string {
+  return n.toLocaleString("cs-CZ");
+}
+function fmtCpc(n: number): string {
+  return n.toLocaleString("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
 }
 
 /* ── Date sort helper ───────────────────────────────────────────────────────── */
@@ -168,6 +183,107 @@ function Select({ value, onChange, options }: {
         {options.map(o => <option key={o} value={o} style={{ background: "oklch(0.12 0.008 222)" }}>{o}</option>)}
       </select>
       <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[--muted-foreground]" />
+    </div>
+  );
+}
+
+/* ── ROI analytics panel ────────────────────────────────────────────────────── */
+function RoiPanel({ ads }: { ads: Ad[] }) {
+  const withData = ads.filter(a => a.dosah !== undefined || a.kliky !== undefined);
+  if (withData.length === 0) return null;
+
+  const totalSpend  = ads.reduce((s, a) => s + parseSpend(a.castka), 0);
+  const totalReach  = withData.reduce((s, a) => s + (a.dosah ?? 0), 0);
+
+  // Weighted avg CPC: sum(cpc * kliky) / sum(kliky)
+  const cpcAds    = withData.filter(a => a.cpc !== undefined && (a.kliky ?? 0) > 0);
+  const avgCpc    = cpcAds.length > 0
+    ? cpcAds.reduce((s, a) => s + (a.cpc! * (a.kliky ?? 0)), 0) / cpcAds.reduce((s, a) => s + (a.kliky ?? 0), 0)
+    : null;
+
+  // Best performer by konverze
+  const withKonv  = withData.filter(a => (a.konverze ?? 0) > 0);
+  const bestAd    = withKonv.length > 0
+    ? withKonv.reduce((best, a) => (a.konverze! > (best.konverze ?? 0) ? a : best))
+    : null;
+
+  const tiles = [
+    {
+      label: "Celkový spend",
+      value: totalSpend > 0 ? formatKc(totalSpend) : "—",
+      color: "oklch(0.62 0.27 265)",
+    },
+    {
+      label: "Celkový dosah",
+      value: totalReach > 0 ? fmtNum(totalReach) : "—",
+      color: "oklch(0.82 0.16 85)",
+    },
+    {
+      label: "Prumer. CPC",
+      value: avgCpc !== null ? fmtCpc(avgCpc) : "—",
+      color: "oklch(0.67 0.155 155)",
+    },
+    {
+      label: "Nejlepsi konverze",
+      value: bestAd ? `${bestAd.klient} (${bestAd.konverze})` : "—",
+      color: "oklch(0.72 0.18 290)",
+    },
+  ];
+
+  return (
+    <div className="card p-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {tiles.map(t => (
+          <div key={t.label} className="space-y-1">
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.09em]"
+              style={{ color: "oklch(0.45 0.005 222)" }}
+            >
+              {t.label}
+            </p>
+            <p
+              className="num text-[15px] font-bold leading-tight truncate"
+              style={{ fontFamily: "var(--font-outfit)", color: t.color, letterSpacing: "-0.02em" }}
+            >
+              {t.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Metric chips ───────────────────────────────────────────────────────────── */
+function MetricChips({ ad }: { ad: Ad }) {
+  const hasSome = ad.dosah !== undefined || ad.kliky !== undefined || ad.konverze !== undefined || ad.cpc !== undefined;
+  if (!hasSome) return null;
+
+  const chips: { label: string; value: string }[] = [];
+  if (ad.dosah     !== undefined) chips.push({ label: "Dosah",     value: fmtNum(ad.dosah) });
+  if (ad.kliky     !== undefined) chips.push({ label: "Kliky",     value: fmtNum(ad.kliky) });
+  if (ad.konverze  !== undefined) chips.push({ label: "Konverze",  value: String(ad.konverze) });
+  if (ad.cpc       !== undefined) chips.push({ label: "CPC",       value: fmtCpc(ad.cpc) });
+
+  return (
+    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+      {chips.map(c => (
+        <span
+          key={c.label}
+          style={{
+            fontSize: "10px",
+            color: "oklch(0.50 0.005 222)",
+            background: "oklch(1 0 0 / 0.04)",
+            border: "1px solid oklch(1 0 0 / 0.08)",
+            borderRadius: "4px",
+            padding: "1px 6px",
+            fontFamily: "var(--font-jakarta)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {c.label}: <span style={{ color: "oklch(0.65 0.005 222)", fontWeight: 600 }}>{c.value}</span>
+        </span>
+      ))}
     </div>
   );
 }

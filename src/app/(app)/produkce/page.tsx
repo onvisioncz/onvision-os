@@ -692,6 +692,54 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
         </motion.button>
       </div>
 
+      {/* Month utilization strip */}
+      {mesicF !== "Vše" && (() => {
+        const mItems = entries.filter(e => e.mesic === mesicF);
+        const done   = mItems.filter(e => e.status === "✅").length;
+        const plan   = mItems.filter(e => e.status === "❓").length;
+        const total  = mItems.length;
+        const WORK_DAYS = 21;
+        const pct = Math.min(Math.round((done / WORK_DAYS) * 100), 100);
+        const celodenni = mItems.filter(e => e.format === "CELODENNÍ").length;
+        const hod3 = mItems.filter(e => e.format === "3 HOD").length;
+        const bts = mItems.filter(e => e.format === "BTS").length;
+        return (
+          <div className="card px-5 py-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[0.07em]" style={{ color: "oklch(0.45 0.005 222)" }}>
+                Využití — {mesicF}
+              </span>
+              <span className="text-[11px] font-semibold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.75 0.19 48)" }}>
+                {done}/{WORK_DAYS} pracovních dní ({pct}%)
+              </span>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 0.07)" }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "oklch(0.75 0.19 48)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3 text-[11px]" style={{ color: "oklch(0.45 0.005 222)" }}>
+              {[
+                { label: "Celodenní", value: celodenni, color: "oklch(0.75 0.19 48)" },
+                { label: "3 hodiny",  value: hod3,      color: "oklch(0.67 0.155 155)" },
+                { label: "BTS",       value: bts,       color: "oklch(0.62 0.27 265)" },
+                { label: "Plánováno", value: plan,      color: "oklch(0.82 0.16 85)" },
+                { label: "Celkem",    value: total,     color: "oklch(0.55 0.005 222)" },
+              ].map(s => (
+                <span key={s.label} className="flex items-center gap-1">
+                  <span className="font-bold" style={{ color: s.color }}>{s.value}</span>
+                  <span>{s.label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
