@@ -606,6 +606,7 @@ export default function AiPage() {
 
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
+  const [model, setModel] = useState<"haiku" | "sonnet" | "opus">("sonnet");
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -655,8 +656,20 @@ export default function AiPage() {
       [activeWsId]: [...(prev[activeWsId] ?? []), { id: aiId, role: "assistant", content: "", ts: Date.now() }],
     }));
 
-    // Send full history to Claude — he needs it to remember past conversations
-    const history = [...(allChats[activeWsId] ?? []), userMsg].map(m => ({ role: m.role, content: m.content }));
+    // Smart context: last 30 messages in full + inject older history as a system-level summary
+    const fullHistory = [...(allChats[activeWsId] ?? []), userMsg];
+    const RECENT = 30;
+    const recentMsgs = fullHistory.slice(-RECENT);
+    const olderMsgs  = fullHistory.slice(0, -RECENT);
+
+    // Compress older history into a brief summary appended to system prompt
+    const olderSummary = olderMsgs.length > 0
+      ? `\n\n--- Starší konverzace (shrnutí pro kontext) ---\n` +
+        olderMsgs.map(m => `${m.role === "user" ? "Uživatel" : "Claude"}: ${m.content.slice(0, 300)}${m.content.length > 300 ? "…" : ""}`).join("\n")
+      : "";
+
+    const history = recentMsgs.map(m => ({ role: m.role, content: m.content }));
+    const enrichedSystemPrompt = buildSystemPrompt(activeWs, user.displayName) + olderSummary;
 
     abortRef.current = new AbortController();
 
@@ -666,9 +679,10 @@ export default function AiPage() {
         headers: { "Content-Type": "application/json" },
         signal: abortRef.current.signal,
         body: JSON.stringify({
-          systemPrompt: buildSystemPrompt(activeWs, user.displayName),
+          systemPrompt: enrichedSystemPrompt,
           messages: history,
           maxTokens: 4096,
+          model,
         }),
       });
 
@@ -857,17 +871,47 @@ export default function AiPage() {
               </div>
             </div>
 
-            {messages.length > 0 && (
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={clearChat}
-                className="p-2 rounded-[8px]"
-                style={{ color: "oklch(0.35 0.005 222)", background: "oklch(1 0 0 / 0.04)" }}
-                title="Smazat konverzaci"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </motion.button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Model picker */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded-[8px]" style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+                {(["haiku", "sonnet", "opus"] as const).map(m => {
+                  const labels = { haiku: "Haiku", sonnet: "Sonnet", opus: "Opus" };
+                  const costs  = { haiku: "nejlevnější", sonnet: "vyvážený", opus: "nejlepší" };
+                  const colors = { haiku: "oklch(0.68 0.18 155)", sonnet: "oklch(0.72 0.18 265)", opus: "oklch(0.72 0.2 310)" };
+                  const active = model === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setModel(m)}
+                      title={costs[m]}
+                      className="px-2.5 py-1 rounded-[6px] text-[10px] font-semibold transition-all"
+                      style={active ? {
+                        background: `${colors[m]}18`,
+                        color: colors[m],
+                        border: `1px solid ${colors[m]}30`,
+                      } : {
+                        color: "oklch(0.38 0.005 222)",
+                        border: "1px solid transparent",
+                      }}
+                    >
+                      {labels[m]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {messages.length > 0 && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={clearChat}
+                  className="p-2 rounded-[8px]"
+                  style={{ color: "oklch(0.35 0.005 222)", background: "oklch(1 0 0 / 0.04)" }}
+                  title="Smazat konverzaci"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </motion.button>
+              )}
+            </div>
           </div>
 
           {/* Messages or guided flow */}

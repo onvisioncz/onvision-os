@@ -12,10 +12,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Model pricing guide (per 1M tokens, input/output):
+  //   haiku-3-5:   $0.80 / $4    — fast, cheap, great for captions/briefs
+  //   sonnet-4-5:  $3    / $15   — balanced, good for strategy/analysis
+  //   opus-4-5:    $15   / $75   — most capable, expensive — use sparingly
+  const MODELS = {
+    haiku:  "claude-haiku-3-5",
+    sonnet: "claude-sonnet-4-5",
+    opus:   "claude-opus-4-5",
+  } as const;
+
   let body: {
     messages: { role: "user" | "assistant"; content: string }[];
     systemPrompt?: string;
     maxTokens?: number;
+    model?: keyof typeof MODELS;
   };
 
   try {
@@ -24,7 +35,7 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Neplatný JSON" }), { status: 400 });
   }
 
-  const { messages, systemPrompt, maxTokens = 2048 } = body;
+  const { messages, systemPrompt, maxTokens = 2048, model = "sonnet" } = body;
 
   if (!messages?.length) {
     return new Response(JSON.stringify({ error: "Chybí messages" }), { status: 400 });
@@ -38,7 +49,7 @@ export async function POST(req: NextRequest) {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-opus-4-5",
+      model: MODELS[model] ?? MODELS.sonnet,
       max_tokens: Math.min(maxTokens, 4096),
       stream: true,
       system: systemPrompt ?? "Jsi asistent kreativní agentury OnVision.",
