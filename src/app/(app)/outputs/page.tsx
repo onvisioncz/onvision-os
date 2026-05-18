@@ -137,6 +137,12 @@ function compressThumb(file: File): Promise<string> {
   });
 }
 
+/* ── Safe config lookup (guards against old stored messages) ─────────── */
+function getCfg(type: string) {
+  return (TYPE_CONFIG as Record<string, typeof TYPE_CONFIG["zprava"]>)[type]
+    ?? TYPE_CONFIG["zprava"];
+}
+
 /* ── Project tag chip ─────────────────────────────────────────────────── */
 function ProjectTag({ typ, nazev }: { typ?: ProjektTyp; nazev?: string }) {
   if (!typ || !nazev) return null;
@@ -161,14 +167,17 @@ function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
   currentEmail: string;
 }) {
   const isRead = msg.readBy.includes(currentEmail);
-  const cfg = TYPE_CONFIG[msg.type];
+  // Safe lookup — old stored messages may have type "link"/"text"/"image"
+  const cfg = getCfg(msg.type);
+  // Old messages stored `content` instead of `popis`
+  const displayText = msg.popis || (msg as unknown as Record<string,string>).content || "";
 
   useEffect(() => {
-    if (!isRead) {
-      const t = setTimeout(() => onMarkRead(msg.id), 1200);
+    if (!isRead && currentEmail) {
+      const t = setTimeout(() => onMarkRead(msg.id), 1500);
       return () => clearTimeout(t);
     }
-  }, [isRead, msg.id, onMarkRead]);
+  }, [isRead, msg.id, currentEmail]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSimple = msg.type === "zprava";
 
@@ -218,7 +227,7 @@ function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
         >
           {isSimple ? (
             <p className="px-4 py-2.5 text-[13px] leading-relaxed" style={{ color: "oklch(0.85 0.005 265)" }}>
-              {msg.popis}
+              {displayText}
             </p>
           ) : (
             <>
@@ -248,9 +257,9 @@ function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
                   </p>
                 </div>
 
-                {msg.popis && (
+                {displayText && (
                   <p className="text-[12px] leading-relaxed" style={{ color: "oklch(0.6 0.005 222)" }}>
-                    {msg.popis}
+                    {displayText}
                   </p>
                 )}
 
