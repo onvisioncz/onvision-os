@@ -12,8 +12,10 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
+import { useUserRole } from "@/lib/hooks/use-user-role";
+import { canAccess, ROLE_COLORS } from "@/lib/roles";
 
-const nav = [
+const ALL_NAV = [
   { label: "Dashboard",       short: "Přehled",   href: "/dashboard",        icon: LayoutDashboard },
   { label: "Inbox",           short: "Inbox",     href: "/inbox",            icon: Inbox },
   { label: "Úkoly",           short: "Úkoly",     href: "/ukoly",            icon: CheckSquare },
@@ -26,23 +28,16 @@ const nav = [
   { label: "Reklamy",         short: "Reklamy",    href: "/ads",              icon: Megaphone },
   { label: "Produkční plán",  short: "Produkce",   href: "/shooting",         icon: Film },
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
-  { label: "Content",         short: "Content",    href: "/obsah",            icon: Layers2 },
+  { label: "SMM",             short: "SMM",        href: "/smm",              icon: Layers2 },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
+  { label: "Výstupy",         short: "Výstupy",    href: "/outputs",          icon: PackageOpen },
   { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
 ];
 
-/* ── Desktop sidebar ────────────────────────────────────────────────────────── */
+/* ── Desktop sidebar ────────────────────────────────────────────────────── */
 export function SidebarNav() {
   const path = usePathname();
-  const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email ?? null);
-    });
-  }, []);
+  const { user, email, loading } = useUserRole();
 
   async function handleLogout() {
     const supabase = createClient();
@@ -50,11 +45,18 @@ export function SidebarNav() {
     window.location.href = "/login";
   }
 
-  // Derive initials + display name from email
-  const displayName = userEmail
-    ? userEmail.startsWith("info@") ? "Adam" : userEmail.startsWith("fakturace@") ? "Dominika" : userEmail.split("@")[0]
-    : "—";
-  const initials = displayName.charAt(0).toUpperCase();
+  // Derive display info
+  const displayName = user?.displayName ?? (email ? email.split("@")[0] : "—");
+  const initials = user?.initials ?? displayName.charAt(0).toUpperCase();
+  const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
+
+  // Filter nav to what this user can access
+  const visibleNav = ALL_NAV.filter(({ href }) => {
+    if (!user) return true; // Show all while loading
+    return canAccess(user.roles, href);
+  });
+
+  const isAdmin = user?.roles.includes("admin") ?? false;
 
   return (
     <aside
@@ -125,7 +127,7 @@ export function SidebarNav() {
       {/* Nav */}
       <nav className="flex-1 px-2 space-y-px overflow-y-auto">
         <p className="section-label px-3 mb-2">Navigace</p>
-        {nav.map(({ label, href, icon: Icon }) => {
+        {visibleNav.map(({ label, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");
           return (
             <Link key={href} href={href} className="block">
@@ -168,17 +170,19 @@ export function SidebarNav() {
       <div className="p-2 pb-5">
         <div className="mx-2 mb-2 h-px" style={{ background: "var(--sidebar-border)" }} />
 
-        <Link href="/settings">
-          <motion.div
-            className="flex items-center gap-2.5 px-3 py-[8px] rounded-[6px] text-[13px] font-medium text-[--muted-foreground]"
-            whileHover={{ color: "oklch(0.82 0.005 222)" }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <Settings className="w-[14px] h-[14px]" style={{ color: "oklch(0.35 0.005 222)" }} />
-            Nastavení
-          </motion.div>
-        </Link>
+        {isAdmin && (
+          <Link href="/nastaveni">
+            <motion.div
+              className="flex items-center gap-2.5 px-3 py-[8px] rounded-[6px] text-[13px] font-medium text-[--muted-foreground]"
+              whileHover={{ color: "oklch(0.82 0.005 222)" }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <Settings className="w-[14px] h-[14px]" style={{ color: "oklch(0.35 0.005 222)" }} />
+              Nastavení
+            </motion.div>
+          </Link>
+        )}
 
         {/* User */}
         <div className="mt-1 flex items-center gap-2.5 px-3 py-2 rounded-[6px]"
@@ -186,7 +190,7 @@ export function SidebarNav() {
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
             style={{
-              background: "oklch(0.62 0.27 265)",
+              background: avatarColor,
               color: "oklch(0.97 0.004 265)",
               fontFamily: "var(--font-outfit)",
               fontWeight: 700,
@@ -196,7 +200,7 @@ export function SidebarNav() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-medium text-[--foreground] leading-tight truncate">{displayName}</p>
-            <p className="text-[10px] text-[--muted-foreground] leading-tight truncate">{userEmail ?? "..."}</p>
+            <p className="text-[10px] text-[--muted-foreground] leading-tight truncate">{email ?? "..."}</p>
           </div>
           <motion.button
             onClick={handleLogout}
@@ -229,9 +233,15 @@ export function SidebarNav() {
   );
 }
 
-/* ── Mobile bottom nav ──────────────────────────────────────────────────────── */
+/* ── Mobile bottom nav ──────────────────────────────────────────────────── */
 export function MobileNav() {
   const path = usePathname();
+  const { user } = useUserRole();
+
+  const visibleNav = ALL_NAV.filter(({ href }) => {
+    if (!user) return true;
+    return canAccess(user.roles, href);
+  });
 
   return (
     <nav
@@ -241,21 +251,19 @@ export function MobileNav() {
         borderTop: "1px solid oklch(1 0 0 / 0.08)",
       }}
     >
-      {/* Scrollable row — hide native scrollbar */}
       <div
         className="flex items-stretch overflow-x-auto"
         style={{
           paddingTop: "8px",
           paddingBottom: "max(env(safe-area-inset-bottom, 0px), 10px)",
-          scrollbarWidth: "none",          /* Firefox */
-          msOverflowStyle: "none",         /* IE/Edge */
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
         }}
       >
-        {/* Hide webkit scrollbar via inline style trick */}
         <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
 
-        {[...nav, { label: "Nastavení", short: "Nastavení", href: "/settings", icon: Settings }].map(({ short, href, icon: Icon }) => {
+        {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");
           return (
             <Link
