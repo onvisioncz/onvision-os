@@ -874,9 +874,10 @@ export default function AiPage() {
             <div className="flex items-center gap-2">
               {/* Model picker — Haiku vs Sonnet */}
               <div className="flex items-center gap-1 p-1 rounded-[10px]" style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.09)" }}>
-                {/* Haiku — cheap */}
+                {/* Haiku — fast & light */}
                 <button
                   onClick={() => setModel("haiku")}
+                  title="Haiku — rychlý, vhodný pro captions a jednoduché úkoly"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] transition-all"
                   style={model === "haiku" ? {
                     background: "oklch(0.68 0.18 155 / 0.15)",
@@ -885,20 +886,21 @@ export default function AiPage() {
                     border: "1px solid transparent",
                   }}
                 >
-                  <span className="text-[11px]">⚡</span>
+                  <span className="text-[12px]">⚡</span>
                   <div className="text-left">
                     <p className="text-[11px] font-bold leading-none" style={{ color: model === "haiku" ? "oklch(0.68 0.18 155)" : "oklch(0.55 0.005 222)" }}>
                       Haiku
                     </p>
-                    <p className="text-[9px] leading-none mt-0.5" style={{ color: "oklch(0.68 0.18 155)" }}>
-                      ~$0.60/měs.
+                    <p className="text-[9px] leading-none mt-0.5 font-medium" style={{ color: "oklch(0.42 0.005 222)" }}>
+                      Rychlý
                     </p>
                   </div>
                 </button>
 
-                {/* Sonnet — quality */}
+                {/* Sonnet — smarter */}
                 <button
                   onClick={() => setModel("sonnet")}
+                  title="Sonnet — lepší kvalita, vhodný pro strategie a komplexní úkoly"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] transition-all"
                   style={model === "sonnet" ? {
                     background: "oklch(0.72 0.18 265 / 0.15)",
@@ -907,13 +909,13 @@ export default function AiPage() {
                     border: "1px solid transparent",
                   }}
                 >
-                  <span className="text-[11px]">✨</span>
+                  <span className="text-[12px]">✨</span>
                   <div className="text-left">
                     <p className="text-[11px] font-bold leading-none" style={{ color: model === "sonnet" ? "oklch(0.72 0.18 265)" : "oklch(0.55 0.005 222)" }}>
                       Sonnet
                     </p>
-                    <p className="text-[9px] leading-none mt-0.5" style={{ color: "oklch(0.72 0.18 265)" }}>
-                      ~$8/měs.
+                    <p className="text-[9px] leading-none mt-0.5 font-medium" style={{ color: "oklch(0.42 0.005 222)" }}>
+                      Lepší
                     </p>
                   </div>
                 </button>
