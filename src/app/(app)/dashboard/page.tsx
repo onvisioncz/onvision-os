@@ -19,6 +19,8 @@ import {
   X,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { useUserRole } from "@/lib/hooks/use-user-role";
+import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -414,6 +416,10 @@ const FAZE_ORDER = ["Lead", "Kvalifikace", "Nabídka", "Jednání", "Realizace"]
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
+  /* ── Auth ── */
+  const { user } = useUserRole();
+  const isAdmin = user?.roles.includes("admin") ?? false;
+
   /* ── Data ── */
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
@@ -2303,6 +2309,19 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI widget — jen pro jednatele (Adam + Jan) */}
+      {isAdmin && (
+        <DashboardAIWidget
+          tasks={tasks}
+          deals={deals}
+          approvals={approvals}
+          clients={clients}
+          summaries={summaries}
+          todayLabel={todayLabel}
+          userName={user?.displayName ?? ""}
+        />
+      )}
     </div>
   );
 }
