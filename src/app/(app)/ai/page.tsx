@@ -7,7 +7,10 @@ import {
   ChevronRight, ArrowLeft,
 } from "lucide-react";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import type { UserConfig } from "@/lib/roles";
+
+const MAX_MSGS_PER_WS = 40; // trimmed per workspace to keep Supabase size sane
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type WorkspaceCategory = "personal" | "internal" | "client";
@@ -517,11 +520,12 @@ function GuidedFlow({
 
 /* ── Workspace sidebar item ──────────────────────────────────────────────── */
 function WorkspaceItem({
-  ws, active, onClick,
+  ws, active, onClick, msgCount,
 }: {
   ws: Workspace;
   active: boolean;
   onClick: () => void;
+  msgCount?: number;
 }) {
   return (
     <motion.button
@@ -544,12 +548,22 @@ function WorkspaceItem({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p
-          className="text-[12px] font-semibold leading-tight truncate"
-          style={{ color: active ? ws.color : "oklch(0.68 0.005 265)" }}
-        >
-          {ws.label}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p
+            className="text-[12px] font-semibold leading-tight truncate"
+            style={{ color: active ? ws.color : "oklch(0.68 0.005 265)" }}
+          >
+            {ws.label}
+          </p>
+          {msgCount != null && msgCount > 0 && (
+            <span
+              className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: `${ws.color}18`, color: ws.color }}
+            >
+              {msgCount}
+            </span>
+          )}
+        </div>
         <p className="text-[10px] leading-tight truncate mt-0.5" style={{ color: "oklch(0.34 0.005 222)" }}>
           {ws.sublabel}
         </p>
@@ -570,7 +584,24 @@ function WorkspaceItem({
 export default function AiPage() {
   const { user, email } = useUserRole();
   const [activeWsId, setActiveWsId] = useState<string | null>(null);
+
+  // Persistent storage — one Supabase key holds all workspace histories
+  const [savedChats, setSavedChats] = useSupabaseData<Record<string, ChatMessage[]>>(
+    "ov-ai-chats",
+    () => ({})
+  );
+  // Live state — includes streaming in-progress; synced from savedChats on first load
   const [allChats, setAllChats] = useState<Record<string, ChatMessage[]>>({});
+  const hydratedRef = useRef(false);
+
+  // One-time hydration from Supabase into local state
+  useEffect(() => {
+    if (!hydratedRef.current && savedChats && Object.keys(savedChats).length > 0) {
+      hydratedRef.current = true;
+      setAllChats(savedChats);
+    }
+  }, [savedChats]);
+
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
@@ -680,12 +711,25 @@ export default function AiPage() {
       }));
     } finally {
       setLoading(false);
+      // Persist completed conversation to Supabase (trim to MAX_MSGS_PER_WS)
+      setAllChats(current => {
+        const wsMessages = current[activeWsId] ?? [];
+        const trimmed = wsMessages.slice(-MAX_MSGS_PER_WS);
+        const updated = { ...current, [activeWsId]: trimmed };
+        setSavedChats(updated);
+        return updated;
+      });
     }
-  }, [messages, loading, activeWsId, activeWs, user, allChats]);
+  }, [messages, loading, activeWsId, activeWs, user, allChats, setSavedChats]);
 
   function clearChat() {
     abortRef.current?.abort();
-    if (activeWsId) setAllChats(prev => ({ ...prev, [activeWsId]: [] }));
+    if (!activeWsId) return;
+    setAllChats(prev => {
+      const updated = { ...prev, [activeWsId]: [] };
+      setSavedChats(updated);
+      return updated;
+    });
     setLoading(false);
   }
 
@@ -740,7 +784,7 @@ export default function AiPage() {
               </p>
               <div className="space-y-0.5 relative">
                 {personalWs.map(ws => (
-                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} />
+                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} msgCount={allChats[ws.id]?.length} />
                 ))}
               </div>
             </div>
@@ -754,7 +798,7 @@ export default function AiPage() {
               </p>
               <div className="space-y-0.5 relative">
                 {internalWs.map(ws => (
-                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} />
+                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} msgCount={allChats[ws.id]?.length} />
                 ))}
               </div>
             </div>
@@ -768,7 +812,7 @@ export default function AiPage() {
               </p>
               <div className="space-y-0.5 relative">
                 {clientWs.map(ws => (
-                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} />
+                  <WorkspaceItem key={ws.id} ws={ws} active={activeWsId === ws.id} onClick={() => selectWorkspace(ws.id)} msgCount={allChats[ws.id]?.length} />
                 ))}
               </div>
             </div>
