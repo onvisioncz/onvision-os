@@ -10,7 +10,8 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import type { UserConfig } from "@/lib/roles";
 
-const MAX_MSGS_PER_WS = 40; // trimmed per workspace to keep Supabase size sane
+const MAX_MSGS_PER_WS = 200;  // stored in Supabase — months of history per workspace
+const CTX_MSGS = 40;          // how many recent messages Claude actually sees per request
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type WorkspaceCategory = "personal" | "internal" | "client";
@@ -653,8 +654,10 @@ export default function AiPage() {
       [activeWsId]: [...(prev[activeWsId] ?? []), { id: aiId, role: "assistant", content: "", ts: Date.now() }],
     }));
 
-    // Build history (without the empty placeholder)
-    const history = [...(allChats[activeWsId] ?? []), userMsg].map(m => ({ role: m.role, content: m.content }));
+    // Build context for Claude — last CTX_MSGS messages (keeps costs reasonable)
+    // Full history is stored in Supabase; Claude only needs recent context
+    const fullHistory = [...(allChats[activeWsId] ?? []), userMsg];
+    const history = fullHistory.slice(-CTX_MSGS).map(m => ({ role: m.role, content: m.content }));
 
     abortRef.current = new AbortController();
 
