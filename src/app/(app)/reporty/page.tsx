@@ -674,8 +674,33 @@ function ClientReportingPanel() {
     ].filter(Boolean).join("\n");
   }
 
-  /* Generate report via streaming */
+  /* Generate report — auto-fetches Meta data first if not yet loaded */
   async function generate() {
+    // Auto-fetch Meta data before generating if fields are empty
+    const noData = !ig.followers && !ig.reach && !ig.engagement;
+    if (noData) {
+      setMetaFetching(true);
+      setMetaFetchError(null);
+      try {
+        const res = await fetch("/api/meta/insights");
+        if (res.ok) {
+          const data = await res.json();
+          const igData = data.instagram;
+          setIg(prev => ({
+            ...prev,
+            followers:       igData.followers       ? String(igData.followers)   : prev.followers,
+            followersGrowth: igData.followerGrowth  ? `+${igData.followerGrowth}` : prev.followersGrowth,
+            reach:           igData.reach           ? String(igData.reach)        : prev.reach,
+            engagement:      (igData.interactions && igData.followers)
+                               ? ((igData.interactions / igData.followers) * 100).toFixed(2)
+                               : prev.engagement,
+          }));
+          setMetaFetchedAt(new Date().toLocaleString("cs-CZ"));
+        }
+      } catch { /* continue without data */ }
+      finally { setMetaFetching(false); }
+    }
+
     setGenerating(true);
     setStreamText("");
     setStep("report");
