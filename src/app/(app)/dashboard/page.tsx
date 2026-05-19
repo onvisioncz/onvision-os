@@ -155,39 +155,10 @@ const item = {
 
 /* ── Shared card style ─────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-  background: "oklch(0.13 0.022 265)",
-  border: "1px solid oklch(1 0 0 / 0.09)",
-  borderRadius: 14,
+  background: "oklch(1 0 0 / 0.035)",
+  border: "1px solid oklch(1 0 0 / 0.08)",
+  borderRadius: 12,
 };
-
-/* ── Section header helper ─────────────────────────────────────────────────── */
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.10em",
-          textTransform: "uppercase",
-          color: "oklch(0.38 0.005 222)",
-          fontFamily: "var(--font-jakarta)",
-          whiteSpace: "nowrap",
-          flexShrink: 0,
-        }}
-      >
-        {label}
-      </span>
-      <div
-        style={{
-          flex: 1,
-          height: 1,
-          background: "oklch(1 0 0 / 0.08)",
-        }}
-      />
-    </div>
-  );
-}
 
 /* ── Recharts custom tooltip ───────────────────────────────────────────────── */
 function FinanceTooltip({
@@ -279,8 +250,8 @@ function PriorityBadge({ p }: { p: Task["priorita"] }) {
         fontWeight: 700,
         letterSpacing: "0.06em",
         textTransform: "uppercase",
-        padding: "3px 8px",
-        borderRadius: 4,
+        padding: "2px 7px",
+        borderRadius: 5,
         whiteSpace: "nowrap",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -308,8 +279,8 @@ function TypBadge({ typ }: { typ: string }) {
         fontWeight: 700,
         letterSpacing: "0.05em",
         textTransform: "uppercase",
-        padding: "3px 8px",
-        borderRadius: 4,
+        padding: "2px 7px",
+        borderRadius: 5,
         whiteSpace: "nowrap",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -802,7 +773,7 @@ export default function DashboardPage() {
   return (
     <div
       style={{
-        background: "oklch(0.08 0.018 265)",
+        background: "oklch(0.09 0.008 222)",
         minHeight: "100vh",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -815,96 +786,112 @@ export default function DashboardPage() {
         style={{ display: "flex", flexDirection: "column", gap: 20 }}
       >
         {/* ── 1. Header ── */}
-        <motion.div variants={item}>
-          {/* Top bar */}
-          <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            marginBottom: 20,
-            paddingBottom: 18,
-            borderBottom: "1px solid oklch(1 0 0 / 0.07)",
-          }}>
-            {/* Left: greeting */}
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 600, letterSpacing: "0.12em",
-                  textTransform: "uppercase", color: "oklch(0.38 0.008 265)",
-                  fontFamily: "var(--font-jakarta)",
-                }}>OnVision OS</span>
-                <span style={{ color: "oklch(0.25 0.008 265)", fontSize: 10 }}>/</span>
-                <span style={{
-                  fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
-                  textTransform: "uppercase", color: "oklch(0.55 0.12 265)",
-                  fontFamily: "var(--font-jakarta)",
-                }}>Dashboard</span>
-              </div>
-              <h1 style={{
-                fontFamily: "var(--font-outfit)",
-                fontWeight: 800, fontSize: 26,
-                letterSpacing: "-0.035em", lineHeight: 1, margin: 0,
-                color: "oklch(0.95 0.008 265)",
-              }}>
-                {greeting}{user?.displayName ? `, ${user.displayName.split(" ")[0]}.` : "."}
-              </h1>
-              <p style={{
-                fontSize: 11.5, color: "oklch(0.38 0.008 265)",
-                marginTop: 5, fontFamily: "var(--font-jakarta)",
-                letterSpacing: "0.01em",
-              }}>{todayLabel}</p>
-            </div>
+        <motion.div
+          variants={item}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}
+        >
+          {/* Greeting */}
+          <div>
+            <h1
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontWeight: 700,
+                fontSize: 30,
+                letterSpacing: "-0.035em",
+                lineHeight: 1,
+                margin: 0,
+                color: "oklch(0.96 0.005 222)",
+              }}
+            >
+              {greeting},{" "}
+              <span style={{ color: "oklch(0.96 0.005 222)" }}>Adame.</span>
+            </h1>
+            <p
+              style={{
+                fontSize: 12,
+                color: "oklch(0.4 0.005 222)",
+                marginTop: 7,
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              {todayLabel}
+            </p>
+          </div>
 
-            {/* Right: status + actions */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "5px 10px", borderRadius: 8,
-                background: "oklch(0.67 0.155 155 / 0.10)",
-                border: "1px solid oklch(0.67 0.155 155 / 0.18)",
-              }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
+          {/* Right side: Live indicator + action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 2 }}>
+            {/* Live indicator */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
                   background: "oklch(0.72 0.2 155)",
-                  boxShadow: "0 0 5px 2px oklch(0.72 0.2 155 / 0.4)",
-                  display: "block", flexShrink: 0,
-                }} />
-                <span style={{
-                  fontSize: 10.5, fontWeight: 600,
-                  color: "oklch(0.62 0.14 155)",
-                  fontFamily: "var(--font-jakarta)",
-                }}>Live</span>
-              </div>
-
-              <button
-                onClick={() => setClosingOpen(true)}
+                  boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)",
+                  display: "block",
+                  flexShrink: 0,
+                }}
+              />
+              <span
                 style={{
-                  background: "oklch(0.13 0.022 265)",
-                  border: "1px solid oklch(1 0 0 / 0.12)",
-                  color: "oklch(0.72 0.14 155)",
-                  borderRadius: 8, padding: "6px 14px",
-                  fontSize: 12, fontWeight: 600,
-                  fontFamily: "var(--font-jakarta)",
-                  cursor: "pointer", whiteSpace: "nowrap",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  fontFamily: "var(--font-sans)",
                 }}
               >
-                Uzavřít měsíc
-              </button>
-
-              <button
-                onClick={() => setQaOpen((v) => !v)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "6px 14px", borderRadius: 8,
-                  background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
-                  border: qaOpen ? "1px solid oklch(1 0 0 / 0.12)" : "1px solid transparent",
-                  color: "#fff", fontSize: 12, fontWeight: 600,
-                  fontFamily: "var(--font-jakarta)", cursor: "pointer",
-                }}
-                aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
-              >
-                {qaOpen ? <X size={13} /> : <span style={{ fontSize: 16, lineHeight: 1, fontWeight: 400 }}>+</span>}
-                {qaOpen ? "Zavřít" : "Přidat"}
-              </button>
+                Live
+              </span>
             </div>
+
+            {/* Uzavrit mesic button */}
+            <button
+              onClick={() => setClosingOpen(true)}
+              style={{
+                background: "oklch(1 0 0 / 0.05)",
+                border: "1px solid oklch(1 0 0 / 0.10)",
+                color: "oklch(0.72 0.14 155)",
+                borderRadius: 8,
+                padding: "5px 12px",
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "var(--font-jakarta)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Uzavrit mesic
+            </button>
+
+            {/* Quick Add (+/x) button */}
+            <button
+              onClick={() => setQaOpen((v) => !v)}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
+                border: "none",
+                color: "#fff",
+                fontSize: 18,
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 400,
+              }}
+              aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
+            >
+              {qaOpen ? <X size={14} /> : "+"}
+            </button>
           </div>
         </motion.div>
 
@@ -1130,145 +1117,223 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         {/* ── 2. KPI Strip ── */}
-        <motion.div variants={item}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-
+        <motion.div
+          variants={item}
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
+        >
           {/* Tile 1: MRR */}
-          <div style={{
-            background: "oklch(0.62 0.27 265 / 0.12)",
-            border: "1px solid oklch(0.62 0.27 265 / 0.22)",
-            borderRadius: 14,
-            padding: "20px 20px 18px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{
-                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "oklch(0.62 0.27 265 / 0.7)",
-                fontFamily: "var(--font-jakarta)",
-              }}>MRR / měsíc</span>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "oklch(0.62 0.27 265 / 0.18)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.75 0.2 265)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-              </div>
+          <div
+            style={{
+              ...cardStyle,
+              padding: "20px 22px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "oklch(0.62 0.27 265 / 0.06)",
+                borderRadius: 12,
+              }}
+            />
+            <div style={{ position: "relative" }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  marginBottom: 8,
+                }}
+              >
+                MRR / měsíc
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  fontSize: 28,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  color: "oklch(0.62 0.27 265)",
+                  marginBottom: 6,
+                }}
+              >
+                {mrr > 0 ? fmt(mrr) : "-- Kč"}
+              </p>
+              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
+                {activeClients.length} aktivních klientů
+              </p>
             </div>
-            <p style={{
-              fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: 28,
-              letterSpacing: "-0.04em", lineHeight: 1,
-              color: "oklch(0.92 0.01 265)", marginBottom: 6,
-            }}>{mrr > 0 ? fmtShort(mrr) : "—"}</p>
-            <p style={{ fontSize: 11, color: "oklch(0.55 0.08 265)", fontFamily: "var(--font-jakarta)" }}>
-              {activeClients.length} aktivních klientů
-            </p>
           </div>
 
           {/* Tile 2: Deliverable completion */}
-          <div style={{
-            background: "oklch(0.67 0.155 155 / 0.10)",
-            border: "1px solid oklch(0.67 0.155 155 / 0.20)",
-            borderRadius: 14,
-            padding: "20px 20px 18px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{
-                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "oklch(0.67 0.155 155 / 0.7)",
-                fontFamily: "var(--font-jakarta)",
-              }}>Splněno</span>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "oklch(0.67 0.155 155 / 0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <CheckCircle2 size={13} color="oklch(0.72 0.14 155)" />
+          <div
+            style={{
+              ...cardStyle,
+              padding: "20px 22px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "oklch(0.67 0.155 155 / 0.05)",
+                borderRadius: 12,
+              }}
+            />
+            <div style={{ position: "relative" }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  marginBottom: 8,
+                }}
+              >
+                Splněno tento měsíc
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  fontSize: 28,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  color: "oklch(0.67 0.155 155)",
+                  marginBottom: 6,
+                }}
+              >
+                {delivPct} %
+              </p>
+              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)", marginBottom: 10 }}>
+                {delivDone}/{delivTotal} úkolů
+              </p>
+              <div
+                style={{
+                  height: 4,
+                  borderRadius: 99,
+                  background: "oklch(1 0 0 / 0.07)",
+                  overflow: "hidden",
+                }}
+              >
+                <motion.div
+                  style={{
+                    height: "100%",
+                    borderRadius: 99,
+                    background: "oklch(0.67 0.155 155)",
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${delivPct}%` }}
+                  transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+                />
               </div>
             </div>
-            <p style={{
-              fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: 28,
-              letterSpacing: "-0.04em", lineHeight: 1,
-              color: "oklch(0.92 0.01 265)", marginBottom: 6,
-            }}>{delivPct}<span style={{ fontSize: 16, fontWeight: 600, color: "oklch(0.67 0.155 155)", marginLeft: 2 }}>%</span></p>
-            <div style={{ height: 3, borderRadius: 99, background: "oklch(1 0 0 / 0.08)", overflow: "hidden", marginBottom: 6 }}>
-              <motion.div
-                style={{ height: "100%", borderRadius: 99, background: "oklch(0.67 0.155 155)" }}
-                initial={{ width: 0 }}
-                animate={{ width: `${delivPct}%` }}
-                transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              />
-            </div>
-            <p style={{ fontSize: 11, color: "oklch(0.50 0.07 155)", fontFamily: "var(--font-jakarta)" }}>
-              {delivDone}/{delivTotal} deliverables
-            </p>
           </div>
 
           {/* Tile 3: Urgent tasks */}
-          <div style={{
-            background: "oklch(0.74 0.18 45 / 0.10)",
-            border: "1px solid oklch(0.74 0.18 45 / 0.20)",
-            borderRadius: 14,
-            padding: "20px 20px 18px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{
-                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "oklch(0.74 0.18 45 / 0.7)",
-                fontFamily: "var(--font-jakarta)",
-              }}>Urgentní</span>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "oklch(0.74 0.18 45 / 0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <AlertTriangle size={13} color="oklch(0.82 0.18 45)" />
-              </div>
+          <div
+            style={{
+              ...cardStyle,
+              padding: "20px 22px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "oklch(0.74 0.18 45 / 0.06)",
+                borderRadius: 12,
+              }}
+            />
+            <div style={{ position: "relative" }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  marginBottom: 8,
+                }}
+              >
+                Urgentní úkoly
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  fontSize: 28,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  color: "oklch(0.74 0.18 45)",
+                  marginBottom: 6,
+                }}
+              >
+                {urgentTasks.length}
+              </p>
+              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
+                {probihaTasks} probíhá · {reviewTasks} v review
+              </p>
             </div>
-            <p style={{
-              fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: 28,
-              letterSpacing: "-0.04em", lineHeight: 1,
-              color: "oklch(0.92 0.01 265)", marginBottom: 6,
-            }}>{urgentTasks.length}</p>
-            <p style={{ fontSize: 11, color: "oklch(0.55 0.08 45)", fontFamily: "var(--font-jakarta)" }}>
-              {probihaTasks} probíhá · {reviewTasks} v review
-            </p>
           </div>
 
           {/* Tile 4: Approvals */}
-          <div style={{
-            background: "oklch(0.68 0.18 275 / 0.10)",
-            border: "1px solid oklch(0.68 0.18 275 / 0.20)",
-            borderRadius: 14,
-            padding: "20px 20px 18px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{
-                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "oklch(0.68 0.18 275 / 0.7)",
-                fontFamily: "var(--font-jakarta)",
-              }}>Ke schválení</span>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "oklch(0.68 0.18 275 / 0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.78 0.16 275)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                </svg>
-              </div>
+          <div
+            style={{
+              ...cardStyle,
+              padding: "20px 22px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "oklch(0.68 0.18 275 / 0.06)",
+                borderRadius: 12,
+              }}
+            />
+            <div style={{ position: "relative" }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "oklch(0.45 0.005 222)",
+                  marginBottom: 8,
+                }}
+              >
+                Čeká na schválení
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  fontSize: 28,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  color: "oklch(0.68 0.18 275)",
+                  marginBottom: 6,
+                }}
+              >
+                {pendingApprovals.length}
+              </p>
+              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
+                {pendingSum > 0 ? fmt(pendingSum) : "0 Kč"} celkem
+              </p>
             </div>
-            <p style={{
-              fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: 28,
-              letterSpacing: "-0.04em", lineHeight: 1,
-              color: "oklch(0.92 0.01 265)", marginBottom: 6,
-            }}>{pendingApprovals.length}</p>
-            <p style={{ fontSize: 11, color: "oklch(0.52 0.08 275)", fontFamily: "var(--font-jakarta)" }}>
-              {pendingSum > 0 ? fmtShort(pendingSum) + " Kč celkem" : "0 Kč celkem"}
-            </p>
-          </div>
-
           </div>
         </motion.div>
 
@@ -1279,34 +1344,21 @@ export default function DashboardPage() {
         >
           {/* Left: Finance chart */}
           <div style={{ ...cardStyle, padding: "22px 22px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8,
-                  background: "oklch(0.62 0.27 265 / 0.14)",
-                  border: "1px solid oklch(0.62 0.27 265 / 0.22)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.75 0.2 265)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                  </svg>
-                </div>
-                <div>
-                  <p style={{
-                    fontSize: 13, fontWeight: 700, color: "oklch(0.90 0.008 265)",
-                    fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em", margin: 0,
-                  }}>Finance — přehled</p>
-                  <p style={{ fontSize: 10, color: "oklch(0.40 0.008 265)", margin: "2px 0 0" }}>posledních 6 měsíců</p>
-                </div>
-              </div>
-              <span style={{
-                fontSize: 10, fontWeight: 600, color: "oklch(0.62 0.27 265)",
-                background: "oklch(0.62 0.27 265 / 0.10)",
-                border: "1px solid oklch(0.62 0.27 265 / 0.18)",
-                padding: "3px 8px", borderRadius: 6,
-                fontFamily: "var(--font-jakarta)",
-              }}>YTD {new Date().getFullYear()}</span>
-            </div>
+            <p
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                fontSize: 15,
+                color: "oklch(0.92 0.005 222)",
+                marginBottom: 4,
+              }}
+            >
+              Finance přehled
+            </p>
+            <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginBottom: 18 }}>
+              Příjmy vs. výdaje · posledních 6 měsíců
+            </p>
 
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={190}>
@@ -1415,40 +1467,27 @@ export default function DashboardPage() {
 
           {/* Right: Tasks by deadline */}
           <div style={{ ...cardStyle, padding: "22px 20px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8,
-                  background: "oklch(0.74 0.18 45 / 0.12)",
-                  border: "1px solid oklch(0.74 0.18 45 / 0.20)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.82 0.18 45)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                </div>
-                <div>
-                  <p style={{
-                    fontSize: 13, fontWeight: 700, color: "oklch(0.90 0.008 265)",
-                    fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em", margin: 0,
-                  }}>Aktuální úkoly</p>
-                  <p style={{ fontSize: 10, color: "oklch(0.40 0.008 265)", margin: "2px 0 0" }}>Nejbližší deadliny</p>
-                </div>
-              </div>
-              {topTasks.length > 0 && (() => {
-                const urgent = topTasks.filter(t => { const d = parseDeadline(t.deadline); return d && daysUntil(d) <= 3; }).length;
-                return urgent > 0 ? (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: "oklch(0.82 0.18 45)",
-                    background: "oklch(0.74 0.18 45 / 0.12)",
-                    border: "1px solid oklch(0.74 0.18 45 / 0.22)",
-                    padding: "3px 8px", borderRadius: 6,
-                    fontFamily: "var(--font-jakarta)",
-                  }}>{urgent} blíží se</span>
-                ) : null;
-              })()}
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  fontSize: 15,
+                  color: "oklch(0.92 0.005 222)",
+                }}
+              >
+                Nejbližší deadliny
+              </p>
+              {topTasks.length > 0 && (
+                <span style={{ fontSize: 11, color: "oklch(0.42 0.005 222)" }}>
+                  {topTasks.filter(t => { const d = parseDeadline(t.deadline); return d && daysUntil(d) <= 3; }).length} blíží se
+                </span>
+              )}
             </div>
+            <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginBottom: 16 }}>
+              Seřazeno podle termínu odevzdání
+            </p>
 
             {topTasks.length === 0 ? (
               <div
@@ -1536,7 +1575,6 @@ export default function DashboardPage() {
         >
           {/* Column 1: Měsíční klienti */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <SectionHeader label="Měsíční klienti" />
             <div
               style={{
                 display: "flex",
@@ -1554,7 +1592,7 @@ export default function DashboardPage() {
                   color: "oklch(0.92 0.005 222)",
                 }}
               >
-                Aktivní paušály
+                Měsíční klienti
               </p>
               <span
                 style={{
@@ -1693,7 +1731,6 @@ export default function DashboardPage() {
 
           {/* Column 2: Jednorázovky */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <SectionHeader label="Jednorázové projekty" />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <p
                 style={{
@@ -1799,7 +1836,6 @@ export default function DashboardPage() {
 
           {/* Column 3: Tým */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
-            <SectionHeader label="Tým" />
             <p
               style={{
                 fontFamily: "var(--font-heading)",
@@ -1810,7 +1846,7 @@ export default function DashboardPage() {
                 marginBottom: 16,
               }}
             >
-              Vytíženost
+              Tým
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

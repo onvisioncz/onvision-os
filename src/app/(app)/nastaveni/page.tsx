@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Pencil, Trash2, X, Check, Shield, Users, ChevronDown } from "lucide-react";
+import {
+  Plus, Pencil, Trash2, X, Check, Shield,
+  Smartphone, KeyRound, CheckCircle2, AlertTriangle, Copy,
+} from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { createClient } from "@/lib/supabase/client";
 import {
   UserConfig, Role, DEFAULT_USERS,
   ROLE_LABELS, ROLE_COLORS,
@@ -62,7 +66,434 @@ function RoleBadge({ role }: { role: Role }) {
   );
 }
 
+/* ── MFA Section ─────────────────────────────────────────────────────────── */
+type MfaStatus = "loading" | "none" | "enrolled";
+type EnrollStep = "idle" | "scanning" | "verifying";
+
+function MfaSection() {
+  const [status, setStatus]         = useState<MfaStatus>("loading");
+  const [enrollStep, setEnrollStep] = useState<EnrollStep>("idle");
+  const [qrCode, setQrCode]         = useState<string | null>(null);
+  const [secret, setSecret]         = useState<string | null>(null);
+  const [enrollFactorId, setEnrollFactorId] = useState<string | null>(null);
+  const [code, setCode]             = useState(["", "", "", "", "", ""]);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [unenrollConfirm, setUnenrollConfirm] = useState(false);
+  const [copied, setCopied]         = useState(false);
+  const inputRefs                   = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    loadStatus();
+  }, []);
+
+  useEffect(() => {
+    if (enrollStep === "scanning") {
+      // Focus first digit after QR appears
+      setTimeout(() => inputRefs.current[0]?.focus(), 300);
+    }
+  }, [enrollStep]);
+
+  async function loadStatus() {
+    const supabase = createClient();
+    const { data } = await supabase.auth.mfa.listFactors();
+    const verified = data?.totp?.filter(f => f.status === "verified") ?? [];
+    setStatus(verified.length > 0 ? "enrolled" : "none");
+  }
+
+  async function startEnroll() {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+    if (error || !data) return;
+
+    setQrCode(data.totp.qr_code);
+    setSecret(data.totp.secret);
+    setEnrollFactorId(data.id);
+    setCode(["", "", "", "", "", ""]);
+    setVerifyError(null);
+    setEnrollStep("scanning");
+  }
+
+  function handleCodeChange(idx: number, val: string) {
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next  = [...code];
+    next[idx]   = digit;
+    setCode(next);
+    if (digit && idx < 5) inputRefs.current[idx + 1]?.focus();
+  }
+
+  function handleCodeKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !code[idx] && idx > 0) inputRefs.current[idx - 1]?.focus();
+    if (e.key === "ArrowLeft"  && idx > 0) inputRefs.current[idx - 1]?.focus();
+    if (e.key === "ArrowRight" && idx < 5) inputRefs.current[idx + 1]?.focus();
+  }
+
+  function handleCodePaste(e: React.ClipboardEvent) {
+    e.preventDefault();
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const next = [...code];
+    for (let i = 0; i < digits.length; i++) next[i] = digits[i];
+    setCode(next);
+    inputRefs.current[Math.min(digits.length, 5)]?.focus();
+  }
+
+  async function verifyEnroll() {
+    if (!enrollFactorId) return;
+    const fullCode = code.join("");
+    if (fullCode.length !== 6) return;
+
+    setVerifyLoading(true);
+    setVerifyError(null);
+
+    const supabase = createClient();
+    const { data: challenge, error: challengeErr } = await supabase.auth.mfa.challenge({ factorId: enrollFactorId });
+    if (challengeErr || !challenge) {
+      setVerifyError("Chyba ověření. Zkuste znovu.");
+      setVerifyLoading(false);
+      return;
+    }
+
+    const { error: verifyErr } = await supabase.auth.mfa.verify({
+      factorId: enrollFactorId,
+      challengeId: challenge.id,
+      code: fullCode,
+    });
+
+    if (verifyErr) {
+      setVerifyError("Nesprávný kód. Zkontrolujte čas v aplikaci.");
+      setCode(["", "", "", "", "", ""]);
+      setTimeout(() => inputRefs.current[0]?.focus(), 50);
+      setVerifyLoading(false);
+      return;
+    }
+
+    setStatus("enrolled");
+    setEnrollStep("idle");
+    setQrCode(null);
+    setSecret(null);
+    setVerifyLoading(false);
+  }
+
+  async function cancelEnroll() {
+    if (enrollFactorId) {
+      const supabase = createClient();
+      await supabase.auth.mfa.unenroll({ factorId: enrollFactorId });
+    }
+    setEnrollStep("idle");
+    setQrCode(null);
+    setSecret(null);
+    setEnrollFactorId(null);
+  }
+
+  async function unenroll() {
+    const supabase = createClient();
+    const { data } = await supabase.auth.mfa.listFactors();
+    const factor = data?.totp?.find(f => f.status === "verified");
+    if (factor) {
+      await supabase.auth.mfa.unenroll({ factorId: factor.id });
+    }
+    setStatus("none");
+    setUnenrollConfirm(false);
+  }
+
+  function copySecret() {
+    if (secret) {
+      navigator.clipboard.writeText(secret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  const codeComplete = code.every(d => d !== "");
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none" style={{ color: "oklch(0.42 0.005 222)" }}>
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 max-w-lg">
+
+      {/* Status card */}
+      <div
+        className="p-5 rounded-[12px]"
+        style={{
+          background: status === "enrolled"
+            ? "oklch(0.67 0.155 155 / 0.06)"
+            : "oklch(1 0 0 / 0.03)",
+          border: status === "enrolled"
+            ? "1px solid oklch(0.67 0.155 155 / 0.22)"
+            : "1px solid oklch(1 0 0 / 0.08)",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              background: status === "enrolled"
+                ? "oklch(0.67 0.155 155 / 0.15)"
+                : "oklch(1 0 0 / 0.06)",
+            }}
+          >
+            {status === "enrolled"
+              ? <CheckCircle2 className="w-5 h-5" style={{ color: "oklch(0.72 0.18 155)" }} />
+              : <Shield className="w-5 h-5" style={{ color: "oklch(0.42 0.005 222)" }} />
+            }
+          </div>
+          <div className="flex-1">
+            <p className="text-[14px] font-semibold" style={{ color: "oklch(0.92 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+              {status === "enrolled" ? "Dvoufázové ověření je aktivní" : "Dvoufázové ověření není aktivní"}
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>
+              {status === "enrolled"
+                ? "Váš účet je chráněn TOTP kódem. Při přihlášení budete vyzvání k zadání kódu z aplikace."
+                : "Aktivujte 2FA pro lepší ochranu vašeho účtu. Budete potřebovat Google Authenticator nebo Authy."}
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="mt-4 flex gap-2">
+          {status === "none" && enrollStep === "idle" && (
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={startEnroll}
+              className="flex items-center gap-2 px-4 py-2 rounded-[8px] text-[13px] font-semibold"
+              style={{
+                background: "oklch(0.62 0.27 265 / 0.15)",
+                color: "oklch(0.78 0.18 265)",
+                border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+              }}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              Aktivovat 2FA
+            </motion.button>
+          )}
+
+          {status === "enrolled" && !unenrollConfirm && (
+            <button
+              onClick={() => setUnenrollConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-[8px] text-[13px] font-medium transition-colors"
+              style={{
+                background: "oklch(0.62 0.22 25 / 0.08)",
+                color: "oklch(0.68 0.18 25)",
+                border: "1px solid oklch(0.62 0.22 25 / 0.2)",
+              }}
+            >
+              <X className="w-3.5 h-3.5" />
+              Deaktivovat 2FA
+            </button>
+          )}
+
+          {status === "enrolled" && unenrollConfirm && (
+            <div className="flex items-center gap-2">
+              <span className="text-[12px]" style={{ color: "oklch(0.68 0.18 25)" }}>
+                Opravdu deaktivovat?
+              </span>
+              <button
+                onClick={unenroll}
+                className="px-3 py-1.5 rounded-[6px] text-[12px] font-semibold"
+                style={{ background: "oklch(0.62 0.22 25 / 0.15)", color: "oklch(0.68 0.18 25)", border: "1px solid oklch(0.62 0.22 25 / 0.3)" }}
+              >
+                Ano, deaktivovat
+              </button>
+              <button
+                onClick={() => setUnenrollConfirm(false)}
+                className="px-3 py-1.5 rounded-[6px] text-[12px]"
+                style={{ color: "oklch(0.42 0.005 222)" }}
+              >
+                Zrušit
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Enrollment flow */}
+      <AnimatePresence>
+        {enrollStep === "scanning" && qrCode && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="p-5 rounded-[12px] space-y-5"
+            style={{
+              background: "oklch(1 0 0 / 0.03)",
+              border: "1px solid oklch(0.62 0.27 265 / 0.2)",
+            }}
+          >
+            <div>
+              <h3 className="text-[14px] font-semibold" style={{ color: "oklch(0.92 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+                1. Naskenujte QR kód
+              </h3>
+              <p className="text-[12px] mt-1" style={{ color: "oklch(0.42 0.005 222)" }}>
+                Otevřete Google Authenticator nebo Authy a naskenujte tento QR kód.
+              </p>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center">
+              <div
+                className="p-3 rounded-[10px]"
+                style={{ background: "oklch(0.98 0.003 265)" }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrCode}
+                  alt="QR kód pro 2FA"
+                  width={160}
+                  height={160}
+                  style={{ display: "block", imageRendering: "pixelated" }}
+                />
+              </div>
+            </div>
+
+            {/* Manual secret */}
+            {secret && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "oklch(0.38 0.005 222)" }}>
+                  Nebo zadejte ručně
+                </p>
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-[7px]"
+                  style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.09)" }}
+                >
+                  <code className="flex-1 text-[12px] font-mono break-all" style={{ color: "oklch(0.72 0.01 265)" }}>
+                    {secret}
+                  </code>
+                  <button onClick={copySecret} className="shrink-0 transition-colors" style={{ color: copied ? "oklch(0.72 0.18 155)" : "oklch(0.42 0.005 222)" }}>
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t" style={{ borderColor: "oklch(1 0 0 / 0.07)" }} />
+
+            {/* Step 2: verify */}
+            <div>
+              <h3 className="text-[14px] font-semibold mb-1" style={{ color: "oklch(0.92 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+                2. Zadejte kód z aplikace
+              </h3>
+              <p className="text-[12px] mb-4" style={{ color: "oklch(0.42 0.005 222)" }}>
+                Aplikace vám zobrazí 6místný kód — zadejte ho níže pro potvrzení.
+              </p>
+
+              {verifyError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-[7px] text-[12px] mb-4"
+                  style={{
+                    background: "oklch(0.62 0.22 25 / 0.08)",
+                    border: "1px solid oklch(0.62 0.22 25 / 0.2)",
+                    color: "oklch(0.75 0.18 25)",
+                  }}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  {verifyError}
+                </motion.div>
+              )}
+
+              {/* 6-digit input */}
+              <div className="flex gap-2 mb-4" onPaste={handleCodePaste}>
+                {code.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={el => { inputRefs.current[idx] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={e => handleCodeChange(idx, e.target.value)}
+                    onKeyDown={e => handleCodeKeyDown(idx, e)}
+                    className="w-10 h-11 text-center rounded-[7px] text-[16px] font-bold outline-none transition-all"
+                    style={{
+                      background: "oklch(1 0 0 / 0.05)",
+                      border: digit
+                        ? "1px solid oklch(0.62 0.27 265 / 0.6)"
+                        : "1px solid oklch(1 0 0 / 0.1)",
+                      color: "oklch(0.96 0.01 265)",
+                      fontFamily: "var(--font-outfit)",
+                      caretColor: "oklch(0.62 0.27 265)",
+                    }}
+                    onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.7)")}
+                    onBlur={e => (e.target.style.borderColor = digit ? "oklch(0.62 0.27 265 / 0.6)" : "oklch(1 0 0 / 0.1)")}
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={verifyEnroll}
+                  disabled={!codeComplete || verifyLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-[8px] text-[13px] font-semibold disabled:opacity-50"
+                  style={{
+                    background: "oklch(0.62 0.27 265)",
+                    color: "oklch(0.97 0.004 265)",
+                    fontFamily: "var(--font-outfit)",
+                  }}
+                >
+                  {verifyLoading ? (
+                    <>
+                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Ověřuji...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-3.5 h-3.5" />
+                      Aktivovat 2FA
+                    </>
+                  )}
+                </motion.button>
+
+                <button
+                  onClick={cancelEnroll}
+                  className="px-4 py-2 rounded-[8px] text-[13px]"
+                  style={{ color: "oklch(0.42 0.005 222)" }}
+                >
+                  Zrušit
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Info note */}
+      {status === "none" && enrollStep === "idle" && (
+        <div
+          className="flex items-start gap-3 px-4 py-3 rounded-[9px] text-[12px]"
+          style={{
+            background: "oklch(0.62 0.27 265 / 0.05)",
+            border: "1px solid oklch(0.62 0.27 265 / 0.12)",
+            color: "oklch(0.55 0.01 265)",
+          }}
+        >
+          <Smartphone className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "oklch(0.62 0.27 265 / 0.6)" }} />
+          <span>
+            Doporučujeme aktivovat 2FA pro všechny členy týmu. Podporované aplikace: Google Authenticator, Authy, 1Password, Bitwarden.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main ─────────────────────────────────────────────────────────────────── */
+type Tab = "users" | "roles" | "security";
+
 export default function NastaveniPage() {
   const { user: currentUser } = useUserRole();
   const [users, setUsers] = useSupabaseData<UserConfig[]>(
@@ -70,13 +501,22 @@ export default function NastaveniPage() {
     () => DEFAULT_USERS
   );
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [form, setForm] = useState<UserConfig>(emptyUser() as UserConfig);
+  const [modalOpen, setModalOpen]   = useState(false);
+  const [editIndex, setEditIndex]   = useState<number | null>(null);
+  const [form, setForm]             = useState<UserConfig>(emptyUser() as UserConfig);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"users" | "roles">("users");
+  const [activeTab, setActiveTab]   = useState<Tab>("security");
 
   const isAdmin = currentUser?.roles.includes("admin") ?? false;
+
+  // Admin tabs + security for everyone
+  const tabs: { id: Tab; label: string }[] = [
+    ...(isAdmin ? [
+      { id: "users" as Tab, label: "Uživatelé" },
+      { id: "roles" as Tab, label: "Role a přístupy" },
+    ] : []),
+    { id: "security" as Tab, label: "Zabezpečení" },
+  ];
 
   function openAdd() {
     setForm(emptyUser() as UserConfig);
@@ -124,41 +564,26 @@ export default function NastaveniPage() {
     }));
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: "oklch(0.38 0.005 222)" }} />
-          <p className="text-[14px] font-medium" style={{ color: "oklch(0.55 0.005 222)" }}>
-            Tato sekce je pouze pro administrátory.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.96 0.01 265)", fontFamily: "var(--font-outfit)" }}>
-            Nastavení
-          </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: "oklch(0.45 0.005 222)" }}>
-            Správa uživatelů, rolí a přístupů
-          </p>
-        </div>
+      <div>
+        <h1 className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.96 0.01 265)", fontFamily: "var(--font-outfit)" }}>
+          Nastavení
+        </h1>
+        <p className="text-[13px] mt-0.5" style={{ color: "oklch(0.45 0.005 222)" }}>
+          {isAdmin ? "Správa uživatelů, rolí a přístupů" : "Zabezpečení účtu"}
+        </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-[8px] w-fit" style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
-        {(["users", "roles"] as const).map(tab => (
+        {tabs.map(tab => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className="px-4 py-1.5 rounded-[6px] text-[13px] font-medium transition-all"
-            style={activeTab === tab ? {
+            style={activeTab === tab.id ? {
               background: "oklch(0.62 0.27 265 / 0.15)",
               color: "oklch(0.78 0.18 265)",
               border: "1px solid oklch(0.62 0.27 265 / 0.25)",
@@ -167,14 +592,14 @@ export default function NastaveniPage() {
               border: "1px solid transparent",
             }}
           >
-            {tab === "users" ? "Uživatelé" : "Role a přístupy"}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {activeTab === "users" && (
+      {/* Users tab */}
+      {activeTab === "users" && isAdmin && (
         <div className="space-y-3">
-          {/* Add button */}
           <div className="flex justify-end">
             <motion.button
               onClick={openAdd}
@@ -191,7 +616,6 @@ export default function NastaveniPage() {
             </motion.button>
           </div>
 
-          {/* User list */}
           <div className="space-y-2">
             {users.map((u, idx) => (
               <motion.div
@@ -205,7 +629,6 @@ export default function NastaveniPage() {
                   border: "1px solid oklch(1 0 0 / 0.07)",
                 }}
               >
-                {/* Avatar */}
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
                   style={{
@@ -217,7 +640,6 @@ export default function NastaveniPage() {
                   {u.initials}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[14px] font-semibold" style={{ color: "oklch(0.92 0.005 265)" }}>
@@ -236,7 +658,6 @@ export default function NastaveniPage() {
                   </p>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
                   <motion.button
                     whileTap={{ scale: 0.9 }}
@@ -283,7 +704,8 @@ export default function NastaveniPage() {
         </div>
       )}
 
-      {activeTab === "roles" && (
+      {/* Roles tab */}
+      {activeTab === "roles" && isAdmin && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {ALL_ROLES.map(role => (
@@ -328,6 +750,9 @@ export default function NastaveniPage() {
         </div>
       )}
 
+      {/* Security tab */}
+      {activeTab === "security" && <MfaSection />}
+
       {/* ── Add/Edit Modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {modalOpen && (
@@ -354,7 +779,6 @@ export default function NastaveniPage() {
                 boxShadow: "0 24px 64px oklch(0 0 0 / 0.6)",
               }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
                 <h2 className="text-[16px] font-bold" style={{ color: "oklch(0.96 0.01 265)", fontFamily: "var(--font-outfit)" }}>
                   {editIndex !== null ? "Upravit uživatele" : "Přidat uživatele"}
@@ -365,7 +789,6 @@ export default function NastaveniPage() {
               </div>
 
               <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-                {/* Name + Email */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Jméno</label>
@@ -418,7 +841,6 @@ export default function NastaveniPage() {
                   />
                 </div>
 
-                {/* Avatar color */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Barva avataru</label>
                   <div className="flex gap-2 flex-wrap">
@@ -439,7 +861,6 @@ export default function NastaveniPage() {
                   </div>
                 </div>
 
-                {/* Roles */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Role</label>
                   <div className="flex flex-wrap gap-2">
@@ -467,7 +888,6 @@ export default function NastaveniPage() {
                   </div>
                 </div>
 
-                {/* Clients */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>
                     Klienti (zodpovědnost)
@@ -497,7 +917,6 @@ export default function NastaveniPage() {
                   </div>
                 </div>
 
-                {/* Active toggle */}
                 <div className="flex items-center justify-between py-2">
                   <label className="text-[13px] font-medium" style={{ color: "oklch(0.78 0.005 265)" }}>Aktivní účet</label>
                   <button
@@ -513,7 +932,6 @@ export default function NastaveniPage() {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="flex gap-2 justify-end px-6 py-4" style={{ borderTop: "1px solid oklch(1 0 0 / 0.07)" }}>
                 <button
                   onClick={() => setModalOpen(false)}

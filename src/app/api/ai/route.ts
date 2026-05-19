@@ -1,8 +1,16 @@
+import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+export async function POST(req: NextRequest) {
+  // ── Auth check ──────────────────────────────────────────────────────────────
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return UNAUTHORIZED;
+
+  // ── API key ──────────────────────────────────────────────────────────────────
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "AI není nakonfigurováno. Přidejte ANTHROPIC_API_KEY do prostředí." },

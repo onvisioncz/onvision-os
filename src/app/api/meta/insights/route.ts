@@ -1,3 +1,4 @@
+import { getUserFromRequest, EDGE_UNAUTHORIZED } from "@/lib/supabase/edge";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
@@ -39,6 +40,10 @@ async function getLongLivedToken(): Promise<{ token: string; isNew: boolean; exp
 }
 
 export async function GET(req: NextRequest) {
+  // ── Auth check ──────────────────────────────────────────────────────────────
+  const user = await getUserFromRequest(req);
+  if (!user) return EDGE_UNAUTHORIZED;
+
   const { searchParams } = new URL(req.url);
   const pageId = searchParams.get("pageId") ?? process.env.ONVISION_PAGE_ID;
   const igId   = searchParams.get("igId")   ?? process.env.ONVISION_IG_ID;

@@ -1,24 +1,29 @@
+import { getUserFromRequest, EDGE_UNAUTHORIZED } from "@/lib/supabase/edge";
 import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+// Model pricing guide (per 1M tokens, input/output):
+//   haiku-3-5:  $0.80 / $4   — ⚡ fast, cheap, great for captions/briefs (~$0.60/month)
+//   sonnet-4-5: $3    / $15  — ✨ balanced, better quality (~$8/month)
+const MODELS = {
+  haiku:  "claude-haiku-3-5",
+  sonnet: "claude-sonnet-4-5",
+} as const;
 
+export async function POST(req: NextRequest) {
+  // ── Auth check ──────────────────────────────────────────────────────────────
+  const user = await getUserFromRequest(req);
+  if (!user) return EDGE_UNAUTHORIZED;
+
+  // ── API key ──────────────────────────────────────────────────────────────────
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(
       JSON.stringify({ error: "AI není nakonfigurováno. Přidejte ANTHROPIC_API_KEY." }),
       { status: 503, headers: { "Content-Type": "application/json" } }
     );
   }
-
-  // Model pricing guide (per 1M tokens, input/output):
-  //   haiku-3-5:  $0.80 / $4   — ⚡ fast, cheap, great for captions/briefs (~$0.60/month)
-  //   sonnet-4-5: $3    / $15  — ✨ balanced, better quality (~$8/month)
-  const MODELS = {
-    haiku:  "claude-haiku-3-5",
-    sonnet: "claude-sonnet-4-5",
-  } as const;
 
   let body: {
     messages: { role: "user" | "assistant"; content: string }[];
