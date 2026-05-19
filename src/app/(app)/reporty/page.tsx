@@ -599,8 +599,38 @@ function ClientReportingPanel() {
   const [streamText, setStreamText] = useState("");
   const [savedReports, setSavedReports] = useSupabaseData<ClientReportData[]>("ov-client-reports", () => []);
   const [viewingReport, setViewingReport] = useState<ClientReportData | null>(null);
+  const [metaFetching, setMetaFetching] = useState(false);
+  const [metaFetchError, setMetaFetchError] = useState<string | null>(null);
+  const [metaFetchedAt, setMetaFetchedAt] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const abortRef  = useRef<AbortController | null>(null);
+
+  /* Load real data from Meta API */
+  async function loadFromMeta() {
+    setMetaFetching(true);
+    setMetaFetchError(null);
+    try {
+      const res = await fetch("/api/meta/insights");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Chyba při načítání dat");
+
+      const ig = data.instagram;
+      setIg(prev => ({
+        ...prev,
+        followers:      ig.followers       ? String(ig.followers)                               : prev.followers,
+        followersGrowth: ig.followerGrowth ? `+${ig.followerGrowth}`                            : prev.followersGrowth,
+        reach:          ig.reach           ? String(ig.reach)                                    : prev.reach,
+        engagement:     (ig.interactions && ig.followers)
+                          ? ((ig.interactions / ig.followers) * 100).toFixed(2)
+                          : prev.engagement,
+      }));
+      setMetaFetchedAt(new Date().toLocaleString("cs-CZ"));
+    } catch (err) {
+      setMetaFetchError(err instanceof Error ? err.message : "Neznámá chyba");
+    } finally {
+      setMetaFetching(false);
+    }
+  }
 
   /* Shortcuts for updating IG / Meta fields */
   const setIgField  = (k: keyof IGMetrics,  v: string) => setIg(p  => ({ ...p, [k]: v }));
@@ -830,9 +860,41 @@ Délka: 400–600 slov. Žádné zbytečné fráze ani omluvy.`,
 
           {/* Instagram metrics */}
           <div className="card p-5">
-            <SectionLabel color="oklch(0.72 0.18 335)">
-              Instagram — {mesic} {rok}
-            </SectionLabel>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "oklch(0.72 0.18 335)" }}>
+                  Instagram — {mesic} {rok}
+                </span>
+                <span className="flex-1 h-px w-16" style={{ background: "oklch(0.72 0.18 335 / 0.2)" }} />
+              </div>
+              <div className="flex items-center gap-2">
+                {metaFetchedAt && (
+                  <span className="text-[10px]" style={{ color: "oklch(0.50 0.005 222)" }}>
+                    Aktualizováno {metaFetchedAt}
+                  </span>
+                )}
+                {metaFetchError && (
+                  <span className="text-[10px]" style={{ color: "oklch(0.65 0.22 25)" }}>
+                    {metaFetchError}
+                  </span>
+                )}
+                <button
+                  onClick={loadFromMeta}
+                  disabled={metaFetching}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-[7px] transition-all disabled:opacity-50"
+                  style={{
+                    color: "oklch(0.72 0.18 335)",
+                    background: "oklch(0.72 0.18 335 / 0.08)",
+                    border: "1px solid oklch(0.72 0.18 335 / 0.2)",
+                  }}
+                >
+                  {metaFetching
+                    ? <><Loader2 className="w-3 h-3 animate-spin" /> Načítám...</>
+                    : <><RefreshCw className="w-3 h-3" /> Načíst z Meta</>
+                  }
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               <MetricInput label="Followers celkem" value={ig.followers} onChange={v => setIgField("followers", v)} placeholder="např. 4 820" icon={Users} />
               <MetricInput label="Nárůst followers" value={ig.followersGrowth} onChange={v => setIgField("followersGrowth", v)} placeholder="+120" />
