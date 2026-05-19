@@ -31,7 +31,6 @@ const ALL_NAV = [
   { label: "SMM",             short: "SMM",        href: "/smm",              icon: Layers2 },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Výstupy",         short: "Výstupy",    href: "/outputs",          icon: PackageOpen },
-  { label: "Reporty",         short: "Reporty",   href: "/reporty",          icon: BarChart2 },
   { label: "AI Asistent",     short: "AI",         href: "/ai",               icon: Sparkles },
 ];
 
