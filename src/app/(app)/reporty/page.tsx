@@ -608,7 +608,7 @@ function ClientReportingPanel() {
   const reportRef = useRef<HTMLDivElement>(null);
   const abortRef  = useRef<AbortController | null>(null);
 
-  /* Load real data from Meta API */
+  /* Load real data from Meta API — maps ALL available fields */
   async function loadFromMeta() {
     setMetaFetching(true);
     setMetaFetchError(null);
@@ -617,16 +617,31 @@ function ClientReportingPanel() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Chyba při načítání dat");
 
-      const ig = data.instagram;
+      const d = data.instagram;
+
+      // Engagement rate: interactions / followers * 100, fallback to accountsEngaged
+      const engagementVal = d.followers > 0
+        ? ((d.interactions > 0 ? d.interactions : d.accountsEngaged) / d.followers * 100).toFixed(2)
+        : "";
+
       setIg(prev => ({
         ...prev,
-        followers:      ig.followers       ? String(ig.followers)                               : prev.followers,
-        followersGrowth: ig.followerGrowth ? `+${ig.followerGrowth}`                            : prev.followersGrowth,
-        reach:          ig.reach           ? String(ig.reach)                                    : prev.reach,
-        engagement:     (ig.interactions && ig.followers)
-                          ? ((ig.interactions / ig.followers) * 100).toFixed(2)
-                          : prev.engagement,
+        followers:       d.followers      > 0 ? String(d.followers)                           : prev.followers,
+        followersGrowth: d.followerGrowth > 0 ? `+${d.followerGrowth}`                        : prev.followersGrowth,
+        reach:           d.reach          > 0 ? String(d.reach)                               : prev.reach,
+        impressions:     d.impressions     > 0 ? String(d.impressions)                        : prev.impressions,
+        engagement:      engagementVal || prev.engagement,
+        posts:           d.mediaCount    > 0 ? String(d.mediaCount)                           : prev.posts,
+        // reels/stories not available from basic API — left for manual entry
       }));
+
+      // If Facebook page data available, populate notes hint
+      if (data.facebook?.impressions > 0) {
+        setPoznamky(prev =>
+          prev ? prev : `Facebook: ${data.facebook.impressions.toLocaleString("cs-CZ")} impressions, ${data.facebook.reach.toLocaleString("cs-CZ")} reach, ${data.facebook.newFollowers} nových sledujících`
+        );
+      }
+
       setMetaFetchedAt(new Date().toLocaleString("cs-CZ"));
     } catch (err) {
       setMetaFetchError(err instanceof Error ? err.message : "Neznámá chyba");
@@ -679,26 +694,9 @@ function ClientReportingPanel() {
     // Auto-fetch Meta data before generating if fields are empty
     const noData = !ig.followers && !ig.reach && !ig.engagement;
     if (noData) {
-      setMetaFetching(true);
-      setMetaFetchError(null);
       try {
-        const res = await fetch("/api/meta/insights");
-        if (res.ok) {
-          const data = await res.json();
-          const igData = data.instagram;
-          setIg(prev => ({
-            ...prev,
-            followers:       igData.followers       ? String(igData.followers)   : prev.followers,
-            followersGrowth: igData.followerGrowth  ? `+${igData.followerGrowth}` : prev.followersGrowth,
-            reach:           igData.reach           ? String(igData.reach)        : prev.reach,
-            engagement:      (igData.interactions && igData.followers)
-                               ? ((igData.interactions / igData.followers) * 100).toFixed(2)
-                               : prev.engagement,
-          }));
-          setMetaFetchedAt(new Date().toLocaleString("cs-CZ"));
-        }
+        await loadFromMeta();
       } catch { /* continue without data */ }
-      finally { setMetaFetching(false); }
     }
 
     setGenerating(true);

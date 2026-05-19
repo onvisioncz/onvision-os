@@ -53,22 +53,27 @@ export async function GET(req: NextRequest) {
   try {
     const { token: userToken, isNew, expiresAt } = await getLongLivedToken();
 
-    // ── Instagram: time_series (reach, follower_count) ────────────────────────
-    const igTimeUrl = `${META_API}/${igId}/insights?metric=reach,follower_count&period=${period}&metric_type=time_series&access_token=${userToken}`;
+    // ── Instagram: total_value metrics (most reliable) ───────────────────────
+    // reach + impressions as total_value (better than time_series for monthly)
+    const igTotalReachUrl = `${META_API}/${igId}/insights?metric=reach,impressions&period=${period}&metric_type=total_value&access_token=${userToken}`;
 
-    // ── Instagram: total_value (interactions, engaged, profile_views) ─────────
+    // ── Instagram: other total_value metrics ──────────────────────────────────
     const igTotalUrl = `${META_API}/${igId}/insights?metric=accounts_engaged,total_interactions,profile_views&period=${period}&metric_type=total_value&access_token=${userToken}`;
 
-    // ── Instagram profile (followers count + media) ───────────────────────────
-    const igProfileUrl = `${META_API}/${igId}?fields=followers_count,media_count,username&access_token=${userToken}`;
+    // ── Instagram: follower_count via time_series (only way to get growth) ────
+    const igFollowerUrl = `${META_API}/${igId}/insights?metric=follower_count&period=day&metric_type=time_series&access_token=${userToken}`;
+
+    // ── Instagram profile (current followers + post count) ────────────────────
+    const igProfileUrl = `${META_API}/${igId}?fields=followers_count,media_count,username,biography&access_token=${userToken}`;
 
     // ── Facebook Page insights ────────────────────────────────────────────────
     const fbUrl = `${META_API}/${pageId}/insights?metric=page_impressions,page_reach,page_post_engagements,page_fan_adds_unique&period=month&access_token=${userToken}`;
 
     // Fetch all in parallel
-    const [igTimeRes, igTotalRes, igProfileRes, fbRes] = await Promise.allSettled([
-      fetch(igTimeUrl),
+    const [igTotalReachRes, igTotalRes, igFollowerRes, igProfileRes, fbRes] = await Promise.allSettled([
+      fetch(igTotalReachUrl),
       fetch(igTotalUrl),
+      fetch(igFollowerUrl),
       fetch(igProfileUrl),
       fetch(fbUrl),
     ]);
@@ -78,9 +83,10 @@ export async function GET(req: NextRequest) {
       try { return await res.value.json(); } catch { return null; }
     }
 
-    const [igTime, igTotal, igProfile, fb] = await Promise.all([
-      safeJson(igTimeRes),
+    const [igTotalReach, igTotal, igFollower, igProfile, fb] = await Promise.all([
+      safeJson(igTotalReachRes),
       safeJson(igTotalRes),
+      safeJson(igFollowerRes),
       safeJson(igProfileRes),
       safeJson(fbRes),
     ]);
@@ -99,13 +105,20 @@ export async function GET(req: NextRequest) {
       return metric.values[metric.values.length - 1]?.value ?? 0;
     }
 
+    // Follower growth = sum of daily changes in the period
+    const followerGrowth = (() => {
+      const vals = igFollower?.data?.find((m: {name: string}) => m.name === "follower_count")?.values ?? [];
+      return (vals as {value: number}[]).reduce((s, v) => s + (v.value || 0), 0);
+    })();
+
     const response = {
       instagram: {
         username:        igProfile?.username        ?? "onvisioncz",
         followers:       igProfile?.followers_count ?? 0,
         mediaCount:      igProfile?.media_count     ?? 0,
-        reach:           sumTimeSeries(igTime, "reach"),
-        followerGrowth:  sumTimeSeries(igTime, "follower_count"),
+        reach:           totalValue(igTotalReach, "reach"),
+        impressions:     totalValue(igTotalReach, "impressions"),
+        followerGrowth,
         interactions:    totalValue(igTotal, "total_interactions"),
         accountsEngaged: totalValue(igTotal, "accounts_engaged"),
         profileViews:    totalValue(igTotal, "profile_views"),
@@ -121,10 +134,10 @@ export async function GET(req: NextRequest) {
       // If token was freshly exchanged, include it so admin can save it as META_LONG_LIVED_TOKEN
       ...(isNew && expiresAt ? { newLongLivedToken: userToken, tokenExpiresAt: expiresAt } : {}),
       errors: {
-        igTime:    igTime?.error    ?? null,
-        igTotal:   igTotal?.error   ?? null,
-        igProfile: igProfile?.error ?? null,
-        fb:        fb?.error        ?? null,
+        igTotalReach: igTotalReach?.error ?? null,
+        igTotal:      igTotal?.error      ?? null,
+        igProfile:    igProfile?.error    ?? null,
+        fb:           fb?.error           ?? null,
       },
     };
 
