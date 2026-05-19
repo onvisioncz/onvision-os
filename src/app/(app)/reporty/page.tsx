@@ -10,6 +10,7 @@ import {
   CheckCircle2, Loader2, RefreshCw, Printer,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { ReportDocument } from "@/components/reports/report-document";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Finance types & data
@@ -602,6 +603,7 @@ function ClientReportingPanel() {
   const [metaFetching, setMetaFetching] = useState(false);
   const [metaFetchError, setMetaFetchError] = useState<string | null>(null);
   const [metaFetchedAt, setMetaFetchedAt] = useState<string | null>(null);
+  const [showDocument, setShowDocument] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const abortRef  = useRef<AbortController | null>(null);
 
@@ -760,55 +762,43 @@ Délka: 400–600 slov. Žádné zbytečné fráze ani omluvy.`,
     }
   }
 
-  /* Print */
+  /* Open premium PDF document */
   function handlePrint() {
-    window.print();
+    setShowDocument(true);
   }
 
-  /* Viewing a saved report */
+  /* Viewing a saved report — open premium document directly */
   if (viewingReport) {
     return (
-      <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
-        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}>
-        <div className="flex items-center gap-3 mb-5">
-          <button onClick={() => setViewingReport(null)}
-            className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-[7px] transition-all"
-            style={{ color: "oklch(0.55 0.005 222)", background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Zpět
-          </button>
-          <div className="flex-1">
-            <p className="text-[15px] font-bold" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em", color: "var(--foreground)" }}>
-              {viewingReport.klient}
-            </p>
-            <p className="text-[11px]" style={{ color: "oklch(0.45 0.005 222)" }}>{viewingReport.mesic} {viewingReport.rok}</p>
-          </div>
-          <button onClick={handlePrint}
-            className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-all"
-            style={{ color: "oklch(0.62 0.27 265)", background: "oklch(0.62 0.27 265 / 0.1)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}>
-            <Printer className="w-3.5 h-3.5" /> Tisknout / PDF
-          </button>
-        </div>
-        <div ref={reportRef} className="card p-6 print:shadow-none print:border-none"
-          style={{ background: "oklch(0.11 0.006 222)" }}>
-          {/* Print header */}
-          <div className="hidden print:flex items-center justify-between mb-8 pb-6 border-b" style={{ borderColor: "oklch(0.2 0.005 222)" }}>
-            <div>
-              <p className="text-[22px] font-bold" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.03em" }}>OnVision</p>
-              <p className="text-[11px] uppercase tracking-[0.1em]" style={{ color: "oklch(0.45 0.005 222)" }}>Kreativní Agentura</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[13px] font-semibold" style={{ fontFamily: "var(--font-outfit)" }}>{viewingReport.klient}</p>
-              <p className="text-[11px]" style={{ color: "oklch(0.45 0.005 222)" }}>Social Media Report · {viewingReport.mesic} {viewingReport.rok}</p>
-            </div>
-          </div>
-          <ReportOutput text={viewingReport.aiReport} streaming={false} />
-        </div>
-      </motion.div>
+      <ReportDocument
+        klient={viewingReport.klient}
+        mesic={viewingReport.mesic}
+        rok={viewingReport.rok}
+        ig={viewingReport.ig}
+        meta={viewingReport.meta}
+        aiReport={viewingReport.aiReport}
+        generatedAt={viewingReport.generatedAt}
+        onClose={() => setViewingReport(null)}
+      />
     );
   }
 
   return (
     <div className="space-y-5">
+      {/* Premium document overlay — shown when PDF button clicked */}
+      {showDocument && streamText && (
+        <ReportDocument
+          klient={klient}
+          mesic={mesic}
+          rok={rok}
+          ig={ig}
+          meta={meta}
+          aiReport={streamText}
+          generatedAt={new Date().toISOString()}
+          onClose={() => setShowDocument(false)}
+        />
+      )}
+
       {step === "form" ? (
         <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
           {/* Client + period selector */}
@@ -992,9 +982,9 @@ Délka: 400–600 slov. Žádné zbytečné fráze ani omluvy.`,
                   <RefreshCw className="w-3 h-3" /> Znovu vygenerovat
                 </button>
                 <button onClick={handlePrint}
-                  className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-[7px] transition-all ml-auto"
-                  style={{ color: "oklch(0.82 0.16 85)", background: "oklch(0.82 0.16 85 / 0.08)", border: "1px solid oklch(0.82 0.16 85 / 0.2)" }}>
-                  <Printer className="w-3.5 h-3.5" /> Tisknout / PDF
+                  className="flex items-center gap-1.5 text-[12px] font-semibold px-4 py-2 rounded-[8px] transition-all ml-auto"
+                  style={{ background: "#5353f6", color: "#fff", border: "none", fontFamily: "var(--font-outfit)" }}>
+                  <Printer className="w-3.5 h-3.5" /> Exportovat PDF
                 </button>
               </>
             )}
