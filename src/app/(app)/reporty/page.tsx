@@ -201,6 +201,7 @@ const TYP_COLOR: Record<string, string> = {
    Client reporting types
 ───────────────────────────────────────────────────────────────────────────── */
 const KLIENTI = [
+  "OnVision (interní)",
   "SENIMED s.r.o.",
   "STAVOS Brno, a.s.",
   "FIRESTA-Fišer a.s.",
