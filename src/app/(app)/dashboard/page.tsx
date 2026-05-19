@@ -155,10 +155,39 @@ const item = {
 
 /* ── Shared card style ─────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-  background: "oklch(1 0 0 / 0.035)",
-  border: "1px solid oklch(1 0 0 / 0.08)",
+  background: "oklch(1 0 0 / 0.045)",
+  border: "1px solid oklch(1 0 0 / 0.11)",
   borderRadius: 12,
 };
+
+/* ── Section header helper ─────────────────────────────────────────────────── */
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "oklch(0.38 0.005 222)",
+          fontFamily: "var(--font-jakarta)",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          height: 1,
+          background: "oklch(1 0 0 / 0.08)",
+        }}
+      />
+    </div>
+  );
+}
 
 /* ── Recharts custom tooltip ───────────────────────────────────────────────── */
 function FinanceTooltip({
@@ -250,8 +279,8 @@ function PriorityBadge({ p }: { p: Task["priorita"] }) {
         fontWeight: 700,
         letterSpacing: "0.06em",
         textTransform: "uppercase",
-        padding: "2px 7px",
-        borderRadius: 5,
+        padding: "3px 8px",
+        borderRadius: 4,
         whiteSpace: "nowrap",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -279,8 +308,8 @@ function TypBadge({ typ }: { typ: string }) {
         fontWeight: 700,
         letterSpacing: "0.05em",
         textTransform: "uppercase",
-        padding: "2px 7px",
-        borderRadius: 5,
+        padding: "3px 8px",
+        borderRadius: 4,
         whiteSpace: "nowrap",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -1117,124 +1146,107 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         {/* ── 2. KPI Strip ── */}
-        <motion.div
-          variants={item}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3"
-        >
+        <motion.div variants={item}>
+          <SectionHeader label="Přehled — tento měsíc" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Tile 1: MRR */}
           <div
             style={{
               ...cardStyle,
-              padding: "20px 22px",
+              padding: "18px 20px 18px 24px",
               position: "relative",
               overflow: "hidden",
+              borderLeft: "2px solid oklch(0.62 0.27 265 / 0.70)",
             }}
           >
-            <div
+            <p
               style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.62 0.27 265 / 0.06)",
-                borderRadius: 12,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "oklch(0.42 0.005 222)",
+                marginBottom: 10,
+                fontFamily: "var(--font-jakarta)",
               }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                MRR / měsíc
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.62 0.27 265)",
-                  marginBottom: 6,
-                }}
-              >
-                {mrr > 0 ? fmt(mrr) : "-- Kč"}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {activeClients.length} aktivních klientů
-              </p>
-            </div>
+            >
+              MRR / měsíc
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 800,
+                fontSize: 26,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "oklch(0.62 0.27 265)",
+                marginBottom: 8,
+              }}
+            >
+              {mrr > 0 ? fmt(mrr) : "-- Kč"}
+            </p>
+            <p style={{ fontSize: 11, color: "oklch(0.46 0.005 222)", fontFamily: "var(--font-jakarta)" }}>
+              {activeClients.length} aktivních klientů
+            </p>
           </div>
 
           {/* Tile 2: Deliverable completion */}
           <div
             style={{
               ...cardStyle,
-              padding: "20px 22px",
+              padding: "18px 20px 18px 24px",
               position: "relative",
               overflow: "hidden",
+              borderLeft: "2px solid oklch(0.67 0.155 155 / 0.70)",
             }}
           >
+            <p
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "oklch(0.42 0.005 222)",
+                marginBottom: 10,
+                fontFamily: "var(--font-jakarta)",
+              }}
+            >
+              Splněno tento měsíc
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 800,
+                fontSize: 26,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "oklch(0.67 0.155 155)",
+                marginBottom: 8,
+              }}
+            >
+              {delivPct} %
+            </p>
+            <p style={{ fontSize: 11, color: "oklch(0.46 0.005 222)", fontFamily: "var(--font-jakarta)", marginBottom: 10 }}>
+              {delivDone}/{delivTotal} deliverables
+            </p>
             <div
               style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.67 0.155 155 / 0.05)",
-                borderRadius: 12,
+                height: 3,
+                borderRadius: 99,
+                background: "oklch(1 0 0 / 0.07)",
+                overflow: "hidden",
               }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
+            >
+              <motion.div
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Splněno tento měsíc
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.67 0.155 155)",
-                  marginBottom: 6,
-                }}
-              >
-                {delivPct} %
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)", marginBottom: 10 }}>
-                {delivDone}/{delivTotal} úkolů
-              </p>
-              <div
-                style={{
-                  height: 4,
+                  height: "100%",
                   borderRadius: 99,
-                  background: "oklch(1 0 0 / 0.07)",
-                  overflow: "hidden",
+                  background: "oklch(0.67 0.155 155)",
                 }}
-              >
-                <motion.div
-                  style={{
-                    height: "100%",
-                    borderRadius: 99,
-                    background: "oklch(0.67 0.155 155)",
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${delivPct}%` }}
-                  transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-                />
-              </div>
+                initial={{ width: 0 }}
+                animate={{ width: `${delivPct}%` }}
+                transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+              />
             </div>
           </div>
 
@@ -1242,98 +1254,83 @@ export default function DashboardPage() {
           <div
             style={{
               ...cardStyle,
-              padding: "20px 22px",
+              padding: "18px 20px 18px 24px",
               position: "relative",
               overflow: "hidden",
+              borderLeft: "2px solid oklch(0.74 0.18 45 / 0.70)",
             }}
           >
-            <div
+            <p
               style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.74 0.18 45 / 0.06)",
-                borderRadius: 12,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "oklch(0.42 0.005 222)",
+                marginBottom: 10,
+                fontFamily: "var(--font-jakarta)",
               }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Urgentní úkoly
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.74 0.18 45)",
-                  marginBottom: 6,
-                }}
-              >
-                {urgentTasks.length}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {probihaTasks} probíhá · {reviewTasks} v review
-              </p>
-            </div>
+            >
+              Urgentní úkoly
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 800,
+                fontSize: 26,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "oklch(0.74 0.18 45)",
+                marginBottom: 8,
+              }}
+            >
+              {urgentTasks.length}
+            </p>
+            <p style={{ fontSize: 11, color: "oklch(0.46 0.005 222)", fontFamily: "var(--font-jakarta)" }}>
+              {probihaTasks} probíhá · {reviewTasks} v review
+            </p>
           </div>
 
           {/* Tile 4: Approvals */}
           <div
             style={{
               ...cardStyle,
-              padding: "20px 22px",
+              padding: "18px 20px 18px 24px",
               position: "relative",
               overflow: "hidden",
+              borderLeft: "2px solid oklch(0.68 0.18 275 / 0.70)",
             }}
           >
-            <div
+            <p
               style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.68 0.18 275 / 0.06)",
-                borderRadius: 12,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "oklch(0.42 0.005 222)",
+                marginBottom: 10,
+                fontFamily: "var(--font-jakarta)",
               }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Čeká na schválení
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.68 0.18 275)",
-                  marginBottom: 6,
-                }}
-              >
-                {pendingApprovals.length}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {pendingSum > 0 ? fmt(pendingSum) : "0 Kč"} celkem
-              </p>
-            </div>
+            >
+              Čeká na schválení
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontWeight: 800,
+                fontSize: 26,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "oklch(0.68 0.18 275)",
+                marginBottom: 8,
+              }}
+            >
+              {pendingApprovals.length}
+            </p>
+            <p style={{ fontSize: 11, color: "oklch(0.46 0.005 222)", fontFamily: "var(--font-jakarta)" }}>
+              {pendingSum > 0 ? fmt(pendingSum) : "0 Kč"} celkem
+            </p>
+          </div>
           </div>
         </motion.div>
 
@@ -1344,21 +1341,21 @@ export default function DashboardPage() {
         >
           {/* Left: Finance chart */}
           <div style={{ ...cardStyle, padding: "22px 22px 16px" }}>
-            <p
-              style={{
-                fontFamily: "var(--font-outfit)",
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                fontSize: 15,
-                color: "oklch(0.92 0.005 222)",
-                marginBottom: 4,
-              }}
-            >
-              Finance přehled
-            </p>
-            <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginBottom: 18 }}>
-              Příjmy vs. výdaje · posledních 6 měsíců
-            </p>
+            <SectionHeader label="Finance — přehled" />
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-outfit)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  fontSize: 15,
+                  color: "oklch(0.92 0.005 222)",
+                }}
+              >
+                Příjmy vs. výdaje
+              </p>
+              <span style={{ fontSize: 11, color: "oklch(0.40 0.005 222)" }}>posledních 6 měsíců</span>
+            </div>
 
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={190}>
@@ -1467,6 +1464,7 @@ export default function DashboardPage() {
 
           {/* Right: Tasks by deadline */}
           <div style={{ ...cardStyle, padding: "22px 20px" }}>
+            <SectionHeader label="Aktuální úkoly" />
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
               <p
                 style={{
@@ -1575,6 +1573,7 @@ export default function DashboardPage() {
         >
           {/* Column 1: Měsíční klienti */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
+            <SectionHeader label="Měsíční klienti" />
             <div
               style={{
                 display: "flex",
@@ -1592,7 +1591,7 @@ export default function DashboardPage() {
                   color: "oklch(0.92 0.005 222)",
                 }}
               >
-                Měsíční klienti
+                Aktivní paušály
               </p>
               <span
                 style={{
@@ -1731,6 +1730,7 @@ export default function DashboardPage() {
 
           {/* Column 2: Jednorázovky */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
+            <SectionHeader label="Jednorázové projekty" />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <p
                 style={{
@@ -1836,6 +1836,7 @@ export default function DashboardPage() {
 
           {/* Column 3: Tým */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
+            <SectionHeader label="Tým" />
             <p
               style={{
                 fontFamily: "var(--font-heading)",
@@ -1846,7 +1847,7 @@ export default function DashboardPage() {
                 marginBottom: 16,
               }}
             >
-              Tým
+              Vytíženost
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
