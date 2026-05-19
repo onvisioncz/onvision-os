@@ -890,8 +890,13 @@ Délka: 400–600 slov. Žádné zbytečné fráze ani omluvy.`,
                   </span>
                 )}
                 {metaFetchError && (
-                  <span className="text-[10px]" style={{ color: "oklch(0.65 0.22 25)" }}>
-                    {metaFetchError}
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-[6px]"
+                    style={{ color: "oklch(0.70 0.22 25)", background: "oklch(0.65 0.22 25 / 0.1)", border: "1px solid oklch(0.65 0.22 25 / 0.2)" }}>
+                    {metaFetchError.includes("TOKEN_EXPIRED") || metaFetchError.includes("vypršel")
+                      ? "⚠️ Token vypršel — obnov META_USER_TOKEN ve Vercel"
+                      : metaFetchError.includes("není nastaveno")
+                      ? "⚠️ Nastav META_APP_ID, META_APP_SECRET, META_USER_TOKEN ve Vercel"
+                      : `⚠️ ${metaFetchError.slice(0, 60)}`}
                   </span>
                 )}
                 <button

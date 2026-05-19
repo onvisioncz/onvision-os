@@ -4,29 +4,40 @@ export const runtime = "edge";
 
 const META_API = "https://graph.facebook.com/v20.0";
 
-async function getLongLivedToken(): Promise<string> {
+async function getLongLivedToken(): Promise<{ token: string; isNew: boolean; expiresAt?: string }> {
   const appId     = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
   const userToken = process.env.META_USER_TOKEN;
 
-  // If we have a pre-stored long-lived token, use it directly
+  // If we already have a long-lived token stored — use it directly, no exchange needed
   const longLived = process.env.META_LONG_LIVED_TOKEN;
-  if (longLived) return longLived;
+  if (longLived) return { token: longLived, isNew: false };
 
-  if (!appId || !appSecret || !userToken) {
-    throw new Error("META_APP_ID, META_APP_SECRET nebo META_USER_TOKEN není nastaveno");
+  if (!appId || !appSecret) {
+    throw new Error("META_APP_ID nebo META_APP_SECRET není nastaveno v Vercel Environment Variables");
+  }
+  if (!userToken) {
+    throw new Error("META_USER_TOKEN není nastaveno — vygeneruj nový token na developers.facebook.com/tools/explorer a vlož do Vercel");
   }
 
-  // Exchange short-lived token for long-lived (60 days)
+  // Exchange short-lived → long-lived (60 days)
   const url = `${META_API}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${userToken}`;
   const res = await fetch(url);
   const data = await res.json();
 
   if (!data.access_token) {
-    throw new Error(`Token exchange failed: ${JSON.stringify(data)}`);
+    const errMsg = data?.error?.message ?? JSON.stringify(data);
+    if (errMsg.includes("expired") || errMsg.includes("Invalid")) {
+      throw new Error("TOKEN_EXPIRED: Tvůj META_USER_TOKEN vypršel. Jdi na developers.facebook.com/tools/explorer → vygeneruj nový → vlož do Vercel jako META_USER_TOKEN a znovu nasaď.");
+    }
+    throw new Error(`Token exchange selhal: ${errMsg}`);
   }
 
-  return data.access_token;
+  // Calculate expiry
+  const expiresIn = data.expires_in ?? 5183944; // ~60 days in seconds
+  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+  return { token: data.access_token, isNew: true, expiresAt };
 }
 
 export async function GET(req: NextRequest) {
@@ -40,7 +51,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const userToken = await getLongLivedToken();
+    const { token: userToken, isNew, expiresAt } = await getLongLivedToken();
 
     // ── Instagram: time_series (reach, follower_count) ────────────────────────
     const igTimeUrl = `${META_API}/${igId}/insights?metric=reach,follower_count&period=${period}&metric_type=time_series&access_token=${userToken}`;
@@ -88,16 +99,7 @@ export async function GET(req: NextRequest) {
       return metric.values[metric.values.length - 1]?.value ?? 0;
     }
 
-    // ── Token info (how long until expiry) ────────────────────────────────────
-    let tokenExpiresIn: number | null = null;
-    try {
-      const debugUrl = `${META_API}/debug_token?input_token=${userToken}&access_token=${userToken}`;
-      const debugRes = await fetch(debugUrl);
-      const debugData = await debugRes.json();
-      tokenExpiresIn = debugData?.data?.expires_at ?? null;
-    } catch { /* not critical */ }
-
-    return NextResponse.json({
+    const response = {
       instagram: {
         username:        igProfile?.username        ?? "onvisioncz",
         followers:       igProfile?.followers_count ?? 0,
@@ -116,14 +118,17 @@ export async function GET(req: NextRequest) {
       },
       period,
       fetchedAt: new Date().toISOString(),
-      tokenExpiresAt: tokenExpiresIn ? new Date(tokenExpiresIn * 1000).toISOString() : null,
+      // If token was freshly exchanged, include it so admin can save it as META_LONG_LIVED_TOKEN
+      ...(isNew && expiresAt ? { newLongLivedToken: userToken, tokenExpiresAt: expiresAt } : {}),
       errors: {
         igTime:    igTime?.error    ?? null,
         igTotal:   igTotal?.error   ?? null,
         igProfile: igProfile?.error ?? null,
         fb:        fb?.error        ?? null,
       },
-    });
+    };
+
+    return NextResponse.json(response);
   } catch (err) {
     console.error("[meta/insights]", err);
     return NextResponse.json(
