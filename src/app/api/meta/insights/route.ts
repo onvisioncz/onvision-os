@@ -20,24 +20,22 @@ async function getLongLivedToken(): Promise<{ token: string; isNew: boolean; exp
     throw new Error("META_USER_TOKEN není nastaveno — vygeneruj nový token na developers.facebook.com/tools/explorer a vlož do Vercel");
   }
 
-  // Exchange short-lived → long-lived (60 days)
+  // Try to exchange short-lived → long-lived (60 days)
   const url = `${META_API}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${userToken}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  if (!data.access_token) {
-    const errMsg = data?.error?.message ?? JSON.stringify(data);
-    if (errMsg.includes("expired") || errMsg.includes("Invalid")) {
-      throw new Error("TOKEN_EXPIRED: Tvůj META_USER_TOKEN vypršel. Jdi na developers.facebook.com/tools/explorer → vygeneruj nový → vlož do Vercel jako META_USER_TOKEN a znovu nasaď.");
-    }
-    throw new Error(`Token exchange selhal: ${errMsg}`);
+  if (data.access_token) {
+    const expiresIn = data.expires_in ?? 5183944;
+    const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+    return { token: data.access_token, isNew: true, expiresAt };
   }
 
-  // Calculate expiry
-  const expiresIn = data.expires_in ?? 5183944; // ~60 days in seconds
-  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
-
-  return { token: data.access_token, isNew: true, expiresAt };
+  // Exchange failed — token might already be long-lived or is a Page Access Token.
+  // Try using it directly (Page Access Tokens never expire and work for insights).
+  const errMsg = data?.error?.message ?? "";
+  console.warn("[meta/insights] Token exchange failed, using token directly:", errMsg);
+  return { token: userToken, isNew: false };
 }
 
 export async function GET(req: NextRequest) {
