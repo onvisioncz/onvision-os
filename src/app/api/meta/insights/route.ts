@@ -51,21 +51,30 @@ export async function GET(req: NextRequest) {
   try {
     const { token: userToken, isNew, expiresAt } = await getLongLivedToken();
 
-    // ── Instagram: reach via time_series (confirmed working in testing) ────────
-    const igReachUrl = `${META_API}/${igId}/insights?metric=reach,follower_count&period=${period}&metric_type=time_series&access_token=${userToken}`;
+    // Date range: last 30 days (period=day + since/until is most compatible)
+    const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
+    const until = Math.floor(Date.now() / 1000);
+    const dateRange = `since=${since}&until=${until}`;
 
-    // ── Instagram: engagement metrics via total_value ─────────────────────────
-    const igTotalUrl = `${META_API}/${igId}/insights?metric=accounts_engaged,total_interactions,profile_views&period=${period}&metric_type=total_value&access_token=${userToken}`;
+    // ── Instagram: reach via day period + date range ──────────────────────────
+    const igReachUrl = `${META_API}/${igId}/insights?metric=reach&period=day&${dateRange}&access_token=${userToken}`;
+
+    // ── Instagram: follower growth via day period ─────────────────────────────
+    const igFollowerUrl = `${META_API}/${igId}/insights?metric=follower_count&period=day&${dateRange}&access_token=${userToken}`;
+
+    // ── Instagram: engagement total_value metrics ─────────────────────────────
+    const igTotalUrl = `${META_API}/${igId}/insights?metric=accounts_engaged,total_interactions,profile_views&period=day&metric_type=total_value&${dateRange}&access_token=${userToken}`;
 
     // ── Instagram profile (current followers + post count) ────────────────────
     const igProfileUrl = `${META_API}/${igId}?fields=followers_count,media_count,username&access_token=${userToken}`;
 
-    // ── Facebook Page insights ────────────────────────────────────────────────
-    const fbUrl = `${META_API}/${pageId}/insights?metric=page_impressions,page_reach,page_post_engagements,page_fan_adds_unique&period=month&access_token=${userToken}`;
+    // ── Facebook Page insights (v20 compatible metrics) ───────────────────────
+    const fbUrl = `${META_API}/${pageId}/insights?metric=page_impressions,page_engaged_users,page_post_engagements&period=month&access_token=${userToken}`;
 
     // Fetch all in parallel
-    const [igReachRes, igTotalRes, igProfileRes, fbRes] = await Promise.allSettled([
+    const [igReachRes, igFollowerRes, igTotalRes, igProfileRes, fbRes] = await Promise.allSettled([
       fetch(igReachUrl),
+      fetch(igFollowerUrl),
       fetch(igTotalUrl),
       fetch(igProfileUrl),
       fetch(fbUrl),
@@ -76,8 +85,9 @@ export async function GET(req: NextRequest) {
       try { return await res.value.json(); } catch { return null; }
     }
 
-    const [igReach, igTotal, igProfile, fb] = await Promise.all([
+    const [igReach, igFollower, igTotal, igProfile, fb] = await Promise.all([
       safeJson(igReachRes),
+      safeJson(igFollowerRes),
       safeJson(igTotalRes),
       safeJson(igProfileRes),
       safeJson(fbRes),
@@ -97,21 +107,24 @@ export async function GET(req: NextRequest) {
       return metric.values[metric.values.length - 1]?.value ?? 0;
     }
 
-    // Sum all values across the period for time_series metrics
-    const reach         = sumTimeSeries(igReach, "reach");
-    const followerGrowth = sumTimeSeries(igReach, "follower_count");
+    // Sum daily values for the 30-day period
+    const reach          = sumTimeSeries(igReach,    "reach");
+    const followerGrowth = sumTimeSeries(igFollower, "follower_count");
+    const interactions   = totalValue(igTotal, "total_interactions");
+    const accountsEngaged = totalValue(igTotal, "accounts_engaged");
+    const profileViews   = totalValue(igTotal, "profile_views");
 
     const response = {
       instagram: {
-        username:        igProfile?.username        ?? "onvisioncz",
-        followers:       igProfile?.followers_count ?? 0,
-        mediaCount:      igProfile?.media_count     ?? 0,
+        username:     igProfile?.username        ?? "onvisioncz",
+        followers:    igProfile?.followers_count ?? 0,
+        mediaCount:   igProfile?.media_count     ?? 0,
         reach,
-        impressions:     totalValue(igTotal, "total_interactions"), // use interactions as impressions proxy
+        impressions:  interactions, // total_interactions as impressions proxy
         followerGrowth,
-        interactions:    totalValue(igTotal, "total_interactions"),
-        accountsEngaged: totalValue(igTotal, "accounts_engaged"),
-        profileViews:    totalValue(igTotal, "profile_views"),
+        interactions,
+        accountsEngaged,
+        profileViews,
       },
       facebook: {
         impressions:  fbLatest(fb, "page_impressions"),
@@ -124,10 +137,11 @@ export async function GET(req: NextRequest) {
       // If token was freshly exchanged, include it so admin can save it as META_LONG_LIVED_TOKEN
       ...(isNew && expiresAt ? { newLongLivedToken: userToken, tokenExpiresAt: expiresAt } : {}),
       errors: {
-        igReach:   igReach?.error   ?? null,
-        igTotal:   igTotal?.error   ?? null,
-        igProfile: igProfile?.error ?? null,
-        fb:        fb?.error        ?? null,
+        igReach:    igReach?.error    ?? null,
+        igFollower: igFollower?.error ?? null,
+        igTotal:    igTotal?.error    ?? null,
+        igProfile:  igProfile?.error  ?? null,
+        fb:         fb?.error         ?? null,
       },
     };
 
