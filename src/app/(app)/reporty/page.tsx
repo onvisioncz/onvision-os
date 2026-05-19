@@ -620,9 +620,10 @@ function ClientReportingPanel() {
       const d = data.instagram;
 
       // Engagement rate: interactions / followers * 100, fallback to accountsEngaged
-      const engagementVal = d.followers > 0
-        ? ((d.interactions > 0 ? d.interactions : d.accountsEngaged) / d.followers * 100).toFixed(2)
-        : "";
+      const totalInteractions = d.interactions > 0 ? d.interactions : d.accountsEngaged;
+      const engagementVal = (d.followers > 0 && totalInteractions > 0)
+        ? (totalInteractions / d.followers * 100).toFixed(2)
+        : ""; // leave blank if no interaction data — never show 0.00
 
       setIg(prev => ({
         ...prev,
