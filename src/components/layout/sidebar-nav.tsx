@@ -29,6 +29,7 @@ const ALL_NAV = [
   { label: "Produkční plán",  short: "Produkce",   href: "/shooting",         icon: Film },
   { label: "Kreativa",        short: "Kreativa",   href: "/produkce",         icon: Clapperboard },
   { label: "SMM",             short: "SMM",        href: "/smm",              icon: Layers2 },
+  { label: "Reporty",         short: "Reporty",    href: "/reporty",          icon: BarChart2 },
   { label: "Kalendář",        short: "Kalendář",   href: "/calendar",         icon: CalendarDays },
   { label: "Výstupy",         short: "Výstupy",    href: "/outputs",          icon: PackageOpen },
   { label: "AI Asistent",     short: "AI",         href: "/ai",               icon: Sparkles },

@@ -132,7 +132,7 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   fakturace: ["/dashboard", "/finance", "/fakturace"],
   produkce:  ["/dashboard", "/shooting", "/produkce", "/ukoly", "/outputs"],
   grafik:    ["/ukoly", "/outputs"],
-  smm:       ["/smm", "/calendar", "/outputs"],
+  smm:       ["/smm", "/calendar", "/outputs", "/reporty"],
   pm:        ["/smm", "/ukoly", "/outputs", "/klienti"],
 };
 
