@@ -18,6 +18,7 @@ import { PwaInstallButton } from "@/components/pwa-install-button";
 import { canAccess } from "@/lib/roles";
 import { ChatTrigger } from "@/components/chat/chat-overlay";
 import { useChatContext } from "@/components/chat/chat-shell";
+import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
@@ -79,9 +80,9 @@ const ALL_NAV = [
 
 /* ── NavItem ────────────────────────────────────────────────────────────── */
 function NavItem({
-  label, href, icon: Icon, active, isAI = false,
+  label, href, icon: Icon, active, isAI = false, badge = 0,
 }: {
-  label: string; href: string; icon: React.ElementType; active: boolean; isAI?: boolean;
+  label: string; href: string; icon: React.ElementType; active: boolean; isAI?: boolean; badge?: number;
 }) {
   return (
     <Link href={href} className="block">
@@ -116,7 +117,23 @@ function NavItem({
           style={{ color: active ? "oklch(0.62 0.27 265)" : isAI ? "oklch(0.55 0.15 265)" : "oklch(0.38 0.005 222)" }}
         />
         {label}
-        {isAI && !active && (
+        {badge > 0 && (
+          <motion.span
+            key={badge}
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1"
+            style={{
+              background: "oklch(0.65 0.22 25)",
+              color: "#fff",
+              boxShadow: "0 0 8px oklch(0.65 0.22 25 / 0.5)",
+              fontFamily: "var(--font-jakarta)",
+            }}
+          >
+            {badge > 99 ? "99+" : badge}
+          </motion.span>
+        )}
+        {isAI && !active && badge === 0 && (
           <span className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full"
             style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.65 0.18 265)" }}>
             AI
@@ -228,6 +245,7 @@ export function SidebarNav() {
   }, []);
 
   const { toggle: toggleChat, unread: chatUnread } = useChatContext();
+  const { count: inboxUnread } = useInboxUnread();
   const displayName = user?.displayName ?? (email ? email.split("@")[0] : "—");
   const initials    = user?.initials ?? displayName.charAt(0).toUpperCase();
   const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
@@ -290,7 +308,8 @@ export function SidebarNav() {
           .filter(({ href }) => visibleHrefs.has(href))
           .map(({ label, href, icon }) => (
             <NavItem key={href} label={label} href={href} icon={icon}
-              active={path === href || path.startsWith(href + "/")} />
+              active={path === href || path.startsWith(href + "/")}
+              badge={href === "/inbox" ? inboxUnread : 0} />
           ))
         }
 
@@ -385,6 +404,7 @@ export function SidebarNav() {
 export function MobileNav() {
   const path = usePathname();
   const { user } = useUserRole();
+  const { count: inboxUnread } = useInboxUnread();
 
   const visibleNav = ALL_NAV.filter(({ href }) => !user || canAccess(user.roles, href));
 
@@ -396,6 +416,7 @@ export function MobileNav() {
         <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
         {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");
+          const badge = href === "/inbox" ? inboxUnread : 0;
           return (
             <Link key={href} href={href} className="flex-shrink-0" style={{ minWidth: 68 }}>
               <motion.div className="flex flex-col items-center gap-[5px] px-2 py-1"
@@ -409,6 +430,28 @@ export function MobileNav() {
                   )}
                   <Icon className="w-[15px] h-[15px] relative"
                     style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.42 0.005 222)" }} />
+                  {/* Unread badge */}
+                  {badge > 0 && (
+                    <span style={{
+                      position: "absolute",
+                      top: -3, right: -3,
+                      minWidth: 16, height: 16,
+                      borderRadius: 99,
+                      background: "oklch(0.65 0.22 25)",
+                      color: "#fff",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 3px",
+                      border: "1.5px solid oklch(0.10 0.008 222)",
+                      fontFamily: "var(--font-jakarta)",
+                      boxShadow: "0 0 8px oklch(0.65 0.22 25 / 0.5)",
+                    }}>
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
                 </div>
                 <span className="text-[9px] font-semibold leading-none text-center whitespace-nowrap"
                   style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.38 0.005 222)", fontFamily: "var(--font-jakarta)", letterSpacing: "0.01em" }}>

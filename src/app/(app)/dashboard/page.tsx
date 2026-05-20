@@ -17,12 +17,14 @@ import {
   XCircle,
   RefreshCw,
   X,
+  Bell,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
+import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -423,6 +425,7 @@ export default function DashboardPage() {
   /* ── Auth ── */
   const { user } = useUserRole();
   const isAdmin = user?.roles.includes("admin") ?? false;
+  const { count: inboxUnread, notifs: inboxNotifs } = useInboxUnread();
 
   /* ── Data ── */
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
@@ -801,8 +804,93 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Right side: Live indicator + action buttons */}
+          {/* Right side: notification widget + Live indicator + action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 2 }}>
+
+            {/* Notification widget — FB-style bell with count */}
+            <Link href="/inbox">
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ duration: 0.12 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "7px 11px",
+                  borderRadius: 10,
+                  border: `1px solid ${inboxUnread > 0 ? "oklch(0.65 0.22 25 / 0.35)" : "oklch(1 0 0 / 0.08)"}`,
+                  background: inboxUnread > 0 ? "oklch(0.65 0.22 25 / 0.08)" : "oklch(1 0 0 / 0.04)",
+                  cursor: "pointer",
+                  position: "relative",
+                  textDecoration: "none",
+                  minWidth: 42,
+                }}
+              >
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <Bell
+                    style={{
+                      width: 15,
+                      height: 15,
+                      color: inboxUnread > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.38 0.005 222)",
+                    }}
+                  />
+                  {inboxUnread > 0 && (
+                    <motion.span
+                      key={inboxUnread}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      style={{
+                        position: "absolute",
+                        top: -5,
+                        right: -6,
+                        minWidth: 16,
+                        height: 16,
+                        borderRadius: 99,
+                        background: "oklch(0.65 0.22 25)",
+                        color: "#fff",
+                        fontSize: 9,
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 3px",
+                        border: "1.5px solid oklch(0.09 0.008 222)",
+                        fontFamily: "var(--font-jakarta)",
+                        boxShadow: "0 0 8px oklch(0.65 0.22 25 / 0.6)",
+                      }}
+                    >
+                      {inboxUnread > 9 ? "9+" : inboxUnread}
+                    </motion.span>
+                  )}
+                </div>
+                {inboxUnread > 0 && (
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "oklch(0.65 0.22 25)",
+                    fontFamily: "var(--font-jakarta)",
+                    whiteSpace: "nowrap",
+                    letterSpacing: "-0.01em",
+                  }}>
+                    {inboxUnread} {inboxUnread === 1 ? "upozornění" : inboxUnread < 5 ? "upozornění" : "upozornění"}
+                  </span>
+                )}
+                {/* Tooltip for urgent items */}
+                {inboxUnread > 0 && inboxNotifs.some(n => n.urgency === 0) && (
+                  <span style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: "oklch(0.65 0.22 25 / 0.7)",
+                    fontFamily: "var(--font-jakarta)",
+                    whiteSpace: "nowrap",
+                  }}>
+                    · kritické
+                  </span>
+                )}
+              </motion.div>
+            </Link>
+
             {/* Live indicator — hidden on mobile */}
             <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
               <span
