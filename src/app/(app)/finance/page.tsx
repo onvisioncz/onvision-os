@@ -1620,71 +1620,116 @@ const SUBSCRIPTIONS: Subscription[] = [
   { id: 9,  nazev: "Anthropic",           popis: "Claude AI",     kat: "AI",            castka: 21.78, mena: "EUR" },
 ];
 
-function PredplatneTab() {
-  const totalCZK = SUBSCRIPTIONS.reduce((s, sub) => {
-    return s + (sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka);
-  }, 0);
+const SUB_KATS: SubKat[] = ["AI", "Úložiště", "Hudba", "Šablony", "Foto", "Pojištění", "Sociální sítě", "Jiné"];
 
-  const byKat = SUBSCRIPTIONS.reduce<Partial<Record<SubKat, number>>>((acc, sub) => {
-    const czk = sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka;
-    acc[sub.kat] = (acc[sub.kat] ?? 0) + czk;
+const EMPTY_FORM: Omit<Subscription, "id"> = { nazev: "", popis: "", kat: "AI", castka: 0, mena: "CZK" };
+
+interface PredplatneTabProps {
+  subs: Subscription[];
+  setSubs: React.Dispatch<React.SetStateAction<Subscription[]>>;
+}
+
+function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
+  const [mode,     setMode]     = useState<"idle" | "add" | "edit">("idle");
+  const [editId,   setEditId]   = useState<number | null>(null);
+  const [form,     setForm]     = useState<Omit<Subscription, "id">>(EMPTY_FORM);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  /* ── computed ── */
+  const toCZK = (sub: Subscription) => sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka;
+  const totalCZK = subs.reduce((s, sub) => s + toCZK(sub), 0);
+  const byKat = subs.reduce<Partial<Record<SubKat, number>>>((acc, sub) => {
+    acc[sub.kat] = (acc[sub.kat] ?? 0) + toCZK(sub);
     return acc;
   }, {});
 
+  /* ── handlers ── */
+  function openAdd() {
+    setForm(EMPTY_FORM);
+    setEditId(null);
+    setMode("add");
+    setDeleteId(null);
+  }
+
+  function openEdit(sub: Subscription) {
+    setForm({ nazev: sub.nazev, popis: sub.popis, kat: sub.kat, castka: sub.castka, mena: sub.mena });
+    setEditId(sub.id);
+    setMode("edit");
+    setDeleteId(null);
+  }
+
+  function cancelForm() { setMode("idle"); setEditId(null); }
+
+  function save() {
+    if (!form.nazev.trim() || !form.castka) return;
+    if (mode === "add") {
+      setSubs(prev => [...prev, { ...form, id: Date.now() }]);
+    } else if (mode === "edit" && editId !== null) {
+      setSubs(prev => prev.map(s => s.id === editId ? { ...form, id: editId } : s));
+    }
+    cancelForm();
+  }
+
+  function deleteSub(id: number) {
+    setSubs(prev => prev.filter(s => s.id !== id));
+    setDeleteId(null);
+    if (editId === id) cancelForm();
+  }
+
+  /* ── shared input style ── */
+  const inp: React.CSSProperties = {
+    background: "oklch(0.10 0.008 222)",
+    border: "1px solid oklch(1 0 0 / 0.10)",
+    borderRadius: 7,
+    padding: "6px 10px",
+    fontSize: 12,
+    color: "oklch(0.90 0.005 222)",
+    fontFamily: "var(--font-sans)",
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box" as const,
+  };
+
+  /* ── render ── */
   return (
     <div className="space-y-5">
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="card p-4">
-          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
-            Celkem / měsíc
-          </p>
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">Celkem / měsíc</p>
           <p className="num text-[22px] font-bold leading-none"
             style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.025em", color: "oklch(0.65 0.22 25)" }}>
             {fKc(totalCZK)}
           </p>
-          <p className="text-[10px] text-[--muted-foreground] mt-1.5">
-            {fKc(totalCZK * 12)} / rok
-          </p>
+          <p className="text-[10px] text-[--muted-foreground] mt-1.5">{fKc(totalCZK * 12)} / rok</p>
         </div>
         <div className="card p-4">
-          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
-            Počet předplatných
-          </p>
-          <p className="num text-[22px] font-bold leading-none"
-            style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
-            {SUBSCRIPTIONS.length}
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">Počet předplatných</p>
+          <p className="num text-[22px] font-bold leading-none" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
+            {subs.length}
           </p>
           <p className="text-[10px] text-[--muted-foreground] mt-1.5">aktivních služeb</p>
         </div>
         <div className="card p-4">
-          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">
-            Největší položka
-          </p>
-          {(() => {
-            const biggest = SUBSCRIPTIONS.reduce((a, b) => {
-              const czk = (sub: Subscription) => sub.mena === "EUR" ? sub.castka * EUR_TO_CZK : sub.castka;
-              return czk(a) >= czk(b) ? a : b;
-            });
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-1.5">Největší položka</p>
+          {subs.length > 0 ? (() => {
+            const biggest = subs.reduce((a, b) => toCZK(a) >= toCZK(b) ? a : b);
             return (
               <>
                 <p className="num text-[18px] font-bold leading-none"
                   style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
-                  {biggest.mena === "EUR" ? fKc(Math.round(biggest.castka * EUR_TO_CZK)) : fKc(biggest.castka)}
+                  {fKc(toCZK(biggest))}
                 </p>
                 <p className="text-[10px] text-[--muted-foreground] mt-1.5">{biggest.nazev}</p>
               </>
             );
-          })()}
+          })() : <p className="text-[12px] text-[--muted-foreground]">—</p>}
         </div>
         <div className="card p-4">
-          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-2">
-            Kategorie
-          </p>
+          <p className="text-[10px] text-[--muted-foreground] uppercase tracking-[0.07em] font-medium mb-2">Kategorie</p>
           <div className="flex flex-col gap-1">
             {(Object.entries(byKat) as [SubKat, number][])
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 3)
+              .sort((a, b) => b[1] - a[1]).slice(0, 3)
               .map(([kat, czk]) => (
                 <div key={kat} className="flex items-center justify-between">
                   <span style={{ fontSize: 10, color: KAT_COLOR[kat].text, fontWeight: 600 }}>{kat}</span>
@@ -1695,70 +1740,237 @@ function PredplatneTab() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table card */}
       <div className="card overflow-hidden">
-        <table className="w-full">
+        {/* Table header row with Add button */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px 0" }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "oklch(0.38 0.005 222)" }}>
+            Přehled předplatných
+          </p>
+          <button
+            onClick={mode === "add" ? cancelForm : openAdd}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: mode === "add" ? "oklch(0.65 0.18 310 / 0.12)" : "transparent",
+              border: `1px solid ${mode === "add" ? "oklch(0.65 0.18 310 / 0.30)" : "oklch(1 0 0 / 0.09)"}`,
+              borderRadius: 7, padding: "5px 11px",
+              fontSize: 12, fontWeight: 600,
+              color: mode === "add" ? "oklch(0.72 0.16 310)" : "oklch(0.50 0.005 222)",
+              cursor: "pointer", fontFamily: "var(--font-sans)",
+            }}
+          >
+            {mode === "add" ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 1l9 9M10 1L1 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                Zrušit
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                Přidat předplatné
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Inline add/edit form */}
+        <AnimatePresence>
+          {(mode === "add" || mode === "edit") && (
+            <motion.div
+              key="sub-form"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div style={{
+                margin: "12px 16px",
+                background: "oklch(0.10 0.010 222)",
+                border: `1px solid ${mode === "edit" ? "oklch(0.65 0.18 310 / 0.25)" : "oklch(0.62 0.27 265 / 0.20)"}`,
+                borderRadius: 10, padding: "14px 16px",
+                display: "flex", flexDirection: "column", gap: 10,
+              }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: mode === "edit" ? "oklch(0.72 0.16 310)" : "oklch(0.72 0.20 265)", margin: 0 }}>
+                  {mode === "edit" ? "Upravit předplatné" : "Nové předplatné"}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 80px", gap: 8, alignItems: "end" }}>
+                  <div>
+                    <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Název *</label>
+                    <input style={inp} placeholder="Adobe, Anthropic..." value={form.nazev}
+                      onChange={e => setForm(f => ({ ...f, nazev: e.target.value }))}
+                      onKeyDown={e => e.key === "Enter" && save()} autoFocus />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Popis</label>
+                    <input style={inp} placeholder="Co to je..." value={form.popis}
+                      onChange={e => setForm(f => ({ ...f, popis: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Kategorie</label>
+                    <select style={{ ...inp, cursor: "pointer" }} value={form.kat}
+                      onChange={e => setForm(f => ({ ...f, kat: e.target.value as SubKat }))}>
+                      {SUB_KATS.map(k => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Cena *</label>
+                    <input style={inp} type="number" placeholder="499" value={form.castka || ""}
+                      onChange={e => setForm(f => ({ ...f, castka: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Měna</label>
+                    <select style={{ ...inp, cursor: "pointer" }} value={form.mena}
+                      onChange={e => setForm(f => ({ ...f, mena: e.target.value as "CZK" | "EUR" }))}>
+                      <option value="CZK">CZK</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={cancelForm} style={{
+                    background: "transparent", border: "1px solid oklch(1 0 0 / 0.08)",
+                    borderRadius: 7, padding: "6px 14px", fontSize: 12, color: "oklch(0.50 0.005 222)",
+                    cursor: "pointer", fontFamily: "var(--font-sans)",
+                  }}>Zrušit</button>
+                  <button onClick={save} disabled={!form.nazev.trim() || !form.castka} style={{
+                    background: mode === "edit" ? "oklch(0.65 0.18 310)" : "oklch(0.62 0.27 265)",
+                    border: "none", borderRadius: 7, padding: "6px 16px", fontSize: 12,
+                    fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: "var(--font-sans)",
+                    opacity: !form.nazev.trim() || !form.castka ? 0.4 : 1,
+                  }}>
+                    {mode === "edit" ? "Uložit změny" : "Přidat"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Table */}
+        <table className="w-full" style={{ marginTop: 8 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
-              {["Služba", "Popis", "Kategorie", "Cena / měsíc"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em]">
+              {["Služba", "Popis", "Kategorie", "Cena / měsíc", ""].map((h, i) => (
+                <th key={i} className="px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em]"
+                  style={i === 4 ? { width: 80 } : {}}>
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {SUBSCRIPTIONS.map((sub, i) => {
-              const czk = sub.mena === "EUR" ? Math.round(sub.castka * EUR_TO_CZK) : sub.castka;
-              const kc = KAT_COLOR[sub.kat];
-              return (
-                <tr
-                  key={sub.id}
-                  style={{ borderBottom: i < SUBSCRIPTIONS.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none" }}
-                  className="hover:bg-[oklch(1_0_0_/_0.02)] transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <span className="text-[13px] font-semibold text-[--foreground]">{sub.nazev}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-[12px] text-[--muted-foreground]">{sub.popis}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="inline-flex px-2 py-0.5 rounded-[5px] text-[10px] font-bold"
-                      style={{ background: kc.bg, color: kc.text }}
-                    >
-                      {sub.kat}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
+            <AnimatePresence mode="popLayout">
+              {subs.map((sub, i) => {
+                const czk = toCZK(sub);
+                const kc = KAT_COLOR[sub.kat] ?? KAT_COLOR["Jiné"];
+                const isEditing = mode === "edit" && editId === sub.id;
+                const isDeleting = deleteId === sub.id;
+                return (
+                  <motion.tr
+                    key={sub.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, height: 0, transition: { duration: 0.18 } }}
+                    style={{
+                      borderBottom: i < subs.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none",
+                      background: isEditing ? "oklch(0.65 0.18 310 / 0.04)" : "transparent",
+                    }}
+                    className="group transition-colors hover:bg-[oklch(1_0_0_/_0.015)]"
+                  >
+                    <td className="px-4 py-3">
+                      <span className="text-[13px] font-semibold text-[--foreground]">{sub.nazev}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-[12px] text-[--muted-foreground]">{sub.popis}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex px-2 py-0.5 rounded-[5px] text-[10px] font-bold"
+                        style={{ background: kc.bg, color: kc.text }}>
+                        {sub.kat}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
                       <span className="num text-[13px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
                         {fKc(czk)}
                       </span>
                       {sub.mena === "EUR" && (
-                        <span className="ml-1.5 text-[10px] text-[--muted-foreground]">
-                          (€{sub.castka})
-                        </span>
+                        <span className="ml-1.5 text-[10px] text-[--muted-foreground]">(€{sub.castka})</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td className="px-4 py-3">
+                      {isDeleting ? (
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                          <button onClick={() => deleteSub(sub.id)} style={{
+                            background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.30)",
+                            borderRadius: 5, padding: "3px 8px", fontSize: 10, color: "oklch(0.72 0.18 25)",
+                            cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-sans)",
+                          }}>Smazat</button>
+                          <button onClick={() => setDeleteId(null)} style={{
+                            background: "transparent", border: "none", fontSize: 10,
+                            color: "oklch(0.40 0.005 222)", cursor: "pointer",
+                          }}>×</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Edit */}
+                          <button onClick={() => openEdit(sub)} title="Upravit" style={{
+                            background: "transparent", border: "1px solid oklch(1 0 0 / 0.09)",
+                            borderRadius: 5, width: 26, height: 26, display: "flex", alignItems: "center",
+                            justifyContent: "center", cursor: "pointer", color: "oklch(0.45 0.005 222)",
+                          }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.72 0.16 310)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "oklch(0.65 0.18 310 / 0.35)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.45 0.005 222)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "oklch(1 0 0 / 0.09)"; }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                              <path d="M7.5 1.5l2 2-6 6H1.5v-2l6-6z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                          {/* Delete */}
+                          <button onClick={() => setDeleteId(sub.id)} title="Smazat" style={{
+                            background: "transparent", border: "1px solid oklch(1 0 0 / 0.09)",
+                            borderRadius: 5, width: 26, height: 26, display: "flex", alignItems: "center",
+                            justifyContent: "center", cursor: "pointer", color: "oklch(0.40 0.005 222)",
+                          }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.65 0.22 25)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "oklch(0.55 0.22 25 / 0.35)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.40 0.005 222)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "oklch(1 0 0 / 0.09)"; }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                              <path d="M1.5 3h8M4 3V2a.5.5 0 01.5-.5h2A.5.5 0 017 2v1M4.5 5v3.5M6.5 5v3.5M2 3l.6 6a.5.5 0 00.5.5h4.8a.5.5 0 00.5-.5L9 3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
           </tbody>
-          <tfoot>
-            <tr style={{ borderTop: "1px solid oklch(1 0 0 / 0.09)", background: "oklch(1 0 0 / 0.02)" }}>
-              <td colSpan={3} className="px-4 py-3 text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">
-                Celkem
-              </td>
-              <td className="px-4 py-3">
-                <span className="num text-[15px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
-                  {fKc(totalCZK)}
-                </span>
-              </td>
-            </tr>
-          </tfoot>
+          {subs.length > 0 && (
+            <tfoot>
+              <tr style={{ borderTop: "1px solid oklch(1 0 0 / 0.09)", background: "oklch(1 0 0 / 0.02)" }}>
+                <td colSpan={4} className="px-4 py-3 text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">
+                  Celkem
+                </td>
+                <td className="px-4 py-3">
+                  <span className="num text-[15px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.65 0.22 25)" }}>
+                    {fKc(totalCZK)}
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          )}
+          {subs.length === 0 && (
+            <tbody>
+              <tr>
+                <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "oklch(0.35 0.005 222)", fontSize: 13 }}>
+                  Žádná předplatná — přidej první kliknutím na tlačítko výše
+                </td>
+              </tr>
+            </tbody>
+          )}
         </table>
       </div>
 
@@ -1785,7 +1997,8 @@ export default function FinancePage() {
   const [incomes,   setIncomes]  = useSupabaseData<IncomeItem[]>("ov-finance-incomes", () => INCOME_SEED);
   const [expenses,  setExpenses] = useSupabaseData<ExpenseItem[]>("ov-finance-expenses", () => EXPENSE_SEED);
   const [faktury,   setFaktury]  = useSupabaseData<Faktura[]>("ov-finance-faktury", () => FAKTURY_SEED);
-  const [doklady,   setDoklady]  = useSupabaseData<Doklad[]>("ov-finance-doklady", () => DOKLADY_SEED);
+  const [doklady,      setDoklady]     = useSupabaseData<Doklad[]>("ov-finance-doklady", () => DOKLADY_SEED);
+  const [predplatne,   setPredplatne]  = useSupabaseData<Subscription[]>("ov-finance-predplatne", () => SUBSCRIPTIONS);
 
   return (
     <div className="p-4 md:p-7 space-y-4 md:space-y-5 min-h-screen"
@@ -1844,7 +2057,7 @@ export default function FinancePage() {
           {tab === "bilance" && <BilanceTab incomes={incomes} expenses={expenses} />}
           {tab === "faktury" && <FakturyTab items={faktury}  setItems={fn => setFaktury(fn)} />}
           {tab === "doklady"    && <DokladyTab    items={doklady}  setItems={fn => setDoklady(fn)} />}
-          {tab === "predplatne" && <PredplatneTab />}
+          {tab === "predplatne" && <PredplatneTab subs={predplatne} setSubs={fn => setPredplatne(fn)} />}
         </motion.div>
       </AnimatePresence>
     </div>
