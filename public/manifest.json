@@ -6,22 +6,28 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#080808",
+  "background_color": "#5353F6",
   "theme_color": "#00D1FF",
   "categories": ["business", "productivity"],
   "lang": "cs",
   "icons": [
     {
-      "src": "/onvision-mark.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/onvision-mark.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/onvision-mark.svg",
@@ -34,17 +40,17 @@
     {
       "name": "Dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "SMM Hub",
       "url": "/smm",
-      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Úkoly",
       "url": "/ukoly",
-      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
