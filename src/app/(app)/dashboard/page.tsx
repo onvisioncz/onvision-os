@@ -861,7 +861,7 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            {/* Uzavrit mesic button */}
+            {/* Uzavřít měsíc button */}
             <button
               onClick={() => setClosingOpen(true)}
               style={{
@@ -877,7 +877,7 @@ export default function DashboardPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              Uzavrit mesic
+              Uzavřít měsíc
             </button>
 
             {/* Quick Add button */}
@@ -2068,7 +2068,7 @@ export default function DashboardPage() {
                     Uzaverka — {currentMonthName}
                   </h2>
                   <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginTop: 4, fontFamily: "var(--font-jakarta)" }}>
-                    Zkontroluj pred uzavrenim mesice
+                    Zkontroluj před uzavřením měsíce
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2336,7 +2336,7 @@ export default function DashboardPage() {
                           resize: "vertical",
                           minHeight: 72,
                         }}
-                        placeholder="Volitelne poznamky k mesici..."
+                        placeholder="Volitelné poznámky k měsíci..."
                         value={closingNote}
                         onChange={(e) => setClosingNote(e.target.value)}
                       />
@@ -2361,7 +2361,7 @@ export default function DashboardPage() {
                         letterSpacing: "-0.01em",
                       }}
                     >
-                      Uzavrit mesic
+                      Uzavřít měsíc
                     </button>
                   </div>
                 </>
