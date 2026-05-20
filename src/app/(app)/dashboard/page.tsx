@@ -161,6 +161,8 @@ const cardStyle: React.CSSProperties = {
   border: "1px solid oklch(1 0 0 / 0.08)",
   borderRadius: 12,
 };
+// className to add alongside cardStyle for hover glow
+const cardClass = "ov-card";
 
 /* ── Recharts custom tooltip ───────────────────────────────────────────────── */
 function FinanceTooltip({
@@ -1139,6 +1141,7 @@ export default function DashboardPage() {
         >
           {/* Tile 1: MRR */}
           <div
+            className={cardClass}
             style={{
               ...cardStyle,
               padding: "20px 22px",
@@ -1188,6 +1191,7 @@ export default function DashboardPage() {
 
           {/* Tile 2: Deliverable completion */}
           <div
+            className={cardClass}
             style={{
               ...cardStyle,
               padding: "20px 22px",
@@ -1256,6 +1260,7 @@ export default function DashboardPage() {
 
           {/* Tile 3: Urgent tasks */}
           <div
+            className={cardClass}
             style={{
               ...cardStyle,
               padding: "20px 22px",
@@ -1305,6 +1310,7 @@ export default function DashboardPage() {
 
           {/* Tile 4: Approvals */}
           <div
+            className={cardClass}
             style={{
               ...cardStyle,
               padding: "20px 22px",
@@ -1359,7 +1365,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4"
         >
           {/* Left: Finance chart */}
-          <div style={{ ...cardStyle, padding: "22px 22px 16px" }}>
+          <div className={cardClass} style={{ ...cardStyle, padding: "22px 22px 16px" }}>
             <p
               style={{
                 fontFamily: "var(--font-outfit)",
@@ -1482,7 +1488,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Right: Tasks by deadline */}
-          <div style={{ ...cardStyle, padding: "22px 20px" }}>
+          <div className={cardClass} style={{ ...cardStyle, padding: "22px 20px" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
               <p
                 style={{

@@ -86,7 +86,7 @@ function NavItem({
       <motion.div
         className={cn(
           "relative flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none",
-          active ? "text-[--primary]" : "text-[--muted-foreground]"
+          active ? "text-[--primary]" : "text-[--muted-foreground] nav-item-hover"
         )}
         style={
           active ? {
@@ -146,7 +146,7 @@ function NavGroup({
       {/* Group header */}
       <button
         onClick={() => toggleGroup(group.id)}
-        className="w-full flex items-center justify-between px-3 py-[5px] rounded-[6px] select-none group"
+        className="w-full flex items-center justify-between px-3 py-[5px] rounded-[6px] select-none group nav-item-hover"
         style={{ border: "1px solid transparent" }}
       >
         <span
