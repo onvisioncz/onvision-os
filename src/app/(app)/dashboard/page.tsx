@@ -21,6 +21,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
+import { BriefingCard } from "@/components/dashboard/briefing-card";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -1115,6 +1116,13 @@ export default function DashboardPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── AI Briefing Card (admin only) ── */}
+        {isAdmin && (
+          <motion.div variants={item}>
+            <BriefingCard userName={user?.displayName ?? user?.email?.split("@")[0] ?? "kolego"} />
+          </motion.div>
+        )}
 
         {/* ── 2. KPI Strip ── */}
         <motion.div
