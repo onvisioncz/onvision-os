@@ -1117,13 +1117,6 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* ── AI Briefing Card (admin only) ── */}
-        {isAdmin && (
-          <motion.div variants={item}>
-            <BriefingCard userName={user?.displayName ?? user?.email?.split("@")[0] ?? "kolego"} />
-          </motion.div>
-        )}
-
         {/* ── 2. KPI Strip ── */}
         <motion.div
           variants={item}
