@@ -3,6 +3,9 @@ import { DEFAULT_USERS, type Role } from "@/lib/roles";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
+// web-push requires Node.js crypto — force Node.js runtime (not Edge)
+export const runtime = "nodejs";
+
 /* ── Configure VAPID once at module load ────────────────────────────────── */
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(

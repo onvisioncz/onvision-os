@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
   // which relies on native Node.js APIs that break inside the webpack bundle.
   // Marking it as serverExternalPackages tells Next.js to import it directly
   // at runtime instead of bundling it.
-  serverExternalPackages: ["@react-pdf/renderer"],
+  // web-push uses Node.js crypto — must not be bundled by webpack/edge runtime
+  serverExternalPackages: ["@react-pdf/renderer", "web-push"],
 
   webpack(config) {
     // canvas is an optional peer dep of pdfkit; it's not available on Vercel
