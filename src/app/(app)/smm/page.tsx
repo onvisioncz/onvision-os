@@ -559,7 +559,7 @@ function PostModal({
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 14 }}
         transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-lg rounded-[14px] overflow-hidden"
+        className="relative w-full max-w-lg md:max-w-4xl rounded-[14px] overflow-hidden"
         style={{
           background: "oklch(0.12 0.008 222)",
           border: "1px solid oklch(1 0 0 / 0.1)",
@@ -577,234 +577,284 @@ function PostModal({
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Client + Date */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Klient</label>
-              <select
-                value={form.klient}
-                onChange={e => setForm(p => ({ ...p, klient: e.target.value }))}
-                className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
-                style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-              >
-                {SMM_CLIENTS.map(c => <option key={c} value={c} style={{ background: "#1a1a2e" }}>{c}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Datum publikace</label>
-              <input
-                type="date"
-                value={form.datum}
-                onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
-                className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
-                style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)", colorScheme: "dark" }}
-              />
-            </div>
-          </div>
-
-          {/* Format + Status */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Formát</label>
-              <div className="flex gap-1 flex-wrap">
-                {(["reel", "carousel", "foto", "story", "text"] as PostFormat[]).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setForm(p => ({ ...p, format: f }))}
-                    className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
-                    style={form.format === f ? {
-                      background: "oklch(0.72 0.18 265 / 0.2)",
-                      color: "oklch(0.78 0.18 265)",
-                      border: "1px solid oklch(0.72 0.18 265 / 0.4)",
-                    } : {
-                      background: "oklch(1 0 0 / 0.05)",
-                      color: "oklch(0.42 0.005 222)",
-                      border: "1px solid oklch(1 0 0 / 0.1)",
-                    }}
+        <div className="px-5 py-4 max-h-[80vh] overflow-y-auto">
+          <div className="md:flex md:gap-6">
+            {/* Left: meta */}
+            <div className="md:w-[260px] md:shrink-0 space-y-4 md:border-r md:pr-6" style={{ borderColor: "oklch(1 0 0 / 0.07)" }}>
+              {/* Client + Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Klient</label>
+                  <select
+                    value={form.klient}
+                    onChange={e => setForm(p => ({ ...p, klient: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
                   >
-                    {FORMAT_EMOJI[f]} {FORMAT_LABELS[f]}
-                  </button>
-                ))}
+                    {SMM_CLIENTS.map(c => <option key={c} value={c} style={{ background: "#1a1a2e" }}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Datum publikace</label>
+                  <input
+                    type="date"
+                    value={form.datum}
+                    onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)", colorScheme: "dark" }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Status</label>
-              <select
-                value={form.status}
-                onChange={e => setForm(p => ({ ...p, status: e.target.value as PostStatus }))}
-                className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
-                style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: STATUS_COLORS[form.status] }}
-              >
-                {(Object.keys(STATUS_LABELS) as PostStatus[]).map(s => (
-                  <option key={s} value={s} style={{ background: "#1a1a2e", color: STATUS_COLORS[s] }}>{STATUS_LABELS[s]}</option>
-                ))}
-              </select>
-            </div>
-          </div>
 
-          {/* Platform selector */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Platforma</label>
-            <div className="flex gap-1 flex-wrap">
-              {(["instagram", "facebook", "linkedin", "tiktok"] as PostPlatform[]).map(pl => (
-                <button
-                  key={pl}
-                  onClick={() => setForm(p => ({ ...p, platform: pl }))}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
-                  style={form.platform === pl ? {
-                    background: `${PLATFORM_COLORS[pl]}20`,
-                    color: PLATFORM_COLORS[pl],
-                    border: `1px solid ${PLATFORM_COLORS[pl]}50`,
-                  } : {
-                    background: "oklch(1 0 0 / 0.05)",
-                    color: "oklch(0.42 0.005 222)",
-                    border: "1px solid oklch(1 0 0 / 0.1)",
-                  }}
-                >
-                  {PLATFORM_SHORT[pl]} {PLATFORM_LABELS[pl]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* AI Brief */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>
-              Zadání pro AI
-            </label>
-            <textarea
-              value={form.aiBrief ?? ""}
-              onChange={e => setForm(p => ({ ...p, aiBrief: e.target.value }))}
-              placeholder="Popiš AI co má napsat... napr. Jarni kolekce dortu, energicky ton, CTA prijit do cukrarny, zminit vikendovy vyprodej"
-              rows={2}
-              className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none resize-none"
-              style={{
-                background: "oklch(0.72 0.2 310 / 0.06)",
-                border: "1px solid oklch(0.72 0.2 310 / 0.2)",
-                color: "oklch(0.88 0.005 265)",
-              }}
-            />
-            <p className="text-[10px] px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
-              Čím víc info, tím lepší výsledek. Piš česky, klidně heslovitě.
-            </p>
-          </div>
-
-          {/* Caption */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Caption</label>
-              <div className="flex items-center gap-1.5">
-                {/* Rewrite existing caption */}
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={handleRewrite}
-                  disabled={aiLoading || !form.caption.trim()}
-                  title="Přepsat / vylepšit caption"
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-all"
-                  style={{
-                    background: "oklch(0.72 0.2 310 / 0.08)",
-                    color: "oklch(0.60 0.15 310)",
-                    border: "1px solid oklch(0.72 0.2 310 / 0.2)",
-                    opacity: form.caption.trim() ? 1 : 0.4,
-                  }}
-                >
-                  {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  Přepsat
-                </motion.button>
-                {/* Generate 3 variants */}
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={handleAI}
-                  disabled={aiLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all"
-                  style={{
-                    background: "oklch(0.72 0.2 310 / 0.15)",
-                    color: "oklch(0.78 0.18 310)",
-                    border: "1px solid oklch(0.72 0.2 310 / 0.3)",
-                  }}
-                >
-                  {aiLoading
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <Sparkles className="w-3 h-3" />
-                  }
-                  ✨ Generovat 3 varianty
-                </motion.button>
-              </div>
-            </div>
-            {aiError && (
-              <p className="text-[11px] px-1" style={{ color: "oklch(0.65 0.22 25)" }}>{aiError}</p>
-            )}
-            <textarea
-              value={form.caption}
-              onChange={e => { setForm(p => ({ ...p, caption: e.target.value })); setAiVariants([]); }}
-              placeholder="Napiš caption nebo použij AI…"
-              rows={4}
-              className="w-full px-3 py-2 rounded-[7px] text-[13px] outline-none resize-none"
-              style={{
-                background: "oklch(1 0 0 / 0.05)",
-                border: "1px solid oklch(1 0 0 / 0.1)",
-                color: "oklch(0.88 0.005 265)",
-              }}
-            />
-            <p className="text-[10px] px-1" style={{ color: "oklch(0.32 0.005 222)" }}>
-              {form.caption.length} znaků
-            </p>
-
-            {/* AI Variant cards */}
-            <AnimatePresence>
-              {aiVariants.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  className="space-y-2 pt-1"
-                >
-                  {aiVariants.map((variant, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-[8px] p-3 space-y-2"
-                      style={{
-                        background: "oklch(0.72 0.2 310 / 0.05)",
-                        border: "1px solid oklch(0.72 0.2 310 / 0.18)",
+              {/* Format */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Formát</label>
+                <div className="flex gap-1 flex-wrap">
+                  {(["reel", "carousel", "foto", "story", "text"] as PostFormat[]).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setForm(p => ({ ...p, format: f }))}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
+                      style={form.format === f ? {
+                        background: "oklch(0.72 0.18 265 / 0.2)",
+                        color: "oklch(0.78 0.18 265)",
+                        border: "1px solid oklch(0.72 0.18 265 / 0.4)",
+                      } : {
+                        background: "oklch(1 0 0 / 0.05)",
+                        color: "oklch(0.42 0.005 222)",
+                        border: "1px solid oklch(1 0 0 / 0.1)",
                       }}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-[11px] leading-relaxed flex-1" style={{ color: "oklch(0.80 0.005 265)" }}>
-                          {variant}
-                        </p>
-                        <button
-                          onClick={() => { setForm(p => ({ ...p, caption: variant })); setAiVariants([]); }}
-                          className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                      {FORMAT_EMOJI[f]} {FORMAT_LABELS[f]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Status</label>
+                <select
+                  value={form.status}
+                  onChange={e => setForm(p => ({ ...p, status: e.target.value as PostStatus }))}
+                  className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
+                  style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: STATUS_COLORS[form.status] }}
+                >
+                  {(Object.keys(STATUS_LABELS) as PostStatus[]).map(s => (
+                    <option key={s} value={s} style={{ background: "#1a1a2e", color: STATUS_COLORS[s] }}>{STATUS_LABELS[s]}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Platform */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Platforma</label>
+                <div className="flex gap-1 flex-wrap">
+                  {(["instagram", "facebook", "linkedin", "tiktok"] as PostPlatform[]).map(pl => (
+                    <button
+                      key={pl}
+                      onClick={() => setForm(p => ({ ...p, platform: pl }))}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
+                      style={form.platform === pl ? {
+                        background: `${PLATFORM_COLORS[pl]}20`,
+                        color: PLATFORM_COLORS[pl],
+                        border: `1px solid ${PLATFORM_COLORS[pl]}50`,
+                      } : {
+                        background: "oklch(1 0 0 / 0.05)",
+                        color: "oklch(0.42 0.005 222)",
+                        border: "1px solid oklch(1 0 0 / 0.1)",
+                      }}
+                    >
+                      {PLATFORM_SHORT[pl]} {PLATFORM_LABELS[pl]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Brief */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>
+                  Zadání pro AI
+                </label>
+                <textarea
+                  value={form.aiBrief ?? ""}
+                  onChange={e => setForm(p => ({ ...p, aiBrief: e.target.value }))}
+                  placeholder="Popiš AI co má napsat... napr. Jarni kolekce dortu, energicky ton, CTA prijit do cukrarny, zminit vikendovy vyprodej"
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none resize-none"
+                  style={{
+                    background: "oklch(0.72 0.2 310 / 0.06)",
+                    border: "1px solid oklch(0.72 0.2 310 / 0.2)",
+                    color: "oklch(0.88 0.005 265)",
+                  }}
+                />
+                <p className="text-[10px] px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
+                  Čím víc info, tím lepší výsledek. Piš česky, klidně heslovitě.
+                </p>
+              </div>
+            </div>
+
+            {/* Right: content */}
+            <div className="flex-1 space-y-4 mt-4 md:mt-0">
+              {/* Caption */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Caption</label>
+                  <div className="flex items-center gap-1.5">
+                    {/* Rewrite existing caption */}
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
+                      onClick={handleRewrite}
+                      disabled={aiLoading || !form.caption.trim()}
+                      title="Přepsat / vylepšit caption"
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-all"
+                      style={{
+                        background: "oklch(0.72 0.2 310 / 0.08)",
+                        color: "oklch(0.60 0.15 310)",
+                        border: "1px solid oklch(0.72 0.2 310 / 0.2)",
+                        opacity: form.caption.trim() ? 1 : 0.4,
+                      }}
+                    >
+                      {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      Přepsat
+                    </motion.button>
+                    {/* Generate 3 variants */}
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
+                      onClick={handleAI}
+                      disabled={aiLoading}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all"
+                      style={{
+                        background: "oklch(0.72 0.2 310 / 0.15)",
+                        color: "oklch(0.78 0.18 310)",
+                        border: "1px solid oklch(0.72 0.2 310 / 0.3)",
+                      }}
+                    >
+                      {aiLoading
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <Sparkles className="w-3 h-3" />
+                      }
+                      ✨ Generovat 3 varianty
+                    </motion.button>
+                  </div>
+                </div>
+                {aiError && (
+                  <p className="text-[11px] px-1" style={{ color: "oklch(0.65 0.22 25)" }}>{aiError}</p>
+                )}
+                <textarea
+                  value={form.caption}
+                  onChange={e => { setForm(p => ({ ...p, caption: e.target.value })); setAiVariants([]); }}
+                  placeholder="Napiš caption nebo použij AI…"
+                  rows={7}
+                  className="w-full px-3 py-2 rounded-[7px] text-[13px] outline-none resize-none"
+                  style={{
+                    background: "oklch(1 0 0 / 0.05)",
+                    border: "1px solid oklch(1 0 0 / 0.1)",
+                    color: "oklch(0.88 0.005 265)",
+                    minHeight: 140,
+                  }}
+                />
+                <p className="text-[10px] px-1" style={{ color: "oklch(0.32 0.005 222)" }}>
+                  {form.caption.length} znaků
+                </p>
+
+                {/* AI Variant cards */}
+                <AnimatePresence>
+                  {aiVariants.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="space-y-2 pt-1"
+                    >
+                      {aiVariants.map((variant, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-[8px] p-3 space-y-2"
                           style={{
-                            background: "oklch(0.62 0.27 265 / 0.15)",
-                            color: "oklch(0.78 0.18 265)",
-                            border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+                            background: "oklch(0.72 0.2 310 / 0.05)",
+                            border: "1px solid oklch(0.72 0.2 310 / 0.18)",
                           }}
                         >
-                          Použít
-                        </button>
-                      </div>
-                      <p className="text-[9px]" style={{ color: "oklch(0.42 0.005 222)" }}>
-                        Varianta {idx + 1}
-                      </p>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[11px] leading-relaxed flex-1" style={{ color: "oklch(0.80 0.005 265)" }}>
+                              {variant}
+                            </p>
+                            <button
+                              onClick={() => { setForm(p => ({ ...p, caption: variant })); setAiVariants([]); }}
+                              className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                              style={{
+                                background: "oklch(0.62 0.27 265 / 0.15)",
+                                color: "oklch(0.78 0.18 265)",
+                                border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+                              }}
+                            >
+                              Použít
+                            </button>
+                          </div>
+                          <p className="text-[9px]" style={{ color: "oklch(0.42 0.005 222)" }}>
+                            Varianta {idx + 1}
+                          </p>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Tagy</label>
-              <div className="flex items-center gap-1.5 relative">
-                {/* Vložit sadu */}
-                {clientHashtagSets.length > 0 && (
-                  <div className="relative">
+              {/* Tags */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Tagy</label>
+                  <div className="flex items-center gap-1.5 relative">
+                    {/* Vložit sadu */}
+                    {clientHashtagSets.length > 0 && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowHashtagDropdown(p => !p)}
+                          className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                          style={{
+                            background: "oklch(1 0 0 / 0.06)",
+                            color: "oklch(0.55 0.005 222)",
+                            border: "1px solid oklch(1 0 0 / 0.1)",
+                          }}
+                        >
+                          📌 Vložit sadu
+                        </button>
+                        <AnimatePresence>
+                          {showHashtagDropdown && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 4 }}
+                              className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[160px]"
+                              style={{
+                                background: "oklch(0.14 0.008 222)",
+                                border: "1px solid oklch(1 0 0 / 0.12)",
+                                boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
+                              }}
+                            >
+                              {clientHashtagSets.map(set => (
+                                <button
+                                  key={set.id}
+                                  onClick={() => applyHashtagSet(set)}
+                                  className="w-full text-left px-4 py-2 text-[11px] font-medium hover:bg-white/5"
+                                  style={{ color: "oklch(0.72 0.005 265)" }}
+                                >
+                                  <span className="font-semibold">{set.label}</span>
+                                  <span className="ml-2 text-[10px]" style={{ color: "oklch(0.42 0.005 222)" }}>
+                                    #{set.tags.slice(0, 3).join(" #")}…
+                                  </span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                    {/* Uložit jako sadu */}
                     <button
-                      onClick={() => setShowHashtagDropdown(p => !p)}
+                      onClick={() => setShowSaveSetInput(p => !p)}
                       className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                       style={{
                         background: "oklch(1 0 0 / 0.06)",
@@ -812,310 +862,269 @@ function PostModal({
                         border: "1px solid oklch(1 0 0 / 0.1)",
                       }}
                     >
-                      📌 Vložit sadu
+                      Uložit jako sadu
                     </button>
-                    <AnimatePresence>
-                      {showHashtagDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 4 }}
-                          className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[160px]"
-                          style={{
-                            background: "oklch(0.14 0.008 222)",
-                            border: "1px solid oklch(1 0 0 / 0.12)",
-                            boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
+                  </div>
+                </div>
+
+                {/* Save set input */}
+                <AnimatePresence>
+                  {showSaveSetInput && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        value={saveSetLabel}
+                        onChange={e => setSaveSetLabel(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") saveAsHashtagSet(); }}
+                        placeholder="Název sady…"
+                        className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
+                        style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                      />
+                      <button
+                        onClick={saveAsHashtagSet}
+                        className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold"
+                        style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+                      >
+                        Uložit
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                    placeholder="přidat tag..."
+                    className="flex-1 px-3 py-1.5 rounded-[7px] text-[12px] outline-none"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                  />
+                  <button onClick={addTag} className="px-3 py-1.5 rounded-[7px] text-[12px] font-medium"
+                    style={{ background: "oklch(1 0 0 / 0.07)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}>
+                    + Přidat
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {form.tags.map(t => (
+                    <span
+                      key={t}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                      style={{ background: "oklch(0.72 0.18 265 / 0.12)", color: "oklch(0.72 0.18 265)", border: "1px solid oklch(0.72 0.18 265 / 0.2)" }}
+                    >
+                      #{t}
+                      <button onClick={() => setForm(p => ({ ...p, tags: p.tags.filter(x => x !== t) }))}>
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content Pillars */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Obsahový pilíř</label>
+                  <button
+                    onClick={() => setShowNewPillar(p => !p)}
+                    className="text-[10px] px-2 py-0.5 rounded-full"
+                    style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+                  >
+                    + Nový pilíř
+                  </button>
+                </div>
+
+                {clientPillars.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {clientPillars.map(pillar => {
+                      const isSelected = form.pillar === pillar.id;
+                      return (
+                        <button
+                          key={pillar.id}
+                          onClick={() => setForm(p => ({ ...p, pillar: isSelected ? undefined : pillar.id }))}
+                          className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all flex items-center gap-1"
+                          style={isSelected ? {
+                            background: `${pillar.color}25`,
+                            color: pillar.color,
+                            border: `1px solid ${pillar.color}60`,
+                          } : {
+                            background: "oklch(1 0 0 / 0.05)",
+                            color: "oklch(0.42 0.005 222)",
+                            border: "1px solid oklch(1 0 0 / 0.1)",
                           }}
                         >
-                          {clientHashtagSets.map(set => (
-                            <button
-                              key={set.id}
-                              onClick={() => applyHashtagSet(set)}
-                              className="w-full text-left px-4 py-2 text-[11px] font-medium hover:bg-white/5"
-                              style={{ color: "oklch(0.72 0.005 265)" }}
-                            >
-                              <span className="font-semibold">{set.label}</span>
-                              <span className="ml-2 text-[10px]" style={{ color: "oklch(0.42 0.005 222)" }}>
-                                #{set.tags.slice(0, 3).join(" #")}…
-                              </span>
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                          <span>{pillar.emoji}</span>
+                          <span>{pillar.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
-                {/* Uložit jako sadu */}
-                <button
-                  onClick={() => setShowSaveSetInput(p => !p)}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{
-                    background: "oklch(1 0 0 / 0.06)",
-                    color: "oklch(0.55 0.005 222)",
-                    border: "1px solid oklch(1 0 0 / 0.1)",
-                  }}
-                >
-                  Uložit jako sadu
-                </button>
+
+                {clientPillars.length === 0 && !showNewPillar && (
+                  <p className="text-[11px]" style={{ color: "oklch(0.35 0.005 222)" }}>
+                    Žádné pilíře pro tohoto klienta. Přidej první.
+                  </p>
+                )}
+
+                {/* New pillar inline form */}
+                <AnimatePresence>
+                  {showNewPillar && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 pt-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={newPillarEmoji}
+                          onChange={e => setNewPillarEmoji(e.target.value)}
+                          placeholder="🏆"
+                          className="w-10 px-2 py-1.5 rounded-[7px] text-[14px] outline-none text-center"
+                          style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                        />
+                        <input
+                          value={newPillarLabel}
+                          onChange={e => setNewPillarLabel(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") addNewPillar(); }}
+                          placeholder="Název pilíře…"
+                          className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
+                          style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5 flex-wrap flex-1">
+                          {PILLAR_COLOR_OPTIONS.map(c => (
+                            <button
+                              key={c}
+                              onClick={() => setNewPillarColor(c)}
+                              className="w-5 h-5 rounded-full transition-all"
+                              style={{
+                                background: c,
+                                boxShadow: newPillarColor === c ? `0 0 0 2px oklch(0.12 0.008 222), 0 0 0 4px ${c}` : "none",
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <button
+                          onClick={addNewPillar}
+                          className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold shrink-0"
+                          style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+                        >
+                          Přidat
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
 
-            {/* Save set input */}
-            <AnimatePresence>
-              {showSaveSetInput && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    value={saveSetLabel}
-                    onChange={e => setSaveSetLabel(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") saveAsHashtagSet(); }}
-                    placeholder="Název sady…"
-                    className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
-                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-                  />
-                  <button
-                    onClick={saveAsHashtagSet}
-                    className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold"
-                    style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
-                  >
-                    Uložit
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Note */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Interní poznámka</label>
+                <input
+                  value={form.note}
+                  onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
+                  placeholder="Pouze pro tým…"
+                  className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
+                  style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                />
+              </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
-                placeholder="přidat tag..."
-                className="flex-1 px-3 py-1.5 rounded-[7px] text-[12px] outline-none"
-                style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-              />
-              <button onClick={addTag} className="px-3 py-1.5 rounded-[7px] text-[12px] font-medium"
-                style={{ background: "oklch(1 0 0 / 0.07)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}>
-                + Přidat
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {form.tags.map(t => (
-                <span
-                  key={t}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{ background: "oklch(0.72 0.18 265 / 0.12)", color: "oklch(0.72 0.18 265)", border: "1px solid oklch(0.72 0.18 265 / 0.2)" }}
-                >
-                  #{t}
-                  <button onClick={() => setForm(p => ({ ...p, tags: p.tags.filter(x => x !== t) }))}>
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
+              {/* Media — thumbnail + link */}
+              <div className="space-y-3 pt-1">
+                <div className="h-px" style={{ background: "oklch(1 0 0 / 0.07)" }} />
+                <label className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: "oklch(0.42 0.005 222)" }}>
+                  Médium
+                </label>
 
-          {/* Content Pillars */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Obsahový pilíř</label>
-              <button
-                onClick={() => setShowNewPillar(p => !p)}
-                className="text-[10px] px-2 py-0.5 rounded-full"
-                style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
-              >
-                + Nový pilíř
-              </button>
-            </div>
-
-            {clientPillars.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {clientPillars.map(pillar => {
-                  const isSelected = form.pillar === pillar.id;
-                  return (
-                    <button
-                      key={pillar.id}
-                      onClick={() => setForm(p => ({ ...p, pillar: isSelected ? undefined : pillar.id }))}
-                      className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all flex items-center gap-1"
-                      style={isSelected ? {
-                        background: `${pillar.color}25`,
-                        color: pillar.color,
-                        border: `1px solid ${pillar.color}60`,
-                      } : {
-                        background: "oklch(1 0 0 / 0.05)",
-                        color: "oklch(0.42 0.005 222)",
-                        border: "1px solid oklch(1 0 0 / 0.1)",
+                <div className="flex gap-3 items-start">
+                  {/* Thumbnail upload */}
+                  <div className="shrink-0">
+                    <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => imgRef.current?.click()}
+                      disabled={imgLoading}
+                      className="relative flex items-center justify-center rounded-[8px] overflow-hidden"
+                      style={{
+                        width: 104,
+                        height: 130, // 4:5 ratio
+                        background: form.imageThumb ? "transparent" : "oklch(1 0 0 / 0.05)",
+                        border: form.imageThumb ? "none" : "2px dashed oklch(1 0 0 / 0.15)",
                       }}
                     >
-                      <span>{pillar.emoji}</span>
-                      <span>{pillar.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {clientPillars.length === 0 && !showNewPillar && (
-              <p className="text-[11px]" style={{ color: "oklch(0.35 0.005 222)" }}>
-                Žádné pilíře pro tohoto klienta. Přidej první.
-              </p>
-            )}
-
-            {/* New pillar inline form */}
-            <AnimatePresence>
-              {showNewPillar && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2 pt-1"
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={newPillarEmoji}
-                      onChange={e => setNewPillarEmoji(e.target.value)}
-                      placeholder="🏆"
-                      className="w-10 px-2 py-1.5 rounded-[7px] text-[14px] outline-none text-center"
-                      style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-                    />
-                    <input
-                      value={newPillarLabel}
-                      onChange={e => setNewPillarLabel(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") addNewPillar(); }}
-                      placeholder="Název pilíře…"
-                      className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
-                      style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-                    />
+                      {form.imageThumb ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={form.imageThumb}
+                            alt="náhled"
+                            className="w-full h-full object-cover rounded-[8px]"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-[8px]"
+                            style={{ background: "oklch(0 0 0 / 0.5)" }}>
+                            <span className="text-[9px] font-semibold text-white">Změnit</span>
+                          </div>
+                        </>
+                      ) : imgLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "oklch(0.42 0.005 222)" }} />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[18px]">📷</span>
+                          <span className="text-[8px] font-medium text-center leading-tight px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
+                            Náhled<br />4:5
+                          </span>
+                        </div>
+                      )}
+                    </motion.button>
+                    {form.imageThumb && (
+                      <button
+                        onClick={() => setForm(p => ({ ...p, imageThumb: undefined }))}
+                        className="w-full text-center text-[9px] mt-1"
+                        style={{ color: "oklch(0.42 0.005 222)" }}
+                      >
+                        Odstranit
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1.5 flex-wrap flex-1">
-                      {PILLAR_COLOR_OPTIONS.map(c => (
-                        <button
-                          key={c}
-                          onClick={() => setNewPillarColor(c)}
-                          className="w-5 h-5 rounded-full transition-all"
-                          style={{
-                            background: c,
-                            boxShadow: newPillarColor === c ? `0 0 0 2px oklch(0.12 0.008 222), 0 0 0 4px ${c}` : "none",
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={addNewPillar}
-                      className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold shrink-0"
-                      style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
-                    >
-                      Přidat
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
-          {/* Note */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Interní poznámka</label>
-            <input
-              value={form.note}
-              onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
-              placeholder="Pouze pro tým…"
-              className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
-              style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-            />
-          </div>
-
-          {/* Media — thumbnail + link */}
-          <div className="space-y-3 pt-1">
-            <div className="h-px" style={{ background: "oklch(1 0 0 / 0.07)" }} />
-            <label className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: "oklch(0.42 0.005 222)" }}>
-              Médium
-            </label>
-
-            <div className="flex gap-3 items-start">
-              {/* Thumbnail upload */}
-              <div className="shrink-0">
-                <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => imgRef.current?.click()}
-                  disabled={imgLoading}
-                  className="relative flex items-center justify-center rounded-[8px] overflow-hidden"
-                  style={{
-                    width: 72,
-                    height: 90, // 4:5 ratio
-                    background: form.imageThumb ? "transparent" : "oklch(1 0 0 / 0.05)",
-                    border: form.imageThumb ? "none" : "2px dashed oklch(1 0 0 / 0.15)",
-                  }}
-                >
-                  {form.imageThumb ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={form.imageThumb}
-                        alt="náhled"
-                        className="w-full h-full object-cover rounded-[8px]"
+                  {/* Media URL */}
+                  <div className="flex-1 space-y-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px]" style={{ color: "oklch(0.38 0.005 222)" }}>
+                        Odkaz na médium
+                      </label>
+                      <input
+                        value={form.mediaUrl ?? ""}
+                        onChange={e => setForm(p => ({ ...p, mediaUrl: e.target.value }))}
+                        placeholder="https://drive.google.com/..."
+                        className="w-full px-3 py-2 rounded-[7px] text-[11px] outline-none"
+                        style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-[8px]"
-                        style={{ background: "oklch(0 0 0 / 0.5)" }}>
-                        <span className="text-[9px] font-semibold text-white">Změnit</span>
-                      </div>
-                    </>
-                  ) : imgLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: "oklch(0.42 0.005 222)" }} />
-                  ) : (
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-[18px]">📷</span>
-                      <span className="text-[8px] font-medium text-center leading-tight px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
-                        Náhled<br />4:5
-                      </span>
                     </div>
-                  )}
-                </motion.button>
-                {form.imageThumb && (
-                  <button
-                    onClick={() => setForm(p => ({ ...p, imageThumb: undefined }))}
-                    className="w-full text-center text-[9px] mt-1"
-                    style={{ color: "oklch(0.42 0.005 222)" }}
-                  >
-                    Odstranit
-                  </button>
-                )}
-              </div>
-
-              {/* Media URL */}
-              <div className="flex-1 space-y-2">
-                <div className="space-y-1">
-                  <label className="text-[10px]" style={{ color: "oklch(0.38 0.005 222)" }}>
-                    Odkaz na médium
-                  </label>
-                  <input
-                    value={form.mediaUrl ?? ""}
-                    onChange={e => setForm(p => ({ ...p, mediaUrl: e.target.value }))}
-                    placeholder="https://drive.google.com/..."
-                    className="w-full px-3 py-2 rounded-[7px] text-[11px] outline-none"
-                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-                  />
+                    {form.mediaUrl && (
+                      <a
+                        href={form.mediaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium"
+                        style={{ color: "oklch(0.62 0.27 265)" }}
+                      >
+                        <span>Otevrit</span>
+                        <span style={{ fontSize: 10 }}>↗</span>
+                      </a>
+                    )}
+                    <p className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>
+                      {form.format === "reel" ? "Video na Drive/Dropbox — nahraj nahledovou fotku vlevo" : "Fotka na Drive — nebo vloz odkaz pro stahovani"}
+                    </p>
+                  </div>
                 </div>
-                {form.mediaUrl && (
-                  <a
-                    href={form.mediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-medium"
-                    style={{ color: "oklch(0.62 0.27 265)" }}
-                  >
-                    <span>Otevrit</span>
-                    <span style={{ fontSize: 10 }}>↗</span>
-                  </a>
-                )}
-                <p className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>
-                  {form.format === "reel" ? "Video na Drive/Dropbox — nahraj nahledovou fotku vlevo" : "Fotka na Drive — nebo vloz odkaz pro stahovani"}
-                </p>
               </div>
             </div>
           </div>
@@ -1169,6 +1178,231 @@ function PostModal({
   );
 }
 
+/* ── Klienti View ─────────────────────────────────────────────────────── */
+function KlientiView({
+  posts,
+  pillars,
+  onOpenPost,
+  onOpenNew,
+}: {
+  posts: SmmPost[];
+  pillars: ContentPillar[];
+  onOpenPost: (p: SmmPost) => void;
+  onOpenNew: (klient: string) => void;
+}) {
+  const [selectedKlient, setSelectedKlient] = useState<string | null>(null);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // upcoming = not published yet, sorted by date
+  const upcoming = [...posts]
+    .filter(p => new Date(p.datum) >= today)
+    .sort((a, b) => a.datum.localeCompare(b.datum));
+
+  // all = sorted by date desc (for "Vše" view)
+  const allSorted = [...posts].sort((a, b) => b.datum.localeCompare(a.datum));
+
+  const clientPosts = selectedKlient
+    ? allSorted.filter(p => p.klient === selectedKlient)
+    : allSorted;
+
+  return (
+    <div className="flex-1 px-4 py-5 space-y-5">
+      {/* Client pill filters */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <button
+          onClick={() => setSelectedKlient(null)}
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+          style={selectedKlient === null ? {
+            background: "oklch(0.62 0.27 265 / 0.18)",
+            color: "oklch(0.78 0.18 265)",
+            border: "1px solid oklch(0.62 0.27 265 / 0.35)",
+          } : {
+            background: "oklch(1 0 0 / 0.04)",
+            color: "oklch(0.45 0.005 222)",
+            border: "1px solid oklch(1 0 0 / 0.08)",
+          }}
+        >
+          Vše ({posts.length})
+        </button>
+        {SMM_CLIENTS.map(c => {
+          const count = posts.filter(p => p.klient === c).length;
+          if (count === 0) return null;
+          return (
+            <button
+              key={c}
+              onClick={() => setSelectedKlient(c === selectedKlient ? null : c)}
+              className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+              style={selectedKlient === c ? {
+                background: "oklch(0.62 0.27 265 / 0.18)",
+                color: "oklch(0.78 0.18 265)",
+                border: "1px solid oklch(0.62 0.27 265 / 0.35)",
+              } : {
+                background: "oklch(1 0 0 / 0.04)",
+                color: "oklch(0.45 0.005 222)",
+                border: "1px solid oklch(1 0 0 / 0.08)",
+              }}
+            >
+              {c} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedKlient ? (
+        /* ── Single client — full post list ── */
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[16px] font-bold" style={{ color: "oklch(0.96 0.01 265)", fontFamily: "var(--font-outfit)" }}>
+              {selectedKlient}
+            </h2>
+            <button
+              onClick={() => onOpenNew(selectedKlient)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[11px] font-semibold"
+              style={{
+                background: "oklch(0.62 0.27 265 / 0.15)",
+                color: "oklch(0.78 0.18 265)",
+                border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nový post
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {clientPosts.map(p => (
+              <KlientPostCard key={p.id} post={p} pillars={pillars} onClick={() => onOpenPost(p)} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* ── All clients — grouped ── */
+        <div className="space-y-8">
+          {SMM_CLIENTS.map(c => {
+            const cPosts = upcoming.filter(p => p.klient === c);
+            if (cPosts.length === 0) return null;
+            return (
+              <div key={c}>
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setSelectedKlient(c)}
+                    className="flex items-center gap-2 group"
+                  >
+                    <span className="text-[14px] font-bold group-hover:underline" style={{ color: "oklch(0.92 0.005 265)", fontFamily: "var(--font-outfit)" }}>{c}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.45 0.005 222)" }}>
+                      {cPosts.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => onOpenNew(c)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-[10px] font-semibold"
+                    style={{
+                      background: "oklch(0.62 0.27 265 / 0.1)",
+                      color: "oklch(0.62 0.18 265)",
+                      border: "1px solid oklch(0.62 0.27 265 / 0.2)",
+                    }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    Přidat
+                  </button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {cPosts.map(p => (
+                    <KlientPostCard key={p.id} post={p} pillars={pillars} onClick={() => onOpenPost(p)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Client Post Card (thumbnail + date + status) ─────────────────────── */
+function KlientPostCard({
+  post,
+  pillars,
+  onClick,
+}: {
+  post: SmmPost;
+  pillars: ContentPillar[];
+  onClick: () => void;
+}) {
+  const pillar = post.pillar ? pillars.find(p => p.id === post.pillar) : null;
+  const date = new Date(post.datum);
+  const dateStr = date.toLocaleDateString("cs-CZ", { day: "numeric", month: "short" });
+
+  return (
+    <motion.button
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className="flex flex-col rounded-[10px] overflow-hidden text-left shrink-0"
+      style={{
+        width: 140,
+        background: "oklch(0.12 0.008 222)",
+        border: `1px solid ${pillar ? pillar.color + "40" : "oklch(1 0 0 / 0.09)"}`,
+        boxShadow: "0 2px 8px oklch(0 0 0 / 0.3)",
+      }}
+    >
+      {/* Thumbnail */}
+      <div
+        className="relative w-full"
+        style={{ height: 140, background: "oklch(1 0 0 / 0.04)", flexShrink: 0 }}
+      >
+        {post.imageThumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.imageThumb} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+            <span className="text-[22px]">{FORMAT_EMOJI[post.format]}</span>
+            <span className="text-[9px] font-medium" style={{ color: "oklch(0.38 0.005 222)" }}>
+              {FORMAT_LABELS[post.format]}
+            </span>
+          </div>
+        )}
+        {/* Status dot */}
+        <div
+          className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full"
+          style={{ background: STATUS_COLORS[post.status], boxShadow: `0 0 6px ${STATUS_COLORS[post.status]}` }}
+          title={STATUS_LABELS[post.status]}
+        />
+        {/* Platform badge */}
+        <div
+          className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold"
+          style={{ background: `${PLATFORM_COLORS[post.platform]}25`, color: PLATFORM_COLORS[post.platform], border: `1px solid ${PLATFORM_COLORS[post.platform]}40` }}
+        >
+          {PLATFORM_SHORT[post.platform]}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="px-2.5 py-2 space-y-1">
+        {/* Date chip */}
+        <div
+          className="text-[10px] font-semibold px-1.5 py-0.5 rounded w-fit"
+          style={{ background: "oklch(0.62 0.27 265 / 0.12)", color: "oklch(0.72 0.18 265)" }}
+        >
+          {dateStr}
+        </div>
+        {/* Caption preview */}
+        <p className="text-[10px] leading-snug line-clamp-2" style={{ color: "oklch(0.62 0.005 222)" }}>
+          {post.caption || <span style={{ color: "oklch(0.35 0.005 222)", fontStyle: "italic" }}>Bez textu</span>}
+        </p>
+        {/* Pillar */}
+        {pillar && (
+          <div className="flex items-center gap-1">
+            <span className="text-[9px]">{pillar.emoji}</span>
+            <span className="text-[9px]" style={{ color: "oklch(0.45 0.005 222)" }}>{pillar.label}</span>
+          </div>
+        )}
+      </div>
+    </motion.button>
+  );
+}
+
 /* ── Main ─────────────────────────────────────────────────────────────── */
 export default function SmmPage() {
   const { user, email } = useUserRole();
@@ -1185,7 +1419,7 @@ export default function SmmPage() {
   const [filterPlatform, setFilterPlatform] = useState<PostPlatform | "Vše">("Vše");
   const [showKlientFilter, setShowKlientFilter] = useState(false);
   const [showPlatformFilter, setShowPlatformFilter] = useState(false);
-  const [activeTab, setActiveTab] = useState<"kalendar" | "pipeline" | "briefing">("kalendar");
+  const [activeTab, setActiveTab] = useState<"kalendar" | "pipeline" | "briefing" | "klienti">("kalendar");
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
@@ -1305,7 +1539,7 @@ export default function SmmPage() {
         {/* Tabs */}
         <div className="flex gap-1 mt-4 p-1 rounded-[8px] w-fit"
           style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
-          {(["kalendar", "pipeline", "briefing"] as const).map(tab => (
+          {(["kalendar", "pipeline", "briefing", "klienti"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1319,7 +1553,7 @@ export default function SmmPage() {
                 border: "1px solid transparent",
               }}
             >
-              {tab === "kalendar" ? "Kalendář" : tab === "pipeline" ? "Pipeline" : "Týdenní briefing"}
+              {tab === "kalendar" ? "Kalendář" : tab === "pipeline" ? "Pipeline" : tab === "briefing" ? "Týdenní briefing" : "Klienti"}
             </button>
           ))}
         </div>
@@ -1517,10 +1751,10 @@ export default function SmmPage() {
                       </span>
                       <button
                         onClick={() => openNew(day)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
-                        style={{ color: "oklch(0.42 0.005 222)" }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded-[5px] flex items-center gap-0.5"
+                        style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.72 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <div className="space-y-0.5">
@@ -1828,6 +2062,25 @@ export default function SmmPage() {
             })()}
           </div>
         </div>
+      )}
+
+      {/* ── Klienti view ───────────────────────────────────────────────────── */}
+      {activeTab === "klienti" && (
+        <KlientiView
+          posts={posts}
+          pillars={pillars}
+          onOpenPost={(p) => { setSelectedPost(p); setIsNewPost(false); }}
+          onOpenNew={(klient) => {
+            if (!user || !email) return;
+            setSelectedPost({
+              ...emptyPost(email, user.displayName),
+              id: `new_${Date.now()}`,
+              klient,
+              datum: new Date().toISOString().split("T")[0],
+            });
+            setIsNewPost(true);
+          }}
+        />
       )}
 
       {/* ── Post Modal ──────────────────────────────────────────────────────── */}
