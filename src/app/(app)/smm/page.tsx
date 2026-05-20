@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, ChevronLeft, ChevronRight, Sparkles,
@@ -214,11 +215,13 @@ const SMM_CLIENTS = ["TOFFI", "BEHEJ BRNO", "SENIMED", "EASTGATE BRNO", "POWERPL
 const WEEK_DAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
 /* ── Image compression (4:5 crop, max 480px wide) ────────────────────────*/
-function compressSmmImage(file: File): Promise<string> {
+/** Compress image to 4:5 Instagram crop, returns a Blob (not base64) */
+function compressSmmBlob(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
+      URL.revokeObjectURL(url);
       const TARGET_W = 480;
       const RATIO = 4 / 5; // Instagram 4:5
       const TARGET_H = Math.round(TARGET_W / RATIO);
@@ -239,17 +242,61 @@ function compressSmmImage(file: File): Promise<string> {
       canvas.height = Math.min(TARGET_H, sh);
       canvas.getContext("2d")!.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
-        if (blob) {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        } else reject(new Error("compression failed"));
+        if (blob) resolve(blob);
+        else reject(new Error("compression failed"));
       }, "image/webp", 0.75);
-      URL.revokeObjectURL(url);
     };
-    img.onerror = reject;
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("load failed")); };
     img.src = url;
   });
+}
+
+/**
+ * Upload SMM image to Supabase Storage via server-side proxy.
+ * Returns a "storage:thumbnails/..." path (same format as outputs).
+ */
+async function uploadSmmImage(file: File): Promise<string> {
+  const blob = await compressSmmBlob(file);
+  const form = new FormData();
+  form.append("file", new File([blob], "smm-thumb.webp", { type: "image/webp" }));
+  const res = await fetch("/api/storage/upload-thumb", { method: "POST", body: form });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Upload failed: ${res.status}`);
+  }
+  const { path } = await res.json();
+  return `storage:${path}`;
+}
+
+/**
+ * Resolves a thumbnail value to a displayable URL.
+ * - "storage:thumbnails/..." → 1-year signed URL
+ * - "data:..." or "https://..." → use as-is (legacy base64 or direct URL)
+ */
+async function resolveImageUrl(
+  thumb: string,
+  supabase: ReturnType<typeof createClient>
+): Promise<string> {
+  if (!thumb.startsWith("storage:")) return thumb;
+  const path = thumb.slice(8);
+  const { data, error } = await supabase.storage
+    .from("output-thumbnails")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (error || !data) throw error ?? new Error("no signed URL");
+  return data.signedUrl;
+}
+
+/** Component that resolves storage: paths to displayable URLs */
+function SmmImage({ thumb, className }: { thumb: string; className?: string }) {
+  const [url, setUrl] = useState<string | null>(thumb.startsWith("storage:") ? null : thumb);
+  useEffect(() => {
+    if (!thumb.startsWith("storage:")) { setUrl(thumb); return; }
+    const supabase = createClient();
+    resolveImageUrl(thumb, supabase).then(setUrl).catch(() => setUrl(null));
+  }, [thumb]);
+  if (!url) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" className={className} />;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────*/
@@ -523,9 +570,11 @@ function PostModal({
     if (!file) return;
     setImgLoading(true);
     try {
-      const thumb = await compressSmmImage(file);
-      setForm(p => ({ ...p, imageThumb: thumb }));
-    } catch {}
+      const storagePath = await uploadSmmImage(file);
+      setForm(p => ({ ...p, imageThumb: storagePath }));
+    } catch (err) {
+      console.error("[smm image upload]", err);
+    }
     setImgLoading(false);
     e.target.value = "";
   }
@@ -712,12 +761,7 @@ function PostModal({
                 >
                   {form.imageThumb ? (
                     <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={form.imageThumb}
-                        alt="náhled"
-                        className="w-full h-full object-cover"
-                      />
+                      <SmmImage thumb={form.imageThumb} className="w-full h-full object-cover" />
                       <div
                         className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                         style={{ background: "oklch(0 0 0 / 0.55)" }}
@@ -1345,8 +1389,7 @@ function KlientPostCard({
         style={{ height: 140, background: "oklch(1 0 0 / 0.04)", flexShrink: 0 }}
       >
         {post.imageThumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.imageThumb} alt="" className="w-full h-full object-cover" />
+          <SmmImage thumb={post.imageThumb} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1">
             <span className="text-[22px]">{FORMAT_EMOJI[post.format]}</span>
