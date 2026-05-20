@@ -834,8 +834,8 @@ export default function DashboardPage() {
 
           {/* Right side: Live indicator + action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 2 }}>
-            {/* Live indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Live indicator — hidden on mobile */}
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
               <span
                 style={{
                   width: 6,
