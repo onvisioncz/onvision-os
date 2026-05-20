@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 import { canAccess } from "@/lib/roles";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
@@ -319,7 +320,10 @@ export function SidebarNav() {
       <div className="p-2 pb-5">
         <div className="mx-2 mb-2 h-px" style={{ background: "var(--sidebar-border)" }} />
 
-        {/* Push notifications subscribe button */}
+        {/* PWA install + push notifications */}
+        <div className="mx-1 mb-1">
+          <PwaInstallButton />
+        </div>
         <div className="mx-1 mb-2">
           <PushSubscribeButton />
         </div>

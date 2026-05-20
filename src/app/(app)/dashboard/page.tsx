@@ -22,6 +22,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
+import { PwaInstallBanner } from "@/components/pwa-install-button";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -793,6 +794,9 @@ export default function DashboardPage() {
         animate="show"
         style={{ display: "flex", flexDirection: "column", gap: 20 }}
       >
+        {/* ── PWA install banner ── */}
+        <PwaInstallBanner />
+
         {/* ── 1. Header ── */}
         <motion.div
           variants={item}
