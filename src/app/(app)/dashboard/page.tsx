@@ -1577,6 +1577,8 @@ export default function DashboardPage() {
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                           <PriorityBadge p={t.priorita} />
                           <Avatar name={t.prirazeno} />
+                          {/* Deadline + done button share a sub-flex so the ✓ aligns with the pill, not the sublabel */}
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                           <DeadlinePill deadline={t.deadline} />
                           {/* Mark done button */}
                           <button
@@ -1613,6 +1615,7 @@ export default function DashboardPage() {
                               <path d="M2 6.5l2.8 2.8 5.2-5.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </button>
+                          </div>{/* end deadline+done sub-flex */}
                         </div>
                       </motion.div>
                     );
