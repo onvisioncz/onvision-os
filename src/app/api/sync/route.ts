@@ -159,6 +159,17 @@ export async function POST(req: NextRequest) {
     if (!hasPermission) return FORBIDDEN;
   }
 
+  // ── Read OLD value BEFORE write (needed for diff in push notifications) ────
+  let oldValue: unknown = null;
+  if (key === "ov-ukoly-tasks" || key === "ov-output-messages") {
+    const { data: prevData } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", key)
+      .maybeSingle();
+    oldValue = prevData?.value ?? null;
+  }
+
   // ── Write ────────────────────────────────────────────────────────────────────
   const { error } = await supabase
     .from("app_data")
@@ -170,7 +181,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // ── Push notifications (fire-and-forget, never blocks the response) ──────
-  void triggerPush(supabase, key, value, user.email!);
+  void triggerPush(supabase, key, value, user.email!, oldValue);
 
   return NextResponse.json({ ok: true });
 }
@@ -180,39 +191,42 @@ async function triggerPush(
   supabase: Awaited<ReturnType<typeof createClient>>,
   key: string,
   value: unknown,
-  authorEmail: string
+  authorEmail: string,
+  oldValue: unknown
 ) {
   // ── New task assigned ─────────────────────────────────────────────────
   if (key === "ov-ukoly-tasks" && Array.isArray(value)) {
-    // Read previous value to detect additions
-    const { data: prev } = await supabase
-      .from("app_data")
-      .select("value")
-      .eq("key", "ov-ukoly-tasks")
-      .maybeSingle();
-
-    const oldIds = new Set<string>(
-      Array.isArray(prev?.value)
-        ? (prev.value as Array<{ id?: string }>).map((t) => t.id ?? "")
+    // Build set of IDs that existed BEFORE this write
+    const oldIds = new Set<unknown>(
+      Array.isArray(oldValue)
+        ? (oldValue as Array<{ id?: unknown }>).map((t) => t.id)
         : []
     );
 
-    const newTasks = (value as Array<{ id?: string; prirazeno?: string; nazev?: string }>)
-      .filter((t) => t.id && !oldIds.has(t.id) && t.prirazeno);
+    const newTasks = (value as Array<{ id?: unknown; prirazeno?: string; nazev?: string }>)
+      .filter((t) => t.id != null && !oldIds.has(t.id) && t.prirazeno);
+
+    if (newTasks.length === 0) return;
+
+    // Load user roster once for all new tasks
+    const { data: rolesData } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-user-roles")
+      .maybeSingle();
+    const users: Array<{ email: string; displayName?: string }> =
+      Array.isArray(rolesData?.value) ? rolesData.value : DEFAULT_USERS;
 
     for (const task of newTasks) {
-      // Find the user record to get their email
-      const { data: rolesData } = await supabase
-        .from("app_data")
-        .select("value")
-        .eq("key", "ov-user-roles")
-        .maybeSingle();
-      const users: Array<{ email: string; displayName?: string }> =
-        Array.isArray(rolesData?.value) ? rolesData.value : DEFAULT_USERS;
+      const prirazeno = (task.prirazeno ?? "").toLowerCase().trim();
 
-      const assignee = users.find(
-        (u) => (u.displayName ?? u.email.split("@")[0]).toLowerCase() === (task.prirazeno ?? "").toLowerCase()
-      );
+      // Match by: full displayName OR first name only (handles "Adam" → "Adam Mendrek")
+      const assignee = users.find((u) => {
+        const full = (u.displayName ?? u.email.split("@")[0]).toLowerCase();
+        const first = full.split(" ")[0];
+        return full === prirazeno || first === prirazeno;
+      });
+
       const targetEmail = assignee?.email;
       if (!targetEmail) continue;
 
@@ -220,32 +234,26 @@ async function triggerPush(
         title: "Nový úkol 📋",
         body: task.nazev ? `„${task.nazev}" — přiřazeno tobě` : "Byl ti přiřazen nový úkol",
         url: "/ukoly",
-        tag: `task-${task.id}`,
+        tag: `task-${String(task.id)}`,
       });
     }
   }
 
   // ── New output message uploaded ───────────────────────────────────────
   if (key === "ov-output-messages" && Array.isArray(value)) {
-    const { data: prev } = await supabase
-      .from("app_data")
-      .select("value")
-      .eq("key", "ov-output-messages")
-      .maybeSingle();
-
-    const oldIds = new Set<string>(
-      Array.isArray(prev?.value)
-        ? (prev.value as Array<{ id?: string }>).map((o) => o.id ?? "")
+    const oldIds = new Set<unknown>(
+      Array.isArray(oldValue)
+        ? (oldValue as Array<{ id?: unknown }>).map((o) => o.id)
         : []
     );
 
     const added = (value as Array<{
-      id?: string;
+      id?: unknown;
       authorName?: string;
       nazev?: string;
       projektNazev?: string;
       type?: string;
-    }>).filter((o) => o.id && !oldIds.has(o.id) && o.type !== "zprava");
+    }>).filter((o) => o.id != null && !oldIds.has(o.id) && o.type !== "zprava");
 
     if (added.length > 0) {
       const newest = added[added.length - 1];
