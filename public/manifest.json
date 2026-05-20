@@ -1,0 +1,50 @@
+{
+  "name": "OnVision OS",
+  "short_name": "OnVision",
+  "description": "Interní systém kreativní agentury OnVision",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080808",
+  "theme_color": "#00D1FF",
+  "categories": ["business", "productivity"],
+  "lang": "cs",
+  "icons": [
+    {
+      "src": "/onvision-mark.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/onvision-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/onvision-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+    },
+    {
+      "name": "SMM Hub",
+      "url": "/smm",
+      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Úkoly",
+      "url": "/ukoly",
+      "icons": [{ "src": "/onvision-mark.svg", "sizes": "any" }]
+    }
+  ]
+}

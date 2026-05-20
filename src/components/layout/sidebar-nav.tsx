@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { canAccess } from "@/lib/roles";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
@@ -317,6 +318,11 @@ export function SidebarNav() {
       {/* Bottom */}
       <div className="p-2 pb-5">
         <div className="mx-2 mb-2 h-px" style={{ background: "var(--sidebar-border)" }} />
+
+        {/* Push notifications subscribe button */}
+        <div className="mx-1 mb-2">
+          <PushSubscribeButton />
+        </div>
 
         {isAdmin && (
           <Link href="/nastaveni">

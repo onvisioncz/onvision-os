@@ -1,6 +1,47 @@
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_USERS, type Role } from "@/lib/roles";
 import { NextRequest, NextResponse } from "next/server";
+import webpush from "web-push";
+
+/* ── Configure VAPID once at module load ────────────────────────────────── */
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL ?? "mailto:onvisionczech@gmail.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+/* ── Push helper ────────────────────────────────────────────────────────── */
+interface PushSubRecord {
+  email: string;
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+}
+
+async function sendPushToEmails(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  emails: string[],
+  payload: { title: string; body: string; url?: string; tag?: string }
+) {
+  if (!process.env.VAPID_PUBLIC_KEY) return; // push not configured
+  try {
+    const { data } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-push-subscriptions")
+      .maybeSingle();
+
+    const subs: PushSubRecord[] = Array.isArray(data?.value) ? data.value : [];
+    const targets = emails.length > 0
+      ? subs.filter((s) => emails.includes(s.email))
+      : subs; // empty = broadcast to all
+
+    const msg = JSON.stringify(payload);
+    await Promise.allSettled(targets.map((s) => webpush.sendNotification(s.subscription, msg)));
+  } catch {
+    // Push failures are non-fatal
+  }
+}
 
 const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 const FORBIDDEN     = NextResponse.json({ error: "Forbidden" },     { status: 403 });
@@ -37,6 +78,8 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-reports-archive":     ["admin", "smm"],
   "ov-investice":           ["admin"],
   "ov-finance-predplatne":  ["admin", "fakturace"],
+  // push subscriptions — every authenticated user can write their own
+  "ov-push-subscriptions":  ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
 };
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
@@ -121,5 +164,100 @@ export async function POST(req: NextRequest) {
     );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // ── Push notifications (fire-and-forget, never blocks the response) ──────
+  void triggerPush(supabase, key, value, user.email!);
+
   return NextResponse.json({ ok: true });
+}
+
+/* ── Push trigger logic ─────────────────────────────────────────────────── */
+async function triggerPush(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  key: string,
+  value: unknown,
+  authorEmail: string
+) {
+  // ── New task assigned ─────────────────────────────────────────────────
+  if (key === "ov-ukoly-tasks" && Array.isArray(value)) {
+    // Read previous value to detect additions
+    const { data: prev } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-ukoly-tasks")
+      .maybeSingle();
+
+    const oldIds = new Set<string>(
+      Array.isArray(prev?.value)
+        ? (prev.value as Array<{ id?: string }>).map((t) => t.id ?? "")
+        : []
+    );
+
+    const newTasks = (value as Array<{ id?: string; prirazeno?: string; nazev?: string }>)
+      .filter((t) => t.id && !oldIds.has(t.id) && t.prirazeno);
+
+    for (const task of newTasks) {
+      // Find the user record to get their email
+      const { data: rolesData } = await supabase
+        .from("app_data")
+        .select("value")
+        .eq("key", "ov-user-roles")
+        .maybeSingle();
+      const users: Array<{ email: string; displayName?: string }> =
+        Array.isArray(rolesData?.value) ? rolesData.value : DEFAULT_USERS;
+
+      const assignee = users.find(
+        (u) => (u.displayName ?? u.email.split("@")[0]).toLowerCase() === (task.prirazeno ?? "").toLowerCase()
+      );
+      const targetEmail = assignee?.email;
+      if (!targetEmail || targetEmail === authorEmail) continue; // don't notify yourself
+
+      await sendPushToEmails(supabase, [targetEmail], {
+        title: "Nový úkol 📋",
+        body: task.nazev ? `„${task.nazev}" — přiřazeno tobě` : "Byl ti přiřazen nový úkol",
+        url: "/ukoly",
+        tag: `task-${task.id}`,
+      });
+    }
+  }
+
+  // ── New output uploaded ───────────────────────────────────────────────
+  if (key === "ov-outputs" && Array.isArray(value)) {
+    const { data: prev } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-outputs")
+      .maybeSingle();
+
+    const oldIds = new Set<string>(
+      Array.isArray(prev?.value)
+        ? (prev.value as Array<{ id?: string }>).map((o) => o.id ?? "")
+        : []
+    );
+
+    const added = (value as Array<{ id?: string; klient?: string; typ?: string }>)
+      .filter((o) => o.id && !oldIds.has(o.id));
+
+    if (added.length > 0) {
+      const newest = added[added.length - 1];
+      const label = [newest.klient, newest.typ].filter(Boolean).join(" · ");
+      // Broadcast to everyone except author
+      const { data: subsData } = await supabase
+        .from("app_data")
+        .select("value")
+        .eq("key", "ov-push-subscriptions")
+        .maybeSingle();
+      const subs: PushSubRecord[] = Array.isArray(subsData?.value) ? subsData.value : [];
+      const others = subs.filter((s) => s.email !== authorEmail);
+
+      if (others.length > 0) {
+        await sendPushToEmails(supabase, others.map((s) => s.email), {
+          title: "Nový výstup 📁",
+          body: label ? `Přidán výstup: ${label}` : "Byl nahrán nový výstup",
+          url: "/outputs",
+          tag: "new-output",
+        });
+      }
+    }
+  }
 }

@@ -1,0 +1,139 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Bell, BellOff, Loader2 } from "lucide-react";
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed";
+
+export function PushSubscribeButton() {
+  const [state, setState] = useState<State>("loading");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setState("unsupported");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setState("denied");
+      return;
+    }
+
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription();
+      setState(sub ? "subscribed" : "unsubscribed");
+    });
+  }, []);
+
+  async function subscribe() {
+    setBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") { setState("denied"); return; }
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""
+        ),
+      });
+
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+
+      if (res.ok) setState("subscribed");
+    } catch (err) {
+      console.error("[push] subscribe error:", err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unsubscribe() {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/subscribe", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setState("unsubscribed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (state === "unsupported" || state === "loading") return null;
+
+  return (
+    <button
+      onClick={state === "subscribed" ? unsubscribe : subscribe}
+      disabled={busy || state === "denied"}
+      title={
+        state === "denied"
+          ? "Notifikace jsou blokovány v prohlížeči"
+          : state === "subscribed"
+          ? "Notifikace zapnuty — klik pro vypnutí"
+          : "Zapnout push notifikace"
+      }
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        width: "100%",
+        padding: "7px 12px",
+        borderRadius: 8,
+        border: "1px solid",
+        borderColor: state === "subscribed"
+          ? "oklch(0.68 0.18 155 / 0.3)"
+          : "oklch(1 0 0 / 0.08)",
+        background: state === "subscribed"
+          ? "oklch(0.68 0.18 155 / 0.08)"
+          : "transparent",
+        color: state === "subscribed"
+          ? "oklch(0.68 0.18 155)"
+          : state === "denied"
+          ? "oklch(0.38 0.005 222)"
+          : "oklch(0.50 0.005 222)",
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: state === "denied" ? "not-allowed" : "pointer",
+        transition: "all 0.15s",
+        fontFamily: "var(--font-jakarta)",
+      }}
+    >
+      {busy ? (
+        <Loader2 style={{ width: 13, height: 13, flexShrink: 0 }} className="animate-spin" />
+      ) : state === "subscribed" ? (
+        <Bell style={{ width: 13, height: 13, flexShrink: 0 }} />
+      ) : (
+        <BellOff style={{ width: 13, height: 13, flexShrink: 0 }} />
+      )}
+      <span>
+        {state === "subscribed"
+          ? "Notifikace zapnuty"
+          : state === "denied"
+          ? "Notifikace blokovány"
+          : "Zapnout notifikace"}
+      </span>
+    </button>
+  );
+}
