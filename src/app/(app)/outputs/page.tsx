@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, CheckCheck, ExternalLink, Filter, ChevronDown,
   Plus, Image as ImageIcon, Link2, Send,
-  Sparkles, Users, FolderKanban, Building2,
+  Sparkles, Users, FolderKanban, Building2, Trash2,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
@@ -160,11 +160,13 @@ function ProjectTag({ typ, nazev }: { typ?: ProjektTyp; nazev?: string }) {
 }
 
 /* ── Delivery Card ────────────────────────────────────────────────────── */
-function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
+function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDelete }: {
   msg: OutputMessage;
   isSelf: boolean;
   onMarkRead: (id: string) => void;
+  onDelete?: (id: string) => void;
   currentEmail: string;
+  canDelete?: boolean;
 }) {
   const isRead = msg.readBy.includes(currentEmail);
   // Safe lookup — old stored messages may have type "link"/"text"/"image"
@@ -187,7 +189,7 @@ function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-      className={`flex gap-3 ${isSelf ? "flex-row-reverse" : ""}`}
+      className={`group/card flex gap-3 ${isSelf ? "flex-row-reverse" : ""}`}
     >
       {/* Avatar */}
       <div
@@ -284,15 +286,29 @@ function DeliveryCard({ msg, isSelf, onMarkRead, currentEmail }: {
           )}
         </div>
 
-        {isSelf && (
-          <div className="flex items-center gap-1 px-1"
-            style={{ color: msg.readBy.length > 1 ? "oklch(0.62 0.27 265)" : "oklch(0.35 0.005 222)" }}>
-            <CheckCheck className="w-3 h-3" />
-            <span className="text-[9px]">
-              {msg.readBy.length > 1 ? `Přečteno (${msg.readBy.length})` : "Doručeno"}
-            </span>
-          </div>
-        )}
+        <div className={`flex items-center gap-2 px-1 ${isSelf ? "justify-end" : "justify-start"}`}>
+          {isSelf && (
+            <div className="flex items-center gap-1"
+              style={{ color: msg.readBy.length > 1 ? "oklch(0.62 0.27 265)" : "oklch(0.35 0.005 222)" }}>
+              <CheckCheck className="w-3 h-3" />
+              <span className="text-[9px]">
+                {msg.readBy.length > 1 ? `Přečteno (${msg.readBy.length})` : "Doručeno"}
+              </span>
+            </div>
+          )}
+          {canDelete && onDelete && (
+            <motion.button
+              onClick={() => onDelete(msg.id)}
+              whileTap={{ scale: 0.88 }}
+              title="Smazat výstup"
+              className="p-1 rounded-[5px] opacity-0 group-hover/card:opacity-100 transition-opacity"
+              style={{ color: "oklch(0.45 0.005 222)" }}
+              whileHover={{ color: "oklch(0.65 0.22 25)" }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </motion.button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -694,6 +710,12 @@ export default function OutputsPage() {
     ));
   }
 
+  function deleteMessage(id: string) {
+    setMessages(prev => prev.filter(m => m.id !== id));
+  }
+
+  const isAdmin = user?.roles?.includes("admin") ?? false;
+
   // Build filter options from existing messages
   const allProjects = ["Vše", ...Array.from(new Set(
     messages.filter(m => m.projektNazev).map(m => m.projektNazev!)
@@ -797,6 +819,8 @@ export default function OutputsPage() {
             msg={msg}
             isSelf={msg.authorEmail === email}
             onMarkRead={markRead}
+            onDelete={deleteMessage}
+            canDelete={isAdmin || msg.authorEmail === email}
             currentEmail={email ?? ""}
           />
         ))}
