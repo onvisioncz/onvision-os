@@ -77,6 +77,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-smm-pillars":         ["admin", "smm"],
   "ov-shooting-plan":       ["admin", "produkce"],
   "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
+  "ov-output-messages":    ["admin", "produkce", "grafik", "smm", "pm", "fakturace"],
   "ov-calendar-events":     ["admin", "pm", "smm"],
   "ov-reports-archive":     ["admin", "smm"],
   "ov-investice":           ["admin"],
@@ -224,12 +225,12 @@ async function triggerPush(
     }
   }
 
-  // ── New output uploaded ───────────────────────────────────────────────
-  if (key === "ov-outputs" && Array.isArray(value)) {
+  // ── New output message uploaded ───────────────────────────────────────
+  if (key === "ov-output-messages" && Array.isArray(value)) {
     const { data: prev } = await supabase
       .from("app_data")
       .select("value")
-      .eq("key", "ov-outputs")
+      .eq("key", "ov-output-messages")
       .maybeSingle();
 
     const oldIds = new Set<string>(
@@ -238,13 +239,24 @@ async function triggerPush(
         : []
     );
 
-    const added = (value as Array<{ id?: string; klient?: string; typ?: string }>)
-      .filter((o) => o.id && !oldIds.has(o.id));
+    const added = (value as Array<{
+      id?: string;
+      authorName?: string;
+      nazev?: string;
+      projektNazev?: string;
+      type?: string;
+    }>).filter((o) => o.id && !oldIds.has(o.id) && o.type !== "zprava");
 
     if (added.length > 0) {
       const newest = added[added.length - 1];
-      const label = [newest.klient, newest.typ].filter(Boolean).join(" · ");
-      // Broadcast to everyone except author
+      const typeLabel: Record<string, string> = {
+        grafika: "Grafika", foto: "Foto", video: "Video",
+        dokument: "Dokument", odkaz: "Odkaz",
+      };
+      const co = newest.nazev || typeLabel[newest.type ?? ""] || "Výstup";
+      const kde = newest.projektNazev ? ` · ${newest.projektNazev}` : "";
+      const kdo = newest.authorName ? `${newest.authorName}: ` : "";
+
       const { data: subsData } = await supabase
         .from("app_data")
         .select("value")
@@ -255,7 +267,7 @@ async function triggerPush(
       if (subs.length > 0) {
         await sendPushToEmails(supabase, subs.map((s) => s.email), {
           title: "Nový výstup 📁",
-          body: label ? `Přidán výstup: ${label}` : "Byl nahrán nový výstup",
+          body: `${kdo}${co}${kde}`,
           url: "/outputs",
           tag: "new-output",
         });
