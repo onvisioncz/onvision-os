@@ -27,10 +27,12 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // Determine extension from content type (client compresses to webp or jpeg)
-  const contentType = file.type === "image/jpeg" ? "image/jpeg" : "image/webp";
-  const ext = contentType === "image/jpeg" ? "jpg" : "webp";
-  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  // Always store as image/webp — bucket is configured for webp only.
+  // The client-side canvas compression outputs webp (or jpeg fallback on old iOS),
+  // but the file is always a valid image regardless. Declaring webp satisfies the
+  // bucket MIME policy and browsers display both formats correctly.
+  const contentType = "image/webp";
+  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
 
   // 4a. Try with service role key (bypasses RLS — reliable)
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
