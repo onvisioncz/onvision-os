@@ -213,7 +213,7 @@ async function triggerPush(
         (u) => (u.displayName ?? u.email.split("@")[0]).toLowerCase() === (task.prirazeno ?? "").toLowerCase()
       );
       const targetEmail = assignee?.email;
-      if (!targetEmail || targetEmail === authorEmail) continue; // don't notify yourself
+      if (!targetEmail) continue;
 
       await sendPushToEmails(supabase, [targetEmail], {
         title: "Nový úkol 📋",
@@ -251,10 +251,9 @@ async function triggerPush(
         .eq("key", "ov-push-subscriptions")
         .maybeSingle();
       const subs: PushSubRecord[] = Array.isArray(subsData?.value) ? subsData.value : [];
-      const others = subs.filter((s) => s.email !== authorEmail);
 
-      if (others.length > 0) {
-        await sendPushToEmails(supabase, others.map((s) => s.email), {
+      if (subs.length > 0) {
+        await sendPushToEmails(supabase, subs.map((s) => s.email), {
           title: "Nový výstup 📁",
           body: label ? `Přidán výstup: ${label}` : "Byl nahrán nový výstup",
           url: "/outputs",
