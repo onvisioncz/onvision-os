@@ -18,7 +18,7 @@ import { canAccess } from "@/lib/roles";
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
   { label: "Dashboard", short: "Přehled",  href: "/dashboard",  icon: LayoutDashboard },
-  { label: "Inbox",     short: "Inbox",    href: "/inbox",      icon: Inbox },
+  { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
   { label: "Úkoly",     short: "Úkoly",    href: "/ukoly",      icon: CheckSquare },
 ];
 

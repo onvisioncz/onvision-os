@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CreditCard, Clock, FileCheck, AlertTriangle,
-  CheckCircle2, RotateCcw, CheckCheck, RefreshCw,
+  CheckCircle2, RotateCcw, CheckCheck, RefreshCw, ArrowRight,
 } from "lucide-react";
 
 /* ── Source data types ──────────────────────────────────────────────────────── */
@@ -37,6 +38,8 @@ interface Notif {
   cas: string;
   urgency: 0 | 1 | 2 | 3; // 0 = nejkritičtější
   castka?: number;
+  link?: string;       // deep-link destination
+  linkLabel?: string;  // button label e.g. "Přejít na fakturace"
 }
 
 /* ── Read/archived state stored in Supabase ─────────────────────────────────── */
@@ -117,7 +120,7 @@ function generate(
         body = `${t.nazev} — termín ${t.deadline}. Přiřazeno: ${t.prirazeno}.`;
       }
 
-      out.push({ id: `task-${t.id}`, type: "deadline", title, body, cas: relativeCas(days), urgency });
+      out.push({ id: `task-${t.id}`, type: "deadline", title, body, cas: relativeCas(days), urgency, link: "/ukoly", linkLabel: "Otevřít úkoly" });
     });
 
   /* 2. Faktury po splatnosti nebo splatné do 3 dnů ───────────────────────────── */
@@ -137,6 +140,8 @@ function generate(
           cas: `${Math.abs(days)}d po splatnosti`,
           urgency: days < -7 ? 0 : 1,
           castka: f.castka,
+          link: "/fakturace",
+          linkLabel: "Otevřít fakturace",
         });
       } else if (days <= 3) {
         out.push({
@@ -147,6 +152,8 @@ function generate(
           cas: relativeCas(days),
           urgency: 1,
           castka: f.castka,
+          link: "/fakturace",
+          linkLabel: "Otevřít fakturace",
         });
       }
     });
@@ -163,6 +170,8 @@ function generate(
         cas: s.datum,
         urgency: 1,
         castka: s.castka,
+        link: "/fakturace",
+        linkLabel: "Otevřít schválení",
       });
     });
 
@@ -196,6 +205,8 @@ function generate(
       cas: pastCas(dAgo),
       urgency: 3,
       castka: g.total,
+      link: "/finance",
+      linkLabel: "Přejít na finance",
     });
   });
 
@@ -226,6 +237,8 @@ function TypeIcon({ type, urgency }: { type: NotifType; urgency: number }) {
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function InboxPage() {
+  const router = useRouter();
+
   /* Read/archived state — only this persists to Supabase */
   const [state, setState] = useSupabaseData<InboxState>("ov-inbox-state", () => EMPTY_STATE);
 
@@ -328,7 +341,7 @@ export default function InboxPage() {
               className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
               style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}
             >
-              Inbox
+              Upozornění
             </h1>
             {unreadCount > 0 && (
               <motion.span
@@ -455,7 +468,10 @@ export default function InboxPage() {
                       background: !notif.precten ? "oklch(0.62 0.27 265 / 0.03)" : "transparent",
                       borderBottom: idx < visible.length - 1 ? "1px solid var(--border)" : "none",
                     }}
-                    onClick={() => markRead(notif.id)}
+                    onClick={() => {
+                      markRead(notif.id);
+                      if (notif.link) router.push(notif.link);
+                    }}
                   >
                     {/* Unread dot */}
                     {!notif.precten && (
@@ -503,6 +519,15 @@ export default function InboxPage() {
                           {notif.castka.toLocaleString("cs-CZ")} Kč
                         </p>
                       )}
+                      {notif.link && (
+                        <span
+                          className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold"
+                          style={{ color: "oklch(0.62 0.27 265)", letterSpacing: "0.01em" }}
+                        >
+                          {notif.linkLabel ?? "Přejít"}
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      )}
                     </div>
 
                     {tab === "archiv" ? (
@@ -519,7 +544,7 @@ export default function InboxPage() {
                       </motion.button>
                     ) : (
                       <motion.button
-                        onClick={e => { e.stopPropagation(); archive(notif.id); }}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); archive(notif.id); }}
                         className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] btn-tactile text-[11px] font-semibold"
                         style={{
                           background: notif.precten ? "oklch(0.67 0.155 155 / 0.08)" : "oklch(0.62 0.27 265 / 0.08)",
