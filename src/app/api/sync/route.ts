@@ -206,6 +206,47 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+/* ── Notification event store ──────────────────────────────────────────── */
+// Appends an event to ov-notif-events so the inbox shows real-time events
+// (task assigned, output uploaded) alongside the auto-generated system alerts.
+interface NotifEvent {
+  id: string;
+  type: "task_assigned" | "output_uploaded";
+  title: string;
+  body: string;
+  url: string;
+  createdAt: string;
+  /** Target user email (null = broadcast to everyone) */
+  targetEmail: string | null;
+}
+
+async function appendNotifEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  event: Omit<NotifEvent, "id" | "createdAt">
+) {
+  try {
+    const { data } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-notif-events")
+      .maybeSingle();
+
+    const existing: NotifEvent[] = Array.isArray(data?.value) ? data.value : [];
+
+    // Keep at most 200 recent events
+    const next: NotifEvent[] = [
+      ...existing.slice(-199),
+      { ...event, id: `ev-${Date.now()}-${Math.random().toString(36).slice(2)}`, createdAt: new Date().toISOString() },
+    ];
+
+    await supabase
+      .from("app_data")
+      .upsert({ key: "ov-notif-events", value: next, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  } catch {
+    // Non-fatal
+  }
+}
+
 /* ── Push trigger logic ─────────────────────────────────────────────────── */
 async function triggerPush(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -250,18 +291,24 @@ async function triggerPush(
       const targetEmail = assignee?.email;
       if (!targetEmail) continue;
 
-      await sendPushToEmails(
-        supabase,
-        [targetEmail],
-        {
-          title: "Nový úkol 📋",
-          body: task.nazev ? `„${task.nazev}" — přiřazeno tobě` : "Byl ti přiřazen nový úkol",
+      const taskTitle = "Nový úkol 📋";
+      const taskBody = task.nazev ? `„${task.nazev}" — přiřazeno: ${task.prirazeno}` : `Přiřazeno: ${task.prirazeno}`;
+
+      await Promise.all([
+        sendPushToEmails(
+          supabase,
+          [targetEmail],
+          { title: taskTitle, body: taskBody, url: "/ukoly", tag: `task-${String(task.id)}` },
+          [prirazeno]
+        ),
+        appendNotifEvent(supabase, {
+          type: "task_assigned",
+          title: taskTitle,
+          body: taskBody,
           url: "/ukoly",
-          tag: `task-${String(task.id)}`,
-        },
-        // Fallback: if email doesn't match subscription, try by first name
-        [prirazeno]
-      );
+          targetEmail,
+        }),
+      ]);
     }
   }
 
@@ -298,14 +345,26 @@ async function triggerPush(
         .maybeSingle();
       const subs: PushSubRecord[] = Array.isArray(subsData?.value) ? subsData.value : [];
 
-      if (subs.length > 0) {
-        await sendPushToEmails(supabase, subs.map((s) => s.email), {
-          title: "Nový výstup 📁",
-          body: `${kdo}${co}${kde}`,
+      const outputTitle = "Nový výstup 📁";
+      const outputBody = `${kdo}${co}${kde}`;
+
+      await Promise.all([
+        subs.length > 0
+          ? sendPushToEmails(supabase, subs.map((s) => s.email), {
+              title: outputTitle,
+              body: outputBody,
+              url: "/outputs",
+              tag: "new-output",
+            })
+          : Promise.resolve(),
+        appendNotifEvent(supabase, {
+          type: "output_uploaded",
+          title: outputTitle,
+          body: outputBody,
           url: "/outputs",
-          tag: "new-output",
-        });
-      }
+          targetEmail: null, // broadcast — visible to everyone
+        }),
+      ]);
     }
   }
 }

@@ -236,6 +236,30 @@ function TypeIcon({ type, urgency }: { type: NotifType; urgency: number }) {
 }
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
+/* ── Event notification (stored in DB by sync route when push fires) ──── */
+interface NotifEvent {
+  id: string;
+  type: "task_assigned" | "output_uploaded";
+  title: string;
+  body: string;
+  url: string;
+  createdAt: string;
+  targetEmail: string | null;
+}
+
+function eventToNotif(e: NotifEvent): Notif {
+  return {
+    id: e.id,
+    type: e.type === "task_assigned" ? "deadline" : "upozorneni",
+    title: e.title,
+    body: e.body,
+    cas: new Date(e.createdAt).toLocaleString("cs-CZ", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+    urgency: e.type === "task_assigned" ? 1 : 2,
+    link: e.url,
+    linkLabel: e.type === "task_assigned" ? "Otevřít úkoly" : "Otevřít výstupy",
+  };
+}
+
 export default function InboxPage() {
   const router = useRouter();
 
@@ -247,6 +271,7 @@ export default function InboxPage() {
   const [faktury,   setFaktury]   = useState<Faktura[]>([]);
   const [schvaleni, setSchvaleni] = useState<SchvaleniItem[]>([]);
   const [incomes,   setIncomes]   = useState<IncomeItem[]>([]);
+  const [events,    setEvents]    = useState<NotifEvent[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
@@ -257,20 +282,30 @@ export default function InboxPage() {
       fetch("/api/sync?key=ov-finance-faktury").then(r => r.json()),
       fetch("/api/sync?key=ov-schvaleni-items").then(r => r.json()),
       fetch("/api/sync?key=ov-finance-incomes").then(r => r.json()),
-    ]).then(([t, f, s, i]) => {
+      fetch("/api/sync?key=ov-notif-events").then(r => r.json()),
+    ]).then(([t, f, s, i, ev]) => {
       if (Array.isArray(t.value)) setTasks(t.value);
       if (Array.isArray(f.value)) setFaktury(f.value);
       if (Array.isArray(s.value)) setSchvaleni(s.value);
       if (Array.isArray(i.value)) setIncomes(i.value);
+      if (Array.isArray(ev.value)) setEvents(ev.value);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [lastRefresh]);
 
-  /* Generate notifications from live data */
-  const allNotifs = useMemo(
-    () => generate(tasks, faktury, schvaleni, incomes),
-    [tasks, faktury, schvaleni, incomes]
-  );
+  /* Generate notifications from live data + stored events */
+  const allNotifs = useMemo(() => {
+    const system = generate(tasks, faktury, schvaleni, incomes);
+    // Convert stored events to Notif format; deduplicate by id
+    const existingIds = new Set(system.map(n => n.id));
+    const eventNotifs = events
+      .map(eventToNotif)
+      .filter(n => !existingIds.has(n.id))
+      // Most recent events first for event section
+      .reverse();
+    // Events go after system alerts
+    return [...system, ...eventNotifs];
+  }, [tasks, faktury, schvaleni, incomes, events]);
 
   /* Apply read/archived state */
   const notifs = useMemo(

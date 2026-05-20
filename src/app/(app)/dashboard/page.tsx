@@ -804,10 +804,10 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Right side: notification widget + Live indicator + action buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 2 }}>
+          {/* Right side: stacked on mobile (notification above buttons), row on desktop */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
 
-            {/* Notification widget — FB-style bell with count */}
+            {/* Row 1: Notification widget */}
             <Link href="/inbox">
               <motion.div
                 whileHover={{ scale: 1.03 }}
@@ -822,38 +822,22 @@ export default function DashboardPage() {
                   border: `1px solid ${inboxUnread > 0 ? "oklch(0.65 0.22 25 / 0.35)" : "oklch(1 0 0 / 0.08)"}`,
                   background: inboxUnread > 0 ? "oklch(0.65 0.22 25 / 0.08)" : "oklch(1 0 0 / 0.04)",
                   cursor: "pointer",
-                  position: "relative",
                   textDecoration: "none",
-                  minWidth: 42,
                 }}
               >
                 <div style={{ position: "relative", flexShrink: 0 }}>
-                  <Bell
-                    style={{
-                      width: 15,
-                      height: 15,
-                      color: inboxUnread > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.38 0.005 222)",
-                    }}
-                  />
+                  <Bell style={{ width: 15, height: 15, color: inboxUnread > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.38 0.005 222)" }} />
                   {inboxUnread > 0 && (
                     <motion.span
                       key={inboxUnread}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       style={{
-                        position: "absolute",
-                        top: -5,
-                        right: -6,
-                        minWidth: 16,
-                        height: 16,
-                        borderRadius: 99,
-                        background: "oklch(0.65 0.22 25)",
-                        color: "#fff",
-                        fontSize: 9,
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        position: "absolute", top: -5, right: -6,
+                        minWidth: 16, height: 16, borderRadius: 99,
+                        background: "oklch(0.65 0.22 25)", color: "#fff",
+                        fontSize: 9, fontWeight: 800,
+                        display: "flex", alignItems: "center", justifyContent: "center",
                         padding: "0 3px",
                         border: "1.5px solid oklch(0.09 0.008 222)",
                         fontFamily: "var(--font-jakarta)",
@@ -864,108 +848,82 @@ export default function DashboardPage() {
                     </motion.span>
                   )}
                 </div>
-                {inboxUnread > 0 && (
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "oklch(0.65 0.22 25)",
-                    fontFamily: "var(--font-jakarta)",
-                    whiteSpace: "nowrap",
-                    letterSpacing: "-0.01em",
-                  }}>
-                    {inboxUnread} {inboxUnread === 1 ? "upozornění" : inboxUnread < 5 ? "upozornění" : "upozornění"}
-                  </span>
-                )}
-                {/* Tooltip for urgent items */}
-                {inboxUnread > 0 && inboxNotifs.some(n => n.urgency === 0) && (
-                  <span style={{
-                    fontSize: 9,
-                    fontWeight: 600,
-                    color: "oklch(0.65 0.22 25 / 0.7)",
-                    fontFamily: "var(--font-jakarta)",
-                    whiteSpace: "nowrap",
-                  }}>
-                    · kritické
-                  </span>
+                {inboxUnread > 0 ? (
+                  <>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "oklch(0.65 0.22 25)", fontFamily: "var(--font-jakarta)", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>
+                      {inboxUnread} upozornění
+                    </span>
+                    {inboxNotifs.some(n => n.urgency === 0) && (
+                      <span style={{ fontSize: 9, fontWeight: 600, color: "oklch(0.65 0.22 25 / 0.7)", fontFamily: "var(--font-jakarta)", whiteSpace: "nowrap" }}>
+                        · kritické
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ fontSize: 11, color: "oklch(0.35 0.005 222)", fontFamily: "var(--font-jakarta)" }}>Upozornění</span>
                 )}
               </motion.div>
             </Link>
 
-            {/* Live indicator — hidden on mobile */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
-              <span
+            {/* Row 2: Live indicator + action buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Live indicator — hidden on mobile */}
+              <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "oklch(0.72 0.2 155)", boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)", display: "block", flexShrink: 0 }} />
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "oklch(0.45 0.005 222)", fontFamily: "var(--font-sans)" }}>
+                  Live
+                </span>
+              </div>
+
+              {/* Uzavřít měsíc button */}
+              <button
+                onClick={() => setClosingOpen(true)}
                 style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "oklch(0.72 0.2 155)",
-                  boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)",
-                  display: "block",
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  fontSize: 10,
+                  background: "oklch(1 0 0 / 0.05)",
+                  border: "1px solid oklch(1 0 0 / 0.10)",
+                  color: "oklch(0.72 0.14 155)",
+                  borderRadius: 8,
+                  padding: "5px 12px",
+                  fontSize: 12,
                   fontWeight: 600,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  fontFamily: "var(--font-sans)",
+                  fontFamily: "var(--font-jakarta)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
-                Live
-              </span>
+                Uzavřít měsíc
+              </button>
+
+              {/* Quick Add button */}
+              <button
+                onClick={() => setQaOpen((v) => !v)}
+                style={{
+                  height: 30,
+                  borderRadius: 8,
+                  background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
+                  border: qaOpen ? "1px solid oklch(1 0 0 / 0.12)" : "none",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "0 12px 0 9px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  fontFamily: "var(--font-jakarta)",
+                }}
+                aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
+              >
+                {qaOpen ? <X size={13} /> : (
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                )}
+                {qaOpen ? "Zavřít" : "Přidat"}
+              </button>
             </div>
-
-            {/* Uzavřít měsíc button */}
-            <button
-              onClick={() => setClosingOpen(true)}
-              style={{
-                background: "oklch(1 0 0 / 0.05)",
-                border: "1px solid oklch(1 0 0 / 0.10)",
-                color: "oklch(0.72 0.14 155)",
-                borderRadius: 8,
-                padding: "5px 12px",
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "var(--font-jakarta)",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Uzavřít měsíc
-            </button>
-
-            {/* Quick Add button */}
-            <button
-              onClick={() => setQaOpen((v) => !v)}
-              style={{
-                height: 30,
-                borderRadius: 8,
-                background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
-                border: qaOpen ? "1px solid oklch(1 0 0 / 0.12)" : "none",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.02em",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "0 12px 0 9px",
-                cursor: "pointer",
-                flexShrink: 0,
-                fontFamily: "var(--font-jakarta)",
-              }}
-              aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
-            >
-              {qaOpen ? <X size={13} /> : (
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              )}
-              {qaOpen ? "Zavřít" : "Přidat"}
-            </button>
           </div>
         </motion.div>
 
