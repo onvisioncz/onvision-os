@@ -423,7 +423,7 @@ export default function DashboardPage() {
 
   /* ── Data ── */
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
-  const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
+  const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [deals] = useSupabaseData<Deal[]>("ov-pipeline-deals", () => []);
   const [approvals] = useSupabaseData<Approval[]>("ov-schvaleni-items", () => []);
   // Read-only fetch — dashboard never seeds finance data (to avoid overwriting real data with [])
@@ -661,6 +661,13 @@ export default function DashboardPage() {
     }
   }, [qaVydajKlient, qaVydajTyp, qaVydajCastka, qaVydajMesic, qaVydajDatum]);
 
+  /* ── Mark deadline task as done ── */
+  const markTaskDone = useCallback((id: number) => {
+    setTasks((prev) =>
+      prev.map((t) => t.id === id ? { ...t, status: "Hotovo" as Task["status"] } : t)
+    );
+  }, [setTasks]);
+
   /* ── Monthly Closing state ── */
   const [closingOpen, setClosingOpen] = useState(false);
   const [closingInvoices, setClosingInvoices] = useState<IssuedInvoice[] | null>(null);
@@ -869,29 +876,34 @@ export default function DashboardPage() {
               Uzavrit mesic
             </button>
 
-            {/* Quick Add (+/x) button */}
+            {/* Quick Add button */}
             <button
               onClick={() => setQaOpen((v) => !v)}
               style={{
-                width: 30,
                 height: 30,
-                borderRadius: "50%",
+                borderRadius: 8,
                 background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
-                border: "none",
+                border: qaOpen ? "1px solid oklch(1 0 0 / 0.12)" : "none",
                 color: "#fff",
-                fontSize: 18,
-                lineHeight: 1,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 5,
+                padding: "0 12px 0 9px",
                 cursor: "pointer",
                 flexShrink: 0,
-                fontFamily: "var(--font-outfit)",
-                fontWeight: 400,
+                fontFamily: "var(--font-jakarta)",
               }}
               aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
             >
-              {qaOpen ? <X size={14} /> : "+"}
+              {qaOpen ? <X size={13} /> : (
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              )}
+              {qaOpen ? "Zavřít" : "Přidat"}
             </button>
           </div>
         </motion.div>
@@ -1505,65 +1517,107 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", maxHeight: 340 }}>
-                {topTasks.map((t) => {
-                  const d = parseDeadline(t.deadline);
-                  const days = d ? daysUntil(d) : null;
-                  const isUrgent = days !== null && days <= 1;
-                  return (
-                    <div
-                      key={t.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "9px 12px",
-                        borderRadius: 8,
-                        background: isUrgent
-                          ? "oklch(0.65 0.22 25 / 0.06)"
-                          : "oklch(1 0 0 / 0.025)",
-                        border: `1px solid ${isUrgent ? "oklch(0.65 0.22 25 / 0.18)" : "oklch(1 0 0 / 0.06)"}`,
-                      }}
-                    >
-                      {/* Left: task info */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "oklch(0.90 0.005 222)",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            fontFamily: "var(--font-outfit)",
-                            letterSpacing: "-0.01em",
-                            marginBottom: 3,
-                          }}
-                        >
-                          {t.nazev}
-                        </p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span
+                <AnimatePresence mode="popLayout">
+                  {topTasks.map((t) => {
+                    const d = parseDeadline(t.deadline);
+                    const days = d ? daysUntil(d) : null;
+                    const isUrgent = days !== null && days <= 1;
+                    return (
+                      <motion.div
+                        key={t.id}
+                        layout
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 20, transition: { duration: 0.18 } }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "9px 8px 9px 12px",
+                          borderRadius: 8,
+                          background: isUrgent
+                            ? "oklch(0.65 0.22 25 / 0.06)"
+                            : "oklch(1 0 0 / 0.025)",
+                          border: `1px solid ${isUrgent ? "oklch(0.65 0.22 25 / 0.18)" : "oklch(1 0 0 / 0.06)"}`,
+                        }}
+                      >
+                        {/* Left: task info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p
                             style={{
-                              fontSize: 10,
-                              color: "oklch(0.40 0.005 222)",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: "oklch(0.90 0.005 222)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
+                              fontFamily: "var(--font-outfit)",
+                              letterSpacing: "-0.01em",
+                              marginBottom: 3,
                             }}
                           >
-                            {t.projekt}
-                          </span>
+                            {t.nazev}
+                          </p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "oklch(0.40 0.005 222)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {t.projekt}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      {/* Right: priority + avatar + deadline */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <PriorityBadge p={t.priorita} />
-                        <Avatar name={t.prirazeno} />
-                        <DeadlinePill deadline={t.deadline} />
-                      </div>
-                    </div>
-                  );
-                })}
+                        {/* Right: priority + avatar + deadline + done */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          <PriorityBadge p={t.priorita} />
+                          <Avatar name={t.prirazeno} />
+                          <DeadlinePill deadline={t.deadline} />
+                          {/* Mark done button */}
+                          <button
+                            onClick={() => markTaskDone(t.id)}
+                            title="Označit jako hotovo"
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 6,
+                              background: "transparent",
+                              border: "1px solid oklch(1 0 0 / 0.10)",
+                              color: "oklch(0.35 0.005 222)",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                              transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                            }}
+                            onMouseEnter={(e) => {
+                              const el = e.currentTarget as HTMLButtonElement;
+                              el.style.background = "oklch(0.67 0.155 155 / 0.15)";
+                              el.style.borderColor = "oklch(0.67 0.155 155 / 0.40)";
+                              el.style.color = "oklch(0.72 0.2 155)";
+                            }}
+                            onMouseLeave={(e) => {
+                              const el = e.currentTarget as HTMLButtonElement;
+                              el.style.background = "transparent";
+                              el.style.borderColor = "oklch(1 0 0 / 0.10)";
+                              el.style.color = "oklch(0.35 0.005 222)";
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6.5l2.8 2.8 5.2-5.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             )}
           </div>
