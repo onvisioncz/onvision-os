@@ -620,7 +620,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "ov-ukoly-tasks", value: [...existing, newTask] }),
       });
-      setQaSuccess("Ukol pridan!");
+      setQaSuccess("Úkol přidán!");
       setQaUkolNazev("");
       setQaUkolDeadline("");
       setTimeout(() => setQaSuccess(null), 2500);
@@ -650,7 +650,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "ov-finance-incomes", value: [...existing, newEntry] }),
       });
-      setQaSuccess("Vydaj pridan!");
+      setQaSuccess("Výdaj přidán!");
       setQaVydajKlient("");
       setQaVydajCastka("");
       setQaVydajDatum("");
@@ -926,7 +926,7 @@ export default function DashboardPage() {
               {/* Tab strip */}
               <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
                 {(["ukol", "vydaj", "faktura"] as const).map((tab) => {
-                  const labels = { ukol: "Ukol", vydaj: "Vydaj", faktura: "Faktura poznamka" };
+                  const labels = { ukol: "Úkol", vydaj: "Výdaj", faktura: "Faktura – poznámka" };
                   const active = qaTab === tab;
                   return (
                     <button
@@ -990,7 +990,7 @@ export default function DashboardPage() {
                   padding: 4,
                   lineHeight: 1,
                 }}
-                aria-label="Zavrit"
+                aria-label="Zavřít"
               >
                 <X size={16} />
               </button>
@@ -1001,14 +1001,14 @@ export default function DashboardPage() {
                   <div style={{ gridColumn: "1 / -1" }}>
                     <input
                       style={qaInputStyle}
-                      placeholder="Nazev ukolu"
+                      placeholder="Název úkolu"
                       value={qaUkolNazev}
                       onChange={(e) => setQaUkolNazev(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleQaUkolSubmit()}
                     />
                   </div>
                   <select style={qaInputStyle} value={qaUkolProjekt} onChange={(e) => setQaUkolProjekt(e.target.value)}>
-                    {["SENIMED","IMTOS","EASTGATE BRNO","MTBCZ","TOFFI","FIRESTA","BEHEJ BRNO","POWERPLATE","SK STAVOS","Interni"].map((p) => (
+                    {["SENIMED","IMTOS","EASTGATE BRNO","MTBCZ","TOFFI","FIRESTA","BEHEJ BRNO","POWERPLATE","SK STAVOS","Interní"].map((p) => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
@@ -1016,10 +1016,9 @@ export default function DashboardPage() {
                     {["Adam","Honza","Dominika"].map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                   <select style={qaInputStyle} value={qaUkolPriority} onChange={(e) => setQaUkolPriority(e.target.value as Task["priorita"])}>
-                    {(["Nizka","Stredni","Vysoka","Urgentni"] as const).map((p) => {
-                      const map: Record<string, string> = { Nizka: "Nizka", Stredni: "Stredni", Vysoka: "Vysoka", Urgentni: "Urgentni" };
-                      return <option key={p} value={p}>{map[p]}</option>;
-                    })}
+                    {(["Nízká","Střední","Vysoká","Urgentní"] as Task["priorita"][]).map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
                   </select>
                   <input
                     type="date"
@@ -1042,7 +1041,7 @@ export default function DashboardPage() {
                         cursor: "pointer",
                       }}
                     >
-                      Pridat ukol
+                      Přidat úkol
                     </button>
                   </div>
                 </div>
@@ -1058,18 +1057,18 @@ export default function DashboardPage() {
                     onChange={(e) => setQaVydajKlient(e.target.value)}
                   />
                   <select style={qaInputStyle} value={qaVydajTyp} onChange={(e) => setQaVydajTyp(e.target.value)}>
-                    {["Pausal","Reklamy","Jine"].map((t) => <option key={t} value={t}>{t}</option>)}
+                    {["Paušál","Reklamy","Jiné"].map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                   <input
                     type="number"
                     style={qaInputStyle}
-                    placeholder="Castka (Kc)"
+                    placeholder="Částka (Kč)"
                     value={qaVydajCastka}
                     onChange={(e) => setQaVydajCastka(e.target.value)}
                   />
                   <input
                     style={qaInputStyle}
-                    placeholder="Mesic"
+                    placeholder="Měsíc"
                     value={qaVydajMesic}
                     onChange={(e) => setQaVydajMesic(e.target.value)}
                   />
@@ -1095,7 +1094,7 @@ export default function DashboardPage() {
                         width: "100%",
                       }}
                     >
-                      Pridat vydaj
+                      Přidat výdaj
                     </button>
                   </div>
                 </div>
@@ -1120,7 +1119,7 @@ export default function DashboardPage() {
                       textDecoration: "none",
                     }}
                   >
-                    Prejit na Fakturaci
+                    Přejít na Fakturaci
                     <span style={{ fontSize: 16, lineHeight: 1 }}>&#8594;</span>
                   </Link>
                 </div>
