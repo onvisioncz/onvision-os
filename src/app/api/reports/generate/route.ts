@@ -131,6 +131,18 @@ async function fetchHistoricalMetric(
 
 /* ── POST /api/reports/generate ─────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
+  try {
+    return await handleGenerate(req);
+  } catch (err) {
+    console.error("[reports/generate] Unhandled error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Neznámá chyba serveru" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleGenerate(req: NextRequest) {
   // Auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

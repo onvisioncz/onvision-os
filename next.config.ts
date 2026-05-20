@@ -21,6 +21,22 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   turbopack: {},
 
+  // @react-pdf/renderer must not be bundled by webpack — it uses pdfkit
+  // which relies on native Node.js APIs that break inside the webpack bundle.
+  // Marking it as serverExternalPackages tells Next.js to import it directly
+  // at runtime instead of bundling it.
+  serverExternalPackages: ["@react-pdf/renderer"],
+
+  webpack(config) {
+    // canvas is an optional peer dep of pdfkit; it's not available on Vercel
+    // serverless workers, so we stub it out to prevent module-not-found crashes.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+    };
+    return config;
+  },
+
   async headers() {
     return [
       {
