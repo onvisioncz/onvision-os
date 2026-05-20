@@ -18,13 +18,16 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 /* ── Push helper ────────────────────────────────────────────────────────── */
 interface PushSubRecord {
   email: string;
+  displayName?: string;   // set when user subscribes — used for name-based fallback
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
 }
 
 async function sendPushToEmails(
   supabase: Awaited<ReturnType<typeof createClient>>,
   emails: string[],
-  payload: { title: string; body: string; url?: string; tag?: string }
+  payload: { title: string; body: string; url?: string; tag?: string },
+  /** First-name fallbacks used when email lookup finds nothing (handles login-email ≠ roster-email) */
+  nameFallbacks: string[] = []
 ) {
   if (!process.env.VAPID_PUBLIC_KEY) return; // push not configured
   try {
@@ -35,9 +38,25 @@ async function sendPushToEmails(
       .maybeSingle();
 
     const subs: PushSubRecord[] = Array.isArray(data?.value) ? data.value : [];
-    const targets = emails.length > 0
-      ? subs.filter((s) => emails.includes(s.email))
-      : subs; // empty = broadcast to all
+
+    let targets: PushSubRecord[];
+    if (emails.length === 0) {
+      // Broadcast to everyone
+      targets = subs;
+    } else {
+      // Primary: exact email match
+      targets = subs.filter((s) => emails.includes(s.email));
+
+      // Fallback: match by displayName first name (handles login vs work email mismatch)
+      if (targets.length === 0 && nameFallbacks.length > 0) {
+        const needles = nameFallbacks.map((n) => n.toLowerCase().trim());
+        targets = subs.filter((s) => {
+          const dn = (s.displayName ?? s.email.split("@")[0]).toLowerCase();
+          const fn = dn.split(/[\s._-]/)[0]; // first word/segment
+          return needles.some((n) => fn === n || dn === n);
+        });
+      }
+    }
 
     const msg = JSON.stringify(payload);
     await Promise.allSettled(targets.map((s) => webpush.sendNotification(s.subscription, msg)));
@@ -231,12 +250,18 @@ async function triggerPush(
       const targetEmail = assignee?.email;
       if (!targetEmail) continue;
 
-      await sendPushToEmails(supabase, [targetEmail], {
-        title: "Nový úkol 📋",
-        body: task.nazev ? `„${task.nazev}" — přiřazeno tobě` : "Byl ti přiřazen nový úkol",
-        url: "/ukoly",
-        tag: `task-${String(task.id)}`,
-      });
+      await sendPushToEmails(
+        supabase,
+        [targetEmail],
+        {
+          title: "Nový úkol 📋",
+          body: task.nazev ? `„${task.nazev}" — přiřazeno tobě` : "Byl ti přiřazen nový úkol",
+          url: "/ukoly",
+          tag: `task-${String(task.id)}`,
+        },
+        // Fallback: if email doesn't match subscription, try by first name
+        [prirazeno]
+      );
     }
   }
 

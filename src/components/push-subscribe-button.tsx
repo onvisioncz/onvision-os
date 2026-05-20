@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_USERS } from "@/lib/roles";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -13,6 +15,29 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed";
+
+/** Look up the current user's display name from ov-user-roles (or DEFAULT_USERS fallback) */
+async function fetchMyDisplayName(): Promise<string | undefined> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return undefined;
+
+    const { data } = await supabase
+      .from("app_data")
+      .select("value")
+      .eq("key", "ov-user-roles")
+      .maybeSingle();
+
+    const roster: Array<{ email: string; displayName?: string }> =
+      Array.isArray(data?.value) ? data.value : DEFAULT_USERS;
+
+    const me = roster.find(u => u.email === user.email);
+    return me?.displayName;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Compact icon-only variant for use in TopBar on mobile */
 export function PushSubscribeIconButton() {
@@ -46,10 +71,11 @@ export function PushSubscribeIconButton() {
           process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""
         ),
       });
+      const displayName = await fetchMyDisplayName();
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub.toJSON() }),
+        body: JSON.stringify({ subscription: sub.toJSON(), displayName }),
       });
       if (res.ok) setState("subscribed");
     } catch (err) {
@@ -178,10 +204,11 @@ export function PushSubscribeButton() {
         ),
       });
 
+      const displayName = await fetchMyDisplayName();
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub.toJSON() }),
+        body: JSON.stringify({ subscription: sub.toJSON(), displayName }),
       });
 
       if (res.ok) setState("subscribed");

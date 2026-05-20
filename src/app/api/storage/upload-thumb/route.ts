@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+  // Determine extension from content type (client compresses to webp or jpeg)
+  const contentType = file.type === "image/jpeg" ? "image/jpeg" : "image/webp";
+  const ext = contentType === "image/jpeg" ? "jpg" : "webp";
+  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   // 4a. Try with service role key (bypasses RLS — reliable)
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
     );
     const { data, error } = await admin.storage
       .from(BUCKET)
-      .upload(path, buffer, { contentType: "image/webp", upsert: false });
+      .upload(path, buffer, { contentType, upsert: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ path: data.path });
   }
@@ -47,7 +50,7 @@ export async function POST(req: NextRequest) {
   // 4b. Fallback: use user session (requires correct RLS policies on bucket)
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, buffer, { contentType: "image/webp", upsert: false });
+    .upload(path, buffer, { contentType, upsert: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ path: data.path });
