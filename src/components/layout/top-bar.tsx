@@ -7,6 +7,8 @@ import { Undo2, LogOut, Check, Cloud, CloudOff, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { globalUndo, type SyncStatus } from "@/lib/hooks/use-supabase-data";
 import { PushSubscribeIconButton } from "@/components/push-subscribe-button";
+import { useChatContext } from "@/components/chat/chat-shell";
+import { MessageSquare } from "lucide-react";
 
 export function TopBar() {
   const router = useRouter();
@@ -65,6 +67,8 @@ export function TopBar() {
     setTimeout(() => setUndoFeedback(false), 900);
   }
 
+  const { toggle: toggleChat, unread: chatUnread } = useChatContext();
+
   return (
     <div
       className="sticky top-0 z-40 flex items-center justify-end px-4 gap-2"
@@ -77,6 +81,36 @@ export function TopBar() {
         paddingBottom: "8px",
       }}
     >
+      {/* Chat — jen na mobilu (desktop má v sidebaru) */}
+      <div className="md:hidden">
+        <button
+          onClick={toggleChat}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: 8, border: "1px solid",
+            borderColor: chatUnread > 0 ? "oklch(0.62 0.27 265 / 0.35)" : "oklch(1 0 0 / 0.07)",
+            background: chatUnread > 0 ? "oklch(0.62 0.27 265 / 0.1)" : "oklch(1 0 0 / 0.04)",
+            color: chatUnread > 0 ? "oklch(0.62 0.27 265)" : "oklch(0.48 0.005 222)",
+            cursor: "pointer", flexShrink: 0, position: "relative",
+          }}
+        >
+          <MessageSquare style={{ width: 14, height: 14 }} />
+          {chatUnread > 0 && (
+            <span style={{
+              position: "absolute", top: -4, right: -4,
+              minWidth: 16, height: 16, borderRadius: 99,
+              background: "oklch(0.62 0.22 25)",
+              color: "#fff", fontSize: 9, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "0 3px",
+              border: "1.5px solid oklch(0.09 0.008 222)",
+            }}>
+              {chatUnread > 9 ? "9+" : chatUnread}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Push notifikace — jen na mobilu (desktop má v sidebaru) */}
       <div className="md:hidden">
         <PushSubscribeIconButton />

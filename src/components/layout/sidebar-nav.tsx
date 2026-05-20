@@ -16,6 +16,8 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { PwaInstallButton } from "@/components/pwa-install-button";
 import { canAccess } from "@/lib/roles";
+import { ChatTrigger } from "@/components/chat/chat-overlay";
+import { useChatContext } from "@/components/chat/chat-shell";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
@@ -225,6 +227,7 @@ export function SidebarNav() {
     });
   }, []);
 
+  const { toggle: toggleChat, unread: chatUnread } = useChatContext();
   const displayName = user?.displayName ?? (email ? email.split("@")[0] : "—");
   const initials    = user?.initials ?? displayName.charAt(0).toUpperCase();
   const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
@@ -319,6 +322,11 @@ export function SidebarNav() {
       {/* Bottom */}
       <div className="p-2 pb-5">
         <div className="mx-2 mb-2 h-px" style={{ background: "var(--sidebar-border)" }} />
+
+        {/* Chat */}
+        <div className="mx-1 mb-1">
+          <ChatTrigger onClick={toggleChat} unread={chatUnread} />
+        </div>
 
         {/* PWA install + push notifications */}
         <div className="mx-1 mb-1">

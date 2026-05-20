@@ -84,6 +84,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-finance-predplatne":  ["admin", "fakturace"],
   // push subscriptions — every authenticated user can write their own
   "ov-push-subscriptions":  ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
+  "ov-team-chat":           ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
 };
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
