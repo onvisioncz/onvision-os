@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, LogOut, Check, Cloud, CloudOff, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { globalUndo, type SyncStatus } from "@/lib/hooks/use-supabase-data";
+import { PushSubscribeIconButton } from "@/components/push-subscribe-button";
 
 export function TopBar() {
   const router = useRouter();
@@ -76,6 +77,11 @@ export function TopBar() {
         paddingBottom: "8px",
       }}
     >
+      {/* Push notifikace — jen na mobilu (desktop má v sidebaru) */}
+      <div className="md:hidden">
+        <PushSubscribeIconButton />
+      </div>
+
       {/* Vrátit zpět (Undo) */}
       <motion.button
         onClick={handleUndo}

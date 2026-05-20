@@ -14,6 +14,136 @@ function urlBase64ToUint8Array(base64String: string) {
 
 type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed";
 
+/** Compact icon-only variant for use in TopBar on mobile */
+export function PushSubscribeIconButton() {
+  const [state, setState] = useState<State>("loading");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setState("unsupported");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setState("denied");
+      return;
+    }
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription();
+      setState(sub ? "subscribed" : "unsubscribed");
+    });
+  }, []);
+
+  async function subscribe() {
+    setBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") { setState("denied"); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""
+        ),
+      });
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+      if (res.ok) setState("subscribed");
+    } catch (err) {
+      console.error("[push] subscribe error:", err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unsubscribe() {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/subscribe", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setState("unsubscribed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Hide while loading or unsupported
+  if (state === "loading" || state === "unsupported") return null;
+
+  const subscribed = state === "subscribed";
+  const denied = state === "denied";
+
+  return (
+    <button
+      onClick={subscribed ? unsubscribe : subscribe}
+      disabled={busy || denied}
+      title={
+        denied ? "Notifikace jsou blokovány v prohlížeči"
+        : subscribed ? "Notifikace zapnuty — klik pro vypnutí"
+        : "Zapnout push notifikace"
+      }
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        border: "1px solid",
+        borderColor: subscribed
+          ? "oklch(0.68 0.18 155 / 0.35)"
+          : denied
+          ? "oklch(1 0 0 / 0.07)"
+          : "oklch(1 0 0 / 0.07)",
+        background: subscribed
+          ? "oklch(0.68 0.18 155 / 0.1)"
+          : "oklch(1 0 0 / 0.04)",
+        color: subscribed
+          ? "oklch(0.68 0.18 155)"
+          : denied
+          ? "oklch(0.35 0.005 222)"
+          : "oklch(0.48 0.005 222)",
+        cursor: denied ? "not-allowed" : "pointer",
+        flexShrink: 0,
+        transition: "all 0.15s",
+        position: "relative",
+      }}
+    >
+      {busy ? (
+        <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" />
+      ) : subscribed ? (
+        <Bell style={{ width: 14, height: 14 }} />
+      ) : (
+        <BellOff style={{ width: 14, height: 14 }} />
+      )}
+      {/* Red dot when unsubscribed */}
+      {!subscribed && !denied && !busy && (
+        <span style={{
+          position: "absolute",
+          top: 5,
+          right: 5,
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: "oklch(0.65 0.22 25)",
+          border: "1.5px solid oklch(0.09 0.008 222)",
+        }} />
+      )}
+    </button>
+  );
+}
+
 export function PushSubscribeButton() {
   const [state, setState] = useState<State>("loading");
   const [busy, setBusy] = useState(false);
