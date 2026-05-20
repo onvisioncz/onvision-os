@@ -617,6 +617,8 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "ov-ukoly-tasks", value: [...existing, newTask] }),
       });
+      // Okamžitě aktualizuj lokální stav — deadline list se zobrazí hned
+      setTasks(prev => [...prev, newTask]);
       setQaSuccess("Úkol přidán!");
       setQaUkolNazev("");
       setQaUkolPopis("");
