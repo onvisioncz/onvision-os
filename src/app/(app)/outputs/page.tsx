@@ -139,22 +139,36 @@ function compressToBlob(file: File): Promise<Blob> {
   });
 }
 
-/** Upload blob to Supabase Storage, return public URL */
+/** Upload blob to Supabase Storage (private bucket), return storage path prefixed "storage:" */
 async function uploadThumb(
   file: File,
   supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
 ): Promise<string> {
   const blob = await compressToBlob(file);
-  const ext = "webp";
-  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
   const { data, error } = await supabase.storage
     .from("output-thumbnails")
     .upload(path, blob, { contentType: "image/webp", upsert: false });
   if (error) throw error;
-  const { data: { publicUrl } } = supabase.storage
+  // Prefix "storage:" so we know this is a private path, not a base64 or old public URL
+  return `storage:${data.path}`;
+}
+
+/** Resolve thumbnail value to displayable URL:
+ *  - "storage:thumbnails/..." → signed URL (1 year expiry)
+ *  - "data:..." or "https://..." → use as-is (legacy)
+ */
+async function resolveThumbUrl(
+  thumb: string,
+  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
+): Promise<string> {
+  if (!thumb.startsWith("storage:")) return thumb;
+  const path = thumb.slice(8);
+  const { data, error } = await supabase.storage
     .from("output-thumbnails")
-    .getPublicUrl(data.path);
-  return publicUrl;
+    .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+  if (error || !data) throw error ?? new Error("no signed URL");
+  return data.signedUrl;
 }
 
 /* ── Safe config lookup (guards against old stored messages) ─────────── */
@@ -180,19 +194,31 @@ function ProjectTag({ typ, nazev }: { typ?: ProjektTyp; nazev?: string }) {
 }
 
 /* ── Delivery Card ────────────────────────────────────────────────────── */
-function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDelete }: {
+function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDelete, supabase }: {
   msg: OutputMessage;
   isSelf: boolean;
   onMarkRead: (id: string) => void;
   onDelete?: (id: string) => void;
   currentEmail: string;
   canDelete?: boolean;
+  supabase: ReturnType<typeof createClient>;
 }) {
   const isRead = msg.readBy.includes(currentEmail);
   // Safe lookup — old stored messages may have type "link"/"text"/"image"
   const cfg = getCfg(msg.type);
   // Old messages stored `content` instead of `popis`
   const displayText = msg.popis || (msg as unknown as Record<string,string>).content || "";
+
+  // Resolve thumbnail: private storage path → signed URL, base64/https → as-is
+  const [thumbUrl, setThumbUrl] = useState<string | undefined>(
+    msg.thumbnail && !msg.thumbnail.startsWith("storage:") ? msg.thumbnail : undefined
+  );
+  useEffect(() => {
+    if (!msg.thumbnail?.startsWith("storage:")) return;
+    resolveThumbUrl(msg.thumbnail, supabase)
+      .then(setThumbUrl)
+      .catch(() => setThumbUrl(undefined));
+  }, [msg.thumbnail, supabase]);
 
   useEffect(() => {
     if (!isRead && currentEmail) {
@@ -254,11 +280,11 @@ function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDele
           ) : (
             <>
               {/* Thumbnail */}
-              {msg.thumbnail && (
+              {thumbUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={msg.thumbnail} alt={msg.nazev} className="w-full max-h-52 object-cover" />
+                <img src={thumbUrl} alt={msg.nazev} className="w-full max-h-52 object-cover" />
               )}
-              {!msg.thumbnail && (
+              {!thumbUrl && (
                 <div className="h-16 flex items-center justify-center gap-2"
                   style={{ background: `${cfg.color}10` }}>
                   <span className="text-2xl">{cfg.emoji}</span>
@@ -857,6 +883,7 @@ export default function OutputsPage() {
             onDelete={deleteMessage}
             canDelete={isAdmin || msg.authorEmail === email}
             currentEmail={email ?? ""}
+            supabase={supabase}
           />
         ))}
         <div ref={bottomRef} />
