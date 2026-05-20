@@ -480,7 +480,7 @@ function PrehledTab({
               <p className="text-[14px] font-bold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>Vývoj financí 2026</p>
               <p className="text-[11px] text-[--muted-foreground] mt-0.5">tis. Kč · měsíčně</p>
             </div>
-            <div className="flex items-center gap-4 text-[11px] text-[--muted-foreground]">
+            <div className="flex items-center gap-3 flex-wrap text-[11px] text-[--muted-foreground]">
               {[["Příjmy","oklch(0.67 0.155 155)"],["Výdaje","oklch(0.65 0.22 25)"],["Čistý","oklch(0.62 0.27 265)"]].map(([n, c]) => (
                 <span key={n} className="flex items-center gap-1.5">
                   <span className="w-3 h-[2px] rounded" style={{ background: c }} />{n}
@@ -1794,7 +1794,7 @@ function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: mode === "edit" ? "oklch(0.72 0.16 310)" : "oklch(0.72 0.20 265)", margin: 0 }}>
                   {mode === "edit" ? "Upravit předplatné" : "Nové předplatné"}
                 </p>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 80px", gap: 8, alignItems: "end" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8, alignItems: "end" }}>
                   <div>
                     <label style={{ fontSize: 10, color: "oklch(0.40 0.005 222)", display: "block", marginBottom: 3 }}>Název *</label>
                     <input style={inp} placeholder="Adobe, Anthropic..." value={form.nazev}
@@ -1848,11 +1848,12 @@ function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
         </AnimatePresence>
 
         {/* Table */}
+        <div className="overflow-x-auto">
         <table className="w-full" style={{ marginTop: 8 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
               {["Služba", "Popis", "Kategorie", "Cena / měsíc", ""].map((h, i) => (
-                <th key={i} className="px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em]"
+                <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h === "Popis" || h === "Kategorie" ? "hidden md:table-cell" : i === 4 ? "w-20" : ""}`}
                   style={i === 4 ? { width: 80 } : {}}>
                   {h}
                 </th>
@@ -1882,10 +1883,10 @@ function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
                     <td className="px-4 py-3">
                       <span className="text-[13px] font-semibold text-[--foreground]">{sub.nazev}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       <span className="text-[12px] text-[--muted-foreground]">{sub.popis}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       <span className="inline-flex px-2 py-0.5 rounded-[5px] text-[10px] font-bold"
                         style={{ background: kc.bg, color: kc.text }}>
                         {sub.kat}
@@ -1972,6 +1973,7 @@ function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
             </tbody>
           )}
         </table>
+        </div>
       </div>
 
       <p className="text-[11px] text-[--muted-foreground]" style={{ paddingLeft: 2 }}>

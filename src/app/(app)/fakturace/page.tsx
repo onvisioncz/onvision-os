@@ -850,7 +850,7 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
         <FInput value={cislo} onChange={setCislo} placeholder={`${yearPrefix}001`} />
       </Field>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="Datum vystavení"><FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} /></Field>
         <Field label="Datum splatnosti"><FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} /></Field>
         <Field label="Datum plnění"><FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} /></Field>
@@ -1011,70 +1011,127 @@ function IssuedInvoicesTab({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.03 }}
-            className="card flex items-center gap-4 px-5 py-3.5"
+            className="card px-4 md:px-5 py-3.5"
           >
-            {/* Number */}
-            <div className="shrink-0 min-w-[90px]">
-              <p className="text-[13px] font-bold text-[--foreground]"
-                style={{ fontFamily: "var(--font-outfit)", letterSpacing: "0.04em" }}>
-                {inv.cislo}
-              </p>
-              <p className="text-[10px] text-[--muted-foreground] mt-0.5">{inv.datumVystaveni}</p>
+            {/* Desktop layout */}
+            <div className="hidden md:flex items-center gap-4">
+              {/* Number */}
+              <div className="shrink-0 min-w-[90px]">
+                <p className="text-[13px] font-bold text-[--foreground]"
+                  style={{ fontFamily: "var(--font-outfit)", letterSpacing: "0.04em" }}>
+                  {inv.cislo}
+                </p>
+                <p className="text-[10px] text-[--muted-foreground] mt-0.5">{inv.datumVystaveni}</p>
+              </div>
+
+              {/* Client */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)" }}>
+                  {inv.klient}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <DodavatelBadge klic={inv.vystavovatel} />
+                  {inv.mesicSluzby > 0 && (
+                    <span className="text-[10px] text-[--muted-foreground]">
+                      {String(inv.mesicSluzby).padStart(2,"0")}/{inv.rokSluzby}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-[--muted-foreground]">{inv.typ}</span>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div className="shrink-0 text-right">
+                <p className="text-[14px] font-bold text-[--foreground]"
+                  style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>
+                  {fKc(inv.castka)}
+                </p>
+                {inv.datumZaplaceni && inv.stav === "Zaplacena" && (
+                  <p className="text-[10px] text-[--muted-foreground]">{inv.datumZaplaceni}</p>
+                )}
+              </div>
+
+              {/* Status toggle */}
+              <motion.button
+                onClick={() => toggleStav(inv.id)}
+                whileTap={{ scale: 0.92 }}
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+                title="Kliknutím změnit stav"
+                style={inv.stav === "Zaplacena"
+                  ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
+                  : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
+                }
+              >
+                {inv.stav === "Zaplacena"
+                  ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
+                  : <><Clock className="w-3 h-3" /> Čeká</>
+                }
+              </motion.button>
+
+              {/* Delete */}
+              <motion.button
+                onClick={() => remove(inv.id)}
+                whileTap={{ scale: 0.9 }}
+                className="shrink-0 p-1.5 rounded-[6px] text-[--muted-foreground] btn-tactile opacity-40 hover:opacity-100 transition-opacity"
+                title="Smazat záznam"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </motion.button>
             </div>
 
-            {/* Client */}
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)" }}>
-                {inv.klient}
-              </p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <DodavatelBadge klic={inv.vystavovatel} />
-                {inv.mesicSluzby > 0 && (
-                  <span className="text-[10px] text-[--muted-foreground]">
-                    {String(inv.mesicSluzby).padStart(2,"0")}/{inv.rokSluzby}
-                  </span>
-                )}
-                <span className="text-[10px] text-[--muted-foreground]">{inv.typ}</span>
+            {/* Mobile layout */}
+            <div className="md:hidden">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-[--foreground]"
+                    style={{ fontFamily: "var(--font-outfit)", letterSpacing: "0.04em" }}>
+                    {inv.cislo}
+                  </p>
+                  <p className="text-[13px] font-semibold text-[--foreground] mt-0.5 truncate" style={{ fontFamily: "var(--font-outfit)" }}>
+                    {inv.klient}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <DodavatelBadge klic={inv.vystavovatel} />
+                    <span className="text-[10px] text-[--muted-foreground]">{inv.datumVystaveni}</span>
+                    <span className="text-[10px] text-[--muted-foreground]">{inv.typ}</span>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[14px] font-bold text-[--foreground]"
+                    style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>
+                    {fKc(inv.castka)}
+                  </p>
+                  {inv.datumZaplaceni && inv.stav === "Zaplacena" && (
+                    <p className="text-[10px] text-[--muted-foreground]">{inv.datumZaplaceni}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <motion.button
+                  onClick={() => toggleStav(inv.id)}
+                  whileTap={{ scale: 0.92 }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+                  title="Kliknutím změnit stav"
+                  style={inv.stav === "Zaplacena"
+                    ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
+                    : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
+                  }
+                >
+                  {inv.stav === "Zaplacena"
+                    ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
+                    : <><Clock className="w-3 h-3" /> Čeká</>
+                  }
+                </motion.button>
+                <motion.button
+                  onClick={() => remove(inv.id)}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2 rounded-[6px] text-[--muted-foreground] btn-tactile opacity-60"
+                  title="Smazat záznam"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </motion.button>
               </div>
             </div>
-
-            {/* Amount */}
-            <div className="shrink-0 text-right">
-              <p className="text-[14px] font-bold text-[--foreground]"
-                style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>
-                {fKc(inv.castka)}
-              </p>
-              {inv.datumZaplaceni && inv.stav === "Zaplacena" && (
-                <p className="text-[10px] text-[--muted-foreground]">{inv.datumZaplaceni}</p>
-              )}
-            </div>
-
-            {/* Status toggle */}
-            <motion.button
-              onClick={() => toggleStav(inv.id)}
-              whileTap={{ scale: 0.92 }}
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
-              title="Kliknutím změnit stav"
-              style={inv.stav === "Zaplacena"
-                ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
-                : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
-              }
-            >
-              {inv.stav === "Zaplacena"
-                ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
-                : <><Clock className="w-3 h-3" /> Čeká</>
-              }
-            </motion.button>
-
-            {/* Delete */}
-            <motion.button
-              onClick={() => remove(inv.id)}
-              whileTap={{ scale: 0.9 }}
-              className="shrink-0 p-1.5 rounded-[6px] text-[--muted-foreground] btn-tactile opacity-40 hover:opacity-100 transition-opacity"
-              title="Smazat záznam"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </motion.button>
           </motion.div>
         ))}
       </div>
@@ -1164,12 +1221,12 @@ export default function FakturaPage() {
       </motion.div>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 mb-5 p-1 rounded-[10px]" style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)", width: "fit-content" }}>
+      <div className="flex gap-1 mb-5 p-1 rounded-[10px] overflow-x-auto" style={{ background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.08)", width: "fit-content", maxWidth: "100%" }}>
         {tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="relative px-4 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1.5"
+            className="relative px-3 md:px-4 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap"
             style={tab === t.key
               ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)" }
               : { color: "var(--muted-foreground)" }

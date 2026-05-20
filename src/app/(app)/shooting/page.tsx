@@ -620,7 +620,7 @@ export default function ShootingPage() {
         minHeight: "100vh",
         background: "oklch(0.09 0.008 222)",
         fontFamily: "var(--font-jakarta)",
-        padding: "28px 24px",
+        padding: "clamp(16px, 4vw, 28px) clamp(14px, 4vw, 24px)",
       }}
     >
       {/* Header */}
@@ -727,12 +727,13 @@ export default function ShootingPage() {
       </div>
 
       {/* Gantt grid */}
+      <div style={{ overflowX: "auto", marginBottom: 28 }} className="[&::-webkit-scrollbar]{display:none}">
       <div style={{
         background: "oklch(1 0 0 / 0.03)",
         border: "1px solid oklch(1 0 0 / 0.08)",
         borderRadius: 12,
         overflow: "hidden",
-        marginBottom: 28,
+        minWidth: 700,
       }}>
         {/* Day header row */}
         <div style={{ display: "flex", borderBottom: "1px solid oklch(1 0 0 / 0.08)" }}>
@@ -879,6 +880,7 @@ export default function ShootingPage() {
             })}
           </div>
         ))}
+      </div>
       </div>
 
       {/* Z projektu */}

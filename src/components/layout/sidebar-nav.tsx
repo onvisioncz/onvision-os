@@ -383,8 +383,8 @@ export function MobileNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{ background: "oklch(0.10 0.008 222)", borderTop: "1px solid oklch(1 0 0 / 0.08)" }}>
-      <div className="flex items-stretch overflow-x-auto"
-        style={{ paddingTop: "8px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 10px)", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+      <div className="flex items-stretch overflow-x-auto mobile-nav-scroll"
+        style={{ paddingTop: "8px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
         <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
         {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");

@@ -133,7 +133,7 @@ export default function KlientiPage() {
     >
       {/* ── Header ── */}
       <div
-        className="px-6 py-5 flex items-center justify-between"
+        className="px-4 md:px-6 py-4 md:py-5 flex items-center justify-between"
         style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
       >
         <div className="flex items-center gap-3">
@@ -157,14 +157,14 @@ export default function KlientiPage() {
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-6">
+      <div className="px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
 
         {/* ── KPI strip ── */}
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex gap-3"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
           style={{
             // workaround: oklch with "/" in JSX style
             ['--c1' as string]: "oklch(0.62 0.27 265)",
@@ -217,155 +217,237 @@ export default function KlientiPage() {
           </div>
         </motion.div>
 
-        {/* ── Table ── */}
+        {/* ── Table (desktop) / Cards (mobile) ── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.05 }}
-          className="rounded-[14px] overflow-hidden"
-          style={{ border: "1px solid oklch(1 0 0 / 0.08)" }}
         >
-          {/* Table header */}
+          {/* ── Desktop table ── */}
           <div
-            className="grid items-center px-5 py-3"
-            style={{
-              background: "oklch(0.11 0.009 222)",
-              borderBottom: "1px solid oklch(1 0 0 / 0.08)",
-              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
-              gap: "12px",
-            }}
+            className="hidden md:block rounded-[14px] overflow-hidden"
+            style={{ border: "1px solid oklch(1 0 0 / 0.08)" }}
           >
-            {["Klient", "Paušál", "Reklama", "Celkem MRR", "Fakturováno", "Čeká", ""].map((h, i) => (
-              <span key={i} className="text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: "oklch(0.38 0.005 222)" }}>
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {/* Rows */}
-          {loading ? (
-            <div className="py-16 flex items-center justify-center">
-              <div className="w-5 h-5 rounded-full border-2 animate-spin"
-                style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
-            </div>
-          ) : sorted.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
-            </div>
-          ) : (
-            sorted.map((client, idx) => (
-              <Link key={client.id} href={`/klienti/${client.id}`} className="block group">
-                <div
-                  className="grid items-center px-5 py-4 transition-colors"
-                  style={{
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
-                    gap: "12px",
-                    borderBottom: idx < sorted.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "oklch(1 0 0 / 0.025)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  {/* Klient */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-[8px] flex items-center justify-center text-[11px] font-bold shrink-0"
-                      style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
-                    >
-                      {client.logo}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-[13px] font-semibold truncate"
-                          style={{ color: client.aktivni ? "oklch(0.92 0.005 265)" : "oklch(0.42 0.005 222)" }}
-                        >
-                          {client.name}
-                        </span>
-                        {!client.aktivni && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                            style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.38 0.005 222)" }}>
-                            Neaktivní
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px]" style={{ color: "oklch(0.36 0.005 222)" }}>
-                        {client.fakturace} · od {client.zacatek || "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Paušál */}
-                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: "oklch(0.80 0.005 265)" }}>
-                    {client.pausal > 0 ? fmt(client.pausal) : "—"}
-                  </span>
-
-                  {/* Reklama */}
-                  <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.50 0.005 222)" }}>
-                    {client.reklama ? fmt(client.reklama) : "—"}
-                  </span>
-
-                  {/* Celkem MRR */}
-                  <span
-                    className="text-[13px] font-bold tabular-nums"
-                    style={{ color: client.aktivni ? "oklch(0.68 0.18 155)" : "oklch(0.42 0.005 222)" }}
-                  >
-                    {fmt(client.mrr)}
-                  </span>
-
-                  {/* Fakturováno */}
-                  <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
-                    {client.pocetFaktur > 0 ? fmt(client.totalFakturovano) : "—"}
-                  </span>
-
-                  {/* Čeká */}
-                  <span className="text-[13px] tabular-nums font-semibold"
-                    style={{ color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
-                    {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
-                  </span>
-
-                  {/* Arrow */}
-                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    style={{ color: "oklch(0.50 0.005 222)" }} />
-                </div>
-              </Link>
-            ))
-          )}
-
-          {/* Footer total row */}
-          {!loading && sorted.length > 0 && (
+            {/* Table header */}
             <div
               className="grid items-center px-5 py-3"
               style={{
+                background: "oklch(0.11 0.009 222)",
+                borderBottom: "1px solid oklch(1 0 0 / 0.08)",
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
                 gap: "12px",
-                borderTop: "1px solid oklch(1 0 0 / 0.1)",
-                background: "oklch(0.11 0.009 222)",
               }}
             >
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "oklch(0.40 0.005 222)" }}>
-                Celkem aktivní
-              </span>
-              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
-                {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + c.pausal, 0))}
-              </span>
-              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
-                {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + (c.reklama ?? 0), 0))}
-              </span>
-              <span className="text-[13px] font-bold tabular-nums" style={{ color: "oklch(0.68 0.18 155)" }}>
-                {fmt(summary.totalMrr)}
-              </span>
-              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
-                {fmt(summary.totalFakturovano)}
-              </span>
-              <span className="text-[12px] font-bold tabular-nums"
-                style={{ color: summary.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
-                {summary.totalCeka > 0 ? fmt(summary.totalCeka) : "—"}
-              </span>
-              <span />
+              {["Klient", "Paušál", "Reklama", "Celkem MRR", "Fakturováno", "Čeká", ""].map((h, i) => (
+                <span key={i} className="text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "oklch(0.38 0.005 222)" }}>
+                  {h}
+                </span>
+              ))}
             </div>
-          )}
+
+            {/* Rows */}
+            {loading ? (
+              <div className="py-16 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full border-2 animate-spin"
+                  style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
+              </div>
+            ) : sorted.length === 0 ? (
+              <div className="py-16 text-center">
+                <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
+              </div>
+            ) : (
+              sorted.map((client, idx) => (
+                <Link key={client.id} href={`/klienti/${client.id}`} className="block group">
+                  <div
+                    className="grid items-center px-5 py-4 transition-colors"
+                    style={{
+                      gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
+                      gap: "12px",
+                      borderBottom: idx < sorted.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "oklch(1 0 0 / 0.025)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {/* Klient */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-[8px] flex items-center justify-center text-[11px] font-bold shrink-0"
+                        style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
+                      >
+                        {client.logo}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-[13px] font-semibold truncate"
+                            style={{ color: client.aktivni ? "oklch(0.92 0.005 265)" : "oklch(0.42 0.005 222)" }}
+                          >
+                            {client.name}
+                          </span>
+                          {!client.aktivni && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                              style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.38 0.005 222)" }}>
+                              Neaktivní
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px]" style={{ color: "oklch(0.36 0.005 222)" }}>
+                          {client.fakturace} · od {client.zacatek || "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Paušál */}
+                    <span className="text-[13px] font-semibold tabular-nums" style={{ color: "oklch(0.80 0.005 265)" }}>
+                      {client.pausal > 0 ? fmt(client.pausal) : "—"}
+                    </span>
+
+                    {/* Reklama */}
+                    <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.50 0.005 222)" }}>
+                      {client.reklama ? fmt(client.reklama) : "—"}
+                    </span>
+
+                    {/* Celkem MRR */}
+                    <span
+                      className="text-[13px] font-bold tabular-nums"
+                      style={{ color: client.aktivni ? "oklch(0.68 0.18 155)" : "oklch(0.42 0.005 222)" }}
+                    >
+                      {fmt(client.mrr)}
+                    </span>
+
+                    {/* Fakturováno */}
+                    <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
+                      {client.pocetFaktur > 0 ? fmt(client.totalFakturovano) : "—"}
+                    </span>
+
+                    {/* Čeká */}
+                    <span className="text-[13px] tabular-nums font-semibold"
+                      style={{ color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                      {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
+                    </span>
+
+                    {/* Arrow */}
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      style={{ color: "oklch(0.50 0.005 222)" }} />
+                  </div>
+                </Link>
+              ))
+            )}
+
+            {/* Footer total row */}
+            {!loading && sorted.length > 0 && (
+              <div
+                className="grid items-center px-5 py-3"
+                style={{
+                  gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
+                  gap: "12px",
+                  borderTop: "1px solid oklch(1 0 0 / 0.1)",
+                  background: "oklch(0.11 0.009 222)",
+                }}
+              >
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "oklch(0.40 0.005 222)" }}>
+                  Celkem aktivní
+                </span>
+                <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
+                  {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + c.pausal, 0))}
+                </span>
+                <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
+                  {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + (c.reklama ?? 0), 0))}
+                </span>
+                <span className="text-[13px] font-bold tabular-nums" style={{ color: "oklch(0.68 0.18 155)" }}>
+                  {fmt(summary.totalMrr)}
+                </span>
+                <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
+                  {fmt(summary.totalFakturovano)}
+                </span>
+                <span className="text-[12px] font-bold tabular-nums"
+                  style={{ color: summary.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                  {summary.totalCeka > 0 ? fmt(summary.totalCeka) : "—"}
+                </span>
+                <span />
+              </div>
+            )}
+          </div>
+
+          {/* ── Mobile card list ── */}
+          <div className="md:hidden flex flex-col gap-2">
+            {loading ? (
+              <div className="py-16 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full border-2 animate-spin"
+                  style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
+              </div>
+            ) : sorted.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
+              </div>
+            ) : (
+              sorted.map(client => (
+                <Link key={client.id} href={`/klienti/${client.id}`}>
+                  <div
+                    className="rounded-[12px] p-4 flex flex-col gap-3"
+                    style={{
+                      background: "oklch(0.11 0.009 222)",
+                      border: "1px solid oklch(1 0 0 / 0.08)",
+                      borderLeft: `3px solid ${client.color}`,
+                    }}
+                  >
+                    {/* Top row: avatar + name + arrow */}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-[9px] flex items-center justify-center text-[11px] font-bold shrink-0"
+                        style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
+                      >
+                        {client.logo}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className="text-[14px] font-bold"
+                            style={{ fontFamily: "var(--font-outfit)", color: client.aktivni ? "oklch(0.92 0.005 265)" : "oklch(0.42 0.005 222)", letterSpacing: "-0.01em" }}
+                          >
+                            {client.name}
+                          </span>
+                          {!client.aktivni && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.38 0.005 222)" }}>
+                              Neaktivní
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px]" style={{ color: "oklch(0.40 0.005 222)" }}>
+                          {client.fakturace} · od {client.zacatek || "—"}
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 shrink-0" style={{ color: "oklch(0.35 0.005 222)" }} />
+                    </div>
+                    {/* Stats row */}
+                    <div className="grid grid-cols-3 gap-2 pt-1" style={{ borderTop: "1px solid oklch(1 0 0 / 0.06)" }}>
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.38 0.005 222)" }}>MRR</p>
+                        <p className="text-[13px] font-bold tabular-nums" style={{ fontFamily: "var(--font-outfit)", color: client.aktivni ? "oklch(0.68 0.18 155)" : "oklch(0.42 0.005 222)" }}>
+                          {fmt(client.mrr)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.38 0.005 222)" }}>Fakt.</p>
+                        <p className="text-[13px] font-semibold tabular-nums" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.60 0.005 222)" }}>
+                          {client.pocetFaktur > 0 ? fmt(client.totalFakturovano) : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.38 0.005 222)" }}>Čeká</p>
+                        <p className="text-[13px] font-semibold tabular-nums" style={{ fontFamily: "var(--font-outfit)", color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                          {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </motion.div>
 
       </div>

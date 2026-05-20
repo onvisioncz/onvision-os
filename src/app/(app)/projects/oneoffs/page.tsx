@@ -354,7 +354,7 @@ export default function OneoffsPage() {
   return (
     <div className="flex flex-col h-full min-h-0" style={{ fontFamily: "var(--font-jakarta)" }}>
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
+      <div className="flex items-center justify-between px-4 md:px-6 pt-5 md:pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3">
           <KanbanSquare className="w-6 h-6" style={{ color: "oklch(0.62 0.27 265)" }} />
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.95 0.005 222)" }}>
@@ -372,7 +372,7 @@ export default function OneoffsPage() {
       </div>
 
       {/* ── Stats bar ───────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-6 pb-3 shrink-0 flex-wrap">
+      <div className="flex items-center gap-3 px-4 md:px-6 pb-3 shrink-0 flex-wrap">
         {[
           { label: "Projektů celkem", value: String(projects.length) },
           { label: "Pipeline hodnota", value: fKc(totalValue) },
@@ -391,7 +391,7 @@ export default function OneoffsPage() {
       </div>
 
       {/* ── Filter bar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-6 pb-4 shrink-0 flex-wrap">
+      <div className="flex items-center gap-2 px-4 md:px-6 pb-4 shrink-0 flex-wrap">
         <Tag className="w-4 h-4" style={{ color: "oklch(0.45 0.005 222)" }} />
         {(["", "VIDEO", "FOTO", "VIDEO + FOTO", "BTS", "REKLAMA"] as (Typ | "")[]).map((t) => (
           <button
@@ -434,7 +434,7 @@ export default function OneoffsPage() {
       <div className="flex-1 min-h-0 overflow-x-auto">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div
-            className="flex gap-3 px-6 pb-6 h-full"
+            className="flex gap-3 px-4 md:px-6 pb-6 h-full"
             style={{ minWidth: `${COLUMNS.length * 260}px` }}
           >
             {COLUMNS.map((col) => {

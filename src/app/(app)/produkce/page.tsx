@@ -659,15 +659,15 @@ function ZdenekTab({ entries, setEntries, pendingItems, setPendingItems, onPushH
       <PendingQueue items={pendingItems} setItems={setPendingItems} onCreateEntry={createEntry} onPushHistory={onPushHistory}/>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}} >
         {[
           {label:"Splněno celkem",   value:totalDone,  color:"oklch(0.67 0.155 155)"},
           {label:"Plánováno",        value:totalPlan,  color:"oklch(0.78 0.165 75)"},
           {label:"Nadpracováno",     value:totalExtra, color:"oklch(0.75 0.19 48)"},
         ].map(s=>(
-          <div key={s.label} className="px-4 py-4" style={{background:"var(--card)"}}>
-            <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1.5 leading-tight">{s.label}</p>
-            <p className="num text-[28px] font-bold leading-none" style={{fontFamily:"var(--font-outfit)",color:s.color,letterSpacing:"-0.02em"}}>{s.value}</p>
+          <div key={s.label} className="px-3 py-3 md:px-4 md:py-4" style={{background:"var(--card)"}}>
+            <p className="text-[9px] md:text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-1 md:mb-1.5 leading-tight">{s.label}</p>
+            <p className="num text-[22px] md:text-[28px] font-bold leading-none" style={{fontFamily:"var(--font-outfit)",color:s.color,letterSpacing:"-0.02em"}}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -904,7 +904,7 @@ function MatejTab({ entries, setEntries }: { entries:MEntry[]; setEntries:(fn:(p
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}} >
         {[
           {label:"Celkem vyplaceno",  value:fKc(totalEarned),   color:"oklch(0.67 0.155 155)"},
           {label:"Čeká na vyplacení", value:fKc(totalPending),  color:"oklch(0.78 0.165 75)"},
@@ -1124,7 +1124,7 @@ function GrafikTab({ grafik, allEntries, setEntries }: {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}}>
+      <div className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden" style={{background:"oklch(1 0 0 / 0.06)"}} >
         {[
           {label:"Celkem vyplaceno",  value:fKc(totalEarned),  color:"oklch(0.67 0.155 155)"},
           {label:"Čeká na vyplacení", value:fKc(totalPending), color:"oklch(0.78 0.165 75)"},

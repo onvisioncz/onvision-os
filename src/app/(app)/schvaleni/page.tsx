@@ -212,7 +212,7 @@ export default function SchvaleniPage() {
                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
               >
                 <div
-                  className="card p-4 flex items-center gap-4"
+                  className="card p-4 flex items-start sm:items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap"
                   style={{ borderLeft: `3px solid ${ACCENT}` }}
                 >
                   <div
@@ -246,20 +246,20 @@ export default function SchvaleniPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                     <motion.button
                       onClick={() => setRejecting(item)}
-                      className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+                      className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold min-h-[44px] sm:min-h-0"
                       style={{ background: "oklch(0.55 0.22 25 / 0.1)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
                     >
                       <XCircle className="w-3.5 h-3.5" />
-                      Zamítnout
+                      <span className="hidden sm:inline">Zamítnout</span>
                     </motion.button>
                     <motion.button
                       onClick={() => approve(item.id)}
-                      className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+                      className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold min-h-[44px] sm:min-h-0"
                       style={{ background: "oklch(0.67 0.155 155 / 0.12)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.25)" }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
@@ -287,7 +287,7 @@ export default function SchvaleniPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.25 }}
-                className="flex items-center gap-4 px-4 py-3 border-b last:border-0"
+                className="flex items-center gap-3 px-4 py-3 border-b last:border-0"
                 style={{ borderColor: "var(--border)" }}
               >
                 <div
@@ -298,25 +298,31 @@ export default function SchvaleniPage() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="text-[13px] font-semibold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)" }}>
                       {item.klient}
                     </span>
-                    <span className="text-[10px] text-[--muted-foreground]">· {item.typ}</span>
+                    <span className="text-[10px] text-[--muted-foreground] hidden sm:inline">· {item.typ}</span>
+                    <span className="text-[10px] text-[--muted-foreground] sm:hidden">{item.datum}</span>
                   </div>
                   <p className="text-[11px] text-[--muted-foreground] truncate">{item.popis}</p>
                   {item.poznamka && (
                     <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.65 0.22 25)" }}>{item.poznamka}</p>
                   )}
+                  {item.castka !== undefined && (
+                    <span className="sm:hidden text-[12px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.50 0.005 222)" }}>
+                      {item.castka.toLocaleString("cs-CZ")} Kč
+                    </span>
+                  )}
                 </div>
 
                 {item.castka !== undefined && (
-                  <span className="num text-[12px] font-bold shrink-0" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.50 0.005 222)" }}>
+                  <span className="hidden sm:inline num text-[12px] font-bold shrink-0" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.50 0.005 222)" }}>
                     {item.castka.toLocaleString("cs-CZ")} Kč
                   </span>
                 )}
 
-                <span className="text-[10px] text-[--muted-foreground] shrink-0">{item.datum}</span>
+                <span className="hidden sm:inline text-[10px] text-[--muted-foreground] shrink-0">{item.datum}</span>
 
                 <span
                   className="text-[10px] font-bold uppercase tracking-[0.05em] px-2 py-1 rounded-[4px] shrink-0"

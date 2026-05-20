@@ -305,7 +305,7 @@ function AddOwnedForm({ onAdd, onCancel }: AddOwnedFormProps) {
         Přidat pořízené vybavení
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ fontSize: 11, color: "oklch(0.42 0.005 222)", display: "block", marginBottom: 4 }}>Název *</label>
           <input
@@ -564,7 +564,7 @@ export default function InvesticePage() {
         background: "oklch(0.09 0.008 222)",
         minHeight: "100vh",
         fontFamily: "var(--font-sans)",
-        padding: "28px 24px 80px",
+        padding: "16px 16px 80px",
       }}
     >
       <motion.div
@@ -598,9 +598,9 @@ export default function InvesticePage() {
           variants={fadeUp}
           style={{
             ...cardStyle,
-            padding: "18px 22px",
+            padding: "16px 18px",
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "space-between",
             gap: 16,
             flexWrap: "wrap",

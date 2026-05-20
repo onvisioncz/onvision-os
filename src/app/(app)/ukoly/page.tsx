@@ -214,7 +214,7 @@ function TaskForm({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(["prirazeno", "priorita", "status"] as const).map(field => (
           <div key={field}>
             <label className="block text-[11px] font-semibold text-[--muted-foreground] mb-1.5 uppercase tracking-[0.05em]">
