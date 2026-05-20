@@ -585,23 +585,16 @@ export default function DashboardPage() {
 
   /* ── Quick Add state ── */
   const [qaOpen, setQaOpen] = useState(false);
-  const [qaTab, setQaTab] = useState<"ukol" | "vydaj" | "faktura">("ukol");
   const [qaSuccess, setQaSuccess] = useState<string | null>(null);
 
-  // Ukol form
+  // Úkol form
   const [qaUkolNazev, setQaUkolNazev] = useState("");
+  const [qaUkolPopis, setQaUkolPopis] = useState("");
   const [qaUkolProjekt, setQaUkolProjekt] = useState("Interní");
   const [qaUkolPrirazeno, setQaUkolPrirazeno] = useState("Adam");
   const [qaUkolPriority, setQaUkolPriority] = useState<Task["priorita"]>("Střední");
+  const [qaUkolStatus, setQaUkolStatus] = useState<Task["status"]>("Nové");
   const [qaUkolDeadline, setQaUkolDeadline] = useState("");
-
-  // Vydaj form
-  const [qaVydajKlient, setQaVydajKlient] = useState("");
-  const [qaVydajTyp, setQaVydajTyp] = useState("Paušál");
-  const [qaVydajCastka, setQaVydajCastka] = useState("");
-  const currentMonthCz = CZ_MONTHS_NOM[new Date().getMonth()];
-  const [qaVydajMesic, setQaVydajMesic] = useState(currentMonthCz);
-  const [qaVydajDatum, setQaVydajDatum] = useState("");
 
   const handleQaUkolSubmit = useCallback(async () => {
     if (!qaUkolNazev.trim()) return;
@@ -612,10 +605,11 @@ export default function DashboardPage() {
       const newTask: Task = {
         id: Date.now(),
         nazev: qaUkolNazev.trim(),
+        ...(qaUkolPopis.trim() ? { popis: qaUkolPopis.trim() } : {}),
         projekt: qaUkolProjekt,
         prirazeno: qaUkolPrirazeno,
         priorita: qaUkolPriority,
-        status: "Nové",
+        status: qaUkolStatus,
         deadline: qaUkolDeadline || "",
       };
       await fetch("/api/sync", {
@@ -625,44 +619,15 @@ export default function DashboardPage() {
       });
       setQaSuccess("Úkol přidán!");
       setQaUkolNazev("");
+      setQaUkolPopis("");
       setQaUkolDeadline("");
+      setQaUkolStatus("Nové");
       setTimeout(() => setQaSuccess(null), 2500);
     } catch {
-      setQaSuccess("Chyba pri ukladani.");
+      setQaSuccess("Chyba při ukládání.");
       setTimeout(() => setQaSuccess(null), 2500);
     }
-  }, [qaUkolNazev, qaUkolProjekt, qaUkolPrirazeno, qaUkolPriority, qaUkolDeadline]);
-
-  const handleQaVydajSubmit = useCallback(async () => {
-    if (!qaVydajKlient.trim() || !qaVydajCastka) return;
-    try {
-      const res = await fetch("/api/sync?key=ov-finance-incomes");
-      const { value } = await res.json();
-      const existing: FinanceIncome[] = Array.isArray(value) ? value : [];
-      const newEntry: FinanceIncome = {
-        id: Date.now(),
-        klient: qaVydajKlient.trim(),
-        typ: qaVydajTyp,
-        castka: Number(qaVydajCastka),
-        mesic: qaVydajMesic,
-        datumZaplaceni: qaVydajDatum || new Date().toISOString().slice(0, 10),
-        stav: "Zaplaceno",
-      };
-      await fetch("/api/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "ov-finance-incomes", value: [...existing, newEntry] }),
-      });
-      setQaSuccess("Výdaj přidán!");
-      setQaVydajKlient("");
-      setQaVydajCastka("");
-      setQaVydajDatum("");
-      setTimeout(() => setQaSuccess(null), 2500);
-    } catch {
-      setQaSuccess("Chyba pri ukladani.");
-      setTimeout(() => setQaSuccess(null), 2500);
-    }
-  }, [qaVydajKlient, qaVydajTyp, qaVydajCastka, qaVydajMesic, qaVydajDatum]);
+  }, [qaUkolNazev, qaUkolPopis, qaUkolProjekt, qaUkolPrirazeno, qaUkolPriority, qaUkolStatus, qaUkolDeadline]);
 
   /* ── Mark deadline task as done ── */
   const markTaskDone = useCallback((id: number) => {
@@ -929,33 +894,6 @@ export default function DashboardPage() {
                 position: "relative",
               }}
             >
-              {/* Tab strip */}
-              <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
-                {(["ukol", "vydaj", "faktura"] as const).map((tab) => {
-                  const labels = { ukol: "Úkol", vydaj: "Výdaj", faktura: "Faktura – poznámka" };
-                  const active = qaTab === tab;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setQaTab(tab)}
-                      style={{
-                        padding: "5px 14px",
-                        borderRadius: 7,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        fontFamily: "var(--font-jakarta)",
-                        border: active ? "1px solid oklch(0.62 0.27 265 / 0.4)" : "1px solid transparent",
-                        background: active ? "oklch(0.62 0.27 265 / 0.14)" : "transparent",
-                        color: active ? "oklch(0.75 0.2 265)" : "oklch(0.45 0.005 222)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {labels[tab]}
-                    </button>
-                  );
-                })}
-              </div>
-
               {/* Success flash */}
               <AnimatePresence>
                 {qaSuccess && (
@@ -1001,135 +939,129 @@ export default function DashboardPage() {
                 <X size={16} />
               </button>
 
-              {/* Ukol form */}
-              {qaTab === "ukol" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <input
-                      style={qaInputStyle}
-                      placeholder="Název úkolu"
-                      value={qaUkolNazev}
-                      onChange={(e) => setQaUkolNazev(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleQaUkolSubmit()}
+              {/* ── Nový úkol form ── */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+                {/* Název — full width, prominent */}
+                <div>
+                  <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                    Název úkolu <span style={{ color: "oklch(0.62 0.22 25)" }}>*</span>
+                  </label>
+                  <input
+                    style={{ ...qaInputStyle, fontSize: 14, fontWeight: 500, padding: "10px 14px" }}
+                    placeholder="Co je potřeba udělat?"
+                    value={qaUkolNazev}
+                    onChange={(e) => setQaUkolNazev(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleQaUkolSubmit()}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Row: Projekt | Přiřazeno | Priorita | Stav */}
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                      Projekt
+                    </label>
+                    <select style={qaInputStyle} value={qaUkolProjekt} onChange={(e) => setQaUkolProjekt(e.target.value)}>
+                      {[
+                        ...clients.map(c => c.name),
+                        "Interní",
+                      ].filter((v, i, a) => a.indexOf(v) === i).map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                      Přiřazeno
+                    </label>
+                    <select style={qaInputStyle} value={qaUkolPrirazeno} onChange={(e) => setQaUkolPrirazeno(e.target.value)}>
+                      {["Adam", "Zdeněk", "Matěj", "Monika", "Patrik"].map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                      Priorita
+                    </label>
+                    <select
+                      style={{
+                        ...qaInputStyle,
+                        color: qaUkolPriority === "Urgentní" ? "oklch(0.72 0.18 25)"
+                          : qaUkolPriority === "Vysoká" ? "oklch(0.78 0.15 55)"
+                          : qaUkolPriority === "Střední" ? "oklch(0.75 0.2 265)"
+                          : "oklch(0.55 0.005 222)",
+                      }}
+                      value={qaUkolPriority}
+                      onChange={(e) => setQaUkolPriority(e.target.value as Task["priorita"])}
+                    >
+                      {(["Nízká", "Střední", "Vysoká", "Urgentní"] as Task["priorita"][]).map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                      Stav
+                    </label>
+                    <select style={qaInputStyle} value={qaUkolStatus} onChange={(e) => setQaUkolStatus(e.target.value as Task["status"])}>
+                      {(["Nové", "Probíhá", "Review", "Hotovo"] as Task["status"][]).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row: Popis | Deadline + Submit */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "end" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                      Popis <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "oklch(0.32 0.005 222)" }}>— volitelné</span>
+                    </label>
+                    <textarea
+                      style={{ ...qaInputStyle, resize: "none", height: 60, lineHeight: 1.5 }}
+                      placeholder="Doplňující info, kontext, odkaz…"
+                      value={qaUkolPopis}
+                      onChange={(e) => setQaUkolPopis(e.target.value)}
                     />
                   </div>
-                  <select style={qaInputStyle} value={qaUkolProjekt} onChange={(e) => setQaUkolProjekt(e.target.value)}>
-                    {["SENIMED","IMTOS","EASTGATE BRNO","MTBCZ","TOFFI","FIRESTA","BEHEJ BRNO","POWERPLATE","SK STAVOS","Interní"].map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <select style={qaInputStyle} value={qaUkolPrirazeno} onChange={(e) => setQaUkolPrirazeno(e.target.value)}>
-                    {["Adam","Honza","Dominika"].map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                  <select style={qaInputStyle} value={qaUkolPriority} onChange={(e) => setQaUkolPriority(e.target.value as Task["priorita"])}>
-                    {(["Nízká","Střední","Vysoká","Urgentní"] as Task["priorita"][]).map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="date"
-                    style={qaInputStyle}
-                    value={qaUkolDeadline}
-                    onChange={(e) => setQaUkolDeadline(e.target.value)}
-                  />
-                  <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.40 0.005 222)", marginBottom: 6, fontFamily: "var(--font-jakarta)" }}>
+                        Deadline
+                      </label>
+                      <input
+                        type="date"
+                        style={{ ...qaInputStyle, minWidth: 160 }}
+                        value={qaUkolDeadline}
+                        onChange={(e) => setQaUkolDeadline(e.target.value)}
+                      />
+                    </div>
                     <button
                       onClick={handleQaUkolSubmit}
+                      disabled={!qaUkolNazev.trim()}
                       style={{
-                        background: "oklch(0.62 0.27 265)",
+                        background: qaUkolNazev.trim() ? "oklch(0.62 0.27 265)" : "oklch(0.22 0.01 265)",
                         border: "none",
-                        color: "#fff",
+                        color: qaUkolNazev.trim() ? "oklch(0.97 0.004 265)" : "oklch(0.38 0.005 222)",
                         borderRadius: 8,
-                        padding: "8px 22px",
+                        padding: "9px 0",
                         fontSize: 13,
                         fontWeight: 600,
                         fontFamily: "var(--font-jakarta)",
-                        cursor: "pointer",
+                        cursor: qaUkolNazev.trim() ? "pointer" : "not-allowed",
+                        width: "100%",
+                        transition: "background 0.15s, color 0.15s",
+                        letterSpacing: "0.01em",
                       }}
                     >
                       Přidat úkol
                     </button>
                   </div>
                 </div>
-              )}
-
-              {/* Vydaj form */}
-              {qaTab === "vydaj" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <input
-                    style={qaInputStyle}
-                    placeholder="Klient"
-                    value={qaVydajKlient}
-                    onChange={(e) => setQaVydajKlient(e.target.value)}
-                  />
-                  <select style={qaInputStyle} value={qaVydajTyp} onChange={(e) => setQaVydajTyp(e.target.value)}>
-                    {["Paušál","Reklamy","Jiné"].map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <input
-                    type="number"
-                    style={qaInputStyle}
-                    placeholder="Částka (Kč)"
-                    value={qaVydajCastka}
-                    onChange={(e) => setQaVydajCastka(e.target.value)}
-                  />
-                  <input
-                    style={qaInputStyle}
-                    placeholder="Měsíc"
-                    value={qaVydajMesic}
-                    onChange={(e) => setQaVydajMesic(e.target.value)}
-                  />
-                  <input
-                    type="date"
-                    style={qaInputStyle}
-                    value={qaVydajDatum}
-                    onChange={(e) => setQaVydajDatum(e.target.value)}
-                  />
-                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-                    <button
-                      onClick={handleQaVydajSubmit}
-                      style={{
-                        background: "oklch(0.62 0.27 265)",
-                        border: "none",
-                        color: "#fff",
-                        borderRadius: 8,
-                        padding: "8px 22px",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        fontFamily: "var(--font-jakarta)",
-                        cursor: "pointer",
-                        width: "100%",
-                      }}
-                    >
-                      Přidat výdaj
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Faktura tab */}
-              {qaTab === "faktura" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontSize: 13, color: "oklch(0.50 0.005 222)", fontFamily: "var(--font-jakarta)" }}>
-                    Faktury se vystavuji v sekci Fakturace.
-                  </p>
-                  <Link
-                    href="/fakturace"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      color: "oklch(0.75 0.2 265)",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      fontFamily: "var(--font-jakarta)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Přejít na Fakturaci
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>&#8594;</span>
-                  </Link>
-                </div>
-              )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
