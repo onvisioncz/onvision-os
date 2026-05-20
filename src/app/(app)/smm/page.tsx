@@ -14,6 +14,7 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type PostStatus = "napad" | "priprava" | "ke_schvaleni" | "schvaleno" | "publikovano";
 type PostFormat = "reel" | "carousel" | "foto" | "story" | "text";
+type PostPlatform = "instagram" | "facebook" | "linkedin" | "tiktok";
 
 interface SmmPost {
   id: string;
@@ -22,6 +23,8 @@ interface SmmPost {
   caption: string;
   format: PostFormat;
   status: PostStatus;
+  platform: PostPlatform;
+  pillar?: string;       // content pillar id
   autorEmail: string;
   autorName: string;
   tags: string[];
@@ -31,6 +34,21 @@ interface SmmPost {
   imageThumb?: string;   // compressed base64 preview (4:5)
   mediaUrl?: string;     // link to actual media (Drive, video, etc.)
   createdAt: string;
+}
+
+interface HashtagSet {
+  id: string;
+  klient: string;
+  label: string;
+  tags: string[];
+}
+
+interface ContentPillar {
+  id: string;
+  klient: string;
+  label: string;
+  color: string;
+  emoji: string;
 }
 
 /* ── Seed ─────────────────────────────────────────────────────────────── */
@@ -49,6 +67,7 @@ const SEED: SmmPost[] = [
     caption: "Nová kolekce jarních dortů 🌸 Přijďte se nechat inspirovat!",
     format: "reel",
     status: "publikovano",
+    platform: "instagram",
     autorEmail: "zdenek@onvision.cz",
     autorName: "Zdeněk",
     tags: ["produkty", "jaro"],
@@ -62,6 +81,7 @@ const SEED: SmmPost[] = [
     caption: "Nedělní ranní běh v parku — přidáte se? 🏃",
     format: "foto",
     status: "schvaleno",
+    platform: "instagram",
     autorEmail: "zdenek@onvision.cz",
     autorName: "Zdeněk",
     tags: ["komunita", "sport"],
@@ -75,6 +95,7 @@ const SEED: SmmPost[] = [
     caption: "",
     format: "carousel",
     status: "priprava",
+    platform: "instagram",
     autorEmail: "tereza@onvision.cz",
     autorName: "Tereza",
     tags: ["fitness", "výsledky"],
@@ -88,6 +109,7 @@ const SEED: SmmPost[] = [
     caption: "5 věcí které nikdo neví o kloubní výživě",
     format: "carousel",
     status: "ke_schvaleni",
+    platform: "instagram",
     autorEmail: "tereza@onvision.cz",
     autorName: "Tereza",
     tags: ["edukace", "zdraví"],
@@ -101,12 +123,36 @@ const SEED: SmmPost[] = [
     caption: "Letní slevy v EASTGATE startují tento víkend 🛍️",
     format: "story",
     status: "napad",
+    platform: "instagram",
     autorEmail: "david@onvision.cz",
     autorName: "David",
     tags: ["promo", "léto"],
     note: "Potvrdit datum se správou",
     createdAt: isoDate(Y, M, 8),
   },
+];
+
+/* ── Default hashtag sets ──────────────────────────────────────────────── */
+const DEFAULT_HASHTAG_SETS: HashtagSet[] = [
+  { id: "hs1", klient: "BEHEJ BRNO", label: "Základní", tags: ["behejbrno", "běh", "brno", "running", "sport"] },
+  { id: "hs2", klient: "BEHEJ BRNO", label: "Závody", tags: ["maraton", "závod", "timing", "brnomezi"] },
+  { id: "hs3", klient: "SENIMED", label: "Zdraví", tags: ["senimed", "zdraví", "výživa", "klouby", "pohyb"] },
+  { id: "hs4", klient: "TOFFI", label: "Cukrárna", tags: ["toffi", "brno", "dort", "cukrarna", "sladkosti"] },
+  { id: "hs5", klient: "POWERPLATE", label: "Fitness", tags: ["powerplate", "fitness", "vibrace", "zdraví"] },
+  { id: "hs6", klient: "EASTGATE BRNO", label: "Nákupy", tags: ["eastgatebrno", "obchodnicentrum", "brno", "nakupy"] },
+];
+
+/* ── Default content pillars ───────────────────────────────────────────── */
+const DEFAULT_PILLARS: ContentPillar[] = [
+  { id: "pp1", klient: "BEHEJ BRNO", label: "Závody",    color: "oklch(0.65 0.22 25)",  emoji: "🏆" },
+  { id: "pp2", klient: "BEHEJ BRNO", label: "Trénink",   color: "oklch(0.62 0.27 265)", emoji: "💪" },
+  { id: "pp3", klient: "BEHEJ BRNO", label: "Komunita",  color: "oklch(0.72 0.2 155)",  emoji: "🤝" },
+  { id: "pp4", klient: "SENIMED",    label: "Edukace",   color: "oklch(0.62 0.27 265)", emoji: "📚" },
+  { id: "pp5", klient: "SENIMED",    label: "Produkt",   color: "oklch(0.72 0.2 155)",  emoji: "💊" },
+  { id: "pp6", klient: "TOFFI",      label: "Produkty",  color: "oklch(0.82 0.16 45)",  emoji: "🎂" },
+  { id: "pp7", klient: "TOFFI",      label: "Za oponou", color: "oklch(0.62 0.22 340)", emoji: "👨‍🍳" },
+  { id: "pp8", klient: "POWERPLATE", label: "Výsledky",  color: "oklch(0.65 0.22 25)",  emoji: "📈" },
+  { id: "pp9", klient: "EASTGATE BRNO", label: "Promo",  color: "oklch(0.82 0.16 45)",  emoji: "🛍️" },
 ];
 
 /* ── Constants ────────────────────────────────────────────────────────── */
@@ -140,6 +186,27 @@ const FORMAT_EMOJI: Record<PostFormat, string> = {
   foto: "📸",
   story: "⚡",
   text: "💬",
+};
+
+const PLATFORM_LABELS: Record<PostPlatform, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+  tiktok: "TikTok",
+};
+
+const PLATFORM_COLORS: Record<PostPlatform, string> = {
+  instagram: "oklch(0.62 0.22 340)", // pink
+  facebook:  "oklch(0.52 0.22 255)", // blue
+  linkedin:  "oklch(0.48 0.20 240)", // LinkedIn blue
+  tiktok:    "oklch(0.62 0.22 25)",  // red
+};
+
+const PLATFORM_SHORT: Record<PostPlatform, string> = {
+  instagram: "IG",
+  facebook:  "FB",
+  linkedin:  "LI",
+  tiktok:    "TT",
 };
 
 const SMM_CLIENTS = ["TOFFI", "BEHEJ BRNO", "SENIMED", "EASTGATE BRNO", "POWERPLATE", "IMTOS", "FIRESTA", "SK STAVOS BRNO SLATINA", "MTB CZ", "OnVision"];
@@ -207,6 +274,7 @@ const emptyPost = (email: string, name: string): SmmPost => ({
   caption: "",
   format: "reel",
   status: "napad",
+  platform: "instagram",
   autorEmail: email,
   autorName: name.split(" ")[0],
   tags: [],
@@ -214,8 +282,32 @@ const emptyPost = (email: string, name: string): SmmPost => ({
   createdAt: new Date().toISOString(),
 });
 
+/* ── Client Stats Strip ───────────────────────────────────────────────── */
+function ClientStatsStrip({ posts, year, month }: { posts: SmmPost[], year: number, month: number }) {
+  const monthPosts = posts.filter(p => { const { y, m } = parseISODate(p.datum); return y === year && m === month; });
+  const byClient: Record<string, number> = {};
+  for (const p of monthPosts) byClient[p.klient] = (byClient[p.klient] ?? 0) + 1;
+  const clients = Object.entries(byClient).sort((a, b) => b[1] - a[1]);
+  if (clients.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+      {clients.map(([klient, count]) => {
+        const color = count >= 4 ? "oklch(0.72 0.2 155)" : count >= 2 ? "oklch(0.82 0.16 45)" : "oklch(0.65 0.22 25)";
+        return (
+          <div key={klient} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 99, background: "oklch(1 0 0 / 0.04)", border: `1px solid ${color}30`, whiteSpace: "nowrap", flexShrink: 0 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0, display: "inline-block" }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: "oklch(0.70 0.005 222)" }}>{klient}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: "var(--font-outfit)" }}>{count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Post Chip (calendar cell) ───────────────────────────────────────── */
-function PostChip({ post, onClick }: { post: SmmPost; onClick: () => void }) {
+function PostChip({ post, pillars, onClick }: { post: SmmPost; pillars: ContentPillar[]; onClick: () => void }) {
+  const pillar = post.pillar ? pillars.find(p => p.id === post.pillar) : undefined;
   return (
     <motion.button
       onClick={onClick}
@@ -225,8 +317,21 @@ function PostChip({ post, onClick }: { post: SmmPost; onClick: () => void }) {
         background: `${STATUS_COLORS[post.status]}18`,
         border: `1px solid ${STATUS_COLORS[post.status]}44`,
         color: STATUS_COLORS[post.status],
+        borderLeft: pillar ? `3px solid ${pillar.color}` : undefined,
       }}
     >
+      {/* Platform badge */}
+      <span
+        className="shrink-0 text-[8px] font-bold px-0.5 rounded"
+        style={{
+          background: `${PLATFORM_COLORS[post.platform]}25`,
+          color: PLATFORM_COLORS[post.platform],
+          border: `1px solid ${PLATFORM_COLORS[post.platform]}40`,
+          lineHeight: "14px",
+        }}
+      >
+        {PLATFORM_SHORT[post.platform]}
+      </span>
       <span>{FORMAT_EMOJI[post.format]}</span>
       <span className="truncate">{post.klient}</span>
       {post.imageThumb && (
@@ -237,28 +342,54 @@ function PostChip({ post, onClick }: { post: SmmPost; onClick: () => void }) {
 }
 
 /* ── AI Caption Generator ────────────────────────────────────────────── */
-async function generateCaption(klient: string, format: PostFormat, tags: string[], note: string, brief: string): Promise<string> {
+async function generateCaption(
+  klient: string,
+  format: PostFormat,
+  platform: PostPlatform,
+  tags: string[],
+  note: string,
+  brief: string
+): Promise<string[]> {
+  const platformInstructions: Record<PostPlatform, string> = {
+    instagram: "Tón: energický, autentický, český jazyk, emojis kde přirozeně sedí, max 150 slov.",
+    facebook: "Tón: trochu delší, komunitní, přátelský, přidej CTA na konec. Max 200 slov.",
+    linkedin: "Tón: profesionální, insights, bez vykřičníků. Přidej hodnotné know-how. Max 200 slov.",
+    tiktok: "Tón: krátké, trendy, hooks na začátku, poutavé. Max 80 slov.",
+  };
+
   try {
     const res = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        systemPrompt: `Jsi kreativní copywriter pro českou kreativní agenturu OnVision. Píšeš caption pro Instagram.
-Tón: energický, autentický, český jazyk, maximálně 150 slov, emojis jen kde přirozeně sedí.
+        systemPrompt: `Jsi kreativní copywriter pro českou kreativní agenturu OnVision.
+Píšeš caption pro ${PLATFORM_LABELS[platform]}.
+${platformInstructions[platform]}
 Piš přímo caption, bez uvozovek ani vysvětlení.`,
         userPrompt: `Klient: ${klient}
 Formát: ${FORMAT_LABELS[format]}
+Platforma: ${PLATFORM_LABELS[platform]}
 Témata/tagy: ${tags.join(", ") || "nespecifikováno"}
 ${brief ? `Zadání od týmu: ${brief}` : ""}
 ${note ? `Interní poznámka: ${note}` : ""}
 
-Napiš jeden silný caption pro Instagram post.`,
-        maxTokens: 300,
+Napiš 3 různé varianty captionu (oddělené ---), každá jiný přístup:
+1) punchy a krátká
+2) střední s hashtagy
+3) příběhová`,
+        maxTokens: 700,
       }),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    return data.content ?? "";
+    const raw: string = data.content ?? "";
+    // Split on --- or numbered markers
+    const parts = raw
+      .split(/---+|\n\s*\d\)\s*/)
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+    // Return up to 3
+    return parts.slice(0, 3).length > 0 ? parts.slice(0, 3) : [raw.trim()];
   } catch (e) {
     throw e;
   }
@@ -270,26 +401,71 @@ function PostModal({
   onClose,
   onSave,
   onDelete,
+  hashtagSets,
+  setHashtagSets,
+  pillars,
+  setPillars,
 }: {
   post: SmmPost;
   onClose: () => void;
   onSave: (p: SmmPost) => void;
   onDelete: (id: string) => void;
+  hashtagSets: HashtagSet[];
+  setHashtagSets: (fn: (prev: HashtagSet[]) => HashtagSet[]) => void;
+  pillars: ContentPillar[];
+  setPillars: (fn: (prev: ContentPillar[]) => ContentPillar[]) => void;
 }) {
   const [form, setForm] = useState<SmmPost>({ ...post });
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [aiVariants, setAiVariants] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
   const imgRef = useRef<HTMLInputElement>(null);
 
+  // Hashtag set dropdown
+  const [showHashtagDropdown, setShowHashtagDropdown] = useState(false);
+  // Save as set
+  const [showSaveSetInput, setShowSaveSetInput] = useState(false);
+  const [saveSetLabel, setSaveSetLabel] = useState("");
+
+  // Pillar add inline
+  const [showNewPillar, setShowNewPillar] = useState(false);
+  const [newPillarLabel, setNewPillarLabel] = useState("");
+  const [newPillarColor, setNewPillarColor] = useState("oklch(0.65 0.22 25)");
+  const [newPillarEmoji, setNewPillarEmoji] = useState("✨");
+
   async function handleAI() {
     setAiLoading(true);
     setAiError("");
+    setAiVariants([]);
     try {
-      const caption = await generateCaption(form.klient, form.format, form.tags, form.note, form.aiBrief ?? "");
-      setForm(p => ({ ...p, aiCaption: caption, caption: caption }));
+      const variants = await generateCaption(form.klient, form.format, form.platform, form.tags, form.note, form.aiBrief ?? "");
+      setAiVariants(variants);
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : "Chyba AI");
+    }
+    setAiLoading(false);
+  }
+
+  async function handleRewrite() {
+    if (!form.caption.trim()) return;
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: `Jsi kreativní copywriter pro českou kreativní agenturu OnVision. Vylepšuješ captions pro ${PLATFORM_LABELS[form.platform]}. Piš přímo vylepšený caption, bez vysvětlení.`,
+          userPrompt: `Přepiš a vylepši tento caption pro ${PLATFORM_LABELS[form.platform]}:\n\n${form.caption}\n\nKlient: ${form.klient}`,
+          maxTokens: 300,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setForm(p => ({ ...p, caption: data.content ?? p.caption }));
     } catch (e: unknown) {
       setAiError(e instanceof Error ? e.message : "Chyba AI");
     }
@@ -304,6 +480,44 @@ function PostModal({
     setTagInput("");
   }
 
+  function applyHashtagSet(set: HashtagSet) {
+    setForm(p => ({
+      ...p,
+      tags: [...new Set([...p.tags, ...set.tags])],
+    }));
+    setShowHashtagDropdown(false);
+  }
+
+  function saveAsHashtagSet() {
+    const label = saveSetLabel.trim();
+    if (!label || form.tags.length === 0) return;
+    const newSet: HashtagSet = {
+      id: `hs${Date.now()}`,
+      klient: form.klient,
+      label,
+      tags: [...form.tags],
+    };
+    setHashtagSets(prev => [...prev, newSet]);
+    setSaveSetLabel("");
+    setShowSaveSetInput(false);
+  }
+
+  function addNewPillar() {
+    const label = newPillarLabel.trim();
+    if (!label) return;
+    const newPillar: ContentPillar = {
+      id: `pp${Date.now()}`,
+      klient: form.klient,
+      label,
+      color: newPillarColor,
+      emoji: newPillarEmoji,
+    };
+    setPillars(prev => [...prev, newPillar]);
+    setForm(p => ({ ...p, pillar: newPillar.id }));
+    setNewPillarLabel("");
+    setShowNewPillar(false);
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -315,6 +529,18 @@ function PostModal({
     setImgLoading(false);
     e.target.value = "";
   }
+
+  const clientHashtagSets = hashtagSets.filter(s => s.klient === form.klient);
+  const clientPillars = pillars.filter(p => p.klient === form.klient);
+
+  const PILLAR_COLOR_OPTIONS = [
+    "oklch(0.65 0.22 25)",
+    "oklch(0.62 0.27 265)",
+    "oklch(0.72 0.2 155)",
+    "oklch(0.82 0.16 45)",
+    "oklch(0.62 0.22 340)",
+    "oklch(0.48 0.20 240)",
+  ];
 
   return (
     <motion.div
@@ -417,6 +643,31 @@ function PostModal({
             </div>
           </div>
 
+          {/* Platform selector */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Platforma</label>
+            <div className="flex gap-1 flex-wrap">
+              {(["instagram", "facebook", "linkedin", "tiktok"] as PostPlatform[]).map(pl => (
+                <button
+                  key={pl}
+                  onClick={() => setForm(p => ({ ...p, platform: pl }))}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
+                  style={form.platform === pl ? {
+                    background: `${PLATFORM_COLORS[pl]}20`,
+                    color: PLATFORM_COLORS[pl],
+                    border: `1px solid ${PLATFORM_COLORS[pl]}50`,
+                  } : {
+                    background: "oklch(1 0 0 / 0.05)",
+                    color: "oklch(0.42 0.005 222)",
+                    border: "1px solid oklch(1 0 0 / 0.1)",
+                  }}
+                >
+                  {PLATFORM_SHORT[pl]} {PLATFORM_LABELS[pl]}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* AI Brief */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>
@@ -443,30 +694,50 @@ function PostModal({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Caption</label>
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={handleAI}
-                disabled={aiLoading}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all"
-                style={{
-                  background: "oklch(0.72 0.2 310 / 0.15)",
-                  color: "oklch(0.78 0.18 310)",
-                  border: "1px solid oklch(0.72 0.2 310 / 0.3)",
-                }}
-              >
-                {aiLoading
-                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                  : <Sparkles className="w-3 h-3" />
-                }
-                AI Caption
-              </motion.button>
+              <div className="flex items-center gap-1.5">
+                {/* Rewrite existing caption */}
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={handleRewrite}
+                  disabled={aiLoading || !form.caption.trim()}
+                  title="Přepsat / vylepšit caption"
+                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-all"
+                  style={{
+                    background: "oklch(0.72 0.2 310 / 0.08)",
+                    color: "oklch(0.60 0.15 310)",
+                    border: "1px solid oklch(0.72 0.2 310 / 0.2)",
+                    opacity: form.caption.trim() ? 1 : 0.4,
+                  }}
+                >
+                  {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  Přepsat
+                </motion.button>
+                {/* Generate 3 variants */}
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={handleAI}
+                  disabled={aiLoading}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all"
+                  style={{
+                    background: "oklch(0.72 0.2 310 / 0.15)",
+                    color: "oklch(0.78 0.18 310)",
+                    border: "1px solid oklch(0.72 0.2 310 / 0.3)",
+                  }}
+                >
+                  {aiLoading
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Sparkles className="w-3 h-3" />
+                  }
+                  ✨ Generovat 3 varianty
+                </motion.button>
+              </div>
             </div>
             {aiError && (
               <p className="text-[11px] px-1" style={{ color: "oklch(0.65 0.22 25)" }}>{aiError}</p>
             )}
             <textarea
               value={form.caption}
-              onChange={e => setForm(p => ({ ...p, caption: e.target.value }))}
+              onChange={e => { setForm(p => ({ ...p, caption: e.target.value })); setAiVariants([]); }}
               placeholder="Napiš caption nebo použij AI…"
               rows={4}
               className="w-full px-3 py-2 rounded-[7px] text-[13px] outline-none resize-none"
@@ -479,11 +750,144 @@ function PostModal({
             <p className="text-[10px] px-1" style={{ color: "oklch(0.32 0.005 222)" }}>
               {form.caption.length} znaků
             </p>
+
+            {/* AI Variant cards */}
+            <AnimatePresence>
+              {aiVariants.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="space-y-2 pt-1"
+                >
+                  {aiVariants.map((variant, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-[8px] p-3 space-y-2"
+                      style={{
+                        background: "oklch(0.72 0.2 310 / 0.05)",
+                        border: "1px solid oklch(0.72 0.2 310 / 0.18)",
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[11px] leading-relaxed flex-1" style={{ color: "oklch(0.80 0.005 265)" }}>
+                          {variant}
+                        </p>
+                        <button
+                          onClick={() => { setForm(p => ({ ...p, caption: variant })); setAiVariants([]); }}
+                          className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                          style={{
+                            background: "oklch(0.62 0.27 265 / 0.15)",
+                            color: "oklch(0.78 0.18 265)",
+                            border: "1px solid oklch(0.62 0.27 265 / 0.3)",
+                          }}
+                        >
+                          Použít
+                        </button>
+                      </div>
+                      <p className="text-[9px]" style={{ color: "oklch(0.42 0.005 222)" }}>
+                        Varianta {idx + 1}
+                      </p>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Tagy</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Tagy</label>
+              <div className="flex items-center gap-1.5 relative">
+                {/* Vložit sadu */}
+                {clientHashtagSets.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowHashtagDropdown(p => !p)}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                      style={{
+                        background: "oklch(1 0 0 / 0.06)",
+                        color: "oklch(0.55 0.005 222)",
+                        border: "1px solid oklch(1 0 0 / 0.1)",
+                      }}
+                    >
+                      📌 Vložit sadu
+                    </button>
+                    <AnimatePresence>
+                      {showHashtagDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[160px]"
+                          style={{
+                            background: "oklch(0.14 0.008 222)",
+                            border: "1px solid oklch(1 0 0 / 0.12)",
+                            boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
+                          }}
+                        >
+                          {clientHashtagSets.map(set => (
+                            <button
+                              key={set.id}
+                              onClick={() => applyHashtagSet(set)}
+                              className="w-full text-left px-4 py-2 text-[11px] font-medium hover:bg-white/5"
+                              style={{ color: "oklch(0.72 0.005 265)" }}
+                            >
+                              <span className="font-semibold">{set.label}</span>
+                              <span className="ml-2 text-[10px]" style={{ color: "oklch(0.42 0.005 222)" }}>
+                                #{set.tags.slice(0, 3).join(" #")}…
+                              </span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+                {/* Uložit jako sadu */}
+                <button
+                  onClick={() => setShowSaveSetInput(p => !p)}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style={{
+                    background: "oklch(1 0 0 / 0.06)",
+                    color: "oklch(0.55 0.005 222)",
+                    border: "1px solid oklch(1 0 0 / 0.1)",
+                  }}
+                >
+                  Uložit jako sadu
+                </button>
+              </div>
+            </div>
+
+            {/* Save set input */}
+            <AnimatePresence>
+              {showSaveSetInput && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    value={saveSetLabel}
+                    onChange={e => setSaveSetLabel(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") saveAsHashtagSet(); }}
+                    placeholder="Název sady…"
+                    className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
+                    style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                  />
+                  <button
+                    onClick={saveAsHashtagSet}
+                    className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold"
+                    style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+                  >
+                    Uložit
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center gap-2">
               <input
                 value={tagInput}
@@ -512,6 +916,105 @@ function PostModal({
                 </span>
               ))}
             </div>
+          </div>
+
+          {/* Content Pillars */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.42 0.005 222)" }}>Obsahový pilíř</label>
+              <button
+                onClick={() => setShowNewPillar(p => !p)}
+                className="text-[10px] px-2 py-0.5 rounded-full"
+                style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+              >
+                + Nový pilíř
+              </button>
+            </div>
+
+            {clientPillars.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {clientPillars.map(pillar => {
+                  const isSelected = form.pillar === pillar.id;
+                  return (
+                    <button
+                      key={pillar.id}
+                      onClick={() => setForm(p => ({ ...p, pillar: isSelected ? undefined : pillar.id }))}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-medium transition-all flex items-center gap-1"
+                      style={isSelected ? {
+                        background: `${pillar.color}25`,
+                        color: pillar.color,
+                        border: `1px solid ${pillar.color}60`,
+                      } : {
+                        background: "oklch(1 0 0 / 0.05)",
+                        color: "oklch(0.42 0.005 222)",
+                        border: "1px solid oklch(1 0 0 / 0.1)",
+                      }}
+                    >
+                      <span>{pillar.emoji}</span>
+                      <span>{pillar.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {clientPillars.length === 0 && !showNewPillar && (
+              <p className="text-[11px]" style={{ color: "oklch(0.35 0.005 222)" }}>
+                Žádné pilíře pro tohoto klienta. Přidej první.
+              </p>
+            )}
+
+            {/* New pillar inline form */}
+            <AnimatePresence>
+              {showNewPillar && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-2 pt-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={newPillarEmoji}
+                      onChange={e => setNewPillarEmoji(e.target.value)}
+                      placeholder="🏆"
+                      className="w-10 px-2 py-1.5 rounded-[7px] text-[14px] outline-none text-center"
+                      style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                    />
+                    <input
+                      value={newPillarLabel}
+                      onChange={e => setNewPillarLabel(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") addNewPillar(); }}
+                      placeholder="Název pilíře…"
+                      className="flex-1 px-3 py-1.5 rounded-[7px] text-[11px] outline-none"
+                      style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5 flex-wrap flex-1">
+                      {PILLAR_COLOR_OPTIONS.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setNewPillarColor(c)}
+                          className="w-5 h-5 rounded-full transition-all"
+                          style={{
+                            background: c,
+                            boxShadow: newPillarColor === c ? `0 0 0 2px oklch(0.12 0.008 222), 0 0 0 4px ${c}` : "none",
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={addNewPillar}
+                      className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold shrink-0"
+                      style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.78 0.18 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+                    >
+                      Přidat
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Note */}
@@ -670,6 +1173,8 @@ function PostModal({
 export default function SmmPage() {
   const { user, email } = useUserRole();
   const [posts, setPosts] = useSupabaseData<SmmPost[]>("ov-smm-posts", () => SEED);
+  const [hashtagSets, setHashtagSets] = useSupabaseData<HashtagSet[]>("ov-smm-hashtag-sets", () => DEFAULT_HASHTAG_SETS);
+  const [pillars, setPillars] = useSupabaseData<ContentPillar[]>("ov-smm-pillars", () => DEFAULT_PILLARS);
 
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(new Date().getMonth() + 1);
@@ -677,7 +1182,9 @@ export default function SmmPage() {
   const [isNewPost, setIsNewPost] = useState(false);
   const [filterKlient, setFilterKlient] = useState("Vše");
   const [filterStatus, setFilterStatus] = useState<PostStatus | "Vše">("Vše");
+  const [filterPlatform, setFilterPlatform] = useState<PostPlatform | "Vše">("Vše");
   const [showKlientFilter, setShowKlientFilter] = useState(false);
+  const [showPlatformFilter, setShowPlatformFilter] = useState(false);
   const [activeTab, setActiveTab] = useState<"kalendar" | "pipeline" | "briefing">("kalendar");
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
@@ -698,6 +1205,7 @@ export default function SmmPage() {
     if (y !== viewYear || m !== viewMonth) return false;
     if (filterKlient !== "Vše" && p.klient !== filterKlient) return false;
     if (filterStatus !== "Vše" && p.status !== filterStatus) return false;
+    if (filterPlatform !== "Vše" && p.platform !== filterPlatform) return false;
     return true;
   });
 
@@ -848,6 +1356,52 @@ export default function SmmPage() {
 
             {/* Filters + Add */}
             <div className="flex items-center gap-2">
+              {/* Platform filter */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowPlatformFilter(p => !p)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[11px] font-medium"
+                  style={{
+                    background: filterPlatform !== "Vše" ? `${PLATFORM_COLORS[filterPlatform]}18` : "oklch(1 0 0 / 0.05)",
+                    border: "1px solid oklch(1 0 0 / 0.1)",
+                    color: filterPlatform !== "Vše" ? PLATFORM_COLORS[filterPlatform] : "oklch(0.45 0.005 222)",
+                  }}
+                >
+                  {filterPlatform === "Vše" ? "Platforma" : PLATFORM_SHORT[filterPlatform]}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <AnimatePresence>
+                  {showPlatformFilter && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      className="absolute right-0 top-full mt-1 z-30 rounded-[10px] overflow-hidden py-1 min-w-[140px]"
+                      style={{
+                        background: "oklch(0.14 0.008 222)",
+                        border: "1px solid oklch(1 0 0 / 0.12)",
+                        boxShadow: "0 8px 24px oklch(0 0 0 / 0.4)",
+                      }}
+                    >
+                      {(["Vše", "instagram", "facebook", "linkedin", "tiktok"] as const).map(pl => (
+                        <button
+                          key={pl}
+                          onClick={() => { setFilterPlatform(pl as PostPlatform | "Vše"); setShowPlatformFilter(false); }}
+                          className="w-full text-left px-4 py-2 text-[12px] font-medium hover:bg-white/5"
+                          style={{
+                            color: pl !== "Vše" && filterPlatform === pl
+                              ? PLATFORM_COLORS[pl as PostPlatform]
+                              : "oklch(0.62 0.005 222)"
+                          }}
+                        >
+                          {pl === "Vše" ? "Vše" : `${PLATFORM_SHORT[pl as PostPlatform]} ${PLATFORM_LABELS[pl as PostPlatform]}`}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Klient filter */}
               <div className="relative">
                 <button
@@ -905,6 +1459,9 @@ export default function SmmPage() {
               </motion.button>
             </div>
           </div>
+
+          {/* Client Stats Strip */}
+          <ClientStatsStrip posts={posts} year={viewYear} month={viewMonth} />
 
           {/* Calendar grid */}
           <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid oklch(1 0 0 / 0.08)" }}>
@@ -971,6 +1528,7 @@ export default function SmmPage() {
                         <PostChip
                           key={p.id}
                           post={p}
+                          pillars={pillars}
                           onClick={() => { setSelectedPost(p); setIsNewPost(false); }}
                         />
                       ))}
@@ -1040,38 +1598,67 @@ export default function SmmPage() {
                   </div>
 
                   {/* Cards */}
-                  {colPosts.map(p => (
-                    <motion.button
-                      key={p.id}
-                      onClick={() => { setSelectedPost(p); setIsNewPost(false); }}
-                      whileTap={{ scale: 0.97 }}
-                      className="w-full text-left p-3 rounded-[8px] space-y-1.5"
-                      style={{
-                        background: "oklch(1 0 0 / 0.04)",
-                        border: "1px solid oklch(1 0 0 / 0.08)",
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[13px]">{FORMAT_EMOJI[p.format]}</span>
-                        <span className="text-[11px] font-semibold truncate" style={{ color: "oklch(0.88 0.005 265)" }}>
-                          {p.klient}
-                        </span>
-                      </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-snug line-clamp-2" style={{ color: "oklch(0.52 0.005 222)" }}>
-                          {p.caption}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px]" style={{ color: "oklch(0.38 0.005 222)" }}>
-                          {new Date(p.datum).toLocaleDateString("cs-CZ", { day: "numeric", month: "short" })}
-                        </span>
-                        <span className="text-[9px] font-semibold" style={{ color: "oklch(0.42 0.005 222)" }}>
-                          {p.autorName}
-                        </span>
-                      </div>
-                    </motion.button>
-                  ))}
+                  {colPosts.map(p => {
+                    const pillar = p.pillar ? pillars.find(pl => pl.id === p.pillar) : undefined;
+                    return (
+                      <motion.button
+                        key={p.id}
+                        onClick={() => { setSelectedPost(p); setIsNewPost(false); }}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full text-left p-3 rounded-[8px] space-y-1.5"
+                        style={{
+                          background: "oklch(1 0 0 / 0.04)",
+                          border: "1px solid oklch(1 0 0 / 0.08)",
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px]">{FORMAT_EMOJI[p.format]}</span>
+                          <span className="text-[11px] font-semibold truncate" style={{ color: "oklch(0.88 0.005 265)" }}>
+                            {p.klient}
+                          </span>
+                          {/* Platform badge */}
+                          <span
+                            className="ml-auto shrink-0 text-[8px] font-bold px-1 rounded"
+                            style={{
+                              background: `${PLATFORM_COLORS[p.platform]}20`,
+                              color: PLATFORM_COLORS[p.platform],
+                              border: `1px solid ${PLATFORM_COLORS[p.platform]}40`,
+                              lineHeight: "14px",
+                            }}
+                          >
+                            {PLATFORM_SHORT[p.platform]}
+                          </span>
+                        </div>
+                        {p.caption && (
+                          <p className="text-[10px] leading-snug line-clamp-2" style={{ color: "oklch(0.52 0.005 222)" }}>
+                            {p.caption}
+                          </p>
+                        )}
+                        {/* Pillar badge */}
+                        {pillar && (
+                          <div
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold"
+                            style={{
+                              background: `${pillar.color}18`,
+                              color: pillar.color,
+                              border: `1px solid ${pillar.color}35`,
+                            }}
+                          >
+                            <span>{pillar.emoji}</span>
+                            <span>{pillar.label}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px]" style={{ color: "oklch(0.38 0.005 222)" }}>
+                            {new Date(p.datum).toLocaleDateString("cs-CZ", { day: "numeric", month: "short" })}
+                          </span>
+                          <span className="text-[9px] font-semibold" style={{ color: "oklch(0.42 0.005 222)" }}>
+                            {p.autorName}
+                          </span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
 
                   {colPosts.length === 0 && (
                     <div className="h-16 rounded-[8px] flex items-center justify-center"
@@ -1145,6 +1732,17 @@ export default function SmmPage() {
                         {p.klient}
                       </span>
                       <span className="text-[10px]">{FORMAT_EMOJI[p.format]} {FORMAT_LABELS[p.format]}</span>
+                      {/* Platform badge */}
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{
+                          background: `${PLATFORM_COLORS[p.platform]}18`,
+                          color: PLATFORM_COLORS[p.platform],
+                          border: `1px solid ${PLATFORM_COLORS[p.platform]}35`,
+                        }}
+                      >
+                        {PLATFORM_SHORT[p.platform]}
+                      </span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                         style={{
@@ -1209,6 +1807,15 @@ export default function SmmPage() {
                       <span className="text-[11px] font-semibold" style={{ color: "oklch(0.72 0.005 265)" }}>{p.klient}</span>
                       <span className="text-[10px]">{FORMAT_EMOJI[p.format]}</span>
                       <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-full"
+                        style={{
+                          background: `${PLATFORM_COLORS[p.platform]}18`,
+                          color: PLATFORM_COLORS[p.platform],
+                        }}
+                      >
+                        {PLATFORM_SHORT[p.platform]}
+                      </span>
+                      <span
                         className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto"
                         style={{ background: `${STATUS_COLORS[p.status]}15`, color: STATUS_COLORS[p.status] }}
                       >
@@ -1231,6 +1838,10 @@ export default function SmmPage() {
             onClose={() => setSelectedPost(null)}
             onSave={savePost}
             onDelete={deletePost}
+            hashtagSets={hashtagSets}
+            setHashtagSets={setHashtagSets}
+            pillars={pillars}
+            setPillars={setPillars}
           />
         )}
       </AnimatePresence>
