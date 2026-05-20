@@ -32,6 +32,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
   "ov-calendar-events":     ["admin", "pm", "smm"],
   "ov-reports-archive":     ["admin", "smm"],
+  "ov-investice":           ["admin"],
 };
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
