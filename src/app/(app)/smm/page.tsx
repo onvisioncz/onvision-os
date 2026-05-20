@@ -692,6 +692,59 @@ function PostModal({
                   Čím víc info, tím lepší výsledek. Piš česky, klidně heslovitě.
                 </p>
               </div>
+
+              {/* Thumbnail — large preview at bottom of left column */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: "oklch(0.42 0.005 222)" }}>
+                  Náhled
+                </label>
+                <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => imgRef.current?.click()}
+                  disabled={imgLoading}
+                  className="relative w-full rounded-[10px] overflow-hidden flex items-center justify-center"
+                  style={{
+                    aspectRatio: "4/5",
+                    background: form.imageThumb ? "transparent" : "oklch(1 0 0 / 0.04)",
+                    border: form.imageThumb ? "none" : "2px dashed oklch(1 0 0 / 0.12)",
+                  }}
+                >
+                  {form.imageThumb ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.imageThumb}
+                        alt="náhled"
+                        className="w-full h-full object-cover"
+                      />
+                      <div
+                        className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        style={{ background: "oklch(0 0 0 / 0.55)" }}
+                      >
+                        <span className="text-[11px] font-semibold text-white">Změnit foto</span>
+                      </div>
+                    </>
+                  ) : imgLoading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: "oklch(0.42 0.005 222)" }} />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 py-6">
+                      <span className="text-[28px]">📷</span>
+                      <span className="text-[11px] font-medium" style={{ color: "oklch(0.42 0.005 222)" }}>Nahrát náhled</span>
+                      <span className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>4 : 5 · JPG nebo PNG</span>
+                    </div>
+                  )}
+                </motion.button>
+                {form.imageThumb && (
+                  <button
+                    onClick={() => setForm(p => ({ ...p, imageThumb: undefined }))}
+                    className="w-full text-center text-[10px] py-0.5"
+                    style={{ color: "oklch(0.42 0.005 222)" }}
+                  >
+                    Odstranit
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Right: content */}
@@ -1036,95 +1089,34 @@ function PostModal({
                 />
               </div>
 
-              {/* Media — thumbnail + link */}
-              <div className="space-y-3 pt-1">
+              {/* Media — Drive link only (thumbnail is in the left column) */}
+              <div className="space-y-2 pt-1">
                 <div className="h-px" style={{ background: "oklch(1 0 0 / 0.07)" }} />
                 <label className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: "oklch(0.42 0.005 222)" }}>
-                  Médium
+                  Odkaz na médium
                 </label>
-
-                <div className="flex gap-3 items-start">
-                  {/* Thumbnail upload */}
-                  <div className="shrink-0">
-                    <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    <motion.button
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => imgRef.current?.click()}
-                      disabled={imgLoading}
-                      className="relative flex items-center justify-center rounded-[8px] overflow-hidden"
-                      style={{
-                        width: 104,
-                        height: 130, // 4:5 ratio
-                        background: form.imageThumb ? "transparent" : "oklch(1 0 0 / 0.05)",
-                        border: form.imageThumb ? "none" : "2px dashed oklch(1 0 0 / 0.15)",
-                      }}
-                    >
-                      {form.imageThumb ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={form.imageThumb}
-                            alt="náhled"
-                            className="w-full h-full object-cover rounded-[8px]"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-[8px]"
-                            style={{ background: "oklch(0 0 0 / 0.5)" }}>
-                            <span className="text-[9px] font-semibold text-white">Změnit</span>
-                          </div>
-                        </>
-                      ) : imgLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "oklch(0.42 0.005 222)" }} />
-                      ) : (
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="text-[18px]">📷</span>
-                          <span className="text-[8px] font-medium text-center leading-tight px-1" style={{ color: "oklch(0.38 0.005 222)" }}>
-                            Náhled<br />4:5
-                          </span>
-                        </div>
-                      )}
-                    </motion.button>
-                    {form.imageThumb && (
-                      <button
-                        onClick={() => setForm(p => ({ ...p, imageThumb: undefined }))}
-                        className="w-full text-center text-[9px] mt-1"
-                        style={{ color: "oklch(0.42 0.005 222)" }}
-                      >
-                        Odstranit
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Media URL */}
-                  <div className="flex-1 space-y-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px]" style={{ color: "oklch(0.38 0.005 222)" }}>
-                        Odkaz na médium
-                      </label>
-                      <input
-                        value={form.mediaUrl ?? ""}
-                        onChange={e => setForm(p => ({ ...p, mediaUrl: e.target.value }))}
-                        placeholder="https://drive.google.com/..."
-                        className="w-full px-3 py-2 rounded-[7px] text-[11px] outline-none"
-                        style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
-                      />
-                    </div>
-                    {form.mediaUrl && (
-                      <a
-                        href={form.mediaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium"
-                        style={{ color: "oklch(0.62 0.27 265)" }}
-                      >
-                        <span>Otevrit</span>
-                        <span style={{ fontSize: 10 }}>↗</span>
-                      </a>
-                    )}
-                    <p className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>
-                      {form.format === "reel" ? "Video na Drive/Dropbox — nahraj nahledovou fotku vlevo" : "Fotka na Drive — nebo vloz odkaz pro stahovani"}
-                    </p>
-                  </div>
-                </div>
+                <input
+                  value={form.mediaUrl ?? ""}
+                  onChange={e => setForm(p => ({ ...p, mediaUrl: e.target.value }))}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full px-3 py-2 rounded-[7px] text-[12px] outline-none"
+                  style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.88 0.005 265)" }}
+                />
+                {form.mediaUrl && (
+                  <a
+                    href={form.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[12px] font-medium"
+                    style={{ color: "oklch(0.62 0.27 265)" }}
+                  >
+                    <span>Otevřít</span>
+                    <span style={{ fontSize: 11 }}>↗</span>
+                  </a>
+                )}
+                <p className="text-[9px]" style={{ color: "oklch(0.32 0.005 222)" }}>
+                  {form.format === "reel" ? "Video na Drive/Dropbox · náhledová fotka vlevo" : "Odkaz na finální soubor na Drive"}
+                </p>
               </div>
             </div>
           </div>
