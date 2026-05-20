@@ -3,18 +3,11 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, CheckCircle2, Circle } from "lucide-react";
+import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 
-/* ── Types ──────────────────────────────────────────────────────────────────── */
-interface Deliverable {
-  id: number;
-  text: string;
-  done: boolean;
-  category: string;
-  deadline?: string;
-  prirazeno?: string;
-}
+/* ── Types ─────────────────────────────────────────────────────────────────── */
+interface Deliverable { id: number; text: string; done: boolean; category: string; }
 
 interface RetainerClient {
   id: number;
@@ -31,354 +24,351 @@ interface RetainerClient {
   poznamka: string;
   kontakt: string;
   zacatek: string;
-  hodinMesic?: number;
-  hodinOdpracovano?: number;
 }
 
-interface Task {
+interface IssuedInvoice {
   id: number;
-  nazev: string;
-  projekt: string;
-  prirazeno: string;
-  priorita: "Nízká" | "Střední" | "Vysoká" | "Urgentní";
-  status: "Nové" | "Probíhá" | "Review" | "Hotovo";
-  deadline: string;
+  klient: string;
+  klientNazev?: string;
+  castka: number;
+  stav: "Zaplacena" | "Čeká na platbu";
+  datumVystaveni: string;
+  datumSplatnosti?: string;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
-function fmtPausal(n: number): string {
-  return n.toLocaleString("cs-CZ") + " Kč / měs";
-}
-
-function fmtMrr(n: number): string {
+function fmt(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(".", ",") + " M Kč";
-  if (n >= 1_000) return Math.round(n / 1_000) + " k Kč";
+  if (n >= 1_000)     return Math.round(n / 1_000) + " k Kč";
   return n.toLocaleString("cs-CZ") + " Kč";
 }
 
-/* ── Animation ──────────────────────────────────────────────────────────────── */
-const stagger = {
-  container: { hidden: {}, show: { transition: { staggerChildren: 0.055 } } },
-  item: {
-    hidden: { opacity: 0, y: 14 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.36, ease: [0.23, 1, 0.32, 1] as const } },
-  },
-};
+function clientMatch(invoiceName: string, clientName: string): boolean {
+  const a = (invoiceName ?? "").toLowerCase().trim();
+  const b = (clientName  ?? "").toLowerCase().trim();
+  return a.includes(b) || b.includes(a);
+}
 
-/* ── Seed ───────────────────────────────────────────────────────────────────── */
-function clientSeed(): RetainerClient[] { return []; }
-function taskSeed(): Task[] { return []; }
+/* ── KPI tile ───────────────────────────────────────────────────────────────── */
+function KpiTile({
+  label, value, sub, color,
+}: { label: string; value: string; sub?: string; color: string }) {
+  return (
+    <div
+      className="rounded-[12px] px-5 py-4 flex-1 min-w-0"
+      style={{ background: `${color} / 0.07`, border: `1px solid ${color} / 0.2` }}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: `${color}` }}>
+        {label}
+      </p>
+      <p className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.94 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+        {value}
+      </p>
+      {sub && <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>{sub}</p>}
+    </div>
+  );
+}
 
-/* ── Component ──────────────────────────────────────────────────────────────── */
+/* ── Invoice status badge ───────────────────────────────────────────────────── */
+function InvBadge({ stav }: { stav: "Zaplacena" | "Čeká na platbu" }) {
+  const paid = stav === "Zaplacena";
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+      style={{
+        background: paid ? "oklch(0.68 0.18 155 / 0.12)" : "oklch(0.75 0.19 48 / 0.12)",
+        color:      paid ? "oklch(0.68 0.18 155)"         : "oklch(0.75 0.19 48)",
+      }}
+    >
+      {paid ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
+      {paid ? "Zaplaceno" : "Čeká"}
+    </span>
+  );
+}
+
+/* ── Main page ──────────────────────────────────────────────────────────────── */
 export default function KlientiPage() {
-  const [clients, , loadingClients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", clientSeed);
-  const [tasks, , loadingTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", taskSeed);
+  const [clients,  , loadingClients]  = useSupabaseData<RetainerClient[]>("ov-monthly-clients",  () => []);
+  const [invoices, , loadingInvoices] = useSupabaseData<IssuedInvoice[]>("ov-issued-invoices",   () => []);
 
-  const loading = loadingClients || loadingTasks;
+  const loading = loadingClients || loadingInvoices;
 
-  const activeClients = useMemo(
-    () => clients.filter((c) => c.aktivni),
-    [clients]
-  );
+  /* ── Per-client invoice aggregates ── */
+  const clientStats = useMemo(() => {
+    return clients.map(c => {
+      const myInvoices = invoices.filter(inv =>
+        clientMatch(inv.klientNazev ?? inv.klient, c.name)
+      );
+      const totalFakturovano = myInvoices.reduce((s, i) => s + i.castka, 0);
+      const totalZaplaceno   = myInvoices.filter(i => i.stav === "Zaplacena").reduce((s, i) => s + i.castka, 0);
+      const totalCeka        = myInvoices.filter(i => i.stav === "Čeká na platbu").reduce((s, i) => s + i.castka, 0);
+      const pocetFaktur      = myInvoices.length;
+      const mrr              = c.pausal + (c.reklama ?? 0);
+      return { ...c, totalFakturovano, totalZaplaceno, totalCeka, pocetFaktur, mrr };
+    });
+  }, [clients, invoices]);
 
-  const totalMrr = useMemo(
-    () => activeClients.reduce((sum, c) => sum + c.pausal + (c.reklama ?? 0), 0),
-    [activeClients]
-  );
-
-  const openTasksByClient = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const t of tasks) {
-      if (t.status === "Hotovo") continue;
-      for (const c of clients) {
-        if (t.projekt.toLowerCase().includes(c.name.toLowerCase())) {
-          map[c.id] = (map[c.id] ?? 0) + 1;
-        }
-      }
-    }
-    return map;
-  }, [tasks, clients]);
-
-  /* ── Sorted: active first, then inactive ── */
-  const sorted = useMemo(
-    () => [...clients].sort((a, b) => {
+  /* ── Sorted: active first, then by MRR ── */
+  const sorted = useMemo(() =>
+    [...clientStats].sort((a, b) => {
       if (a.aktivni !== b.aktivni) return a.aktivni ? -1 : 1;
-      return b.pausal - a.pausal;
+      return b.mrr - a.mrr;
     }),
-    [clients]
+    [clientStats]
   );
+
+  /* ── Summary KPIs ── */
+  const summary = useMemo(() => {
+    const active = clientStats.filter(c => c.aktivni);
+    const totalMrr         = active.reduce((s, c) => s + c.mrr, 0);
+    const totalFakturovano = clientStats.reduce((s, c) => s + c.totalFakturovano, 0);
+    const totalCeka        = clientStats.reduce((s, c) => s + c.totalCeka, 0);
+    return { totalMrr, totalFakturovano, totalCeka, activeCount: active.length };
+  }, [clientStats]);
 
   return (
     <div
-      className="min-h-screen px-6 py-8"
+      className="min-h-screen"
       style={{ background: "oklch(0.09 0.008 222)", fontFamily: "var(--font-jakarta)" }}
     >
       {/* ── Header ── */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-        className="flex items-center justify-between mb-8"
+      <div
+        className="px-6 py-5 flex items-center justify-between"
+        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
       >
         <div className="flex items-center gap-3">
           <div
-            className="flex items-center justify-center w-9 h-9 rounded-[10px]"
-            style={{ background: "oklch(0.62 0.27 265 / 0.15)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}
+            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+            style={{ background: "oklch(0.62 0.27 265 / 0.14)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}
           >
-            <Users className="w-4.5 h-4.5" style={{ color: "oklch(0.62 0.27 265)" }} />
+            <Building2 className="w-4 h-4" style={{ color: "oklch(0.72 0.18 265)" }} />
           </div>
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.97 0.004 222)" }}
-          >
-            Klienti
-          </h1>
+          <div>
+            <h1
+              className="text-[20px] font-bold tracking-tight leading-tight"
+              style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.96 0.005 265)" }}
+            >
+              Klienti
+            </h1>
+            <p className="text-[11px]" style={{ color: "oklch(0.38 0.005 222)" }}>
+              Finanční přehled retainer klientů
+            </p>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* ── Summary strip ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.36, delay: 0.05, ease: [0.23, 1, 0.32, 1] }}
-        className="flex gap-4 mb-8"
-      >
-        <SummaryTile
-          label="MRR"
-          value={loading ? "..." : fmtMrr(totalMrr)}
-          color="oklch(0.67 0.155 155)"
-          icon={<TrendingUp className="w-4 h-4" />}
-        />
-        <SummaryTile
-          label="Aktivní klienti"
-          value={loading ? "..." : String(activeClients.length)}
-          color="oklch(0.62 0.27 265)"
-          icon={<Users className="w-4 h-4" />}
-        />
-      </motion.div>
+      <div className="px-6 py-6 space-y-6">
 
-      {/* ── Grid ── */}
-      {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Spinner />
-        </div>
-      ) : (
+        {/* ── KPI strip ── */}
         <motion.div
-          variants={stagger.container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex gap-3"
+          style={{
+            // workaround: oklch with "/" in JSX style
+            ['--c1' as string]: "oklch(0.62 0.27 265)",
+            ['--c2' as string]: "oklch(0.68 0.18 155)",
+            ['--c3' as string]: "oklch(0.65 0.22 25)",
+          }}
         >
-          {sorted.map((client) => {
-            const totalDel = client.deliverables.length;
-            const doneDel = client.deliverables.filter((d) => d.done).length;
-            const openTasks = openTasksByClient[client.id] ?? 0;
+          <div
+            className="rounded-[12px] px-5 py-4 flex-1"
+            style={{ background: "oklch(0.62 0.27 265 / 0.08)", border: "1px solid oklch(0.62 0.27 265 / 0.2)" }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "oklch(0.72 0.18 265)" }}>
+              MRR · {summary.activeCount} aktivních
+            </p>
+            <p className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.94 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+              {fmt(summary.totalMrr)}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>měsíčně</p>
+          </div>
 
-            return (
-              <motion.div key={client.id} variants={stagger.item}>
-                <Link href={`/klienti/${client.id}`} className="block group">
-                  <div
-                    className="relative overflow-hidden rounded-[14px] p-5 transition-all duration-200"
-                    style={{
-                      background: "oklch(1 0 0 / 0.035)",
-                      border: "1px solid oklch(1 0 0 / 0.08)",
-                    }}
-                  >
-                    {/* Top accent line */}
+          <div
+            className="rounded-[12px] px-5 py-4 flex-1"
+            style={{ background: "oklch(0.68 0.18 155 / 0.08)", border: "1px solid oklch(0.68 0.18 155 / 0.2)" }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "oklch(0.68 0.18 155)" }}>
+              Celkem fakturováno
+            </p>
+            <p className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.94 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+              {loading ? "..." : fmt(summary.totalFakturovano)}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>celkem od začátku</p>
+          </div>
+
+          <div
+            className="rounded-[12px] px-5 py-4 flex-1"
+            style={{
+              background: summary.totalCeka > 0 ? "oklch(0.65 0.22 25 / 0.08)" : "oklch(1 0 0 / 0.03)",
+              border: summary.totalCeka > 0 ? "1px solid oklch(0.65 0.22 25 / 0.25)" : "1px solid oklch(1 0 0 / 0.07)",
+            }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: summary.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.45 0.005 222)" }}>
+              Čeká na platbu
+            </p>
+            <p className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.94 0.005 265)", fontFamily: "var(--font-outfit)" }}>
+              {loading ? "..." : summary.totalCeka > 0 ? fmt(summary.totalCeka) : "—"}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>
+              {summary.totalCeka > 0 ? "nezaplacené faktury" : "vše zaplaceno"}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* ── Table ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+          className="rounded-[14px] overflow-hidden"
+          style={{ border: "1px solid oklch(1 0 0 / 0.08)" }}
+        >
+          {/* Table header */}
+          <div
+            className="grid items-center px-5 py-3"
+            style={{
+              background: "oklch(0.11 0.009 222)",
+              borderBottom: "1px solid oklch(1 0 0 / 0.08)",
+              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
+              gap: "12px",
+            }}
+          >
+            {["Klient", "Paušál", "Reklama", "Celkem MRR", "Fakturováno", "Čeká", ""].map((h, i) => (
+              <span key={i} className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: "oklch(0.38 0.005 222)" }}>
+                {h}
+              </span>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {loading ? (
+            <div className="py-16 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full border-2 animate-spin"
+                style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
+            </div>
+          ) : (
+            sorted.map((client, idx) => (
+              <Link key={client.id} href={`/klienti/${client.id}`} className="block group">
+                <div
+                  className="grid items-center px-5 py-4 transition-colors"
+                  style={{
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
+                    gap: "12px",
+                    borderBottom: idx < sorted.length - 1 ? "1px solid oklch(1 0 0 / 0.05)" : "none",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "oklch(1 0 0 / 0.025)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  {/* Klient */}
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="absolute top-0 left-0 right-0 h-[2px]"
-                      style={{ background: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
-                    />
-
-                    {/* Hover glow */}
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-[14px]"
-                      style={{ background: `${client.color} / 0.04` }}
-                    />
-
-                    {/* Card body */}
-                    <div className="relative flex items-start gap-4">
-                      {/* Logo bubble */}
-                      <div
-                        className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-[10px] text-sm font-bold"
-                        style={{
-                          background: `color-mix(in oklch, ${client.color} 18%, oklch(0.09 0.008 222))`,
-                          border: `1px solid color-mix(in oklch, ${client.color} 35%, oklch(1 0 0 / 0.06))`,
-                          color: client.color,
-                          fontFamily: "var(--font-outfit)",
-                        }}
-                      >
-                        {client.logo}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span
-                            className="text-[15px] font-semibold truncate"
-                            style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.97 0.004 222)" }}
-                          >
-                            {client.name}
-                          </span>
-                          <StatusBadge aktivni={client.aktivni} />
-                        </div>
-
-                        <p
-                          className="text-[13px] font-medium mb-3"
-                          style={{ color: "oklch(0.67 0.155 155)" }}
-                        >
-                          {fmtPausal(client.pausal + (client.reklama ?? 0))}
-                        </p>
-
-                        {/* Stats row */}
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <StatChip
-                            icon={<CheckCircle2 className="w-3 h-3" />}
-                            label={`${doneDel}/${totalDel} deliverables`}
-                            color="oklch(0.55 0.01 222)"
-                          />
-                          {openTasks > 0 && (
-                            <StatChip
-                              icon={<Circle className="w-3 h-3" />}
-                              label={`${openTasks} úkolů`}
-                              color="oklch(0.82 0.16 85)"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div
-                      className="mt-4 pt-3 flex items-center justify-between"
-                      style={{ borderTop: "1px solid oklch(1 0 0 / 0.06)" }}
+                      className="w-8 h-8 rounded-[8px] flex items-center justify-center text-[11px] font-bold shrink-0"
+                      style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
                     >
-                      <span
-                        className="text-[11px]"
-                        style={{ color: "oklch(0.5 0.007 222)" }}
-                      >
-                        Od {client.zacatek}
-                      </span>
-                      {client.fakturace && (
+                      {client.logo}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
                         <span
-                          className="text-[11px] px-2 py-0.5 rounded-full"
-                          style={{
-                            background: "oklch(1 0 0 / 0.05)",
-                            color: "oklch(0.55 0.008 222)",
-                            border: "1px solid oklch(1 0 0 / 0.07)",
-                          }}
+                          className="text-[13px] font-semibold truncate"
+                          style={{ color: client.aktivni ? "oklch(0.92 0.005 265)" : "oklch(0.42 0.005 222)" }}
                         >
-                          {client.fakturace}
+                          {client.name}
                         </span>
-                      )}
+                        {!client.aktivni && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                            style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.38 0.005 222)" }}>
+                            Neaktivní
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px]" style={{ color: "oklch(0.36 0.005 222)" }}>
+                        {client.fakturace} · od {client.zacatek || "—"}
+                      </span>
                     </div>
                   </div>
-                </Link>
-              </motion.div>
-            );
-          })}
 
-          {clients.length === 0 && (
+                  {/* Paušál */}
+                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: "oklch(0.80 0.005 265)" }}>
+                    {client.pausal > 0 ? fmt(client.pausal) : "—"}
+                  </span>
+
+                  {/* Reklama */}
+                  <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.50 0.005 222)" }}>
+                    {client.reklama ? fmt(client.reklama) : "—"}
+                  </span>
+
+                  {/* Celkem MRR */}
+                  <span
+                    className="text-[13px] font-bold tabular-nums"
+                    style={{ color: client.aktivni ? "oklch(0.68 0.18 155)" : "oklch(0.42 0.005 222)" }}
+                  >
+                    {fmt(client.mrr)}
+                  </span>
+
+                  {/* Fakturováno */}
+                  <span className="text-[13px] tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
+                    {client.pocetFaktur > 0 ? fmt(client.totalFakturovano) : "—"}
+                  </span>
+
+                  {/* Čeká */}
+                  <span className="text-[13px] tabular-nums font-semibold"
+                    style={{ color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                    {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
+                  </span>
+
+                  {/* Arrow */}
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    style={{ color: "oklch(0.50 0.005 222)" }} />
+                </div>
+              </Link>
+            ))
+          )}
+
+          {/* Footer total row */}
+          {!loading && sorted.length > 0 && (
             <div
-              className="col-span-full flex flex-col items-center justify-center py-20 rounded-[14px]"
-              style={{ background: "oklch(1 0 0 / 0.025)", border: "1px solid oklch(1 0 0 / 0.06)" }}
+              className="grid items-center px-5 py-3"
+              style={{
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
+                gap: "12px",
+                borderTop: "1px solid oklch(1 0 0 / 0.1)",
+                background: "oklch(0.11 0.009 222)",
+              }}
             >
-              <Users className="w-8 h-8 mb-3" style={{ color: "oklch(0.4 0.007 222)" }} />
-              <p className="text-sm" style={{ color: "oklch(0.5 0.007 222)" }}>
-                Zatím žádní klienti
-              </p>
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "oklch(0.40 0.005 222)" }}>
+                Celkem aktivní
+              </span>
+              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
+                {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + c.pausal, 0))}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.72 0.18 265)" }}>
+                {fmt(sorted.filter(c => c.aktivni).reduce((s, c) => s + (c.reklama ?? 0), 0))}
+              </span>
+              <span className="text-[13px] font-bold tabular-nums" style={{ color: "oklch(0.68 0.18 155)" }}>
+                {fmt(summary.totalMrr)}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums" style={{ color: "oklch(0.60 0.005 222)" }}>
+                {fmt(summary.totalFakturovano)}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums"
+                style={{ color: summary.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                {summary.totalCeka > 0 ? fmt(summary.totalCeka) : "—"}
+              </span>
+              <span />
             </div>
           )}
         </motion.div>
-      )}
-    </div>
-  );
-}
 
-/* ── Sub-components ─────────────────────────────────────────────────────────── */
-function SummaryTile({
-  label, value, color, icon,
-}: {
-  label: string;
-  value: string;
-  color: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-3 rounded-[12px]"
-      style={{
-        background: `color-mix(in oklch, ${color} 10%, oklch(0.09 0.008 222))`,
-        border: `1px solid color-mix(in oklch, ${color} 22%, oklch(1 0 0 / 0.07))`,
-      }}
-    >
-      <span style={{ color }}>{icon}</span>
-      <div>
-        <p className="text-[11px] uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.5 0.007 222)" }}>
-          {label}
-        </p>
-        <p
-          className="text-[15px] font-bold"
-          style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.97 0.004 222)" }}
-        >
-          {value}
-        </p>
       </div>
     </div>
-  );
-}
-
-function StatusBadge({ aktivni }: { aktivni: boolean }) {
-  if (aktivni) {
-    return (
-      <span
-        className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide"
-        style={{
-          background: "oklch(0.67 0.155 155 / 0.14)",
-          color: "oklch(0.67 0.155 155)",
-          border: "1px solid oklch(0.67 0.155 155 / 0.28)",
-        }}
-      >
-        Aktivní
-      </span>
-    );
-  }
-  return (
-    <span
-      className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide"
-      style={{
-        background: "oklch(1 0 0 / 0.05)",
-        color: "oklch(0.45 0.006 222)",
-        border: "1px solid oklch(1 0 0 / 0.09)",
-      }}
-    >
-      Neaktivní
-    </span>
-  );
-}
-
-function StatChip({
-  icon, label, color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  color: string;
-}) {
-  return (
-    <span className="flex items-center gap-1 text-[11px]" style={{ color }}>
-      {icon}
-      {label}
-    </span>
-  );
-}
-
-function Spinner() {
-  return (
-    <div
-      className="w-6 h-6 rounded-full border-2 animate-spin"
-      style={{
-        borderColor: "oklch(0.62 0.27 265 / 0.2)",
-        borderTopColor: "oklch(0.62 0.27 265)",
-      }}
-    />
   );
 }

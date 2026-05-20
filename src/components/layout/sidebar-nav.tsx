@@ -27,7 +27,6 @@ const GROUPS = [
     id: "projekty",
     label: "Projekty",
     items: [
-      { label: "Klienti",          short: "Klienti",  href: "/klienti",          icon: Building2 },
       { label: "Měsíční klienti",  short: "Měsíční",  href: "/projects/monthly", icon: Users },
       { label: "Jednorázovky",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
     ],
@@ -39,6 +38,7 @@ const GROUPS = [
       { label: "Finance",    short: "Finance",   href: "/finance",    icon: Receipt },
       { label: "Fakturace",  short: "Faktury",   href: "/fakturace",  icon: FileText },
       { label: "Investice",  short: "Investice", href: "/investice",  icon: PackageOpen },
+      { label: "Klienti",    short: "Klienti",   href: "/klienti",    icon: Building2 },
     ],
   },
   {

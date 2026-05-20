@@ -129,11 +129,11 @@ export const ROLE_COLORS: Record<Role, string> = {
 // "*" = all routes (admin only)
 export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
-  fakturace: ["/dashboard", "/finance", "/fakturace"],
+  fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti"],
   produkce:  ["/dashboard", "/shooting", "/produkce", "/ukoly", "/outputs"],
   grafik:    ["/ukoly", "/outputs"],
   smm:       ["/smm", "/calendar", "/outputs", "/reporty"],
-  pm:        ["/smm", "/ukoly", "/outputs", "/klienti"],
+  pm:        ["/smm", "/ukoly", "/outputs"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */
