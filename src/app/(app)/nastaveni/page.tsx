@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Check, Shield,
-  Smartphone, KeyRound, CheckCircle2, AlertTriangle, Copy,
+  Smartphone, KeyRound, CheckCircle2, AlertTriangle, Copy, Bell, BellOff, Loader2,
 } from "lucide-react";
+import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { createClient } from "@/lib/supabase/client";
@@ -49,6 +50,98 @@ const emptyUser = (): Omit<UserConfig, "aktivni"> & { aktivni: boolean } => ({
   initials: "",
   aktivni: true,
 });
+
+/* ── Push notifications section ─────────────────────────────────────────── */
+function PushSection() {
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  async function sendTest() {
+    setTesting(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" });
+      const json = await res.json();
+      if (json.ok) {
+        setResult({ ok: true, msg: "Testovací notifikace odeslána! Zkontroluj zámek/notif lištu." });
+      } else {
+        setResult({ ok: false, msg: json.error ?? `Chyba: ${JSON.stringify(json)}` });
+      }
+    } catch (e) {
+      setResult({ ok: false, msg: String(e) });
+    } finally {
+      setTesting(false);
+      setTimeout(() => setResult(null), 8000);
+    }
+  }
+
+  return (
+    <div className="p-5 rounded-[12px] space-y-4 mt-4"
+      style={{ background: "oklch(1 0 0 / 0.025)", border: "1px solid oklch(1 0 0 / 0.07)" }}>
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-[8px] flex items-center justify-center"
+          style={{ background: "oklch(0.74 0.165 75 / 0.12)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }}>
+          <Bell className="w-4 h-4" style={{ color: "oklch(0.74 0.165 75)" }} />
+        </div>
+        <div>
+          <p className="text-[14px] font-semibold" style={{ color: "oklch(0.92 0.005 222)", fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>
+            Push notifikace
+          </p>
+          <p className="text-[11px]" style={{ color: "oklch(0.42 0.005 222)" }}>
+            Oznámení o nových úkolech a výstupech
+          </p>
+        </div>
+      </div>
+
+      {/* Subscribe toggle */}
+      <PushSubscribeButton />
+
+      {/* Instructions */}
+      <div className="text-[11px] space-y-1.5 rounded-[8px] p-3"
+        style={{ background: "oklch(0.62 0.27 265 / 0.05)", border: "1px solid oklch(0.62 0.27 265 / 0.1)", color: "oklch(0.50 0.01 265)" }}>
+        <p className="font-semibold" style={{ color: "oklch(0.65 0.15 265)" }}>Jak správně aktivovat na iPhone:</p>
+        <p>1. Otevři OnVision <strong>z ikony na ploše</strong> (ne ze Safari)</p>
+        <p>2. Klikni na &quot;Zapnout notifikace&quot; výše</p>
+        <p>3. V systémovém dialogu zvol <strong>Povolit</strong></p>
+        <p>4. Ověř tlačítkem níže že vše funguje</p>
+      </div>
+
+      {/* Test button */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={sendTest}
+          disabled={testing}
+          className="flex items-center gap-2 px-4 py-2 rounded-[8px] text-[12px] font-semibold transition-all"
+          style={{
+            background: "oklch(0.62 0.27 265 / 0.12)",
+            border: "1px solid oklch(0.62 0.27 265 / 0.25)",
+            color: "oklch(0.75 0.2 265)",
+            cursor: testing ? "not-allowed" : "pointer",
+            opacity: testing ? 0.7 : 1,
+            fontFamily: "var(--font-jakarta)",
+          }}
+        >
+          {testing
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            : <Bell className="w-3.5 h-3.5" />}
+          {testing ? "Odesílám…" : "Odeslat testovací notifikaci"}
+        </button>
+
+        {result && (
+          <motion.span
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-[12px] font-medium"
+            style={{ color: result.ok ? "oklch(0.67 0.155 155)" : "oklch(0.65 0.22 25)", fontFamily: "var(--font-jakarta)" }}
+          >
+            {result.ok ? "✓" : "✗"} {result.msg}
+          </motion.span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ── Role badge ──────────────────────────────────────────────────────────── */
 function RoleBadge({ role }: { role: Role }) {
@@ -751,7 +844,12 @@ export default function NastaveniPage() {
       )}
 
       {/* Security tab */}
-      {activeTab === "security" && <MfaSection />}
+      {activeTab === "security" && (
+        <>
+          <MfaSection />
+          <PushSection />
+        </>
+      )}
 
       {/* ── Add/Edit Modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
