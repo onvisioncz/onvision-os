@@ -66,12 +66,14 @@ export function TopBar() {
 
   return (
     <div
-      className="sticky top-0 z-40 flex items-center justify-end px-4 py-2 gap-2"
+      className="sticky top-0 z-40 flex items-center justify-end px-4 gap-2"
       style={{
         background: "oklch(0.09 0.008 222 / 0.88)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid oklch(1 0 0 / 0.055)",
+        paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+        paddingBottom: "8px",
       }}
     >
       {/* Vrátit zpět (Undo) */}

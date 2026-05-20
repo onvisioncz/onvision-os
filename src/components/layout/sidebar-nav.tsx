@@ -242,7 +242,7 @@ export function SidebarNav() {
       style={{ background: "var(--sidebar)", borderColor: "var(--sidebar-border)" }}
     >
       {/* Wordmark */}
-      <div className="px-4 py-[18px] flex items-center gap-3">
+      <div className="px-4 flex items-center gap-3" style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 18px)", paddingBottom: "18px" }}>
         <div className="relative shrink-0" style={{ width: 36, height: 36 }}>
           <motion.div
             className="absolute"
