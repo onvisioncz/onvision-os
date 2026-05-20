@@ -139,19 +139,19 @@ function compressToBlob(file: File): Promise<Blob> {
   });
 }
 
-/** Upload blob to Supabase Storage (private bucket), return storage path prefixed "storage:" */
-async function uploadThumb(
-  file: File,
-  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
-): Promise<string> {
+/** Upload thumbnail via server-side proxy (uses service role key, no RLS issues) */
+async function uploadThumb(file: File): Promise<string> {
   const blob = await compressToBlob(file);
-  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
-  const { data, error } = await supabase.storage
-    .from("output-thumbnails")
-    .upload(path, blob, { contentType: "image/webp", upsert: false });
-  if (error) throw error;
-  // Prefix "storage:" so we know this is a private path, not a base64 or old public URL
-  return `storage:${data.path}`;
+  const form = new FormData();
+  form.append("file", new File([blob], "thumb.webp", { type: "image/webp" }));
+
+  const res = await fetch("/api/storage/upload-thumb", { method: "POST", body: form });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Upload failed: ${res.status}`);
+  }
+  const { path } = await res.json();
+  return `storage:${path}`;
 }
 
 /** Resolve thumbnail value to displayable URL:
@@ -389,11 +389,11 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
     setImgLoading(true);
     setUploadError(null);
     try {
-      const url = await uploadThumb(file, supabase);
+      const url = await uploadThumb(file);
       setThumbnail(url);
     } catch (err) {
       console.error("[thumb upload]", err);
-      setUploadError("Nahrání selhalo — zkontroluj Supabase Storage bucket.");
+      setUploadError("Náhled se nepodařilo nahrát. Výstup uložíš i bez něj — stačí vyplnit název a odeslat.");
     }
     setImgLoading(false);
     e.target.value = "";
