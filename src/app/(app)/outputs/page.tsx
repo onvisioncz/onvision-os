@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { createClient } from "@/lib/supabase/client";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type DeliveryType = "grafika" | "foto" | "video" | "dokument" | "odkaz" | "zprava";
@@ -115,7 +116,8 @@ function timeLabel(iso: string) {
   return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "short" });
 }
 
-function compressThumb(file: File): Promise<string> {
+/** Compress image to WebP blob (max 400px, q=0.72) */
+function compressToBlob(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -127,14 +129,32 @@ function compressThumb(file: File): Promise<string> {
       canvas.height = img.height * scale;
       canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(b => {
-        if (b) { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(b); }
-        else reject(new Error("failed"));
+        if (b) resolve(b);
+        else reject(new Error("canvas toBlob failed"));
       }, "image/webp", 0.72);
       URL.revokeObjectURL(url);
     };
     img.onerror = reject;
     img.src = url;
   });
+}
+
+/** Upload blob to Supabase Storage, return public URL */
+async function uploadThumb(
+  file: File,
+  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
+): Promise<string> {
+  const blob = await compressToBlob(file);
+  const ext = "webp";
+  const path = `thumbnails/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data, error } = await supabase.storage
+    .from("output-thumbnails")
+    .upload(path, blob, { contentType: "image/webp", upsert: false });
+  if (error) throw error;
+  const { data: { publicUrl } } = supabase.storage
+    .from("output-thumbnails")
+    .getPublicUrl(data.path);
+  return publicUrl;
 }
 
 /* ── Safe config lookup (guards against old stored messages) ─────────── */
@@ -315,11 +335,12 @@ function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDele
 }
 
 /* ── Composer Modal ───────────────────────────────────────────────────── */
-function ComposerModal({ onClose, onSend, email, user }: {
+function ComposerModal({ onClose, onSend, email, user, supabase }: {
   onClose: () => void;
   onSend: (msg: Omit<OutputMessage, "id" | "createdAt" | "readBy">) => void;
   email: string;
   user: { displayName: string; initials: string; color: string };
+  supabase: ReturnType<typeof createClient>;
 }) {
   const [type, setType] = useState<DeliveryType>("foto");
   const [nazev, setNazev] = useState("");
@@ -330,6 +351,7 @@ function ComposerModal({ onClose, onSend, email, user }: {
   const [mediaUrl, setMediaUrl] = useState("");
   const [thumbnail, setThumbnail] = useState<string | undefined>();
   const [imgLoading, setImgLoading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const cfg = TYPE_CONFIG[type];
@@ -339,7 +361,14 @@ function ComposerModal({ onClose, onSend, email, user }: {
     const file = e.target.files?.[0];
     if (!file) return;
     setImgLoading(true);
-    try { setThumbnail(await compressThumb(file)); } catch {}
+    setUploadError(null);
+    try {
+      const url = await uploadThumb(file, supabase);
+      setThumbnail(url);
+    } catch (err) {
+      console.error("[thumb upload]", err);
+      setUploadError("Nahrání selhalo — zkontroluj Supabase Storage bucket.");
+    }
     setImgLoading(false);
     e.target.value = "";
   }
@@ -557,6 +586,11 @@ function ComposerModal({ onClose, onSend, email, user }: {
                   <p className="text-[8px] text-center" style={{ color: "oklch(0.32 0.005 222)" }}>
                     {type === "video" ? "Náhledovka" : "Mini preview"}
                   </p>
+                  {uploadError && (
+                    <p className="text-[8px] text-center leading-tight" style={{ color: "oklch(0.65 0.22 25)" }}>
+                      {uploadError}
+                    </p>
+                  )}
                 </div>
 
                 {/* URL */}
@@ -657,6 +691,7 @@ function ComposerModal({ onClose, onSend, email, user }: {
 export default function OutputsPage() {
   const { user, email } = useUserRole();
   const [messages, setMessages] = useSupabaseData<OutputMessage[]>("ov-output-messages", () => SEED);
+  const supabase = createClient();
   const [filterProjekt, setFilterProjekt] = useState<string>("Vše");
   const [showFilter, setShowFilter] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -895,6 +930,7 @@ export default function OutputsPage() {
             onSend={sendMessage}
             email={email}
             user={user}
+            supabase={supabase}
           />
         )}
       </AnimatePresence>
