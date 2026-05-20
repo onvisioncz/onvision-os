@@ -1569,8 +1569,8 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── 4. Bottom row (3 columns) ── */}
-        <motion.div
+        {/* ── 4. Bottom row (3 columns) — REMOVED, items moved to own pages ── */}
+        {false && <motion.div
           variants={item}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
@@ -1952,7 +1952,7 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
-        </motion.div>
+        </motion.div>}
       </motion.div>
 
       {/* ── Monthly Closing Modal ── */}
