@@ -663,7 +663,7 @@ export default function UkolyPage() {
 
   const byStatus = STATUSES.map(s => ({
     status: s,
-    items: filtered.filter(t => t.status === s),
+    items: filtered.filter(t => t.status === s).sort((a, b) => b.id - a.id),
   })).filter(g => g.items.length > 0);
 
   const active = nonTemplates.filter(t => t.status !== "Hotovo").length;
