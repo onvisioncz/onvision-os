@@ -953,7 +953,7 @@ export default function ShootingPage() {
                   }}
                 >
                   <Plus size={10} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                  Pridat do planu
+                  Přidat do plánu
                 </motion.button>
               </div>
             ))}
