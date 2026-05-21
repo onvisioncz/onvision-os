@@ -12,7 +12,18 @@ import {
   Circle,
   G,
   StyleSheet,
+  Font,
 } from "@react-pdf/renderer";
+import path from "path";
+
+/* ── Register Roboto (supports Czech diacritics) ────────────────────────────── */
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: path.join(process.cwd(), "public/fonts/Roboto-Regular.ttf"),  fontWeight: "normal" },
+    { src: path.join(process.cwd(), "public/fonts/Roboto-Bold.ttf"),     fontWeight: "bold" },
+  ],
+});
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 export interface ReportData {
@@ -112,7 +123,8 @@ const s = StyleSheet.create({
   // Section heading
   sectionHeadingText: {
     fontSize: 13,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: SECTION_CLR,
     letterSpacing: 3,
     marginBottom: 4,
@@ -132,7 +144,8 @@ const s = StyleSheet.create({
   // Column header
   colHeader: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#1a1a2e",
     marginBottom: 3,
   },
@@ -171,7 +184,8 @@ const s = StyleSheet.create({
   },
   bestPostMetricLabel: {
     fontSize: 7,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: SECTION_CLR,
     letterSpacing: 1,
     marginTop: 10,
@@ -179,7 +193,8 @@ const s = StyleSheet.create({
   },
   bestPostMetricValue: {
     fontSize: 22,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#1a1a2e",
   },
   // Best post right image placeholder
@@ -216,7 +231,8 @@ const s = StyleSheet.create({
   },
   footerAvatarText: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "white",
   },
   footerSeparator: {
@@ -232,7 +248,8 @@ const s = StyleSheet.create({
   },
   footerValue: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#1a1a2e",
   },
 });
@@ -469,7 +486,7 @@ function PageHeader({ client, monthName, year }: { client: string; monthName: st
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         {/* Left: OnVision brand */}
         <View style={{ flexDirection: "column" }}>
-          <Text style={{ fontSize: 26, fontFamily: "Helvetica-Bold", color: "white" }}>OnVision</Text>
+          <Text style={{ fontSize: 26, fontFamily: "Roboto", fontWeight: "bold", color: "white" }}>OnVision</Text>
           <Text style={{ fontSize: 7, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
             {"Kreativní\nagentura"}
           </Text>
@@ -498,15 +515,15 @@ function PageHeader({ client, monthName, year }: { client: string; monthName: st
               justifyContent: "center",
             }}
           >
-            <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: HEADER_BG }}>On</Text>
+            <Text style={{ fontSize: 11, fontFamily: "Roboto", fontWeight: "bold", color: HEADER_BG }}>On</Text>
           </View>
-          <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: "white", letterSpacing: 2 }}>
-            MESICNI REPORT
+          <Text style={{ fontSize: 9, fontFamily: "Roboto", fontWeight: "bold", color: "white", letterSpacing: 2 }}>
+            MĚSÍČNÍ REPORT
           </Text>
         </View>
 
         {/* Right: client name */}
-        <Text style={{ fontSize: 24, color: "rgba(255,255,255,0.45)", fontFamily: "Helvetica-Bold" }}>
+        <Text style={{ fontSize: 24, color: "rgba(255,255,255,0.45)", fontFamily: "Roboto", fontWeight: "bold" }}>
           {client}
         </Text>
       </View>
@@ -514,7 +531,7 @@ function PageHeader({ client, monthName, year }: { client: string; monthName: st
       {/* Row 2: client + month info */}
       <View style={{ flexDirection: "row", gap: 24, marginTop: 6 }}>
         <Text style={{ fontSize: 10, color: "white" }}>Klient: {client}</Text>
-        <Text style={{ fontSize: 10, color: "white" }}>Mesic: {monthName} {year}</Text>
+        <Text style={{ fontSize: 10, color: "white" }}>Měsíc: {monthName} {year}</Text>
       </View>
     </View>
   );
@@ -564,48 +581,48 @@ export function ReportPDF({ data }: { data: ReportData }) {
         <PageHeader client={data.client} monthName={monthName} year={year} />
         <View style={whiteCard}>
 
-          {/* ZVEREJNENY OBSAH */}
-          <SectionHeading text="ZVEREJNENY OBSAH" />
+          {/* ZVEŘEJNĚNÝ OBSAH */}
+          <SectionHeading text="ZVEŘEJNĚNÝ OBSAH" />
           <Text style={s.explainerText}>
-            {"PRISPEVKY: " + czFmt(data.postsCount) + "   |   PRIBEHY: " + czFmt(data.storiesCount) + "   |   VIDEA A REELS: " + czFmt(data.reelsCount)}
+            {"PŘÍSPĚVKY: " + czFmt(data.postsCount) + "   |   PŘÍBĚHY: " + czFmt(data.storiesCount) + "   |   VIDEA A REELS: " + czFmt(data.reelsCount)}
           </Text>
 
-          {/* SLEDUJICI */}
-          <SectionHeading text="SLEDUJICI" />
+          {/* SLEDUJÍCÍ */}
+          <SectionHeading text="SLEDUJÍCÍ" />
           <Text style={s.explainerText}>
-            {"Sledujici (followers) jsou uzivatele, kteri se rozhodli odobivat obsah konkretniho uctu na Facebooku nebo Instagramu. Tim, ze ucet sledujI, se jim pravidelne zobrazuji nove prispevky a pribehy tohoto uctu v jejich zdi prispevku (feedu) nebo v sekci pribehu (stories). Sledujici reprezentuji komunitu, ktera ma zajem o obsah a znacku daneho uctu."}
+            {"Sledující (followers) jsou uživatelé, kteří se rozhodli odebírat obsah konkrétního účtu na Facebooku nebo Instagramu. Tím, že účet sledují, se jim pravidelně zobrazují nové příspěvky a příběhy tohoto účtu v jejich zdi příspěvků (feedu) nebo v sekci příběhů (stories). Sledující reprezentují komunitu, která má zájem o obsah a značku daného účtu."}
           </Text>
           <View style={s.row2}>
             {/* IG line chart */}
             <View style={s.col}>
               <Text style={s.colHeader}>1. INSTAGRAM: {czFmt(data.igFollowers)}</Text>
-              <Text style={s.chartSubtitle}>Krivka vyvoje sledujicich za poslednich 6 mesicu</Text>
+              <Text style={s.chartSubtitle}>Křivka vývoje sledujících za posledních 6 měsíců</Text>
               <SvgLineChart data={data.igFollowersHistory} labels={labels} color={LINE_CLR} />
             </View>
             {/* FB donut */}
             <View style={s.col}>
               <Text style={s.colHeader}>2. FACEBOOK: {czFmt(data.fbFollowers)}</Text>
-              <Text style={s.chartSubtitle}>Vekove skupiny fanousku</Text>
+              <Text style={s.chartSubtitle}>Věkové skupiny fanoušků</Text>
               <SvgDonutChart groups={data.fbAgeGroups} />
             </View>
           </View>
           {data.aiFollowers && <Text style={s.commentary}>{data.aiFollowers}</Text>}
 
-          {/* ZOBRAZENI */}
+          {/* ZOBRAZENÍ */}
           <View style={{ marginTop: 12 }}>
-            <SectionHeading text="ZOBRAZENI" />
+            <SectionHeading text="ZOBRAZENÍ" />
             <Text style={s.explainerText}>
-              {"Zobrazeni (Impressions) oznacuje pocet celkovych zhlédnuti obsahu (reely, prispevky, pribehy a reklamy). Jedna se o pocet, kolikrat byl obsah zobrazen na obrazovkach uzivatelu – muze zahrnovat opakovana zhlédnuti od stejneho uzivatele."}
+              {"Zobrazení (Impressions) označuje počet celkových zhlédnutí obsahu (reely, příspěvky, příběhy a reklamy). Jedná se o počet, kolikrát byl obsah zobrazen na obrazovkách uživatelů – může zahrnovat opakovaná zhlédnutí od stejného uživatele."}
             </Text>
             <View style={s.row2}>
               <View style={s.col}>
                 <Text style={s.colHeader}>1. INSTAGRAM: {czFmt(data.igImpressions)}</Text>
-                <Text style={s.chartSubtitle}>Vyvoj zobrazeni za poslednich 6 mesicu</Text>
+                <Text style={s.chartSubtitle}>Vývoj zobrazení za posledních 6 měsíců</Text>
                 <SvgBarChart data={data.igImpressionsHistory} labels={labels} color={BAR_CLR} />
               </View>
               <View style={s.col}>
                 <Text style={s.colHeader}>2. FACEBOOK: {czFmt(data.fbImpressions)}</Text>
-                <Text style={s.chartSubtitle}>Vyvoj zobrazeni za poslednich 6 mesicu</Text>
+                <Text style={s.chartSubtitle}>Vývoj zobrazení za posledních 6 měsíců</Text>
                 <SvgBarChart data={data.fbImpressionsHistory} labels={labels} color={BAR_CLR} />
               </View>
             </View>
@@ -625,17 +642,17 @@ export function ReportPDF({ data }: { data: ReportData }) {
           {/* DOSAH */}
           <SectionHeading text="DOSAH" />
           <Text style={s.explainerText}>
-            {"Dosah (reach) na Facebooku a Instagramu vyjadruje pocet unikatnich uzivatelu, kteri videli nejaky obsah dane stranky alespon jednou. Pocita se sem dosah jak placene, tak organicke distribuce obsahu stranky. Metrika je pouze odhadovana."}
+            {"Dosah (reach) na Facebooku a Instagramu vyjadřuje počet unikátních uživatelů, kteří viděli nějaký obsah dané stránky alespoň jednou. Počítá se sem dosah jak placené, tak organické distribuce obsahu stránky. Metrika je pouze odhadovaná."}
           </Text>
           <View style={s.row2}>
             <View style={s.col}>
               <Text style={s.colHeader}>1. INSTAGRAM: {czFmt(data.igReach)}</Text>
-              <Text style={s.chartSubtitle}>Vyvoj dosahu za poslednich 6 mesicu</Text>
+              <Text style={s.chartSubtitle}>Vývoj dosahu za posledních 6 měsíců</Text>
               <SvgBarChart data={data.igReachHistory} labels={labels} color={BAR_CLR} />
             </View>
             <View style={s.col}>
               <Text style={s.colHeader}>2. FACEBOOK: {czFmt(data.fbReach)}</Text>
-              <Text style={s.chartSubtitle}>Vyvoj dosahu za poslednich 6 mesicu</Text>
+              <Text style={s.chartSubtitle}>Vývoj dosahu za posledních 6 měsíců</Text>
               <SvgBarChart data={data.fbReachHistory} labels={labels} color={BAR_CLR} />
             </View>
           </View>
@@ -645,17 +662,17 @@ export function ReportPDF({ data }: { data: ReportData }) {
           <View style={{ marginTop: 16 }}>
             <SectionHeading text="INTERAKCE S OBSAHEM" />
             <Text style={s.explainerText}>
-              {"Interakce na Facebooku a Instagramu zahrnuji jakoukoliv akci, kterou uzivatele provedou s prispevkem nebo uctem. Patri sem napriklad pocet To se mi libi, reakci, ulozeni, komentaru, sdileni a odpovedi u daneho obsahu, vcetne reklam. Interakce jsou vsechny zpusoby, jak lide reagujI na vas obsah."}
+              {"Interakce na Facebooku a Instagramu zahrnují jakoukoliv akci, kterou uživatelé provedou s příspěvkem nebo účtem. Patří sem například počet To se mi líbí, reakcí, uložení, komentářů, sdílení a odpovědí u daného obsahu, včetně reklam. Interakce jsou všechny způsoby, jak lidé reagují na váš obsah."}
             </Text>
             <View style={s.row2}>
               <View style={s.col}>
                 <Text style={s.colHeader}>1. INSTAGRAM: {czFmt(data.igInteractions)}</Text>
-                <Text style={s.chartSubtitle}>Vyvoj interakci za poslednich 6 mesicu</Text>
+                <Text style={s.chartSubtitle}>Vývoj interakcí za posledních 6 měsíců</Text>
                 <SvgBarChart data={data.igInteractionsHistory} labels={labels} color={BAR_CLR} />
               </View>
               <View style={s.col}>
                 <Text style={s.colHeader}>2. FACEBOOK: {czFmt(data.fbInteractions)}</Text>
-                <Text style={s.chartSubtitle}>Vyvoj interakci za poslednich 6 mesicu</Text>
+                <Text style={s.chartSubtitle}>Vývoj interakcí za posledních 6 měsíců</Text>
                 <SvgBarChart data={data.fbInteractionsHistory} labels={labels} color={BAR_CLR} />
               </View>
             </View>
@@ -672,50 +689,50 @@ export function ReportPDF({ data }: { data: ReportData }) {
         <PageHeader client={data.client} monthName={monthName} year={year} />
         <View style={whiteCard}>
 
-          {/* NAVSTEVY */}
-          <SectionHeading text="NAVSTEVY" />
+          {/* NÁVŠTĚVY */}
+          <SectionHeading text="NÁVŠTĚVY" />
           <Text style={s.explainerText}>
-            {"Navstevy (page visits) vyjadrujI, kolikrat byla stranka zobrazena, napriklad ze zdi prispevku, reklam nebo vysledku vyhledavani."}
+            {"Návštěvy (page visits) vyjadřují, kolikrát byla stránka zobrazena, například ze zdi příspěvků, reklam nebo výsledků vyhledávání."}
           </Text>
           <View style={s.row2}>
             <View style={s.col}>
               <Text style={s.colHeader}>1. INSTAGRAM: {czFmt(data.igProfileVisits)}</Text>
-              <Text style={s.chartSubtitle}>Vyvoj navstev profilu za poslednich 6 mesicu</Text>
+              <Text style={s.chartSubtitle}>Vývoj návštěv profilu za posledních 6 měsíců</Text>
               <SvgBarChart data={data.igProfileVisitsHistory} labels={labels} color={BAR_CLR} />
             </View>
             <View style={s.col}>
               <Text style={s.colHeader}>2. FACEBOOK: {czFmt(data.fbPageVisits)}</Text>
-              <Text style={s.chartSubtitle}>Vyvoj navstev stranky za poslednich 6 mesicu</Text>
+              <Text style={s.chartSubtitle}>Vývoj návštěv stránky za posledních 6 měsíců</Text>
               <SvgBarChart data={data.fbPageVisitsHistory} labels={labels} color={BAR_CLR} />
             </View>
           </View>
           {data.aiVisits && <Text style={s.commentary}>{data.aiVisits}</Text>}
 
-          {/* PRISPEVEK MESICE */}
+          {/* PŘÍSPĚVEK MĚSÍCE */}
           <View style={{ marginTop: 16 }}>
-            <SectionHeading text="PRISPEVEK MESICE" />
+            <SectionHeading text="PŘÍSPĚVEK MĚSÍCE" />
             <View style={{ flexDirection: "row", gap: 16 }}>
               {/* Left card */}
               <View style={s.bestPostLeft}>
-                <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold", color: SECTION_CLR, letterSpacing: 2, marginBottom: 4 }}>
-                  {"PRISPEVEK\nMESICE"}
+                <Text style={{ fontSize: 13, fontFamily: "Roboto", fontWeight: "bold", color: SECTION_CLR, letterSpacing: 2, marginBottom: 4 }}>
+                  {"PŘÍSPĚVEK\nMĚSÍCE"}
                 </Text>
                 <View style={{ height: 1.5, backgroundColor: SECTION_CLR, marginBottom: 8 }} />
 
-                <Text style={s.bestPostMetricLabel}>ZOBRAZENI</Text>
+                <Text style={s.bestPostMetricLabel}>ZOBRAZENÍ</Text>
                 <Text style={s.bestPostMetricValue}>{czFmt(data.bestPostImpressions)}</Text>
 
                 <Text style={s.bestPostMetricLabel}>DOSAH</Text>
                 <Text style={s.bestPostMetricValue}>{czFmt(data.bestPostReach)}</Text>
 
-                <Text style={s.bestPostMetricLabel}>TO SE MI LIBI</Text>
+                <Text style={s.bestPostMetricLabel}>TO SE MI LÍBÍ</Text>
                 <Text style={s.bestPostMetricValue}>{czFmt(data.bestPostLikes)}</Text>
               </View>
 
               {/* Right image placeholder */}
               <View style={s.bestPostRight}>
                 <Text style={s.bestPostPlaceholderText}>
-                  {data.bestPostImageUrl ? "Nahled prispevku" : "Obrazek prispevku\nneni k dispozici"}
+                  {data.bestPostImageUrl ? "Náhled příspěvku" : "Obrázek příspěvku\nnení k dispozici"}
                 </Text>
               </View>
             </View>
