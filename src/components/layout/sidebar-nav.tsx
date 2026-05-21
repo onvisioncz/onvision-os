@@ -244,7 +244,7 @@ export function SidebarNav() {
     });
   }, []);
 
-  const { toggle: toggleChat, unread: chatUnread } = useChatContext();
+  const { toggle: toggleChat, unread: chatUnread, aiOpen, toggleAi } = useChatContext();
   const taskBadge = useTaskBadge();
 
   // Clear badge when user is on /ukoly
@@ -339,10 +339,47 @@ export function SidebarNav() {
 
         <div className="h-px mx-1 my-2" style={{ background: "var(--sidebar-border)" }} />
 
-        {/* AI Asistent */}
+        {/* AI Asistent — opens as overlay instead of navigating */}
         {visibleHrefs.has("/ai") && (
-          <NavItem label="AI Asistent" href="/ai" icon={Sparkles}
-            active={path === "/ai"} isAI />
+          <motion.button
+            onClick={toggleAi}
+            className={cn(
+              "relative w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none",
+              aiOpen ? "text-[--primary]" : "text-[--muted-foreground] nav-item-hover"
+            )}
+            style={
+              aiOpen ? {
+                background: "oklch(0.62 0.27 265 / 0.12)",
+                border: "1px solid oklch(0.62 0.27 265 / 0.18)",
+              } : {
+                border: "1px solid oklch(0.62 0.27 265 / 0.14)",
+                background: "oklch(0.62 0.27 265 / 0.05)",
+              }
+            }
+            whileHover={!aiOpen ? { color: "oklch(0.82 0.005 222)" } : {}}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+          >
+            {aiOpen && (
+              <motion.span
+                layoutId="nav-active-bar"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                style={{ background: "oklch(0.62 0.27 265)", boxShadow: "0 0 8px oklch(0.62 0.27 265 / 0.7)" }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              />
+            )}
+            <Sparkles
+              className="w-[14px] h-[14px] shrink-0"
+              style={{ color: aiOpen ? "oklch(0.62 0.27 265)" : "oklch(0.55 0.15 265)" }}
+            />
+            AI Asistent
+            {!aiOpen && (
+              <span className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.65 0.18 265)" }}>
+                AI
+              </span>
+            )}
+          </motion.button>
         )}
       </nav>
 
@@ -413,6 +450,7 @@ export function MobileNav() {
   const path = usePathname();
   const { user } = useUserRole();
   const taskBadge = useTaskBadge();
+  const { aiOpen, toggleAi } = useChatContext();
 
   // Clear badge when user is on /ukoly
   useEffect(() => {
@@ -428,21 +466,21 @@ export function MobileNav() {
         style={{ paddingTop: "8px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
         <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
         {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
-          const active = path === href || path.startsWith(href + "/");
+          const isAiItem = href === "/ai";
+          const active = isAiItem ? aiOpen : (path === href || path.startsWith(href + "/"));
           const badge = href === "/ukoly" ? taskBadge : 0;
-          return (
-            <Link key={href} href={href} className="flex-shrink-0" style={{ minWidth: 68 }}>
-              <motion.div className="flex flex-col items-center gap-[5px] px-2 py-1"
-                whileTap={{ scale: 0.85 }} transition={{ duration: 0.1 }}>
-                <div className="relative flex items-center justify-center w-8 h-8 rounded-[8px]"
-                  style={active ? { background: "oklch(0.62 0.27 265 / 0.14)", border: "1px solid oklch(0.62 0.27 265 / 0.22)" } : { border: "1px solid transparent" }}>
-                  {active && (
-                    <motion.span layoutId="mobile-nav-bg" className="absolute inset-0 rounded-[8px]"
-                      style={{ background: "oklch(0.62 0.27 265 / 0.14)" }}
-                      transition={{ duration: 0.18 }} />
-                  )}
-                  <Icon className="w-[15px] h-[15px] relative"
-                    style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.42 0.005 222)" }} />
+          const inner = (
+            <motion.div className="flex flex-col items-center gap-[5px] px-2 py-1"
+              whileTap={{ scale: 0.85 }} transition={{ duration: 0.1 }}>
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-[8px]"
+                style={active ? { background: "oklch(0.62 0.27 265 / 0.14)", border: "1px solid oklch(0.62 0.27 265 / 0.22)" } : { border: "1px solid transparent" }}>
+                {active && (
+                  <motion.span layoutId="mobile-nav-bg" className="absolute inset-0 rounded-[8px]"
+                    style={{ background: "oklch(0.62 0.27 265 / 0.14)" }}
+                    transition={{ duration: 0.18 }} />
+                )}
+                <Icon className="w-[15px] h-[15px] relative"
+                  style={{ color: active ? "oklch(0.62 0.27 265)" : "oklch(0.42 0.005 222)" }} />
                   {/* Unread badge */}
                   {badge > 0 && (
                     <span style={{
@@ -471,6 +509,14 @@ export function MobileNav() {
                   {short}
                 </span>
               </motion.div>
+          );
+          return isAiItem ? (
+            <button key={href} onClick={toggleAi} className="flex-shrink-0 bg-transparent border-none p-0" style={{ minWidth: 68 }}>
+              {inner}
+            </button>
+          ) : (
+            <Link key={href} href={href} className="flex-shrink-0" style={{ minWidth: 68 }}>
+              {inner}
             </Link>
           );
         })}

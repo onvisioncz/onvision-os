@@ -586,7 +586,7 @@ function WorkspaceItem({
 }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
-export default function AiPage() {
+export function AiPage() {
   const { user, email } = useUserRole();
   const [activeWsId, setActiveWsId] = useState<string | null>(null);
 
@@ -1021,3 +1021,5 @@ export default function AiPage() {
     </div>
   );
 }
+
+export default AiPage;
