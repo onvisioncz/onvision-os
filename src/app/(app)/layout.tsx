@@ -1,6 +1,7 @@
 import { SidebarNav, MobileNav } from "@/components/layout/sidebar-nav";
 import { TopBar } from "@/components/layout/top-bar";
 import { ChatShell } from "@/components/chat/chat-shell";
+import { NotifBanner } from "@/components/notif-banner";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
         <MobileNav />
+        <NotifBanner />
       </div>
     </ChatShell>
   );

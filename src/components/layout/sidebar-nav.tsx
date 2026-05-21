@@ -18,7 +18,7 @@ import { PwaInstallButton } from "@/components/pwa-install-button";
 import { canAccess } from "@/lib/roles";
 import { ChatTrigger } from "@/components/chat/chat-overlay";
 import { useChatContext } from "@/components/chat/chat-shell";
-import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
+import { useTaskBadge, markTaskBadgeSeen } from "@/lib/hooks/use-task-badge";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
@@ -245,7 +245,13 @@ export function SidebarNav() {
   }, []);
 
   const { toggle: toggleChat, unread: chatUnread } = useChatContext();
-  const { count: inboxUnread } = useInboxUnread();
+  const taskBadge = useTaskBadge();
+
+  // Clear badge when user is on /ukoly
+  useEffect(() => {
+    if (path === "/ukoly") markTaskBadgeSeen();
+  }, [path]);
+
   const displayName = user?.displayName ?? (email ? email.split("@")[0] : "—");
   const initials    = user?.initials ?? displayName.charAt(0).toUpperCase();
   const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
@@ -263,40 +269,42 @@ export function SidebarNav() {
       style={{ background: "var(--sidebar)", borderColor: "var(--sidebar-border)" }}
     >
       {/* Wordmark */}
-      <div className="px-4 flex items-center gap-3" style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 18px)", paddingBottom: "18px" }}>
-        <div className="relative shrink-0" style={{ width: 36, height: 36 }}>
-          <motion.div
-            className="absolute"
-            style={{
-              inset: -3,
-              borderRadius: "50%",
-              background: "conic-gradient(from 0deg, transparent 50%, rgba(83,83,246,0.3) 70%, rgba(180,165,255,1) 88%, rgba(83,83,246,0.3) 95%, transparent 100%)",
-              WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
-              mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
-              filter: "blur(0.5px)",
-              pointerEvents: "none",
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/onvision-mark.png"
-            alt="OnVision"
-            width={36}
-            height={36}
-            style={{ display: "block", borderRadius: "50%", position: "relative", zIndex: 1 }}
-          />
+      <Link href="/dashboard" className="block">
+        <div className="px-4 flex items-center gap-3" style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 18px)", paddingBottom: "18px" }}>
+          <div className="relative shrink-0" style={{ width: 36, height: 36 }}>
+            <motion.div
+              className="absolute"
+              style={{
+                inset: -3,
+                borderRadius: "50%",
+                background: "conic-gradient(from 0deg, transparent 50%, rgba(83,83,246,0.3) 70%, rgba(180,165,255,1) 88%, rgba(83,83,246,0.3) 95%, transparent 100%)",
+                WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
+                mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px))",
+                filter: "blur(0.5px)",
+                pointerEvents: "none",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/onvision-mark.png"
+              alt="OnVision"
+              width={36}
+              height={36}
+              style={{ display: "block", borderRadius: "50%", position: "relative", zIndex: 1 }}
+            />
+          </div>
+          <div className="flex flex-col leading-none gap-[3px]">
+            <span style={{ fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: "14px", letterSpacing: "-0.04em", color: "oklch(0.96 0.01 265)", lineHeight: 1 }}>
+              OnVision
+            </span>
+            <span style={{ fontFamily: "var(--font-jakarta)", fontWeight: 500, fontSize: "8.5px", letterSpacing: "0.16em", textTransform: "uppercase", color: "oklch(0.35 0.01 265)", lineHeight: 1 }}>
+              OS Platform
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col leading-none gap-[3px]">
-          <span style={{ fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: "14px", letterSpacing: "-0.04em", color: "oklch(0.96 0.01 265)", lineHeight: 1 }}>
-            OnVision
-          </span>
-          <span style={{ fontFamily: "var(--font-jakarta)", fontWeight: 500, fontSize: "8.5px", letterSpacing: "0.16em", textTransform: "uppercase", color: "oklch(0.35 0.01 265)", lineHeight: 1 }}>
-            OS Platform
-          </span>
-        </div>
-      </div>
+      </Link>
 
       <div className="mx-4 h-px mb-3" style={{ background: "var(--sidebar-border)" }} />
 
@@ -309,7 +317,7 @@ export function SidebarNav() {
           .map(({ label, href, icon }) => (
             <NavItem key={href} label={label} href={href} icon={icon}
               active={path === href || path.startsWith(href + "/")}
-              badge={href === "/inbox" ? inboxUnread : 0} />
+              badge={href === "/ukoly" ? taskBadge : 0} />
           ))
         }
 
@@ -404,7 +412,12 @@ export function SidebarNav() {
 export function MobileNav() {
   const path = usePathname();
   const { user } = useUserRole();
-  const { count: inboxUnread } = useInboxUnread();
+  const taskBadge = useTaskBadge();
+
+  // Clear badge when user is on /ukoly
+  useEffect(() => {
+    if (path === "/ukoly") markTaskBadgeSeen();
+  }, [path]);
 
   const visibleNav = ALL_NAV.filter(({ href }) => !user || canAccess(user.roles, href));
 
@@ -416,7 +429,7 @@ export function MobileNav() {
         <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
         {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
           const active = path === href || path.startsWith(href + "/");
-          const badge = href === "/inbox" ? inboxUnread : 0;
+          const badge = href === "/ukoly" ? taskBadge : 0;
           return (
             <Link key={href} href={href} className="flex-shrink-0" style={{ minWidth: 68 }}>
               <motion.div className="flex flex-col items-center gap-[5px] px-2 py-1"
