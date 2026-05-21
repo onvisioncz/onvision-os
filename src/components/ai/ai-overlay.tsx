@@ -13,25 +13,7 @@ export function AiOverlay({ open, onClose }: Props) {
     <AnimatePresence>
       {open && (
         <>
-          {/* Blurred backdrop — same as chat */}
-          <motion.div
-            key="ai-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            onClick={onClose}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 49,
-              background: "oklch(0 0 0 / 0.35)",
-              backdropFilter: "blur(2px)",
-              WebkitBackdropFilter: "blur(2px)",
-            }}
-          />
-
-          {/* Panel slides in from the right */}
+          {/* Panel slides in from the right — no backdrop */}
           <motion.div
             key="ai-panel"
             initial={{ x: "100%" }}
