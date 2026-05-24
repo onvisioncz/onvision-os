@@ -113,6 +113,15 @@
     background: var(--background);
     color: var(--foreground);
     color-scheme: dark;
+    /* Standard scrollbar (Chrome 121+ / Firefox) — override teal OS default */
+    scrollbar-color: rgba(255,255,255,0.10) transparent;
+    scrollbar-width: thin;
+    accent-color: oklch(0.62 0.27 265);
+  }
+
+  * {
+    scrollbar-color: rgba(255,255,255,0.10) transparent;
+    scrollbar-width: thin;
   }
 
   h1, h2, h3 {
