@@ -1,0 +1,101 @@
+<h2>Design stránky /reporty</h2>
+<p class="subtitle">Takto bude vypadat nová sekce — klikni pokud ti to sedí</p>
+
+<div class="mockup" style="max-width: 860px; margin: 0 auto;">
+  <div class="mockup-header">OnVision OS — /reporty</div>
+  <div class="mockup-body" style="background: oklch(0.09 0.008 222); padding: 32px; font-family: system-ui;">
+
+    <!-- Header -->
+    <div style="margin-bottom: 28px;">
+      <div style="font-size: 22px; font-weight: 700; color: oklch(0.96 0.01 265); letter-spacing: -0.03em;">Měsíční reporty</div>
+      <div style="font-size: 13px; color: oklch(0.45 0.005 222); margin-top: 4px;">Automatické PDF reporty z Meta dat pro klienty</div>
+    </div>
+
+    <!-- Controls row -->
+    <div style="display: flex; gap: 12px; margin-bottom: 28px; align-items: flex-end;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 6px;">Klient</div>
+        <div style="background: oklch(1 0 0 / 0.05); border: 1px solid oklch(1 0 0 / 0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: oklch(0.92 0.005 265); display: flex; justify-content: space-between;">
+          OnVision <span style="color: oklch(0.45 0.005 222);">▾</span>
+        </div>
+      </div>
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 6px;">Měsíc</div>
+        <div style="background: oklch(1 0 0 / 0.05); border: 1px solid oklch(1 0 0 / 0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: oklch(0.92 0.005 265); display: flex; justify-content: space-between;">
+          Květen 2026 <span style="color: oklch(0.45 0.005 222);">▾</span>
+        </div>
+      </div>
+      <div>
+        <div style="background: oklch(0.62 0.27 265); border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; color: white; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
+          ✦ Generovat report
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress state (shown while generating) -->
+    <div style="background: oklch(0.62 0.27 265 / 0.06); border: 1px solid oklch(0.62 0.27 265 / 0.2); border-radius: 10px; padding: 20px 24px; margin-bottom: 28px;">
+      <div style="font-size: 13px; font-weight: 600; color: oklch(0.78 0.18 265); margin-bottom: 12px;">⟳ &nbsp;Generuji report...</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: oklch(0.67 0.155 155);">
+          <span>✓</span> Stahuju data z Meta API
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: oklch(0.67 0.155 155);">
+          <span>✓</span> Vybírám příspěvek měsíce
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: oklch(0.78 0.18 265);">
+          <span style="opacity: 0.5">◌</span> AI píše komentáře v češtině...
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: oklch(0.45 0.005 222);">
+          <span style="opacity: 0.3">○</span> Generuji PDF
+        </div>
+      </div>
+    </div>
+
+    <!-- Past reports list -->
+    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 12px;">Archiv reportů</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="background: oklch(1 0 0 / 0.03); border: 1px solid oklch(1 0 0 / 0.07); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 18px;">📄</div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: oklch(0.92 0.005 265);">OnVision — Duben 2026</div>
+            <div style="font-size: 11px; color: oklch(0.42 0.005 222); margin-top: 2px;">Vygenerováno 2. 5. 2026 · 3 strany</div>
+          </div>
+        </div>
+        <div style="background: oklch(0.62 0.27 265 / 0.12); border: 1px solid oklch(0.62 0.27 265 / 0.25); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: oklch(0.78 0.18 265);">
+          ↓ Stáhnout
+        </div>
+      </div>
+      <div style="background: oklch(1 0 0 / 0.03); border: 1px solid oklch(1 0 0 / 0.07); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 18px;">📄</div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: oklch(0.92 0.005 265);">OnVision — Březen 2026</div>
+            <div style="font-size: 11px; color: oklch(0.42 0.005 222); margin-top: 2px;">Vygenerováno 1. 4. 2026 · 3 strany</div>
+          </div>
+        </div>
+        <div style="background: oklch(0.62 0.27 265 / 0.12); border: 1px solid oklch(0.62 0.27 265 / 0.25); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: oklch(0.78 0.18 265);">
+          ↓ Stáhnout
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="options" style="margin-top: 24px;">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Vypadá dobře, jdeme dál</h3>
+      <p>Design stránky schvaluju, pojďme na technický plán</p>
+    </div>
+  </div>
+  <div class="option" data-choice="zmenit" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>Chci něco změnit</h3>
+      <p>Napiš co ti nesedí a upravím návrh</p>
+    </div>
+  </div>
+</div>

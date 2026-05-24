@@ -2,6 +2,7 @@ import { SidebarNav, MobileNav } from "@/components/layout/sidebar-nav";
 import { TopBar } from "@/components/layout/top-bar";
 import { ChatShell } from "@/components/chat/chat-shell";
 import { NotifBanner } from "@/components/notif-banner";
+import { VystupyFab } from "@/components/layout/vystup-fab";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <MobileNav />
         <NotifBanner />
+        <VystupyFab />
       </div>
     </ChatShell>
   );

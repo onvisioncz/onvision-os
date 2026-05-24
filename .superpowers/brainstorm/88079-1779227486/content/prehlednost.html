@@ -1,0 +1,222 @@
+
+<h2>Návrh přehlednosti</h2>
+<p class="subtitle">17 položek v sidebaru → 8. Dashboard ze 6 sekcí → 3. Klikni co si myslíš.</p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px;">
+
+  <!-- LEFT: Sidebar before/after -->
+  <div>
+    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.45 0.005 222); margin-bottom: 10px;">Sidebar: 17 položek → skupiny</div>
+    <div class="mockup" style="max-width: 100%;">
+      <div class="mockup-header">Nová navigace</div>
+      <div class="mockup-body" style="background: oklch(0.09 0.008 222); display: flex; gap: 0; padding: 0; height: 540px;">
+
+        <!-- NEW sidebar -->
+        <div style="width: 200px; background: oklch(0.08 0.006 222); border-right: 1px solid oklch(1 0 0 / 0.07); padding: 12px 8px; display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; overflow-y: auto;">
+
+          <!-- Always visible single items -->
+          <div style="padding: 7px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; background: oklch(0.62 0.27 265 / 0.15); color: oklch(0.82 0.12 265); display: flex; align-items: center; gap: 8px; border: 1px solid oklch(0.62 0.27 265 / 0.2);">
+            <span>🏠</span> Dashboard
+          </div>
+          <div style="padding: 7px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: oklch(0.55 0.005 222); display: flex; align-items: center; gap: 8px;">
+            <span>📥</span> Inbox
+          </div>
+          <div style="padding: 7px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: oklch(0.55 0.005 222); display: flex; align-items: center; gap: 8px;">
+            <span>✅</span> Úkoly
+          </div>
+
+          <div style="height: 1px; background: oklch(1 0 0 / 0.06); margin: 6px 0;"></div>
+
+          <!-- GROUP: Projekty (expanded) -->
+          <div style="padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: oklch(0.48 0.005 222); display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <span>PROJEKTY</span>
+            <span style="font-size: 9px;">▼</span>
+          </div>
+          <div style="padding: 6px 10px 6px 22px; border-radius: 6px; font-size: 12px; color: oklch(0.52 0.005 222); display: flex; align-items: center; gap: 7px;">
+            <span>🏢</span> Klienti
+          </div>
+          <div style="padding: 6px 10px 6px 22px; border-radius: 6px; font-size: 12px; color: oklch(0.52 0.005 222); display: flex; align-items: center; gap: 7px;">
+            <span>🔄</span> Měsíční klienti
+          </div>
+          <div style="padding: 6px 10px 6px 22px; border-radius: 6px; font-size: 12px; color: oklch(0.52 0.005 222); display: flex; align-items: center; gap: 7px;">
+            <span>📁</span> Jednorázovky
+          </div>
+
+          <div style="height: 1px; background: oklch(1 0 0 / 0.06); margin: 6px 0;"></div>
+
+          <!-- GROUP: Finance (collapsed) -->
+          <div style="padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: oklch(0.48 0.005 222); display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <span>FINANCE</span>
+            <span style="font-size: 9px; opacity: 0.5;">▶</span>
+          </div>
+
+          <div style="height: 1px; background: oklch(1 0 0 / 0.06); margin: 6px 0;"></div>
+
+          <!-- GROUP: Obsah (collapsed) -->
+          <div style="padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: oklch(0.48 0.005 222); display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <span>OBSAH</span>
+            <span style="font-size: 9px; opacity: 0.5;">▶</span>
+          </div>
+          <div style="padding: 4px 10px 4px 22px; font-size: 10px; color: oklch(0.35 0.005 222);">SMM, Reporty, Kalendář, Výstupy</div>
+
+          <div style="height: 1px; background: oklch(1 0 0 / 0.06); margin: 6px 0;"></div>
+
+          <!-- GROUP: Produkce (collapsed) -->
+          <div style="padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: oklch(0.48 0.005 222); display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <span>PRODUKCE</span>
+            <span style="font-size: 9px; opacity: 0.5;">▶</span>
+          </div>
+          <div style="padding: 4px 10px 4px 22px; font-size: 10px; color: oklch(0.35 0.005 222);">Produkční plán, Kreativa, Reklamy</div>
+
+          <div style="height: 1px; background: oklch(1 0 0 / 0.06); margin: 6px 0;"></div>
+
+          <!-- AI -->
+          <div style="padding: 7px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: oklch(0.62 0.18 265); display: flex; align-items: center; gap: 8px;">
+            <span>✦</span> AI Asistent
+          </div>
+        </div>
+
+        <!-- Preview pane -->
+        <div style="flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 10px; color: oklch(0.35 0.005 222); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Co se změní</div>
+          <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 4px;">
+            <div style="font-size: 11px; color: oklch(0.68 0.18 155);">✓ 17 položek → skupiny</div>
+            <div style="font-size: 11px; color: oklch(0.68 0.18 155);">✓ Výchozí stav: skupiny sbalené</div>
+            <div style="font-size: 11px; color: oklch(0.68 0.18 155);">✓ Aktivní stránka skupinu rozbalí</div>
+            <div style="font-size: 11px; color: oklch(0.68 0.18 155);">✓ Klikaví header skupiny = rozbalit/sbalit</div>
+            <div style="font-size: 11px; color: oklch(0.5 0.005 222);">→ Stejné URL struktury, nic se netrhá</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Dashboard before/after -->
+  <div>
+    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: oklch(0.45 0.005 222); margin-bottom: 10px;">Dashboard: 6 sekcí → 3</div>
+    <div class="mockup" style="max-width: 100%;">
+      <div class="mockup-header">Nový dashboard</div>
+      <div class="mockup-body" style="background: oklch(0.09 0.008 222); padding: 16px; font-family: system-ui; height: 540px; overflow-y: auto;">
+
+        <!-- Header simplified -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 20px; font-weight: 700; color: oklch(0.92 0.005 265);">Dobrý den, Jane.</div>
+          <div style="font-size: 10px; color: oklch(0.38 0.005 222); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px;">Úterý 20. května 2026</div>
+        </div>
+
+        <!-- KPI: 3 tiles instead of 4 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          <div style="background: oklch(0.62 0.27 265 / 0.08); border: 1px solid oklch(0.62 0.27 265 / 0.2); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 4px;">MRR</div>
+            <div style="font-size: 22px; font-weight: 700; color: oklch(0.92 0.005 265);">185k</div>
+            <div style="font-size: 9px; color: oklch(0.68 0.18 155);">+8 % vs. minulý měsíc</div>
+          </div>
+          <div style="background: oklch(0.75 0.19 48 / 0.07); border: 1px solid oklch(0.75 0.19 48 / 0.2); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 4px;">Otevřené úkoly</div>
+            <div style="font-size: 22px; font-weight: 700; color: oklch(0.92 0.005 265);">14</div>
+            <div style="font-size: 9px; color: oklch(0.65 0.22 25);">2 urgentní</div>
+          </div>
+          <div style="background: oklch(0.68 0.18 155 / 0.07); border: 1px solid oklch(0.68 0.18 155 / 0.2); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.45 0.005 222); margin-bottom: 4px;">Ke schválení</div>
+            <div style="font-size: 22px; font-weight: 700; color: oklch(0.92 0.005 265);">3</div>
+            <div style="font-size: 9px; color: oklch(0.45 0.005 222);">výdaje + faktury</div>
+          </div>
+        </div>
+
+        <!-- Finance chart: full width, taller -->
+        <div style="background: oklch(0.11 0.008 222); border: 1px solid oklch(1 0 0 / 0.08); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+          <div style="font-size: 13px; font-weight: 700; color: oklch(0.88 0.005 265); margin-bottom: 8px;">Finance přehled</div>
+          <!-- Fake chart bars -->
+          <div style="display: flex; align-items: flex-end; gap: 6px; height: 60px;">
+            <div style="flex: 1; background: oklch(0.62 0.27 265 / 0.5); border-radius: 3px; height: 65%;"></div>
+            <div style="flex: 1; background: oklch(0.62 0.27 265 / 0.5); border-radius: 3px; height: 55%;"></div>
+            <div style="flex: 1; background: oklch(0.62 0.27 265 / 0.5); border-radius: 3px; height: 80%;"></div>
+            <div style="flex: 1; background: oklch(0.62 0.27 265 / 0.5); border-radius: 3px; height: 70%;"></div>
+            <div style="flex: 1; background: oklch(0.62 0.27 265 / 0.5); border-radius: 3px; height: 88%;"></div>
+            <div style="flex: 1; background: oklch(0.62 0.27 265); border-radius: 3px; height: 100%;"></div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Pro</div>
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Led</div>
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Úno</div>
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Bře</div>
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Dub</div>
+            <div style="flex: 1; text-align: center; font-size: 8px; color: oklch(0.35 0.005 222);">Kvě</div>
+          </div>
+        </div>
+
+        <!-- Two columns: Tasks + Approvals -->
+        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 10px;">
+          <div style="background: oklch(0.11 0.008 222); border: 1px solid oklch(1 0 0 / 0.08); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: oklch(0.88 0.005 265); margin-bottom: 8px;">Nejbližší deadliny</div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: oklch(0.65 0.22 25 / 0.07); border-radius: 6px;">
+                <div style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.65 0.22 25);"></div>
+                <span style="font-size: 11px; color: oklch(0.78 0.005 265); flex: 1;">Kreativa Eastgate</span>
+                <span style="font-size: 10px; color: oklch(0.55 0.22 25);">Dnes</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: oklch(1 0 0 / 0.03); border-radius: 6px;">
+                <div style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.75 0.19 48);"></div>
+                <span style="font-size: 11px; color: oklch(0.78 0.005 265); flex: 1;">SMM plán IMTOS</span>
+                <span style="font-size: 10px; color: oklch(0.45 0.005 222);">22. 5.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: oklch(1 0 0 / 0.03); border-radius: 6px;">
+                <div style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.27 265 / 0.5);"></div>
+                <span style="font-size: 11px; color: oklch(0.78 0.005 265); flex: 1;">Fakturace Červen</span>
+                <span style="font-size: 10px; color: oklch(0.45 0.005 222);">25. 5.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: oklch(0.11 0.008 222); border: 1px solid oklch(1 0 0 / 0.08); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: oklch(0.88 0.005 265); margin-bottom: 8px;">Ke schválení</div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <div style="padding: 5px 8px; background: oklch(1 0 0 / 0.03); border-radius: 6px;">
+                <div style="font-size: 10px; font-weight: 600; color: oklch(0.68 0.005 265);">Výdaj · FIRESTA</div>
+                <div style="font-size: 11px; color: oklch(0.52 0.005 222);">Reklama Meta 12 000 Kč</div>
+              </div>
+              <div style="padding: 5px 8px; background: oklch(1 0 0 / 0.03); border-radius: 6px;">
+                <div style="font-size: 10px; font-weight: 600; color: oklch(0.68 0.005 265);">Faktura · MTB CZ</div>
+                <div style="font-size: 11px; color: oklch(0.52 0.005 222);">Paušál Duben 28 000 Kč</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Removed notice -->
+        <div style="margin-top: 10px; padding: 8px 12px; background: oklch(1 0 0 / 0.02); border: 1px dashed oklch(1 0 0 / 0.08); border-radius: 8px;">
+          <div style="font-size: 10px; color: oklch(0.35 0.005 222);">
+            ✕ Odstraněno z dashboardu: <span style="color: oklch(0.45 0.005 222);">Tým, Jednorázovky, Měsíční klienti</span> — každý má vlastní stránku
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Options -->
+<div class="options" style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px;">
+  <div class="option" data-choice="both" onclick="toggleSelect(this)" style="border-left: 3px solid oklch(0.68 0.18 155);">
+    <div class="letter" style="background: oklch(0.68 0.18 155 / 0.2); color: oklch(0.68 0.18 155); font-size: 11px; width: auto; padding: 4px 8px; border-radius: 6px;">DOPORUČUJI</div>
+    <div class="content">
+      <h3>Obojí — sidebar skupiny + čistší dashboard</h3>
+      <p>Sidebar: 17→skupiny (kliknutím rozbalit). Dashboard: jen KPI + Finance + Deadliny + Schválení</p>
+    </div>
+  </div>
+  <div class="option" data-choice="sidebar-only" onclick="toggleSelect(this)">
+    <div class="letter">☰</div>
+    <div class="content">
+      <h3>Jen sidebar — dashboard necháme</h3>
+      <p>Skupiny v sidebaru vyřeší orientaci, dashboard může zůstat</p>
+    </div>
+  </div>
+  <div class="option" data-choice="dashboard-only" onclick="toggleSelect(this)">
+    <div class="letter">📊</div>
+    <div class="content">
+      <h3>Jen dashboard — sidebar necháme</h3>
+      <p>Uklidíme dashboard, navigaci řešíme jindy</p>
+    </div>
+  </div>
+</div>

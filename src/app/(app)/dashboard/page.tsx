@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
-import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
@@ -2441,18 +2440,6 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* AI widget — jen pro jednatele (Adam + Jan) */}
-      {isAdmin && (
-        <DashboardAIWidget
-          tasks={tasks}
-          deals={deals}
-          approvals={approvals}
-          clients={clients}
-          summaries={summaries}
-          todayLabel={todayLabel}
-          userName={user?.displayName ?? ""}
-        />
-      )}
     </div>
   );
 }

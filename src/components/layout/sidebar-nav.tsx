@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, MessageSquareDashed,
+  Building2, Film, Sparkles, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -337,21 +337,6 @@ export function SidebarNav() {
           ))}
         </div>
 
-        <div className="h-px mx-1 my-2" style={{ background: "var(--sidebar-border)" }} />
-
-        {/* Rychlochat na výstupy */}
-        <Link href="/outputs">
-          <motion.div
-            className="relative w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-            whileHover={{ color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.04)" }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.12 }}
-          >
-            <MessageSquareDashed className="w-[14px] h-[14px] shrink-0" style={{ color: "oklch(0.48 0.08 265)" }} />
-            Rychlochat výstupy
-          </motion.div>
-        </Link>
       </nav>
 
       {/* Bottom */}
