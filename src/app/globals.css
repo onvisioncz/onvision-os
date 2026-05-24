@@ -87,9 +87,9 @@
   --chart-5: oklch(0.62 0.22 25);
 
   /* Sidebar */
-  --sidebar:            oklch(0.075 0.012 265);
+  --sidebar:            oklch(0.082 0.032 265);
   --sidebar-foreground: oklch(0.92 0.005 222);
-  --sidebar-border:     oklch(1 0 0 / 0.055);
+  --sidebar-border:     oklch(1 0 0 / 0.07);
 
   /* State colors */
   --success: oklch(0.67 0.155 155);
@@ -138,8 +138,8 @@
   /* Scrollbar */
   ::-webkit-scrollbar        { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track  { background: transparent; }
-  ::-webkit-scrollbar-thumb  { background: oklch(1 0 0 / 0.1); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.62 0.27 265 / 0.3); }
+  ::-webkit-scrollbar-thumb  { background: oklch(1 0 0 / 0.10); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.22); }
 }
 
 /* ── Utilities ─────────────────────────────────────────────────────────────── */

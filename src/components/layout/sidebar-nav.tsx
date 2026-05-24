@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight,
+  Building2, Film, Sparkles, ChevronRight, MessageSquareDashed,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -114,7 +114,7 @@ function NavItem({
         )}
         <Icon
           className="w-[14px] h-[14px] shrink-0"
-          style={{ color: active ? "oklch(0.62 0.27 265)" : isAI ? "oklch(0.55 0.15 265)" : "oklch(0.38 0.005 222)" }}
+          style={{ color: active ? "oklch(0.62 0.27 265)" : isAI ? "oklch(0.55 0.15 265)" : "oklch(0.48 0.08 265)" }}
         />
         {label}
         {badge > 0 && (
@@ -339,44 +339,19 @@ export function SidebarNav() {
 
         <div className="h-px mx-1 my-2" style={{ background: "var(--sidebar-border)" }} />
 
-        {/* AI Asistent — opens as overlay instead of navigating */}
-        {visibleHrefs.has("/ai") && (
-          <motion.button
-            onClick={toggleAi}
-            className={cn(
-              "relative w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none",
-              aiOpen ? "text-white" : "text-white"
-            )}
-            style={{
-              background: "linear-gradient(130deg, #5353F6, #3b35d4)",
-              border: "1px solid rgba(83,83,246,0.55)",
-              boxShadow: "0 2px 14px rgba(83,83,246,0.30)",
-            }}
-            whileHover={!aiOpen ? { color: "oklch(0.82 0.005 222)" } : {}}
+        {/* Rychlochat na výstupy */}
+        <Link href="/outputs">
+          <motion.div
+            className="relative w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none"
+            style={{ color: "rgba(255,255,255,0.55)" }}
+            whileHover={{ color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.04)" }}
             whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.12 }}
           >
-            {aiOpen && (
-              <motion.span
-                layoutId="nav-active-bar"
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                style={{ background: "oklch(0.62 0.27 265)", boxShadow: "0 0 8px oklch(0.62 0.27 265 / 0.7)" }}
-                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              />
-            )}
-            <Sparkles
-              className="w-[14px] h-[14px] shrink-0"
-              style={{ color: aiOpen ? "oklch(0.62 0.27 265)" : "oklch(0.55 0.15 265)" }}
-            />
-            AI Asistent
-            {!aiOpen && (
-              <span className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: "oklch(0.62 0.27 265 / 0.15)", color: "oklch(0.65 0.18 265)" }}>
-                AI
-              </span>
-            )}
-          </motion.button>
-        )}
+            <MessageSquareDashed className="w-[14px] h-[14px] shrink-0" style={{ color: "oklch(0.48 0.08 265)" }} />
+            Rychlochat výstupy
+          </motion.div>
+        </Link>
       </nav>
 
       {/* Bottom */}
