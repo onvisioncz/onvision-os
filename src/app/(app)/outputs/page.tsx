@@ -824,7 +824,13 @@ export default function OutputsPage() {
 
       {/* Header */}
       <div className="shrink-0 px-5 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}>
+        style={{
+          borderBottom: "1px solid oklch(1 0 0 / 0.07)",
+          background: "rgba(12, 10, 35, 0.55)",
+          backdropFilter: "blur(20px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+          position: "sticky", top: 0, zIndex: 10,
+        }}>
         <div>
           <h1 className="text-[18px] font-bold tracking-tight flex items-center gap-2"
             style={{ color: "oklch(0.96 0.01 265)", fontFamily: "var(--font-outfit)" }}>
@@ -923,7 +929,12 @@ export default function OutputsPage() {
       {/* Bottom chat bar */}
       <div
         className="shrink-0 px-4 py-3 flex items-end gap-3"
-        style={{ borderTop: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+        style={{
+          borderTop: "1px solid oklch(1 0 0 / 0.07)",
+          background: "rgba(12, 10, 35, 0.55)",
+          backdropFilter: "blur(20px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+        }}
       >
         {/* Composer trigger — structured outputs */}
         <motion.button
