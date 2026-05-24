@@ -1331,7 +1331,7 @@ export default function DashboardPage() {
         {/* ── 4. Finance chart (full width) ── */}
         <motion.div
           variants={item}
-          className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4"
+          className="grid grid-cols-1 gap-4"
         >
           {/* Left: Finance chart */}
           <div className={cardClass} style={{ ...cardStyle, padding: "22px 22px 16px" }}>
@@ -1456,70 +1456,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right: Aktivní klienti */}
-          <div className={cardClass} style={{ ...cardStyle, padding: "22px 20px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <p style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, letterSpacing: "-0.02em", fontSize: 15, color: "rgba(255,255,255,0.88)" }}>
-                Aktivní klienti
-              </p>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(83,83,246,0.15)", color: "#a78bfa", border: "1px solid rgba(83,83,246,0.25)" }}>
-                {activeClients.length} retainer
-              </span>
-            </div>
-
-            {activeClients.length === 0 ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "rgba(255,255,255,0.25)", fontSize: 13 }}>
-                Žádní aktivní klienti
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, overflowY: "auto", maxHeight: 300 }}>
-                {displayClients.map((c) => {
-                  const total = c.deliverables.length;
-                  const done = c.deliverables.filter((d) => d.done).length;
-                  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                  const abbr = c.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-                  return (
-                    <div key={c.id}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-                        <div style={{
-                          width: 30, height: 30, borderRadius: 8,
-                          background: c.color || "#5353F6",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 11, fontWeight: 800, color: "#fff",
-                          fontFamily: "var(--font-jakarta)", flexShrink: 0,
-                        }}>
-                          {abbr}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.82)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", fontFamily: "var(--font-jakarta)" }}>
-                            {c.name}
-                          </span>
-                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)" }}>
-                            {fmt(c.pausal)} / měsíc
-                          </span>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: pct >= 100 ? "#34d399" : pct >= 50 ? "#a78bfa" : "rgba(255,255,255,0.38)", flexShrink: 0 }}>
-                          {pct}&nbsp;%
-                        </span>
-                      </div>
-                      <div style={{ height: 3, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                        <motion.div
-                          style={{ height: "100%", borderRadius: 99, background: c.color || "#5353F6" }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <Link href="/projects/monthly" style={{ display: "block", marginTop: 14, fontSize: 12, color: "rgba(130,130,255,0.75)", fontWeight: 600, textDecoration: "none" }}>
-              Všichni klienti →
-            </Link>
-          </div>
         </motion.div>
 
         {/* ── 4. Bottom row (3 columns) — REMOVED, items moved to own pages ── */}

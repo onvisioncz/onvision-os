@@ -54,9 +54,9 @@
 
   /* Surfaces — nebula dark base */
   --background:         oklch(0.095 0.012 265);
-  --card:               oklch(0.115 0.007 222);
+  --card:               oklch(0.095 0.018 265 / 0.62);
   --card-foreground:    oklch(0.93 0.004 222);
-  --popover:            oklch(0.13 0.007 222);
+  --popover:            oklch(0.10 0.018 265 / 0.88);
   --popover-foreground: oklch(0.93 0.004 222);
   --foreground:         oklch(0.92 0.005 222);
 
@@ -271,6 +271,19 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s linear infinite;
+  }
+
+  /* ── Global page transparency — let nebula show through every page ─────── */
+  main > div {
+    background: transparent !important;
+  }
+
+  /* ── Glass card override — all .card elements become glass ──────────────── */
+  .card {
+    background: rgba(12, 10, 35, 0.55) !important;
+    backdrop-filter: blur(24px) saturate(1.3) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.3) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
   }
 
   /* ── Nebula background ─────────────────────────────────────────────────── */
