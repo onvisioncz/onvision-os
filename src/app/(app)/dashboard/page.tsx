@@ -157,12 +157,20 @@ const item = {
 
 /* ── Shared card style ─────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-  background: "oklch(1 0 0 / 0.035)",
-  border: "1px solid oklch(1 0 0 / 0.08)",
+  background: "rgba(12, 10, 35, 0.55)",
+  backdropFilter: "blur(28px) saturate(1.4)",
+  WebkitBackdropFilter: "blur(28px) saturate(1.4)",
+  border: "1px solid rgba(255,255,255,0.09)",
+  borderRadius: 14,
+};
+const cardClass = "glass-card";
+
+/* ── Secondary card (slightly lighter) ────────────────────────────────────── */
+const cardStyleSm: React.CSSProperties = {
+  ...cardStyle,
+  background: "rgba(14, 12, 40, 0.50)",
   borderRadius: 12,
 };
-// className to add alongside cardStyle for hover glow
-const cardClass = "ov-card";
 
 /* ── Recharts custom tooltip ───────────────────────────────────────────────── */
 function FinanceTooltip({
@@ -751,7 +759,7 @@ export default function DashboardPage() {
   return (
     <div
       style={{
-        background: "oklch(0.09 0.008 222)",
+        background: "transparent",
         minHeight: "100vh",
         fontFamily: "var(--font-jakarta)",
       }}
@@ -766,99 +774,98 @@ export default function DashboardPage() {
         {/* ── PWA install banner ── */}
         <PwaInstallBanner />
 
-        {/* ── 1. Header ── */}
+        {/* ── 1. Top grid: Greeting card (3/6) + AI inline card (3/6) ── */}
         <motion.div
           variants={item}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}
+          className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
-          {/* Greeting */}
-          <div>
-            <h1
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 700,
-                fontSize: 30,
-                letterSpacing: "-0.035em",
-                lineHeight: 1,
-                margin: 0,
-                color: "oklch(0.96 0.005 222)",
-              }}
-            >
-              {greeting},{" "}
-              <span style={{ color: "oklch(0.96 0.005 222)" }}>Adame.</span>
-            </h1>
-            <p
-              style={{
-                fontSize: 12,
-                color: "oklch(0.4 0.005 222)",
-                marginTop: 7,
-                fontFamily: "var(--font-sans)",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
-              {todayLabel}
+          {/* Greeting card */}
+          <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 4", padding: "24px 26px" }}>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
+              {todayLabel} · OnVision Workspace
             </p>
+            <h1 style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, fontSize: "clamp(28px,3.2vw,38px)", letterSpacing: "-0.03em", lineHeight: 1.08, margin: 0, marginBottom: 10 }}>
+              <span style={{ color: "#ffffff" }}>{greeting}, </span>
+              <span style={{ background: "linear-gradient(125deg,#8080ff 0%,#5353F6 45%,#3535cc 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                Adame.
+              </span>
+            </h1>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", lineHeight: 1.6, marginBottom: 18 }}>
+              {activeClients.length > 0 ? `${activeClients.length} aktivních klientů · ${urgentTasks.length > 0 ? `${urgentTasks.length} urgentních úkolů` : "vše pod kontrolou"}.` : "Načítám data…"}
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {/* Nový úkol — primary pulsing */}
+              <button
+                onClick={() => setQaOpen((v) => !v)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "7px 16px", borderRadius: 20,
+                  fontSize: 12, fontWeight: 700, fontFamily: "var(--font-jakarta)",
+                  cursor: "pointer",
+                  background: qaOpen ? "rgba(255,255,255,0.08)" : "linear-gradient(130deg,#5353F6,#3b35d4)",
+                  border: qaOpen ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,83,246,0.5)",
+                  color: "#ffffff",
+                  animation: qaOpen ? "none" : "ov-btn-pulse 2.4s ease-in-out infinite",
+                }}
+              >
+                {qaOpen ? <X size={12} /> : <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+                {qaOpen ? "Zavřít" : "Nový úkol"}
+              </button>
+              {/* Uzavřít měsíc */}
+              <button
+                onClick={() => setClosingOpen(true)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "7px 14px", borderRadius: 20,
+                  fontSize: 12, fontWeight: 600, fontFamily: "var(--font-jakarta)",
+                  cursor: "pointer",
+                  background: "rgba(83,83,246,0.08)",
+                  border: "1px solid rgba(83,83,246,0.18)",
+                  color: "rgba(255,255,255,0.62)",
+                }}
+              >
+                📋 Uzavřít měsíc
+              </button>
+              {/* Live indicator */}
+              <div className="hidden md:flex" style={{ alignItems: "center", gap: 5, marginLeft: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0, animation: "ov-pulse 2s ease-in-out infinite" }} />
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>Live</span>
+              </div>
+            </div>
           </div>
 
-          {/* Right side: action buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* Live indicator — hidden on mobile */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "oklch(0.72 0.2 155)", boxShadow: "0 0 6px 2px oklch(0.72 0.2 155 / 0.5)", display: "block", flexShrink: 0 }} />
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "oklch(0.45 0.005 222)", fontFamily: "var(--font-sans)" }}>
-                Live
-              </span>
+          {/* AI inline card — status + suggestion */}
+          <div className={cardClass} style={{ ...cardStyle, gridColumn: "4 / 7", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)" }}>AI Asistent</span>
+              </div>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", letterSpacing: "0.05em" }}>online · claude-3.5</span>
             </div>
 
-            {/* Uzavřít měsíc button */}
-            <button
-              onClick={() => setClosingOpen(true)}
-              style={{
-                background: "oklch(1 0 0 / 0.05)",
-                border: "1px solid oklch(1 0 0 / 0.10)",
-                color: "oklch(0.72 0.14 155)",
-                borderRadius: 8,
-                padding: "5px 12px",
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "var(--font-jakarta)",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Uzavřít měsíc
-            </button>
+            {/* Návrh dne — derived from real task data */}
+            <div style={{ background: "rgba(83,83,246,0.10)", border: "1px solid rgba(83,83,246,0.20)", borderRadius: 10, padding: "12px 14px", flex: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Návrh dne</p>
+              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.55 }}>
+                {topTasks[0]
+                  ? <>Začni <strong style={{ color: "rgba(255,255,255,0.95)" }}>„{topTasks[0].nazev}"</strong>
+                      {(() => { const d = parseDeadline(topTasks[0].deadline); const days = d ? daysUntil(d) : null;
+                        return days !== null && days <= 1 ? " — deadline je dnes nebo zítra!" : days !== null ? ` — deadline za ${days} dní.` : "."; })()}
+                    </>
+                  : "Žádné urgentní úkoly — skvělá práce!"}
+              </p>
+            </div>
 
-            {/* Quick Add button */}
-            <button
-              onClick={() => setQaOpen((v) => !v)}
-              style={{
-                height: 30,
-                borderRadius: 8,
-                background: qaOpen ? "oklch(1 0 0 / 0.08)" : "oklch(0.62 0.27 265)",
-                border: qaOpen ? "1px solid oklch(1 0 0 / 0.12)" : "none",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.02em",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "0 12px 0 9px",
-                cursor: "pointer",
-                flexShrink: 0,
-                fontFamily: "var(--font-jakarta)",
-              }}
-              aria-label={qaOpen ? "Zavrit panel" : "Rychle pridat"}
-            >
-              {qaOpen ? <X size={13} /> : (
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              )}
-              {qaOpen ? "Zavřít" : "Přidat"}
-            </button>
+            {/* Input row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-jakarta)" }}>
+                Napiš zprávu nebo příkaz…
+              </div>
+              <button style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#5353F6,#7c3aed)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 2l3 6-3 6 12-6z" fill="white"/></svg>
+              </button>
+            </div>
           </div>
         </motion.div>
 
@@ -1049,238 +1056,285 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* ── 2. KPI Strip ── */}
+        {/* ── 2. Metric cards (aligned with top grid, 6-col) ── */}
         <motion.div
           variants={item}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3"
+          className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
-          {/* Tile 1: MRR */}
-          <div
-           
-            style={{
-              ...cardStyle,
-              padding: "20px 22px",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.62 0.27 265 / 0.06)",
-                borderRadius: 12,
-              }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                MRR / měsíc
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.62 0.27 265)",
-                  marginBottom: 6,
-                }}
-              >
-                {mrr > 0 ? fmt(mrr) : "-- Kč"}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {activeClients.length} aktivních klientů
-              </p>
-            </div>
-          </div>
-
-          {/* Tile 2: Deliverable completion */}
-          <div
-           
-            style={{
-              ...cardStyle,
-              padding: "20px 22px",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.67 0.155 155 / 0.05)",
-                borderRadius: 12,
-              }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Splněno tento měsíc
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.67 0.155 155)",
-                  marginBottom: 6,
-                }}
-              >
-                {delivPct} %
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)", marginBottom: 10 }}>
-                {delivDone}/{delivTotal} úkolů
-              </p>
-              <div
-                style={{
-                  height: 4,
-                  borderRadius: 99,
-                  background: "oklch(1 0 0 / 0.07)",
-                  overflow: "hidden",
-                }}
-              >
-                <motion.div
-                  style={{
-                    height: "100%",
-                    borderRadius: 99,
-                    background: "oklch(0.67 0.155 155)",
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${delivPct}%` }}
-                  transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-                />
+          {/* Tile 1: Příjmy (MRR) — cols 1-2 */}
+          <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 3", padding: "18px 20px" }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>
+              Příjmy tento měsíc
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 30, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff", marginBottom: 8 }}>
+                  {mrr > 0 ? fmt(mrr) : "-- Kč"}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.18)", border: "1px solid rgba(83,83,246,0.32)", color: "#8080ff", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                    ↑ {activeClients.length} klientů
+                  </span>
+                </div>
               </div>
+              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
+                <defs><linearGradient id="mg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#5353F6" stopOpacity="0.45"/><stop offset="100%" stopColor="#5353F6" stopOpacity="0"/></linearGradient></defs>
+                <path d="M0 36 C12 33 22 28 34 22 C46 16 56 11 70 7 C80 4 84 2 88 1 L88 44 L0 44Z" fill="url(#mg1)"/>
+                <path d="M0 36 C12 33 22 28 34 22 C46 16 56 11 70 7 C80 4 84 2 88 1" stroke="#7070ff" strokeWidth="1.8" fill="none"/>
+              </svg>
             </div>
           </div>
 
-          {/* Tile 3: Urgent tasks */}
-          <div
-           
-            style={{
-              ...cardStyle,
-              padding: "20px 22px",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.74 0.18 45 / 0.06)",
-                borderRadius: 12,
-              }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Urgentní úkoly
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.74 0.18 45)",
-                  marginBottom: 6,
-                }}
-              >
-                {urgentTasks.length}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {probihaTasks} probíhá · {reviewTasks} v review
-              </p>
+          {/* Tile 2: Otevřené úkoly — cols 3-4 */}
+          <div className={cardClass} style={{ ...cardStyle, gridColumn: "3 / 5", padding: "18px 20px" }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>
+              Otevřené úkoly
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 30, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff", marginBottom: 8 }}>
+                  {tasks.filter(t => t.status !== "Hotovo").length}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.15)", border: "1px solid rgba(83,83,246,0.28)", color: "#8080ff", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#34d399", display: "block" }} />
+                    {urgentTasks.length} urgentních
+                  </span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{reviewTasks} v review</span>
+                </div>
+              </div>
+              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M0 36 T14 32 T28 28 T42 20 T56 26 T70 16 T88 12" stroke="rgba(167,139,250,0.7)" strokeWidth="1.8" fill="none"/>
+              </svg>
             </div>
           </div>
 
-          {/* Tile 4: Approvals */}
-          <div
-           
-            style={{
-              ...cardStyle,
-              padding: "20px 22px",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "oklch(0.68 0.18 275 / 0.06)",
-                borderRadius: 12,
-              }}
-            />
-            <div style={{ position: "relative" }}>
-              <p
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "oklch(0.45 0.005 222)",
-                  marginBottom: 8,
-                }}
-              >
-                Čeká na schválení
+          {/* Tile 3: Aktivní zakázky — cols 5-6 */}
+          <div className={cardClass} style={{ ...cardStyle, gridColumn: "5 / 7", padding: "18px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)" }}>
+                Aktivní zakázky
               </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  color: "oklch(0.68 0.18 275)",
-                  marginBottom: 6,
-                }}
-              >
-                {pendingApprovals.length}
-              </p>
-              <p style={{ fontSize: 12, color: "oklch(0.50 0.005 222)" }}>
-                {pendingSum > 0 ? fmt(pendingSum) : "0 Kč"} celkem
-              </p>
+              <span style={{ fontSize: 9, background: "rgba(83,83,246,0.18)", color: "#a78bfa", border: "1px solid rgba(83,83,246,0.25)", padding: "1px 7px", borderRadius: 8, letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>
+                {new Date().toLocaleDateString("cs-CZ", { month: "long" }).toUpperCase()}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 3 }}>Retainer</div>
+                  <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeClients.length}</div>
+                </div>
+                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", marginBottom: 3 }} />
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 3 }}>Jednorázový</div>
+                  <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeOneoffs.length}</div>
+                </div>
+              </div>
+              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
+                <defs><linearGradient id="mg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#5353F6" stopOpacity="0.35"/><stop offset="100%" stopColor="#5353F6" stopOpacity="0"/></linearGradient></defs>
+                <path d="M0 34 T22 28 T44 20 T66 16 T88 13 L88 44 L0 44Z" fill="url(#mg3)"/>
+                <path d="M0 34 T22 28 T44 20 T66 16 T88 13" stroke="rgba(83,83,246,0.75)" strokeWidth="1.8" fill="none"/>
+              </svg>
             </div>
           </div>
         </motion.div>
 
-        {/* ── 3. Middle row (60/40) ── */}
+        {/* ── 3. Three-col: Deadlines · Kalendář · Úkoly ── */}
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-3 gap-[14px]"
+        >
+          {/* Col 1: Nejbližší deadliny */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Nejbližší deadliny</p>
+              <Link href="/ukoly" style={{ fontSize: 11, color: "rgba(130,130,255,0.75)", textDecoration: "none" }}>Zobrazit vše →</Link>
+            </div>
+            {topTasks.length === 0 ? (
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {topTasks.slice(0, 6).map((t) => {
+                  const d = parseDeadline(t.deadline);
+                  const days = d ? daysUntil(d) : null;
+                  const isUrgent = days !== null && days <= 2;
+                  const isSoon = days !== null && days > 2 && days <= 5;
+                  const dotColor = isUrgent ? "#ef4444" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.22)";
+                  const badgeBg = isUrgent ? "rgba(239,68,68,0.18)" : isSoon ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)";
+                  const badgeColor = isUrgent ? "#ef4444" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.38)";
+                  const badgeBorder = isUrgent ? "rgba(239,68,68,0.30)" : isSoon ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.10)";
+                  const daysLabel = days === null ? t.deadline : days <= 0 ? "Dnes!" : days === 1 ? "Zítra" : `${days} dní`;
+                  return (
+                    <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span style={{
+                        width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4,
+                        ...(isUrgent ? { boxShadow: "0 0 6px rgba(239,68,68,0.7)", animation: "dl-pulse-red 1.4s ease-in-out infinite" } : {}),
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.30)" }}>{t.projekt}</p>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 7, background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, flexShrink: 0 }}>
+                        {daysLabel}
+                      </span>
+                      <button
+                        onClick={() => markTaskDone(t.id)}
+                        title="Hotovo"
+                        style={{ width: 22, height: 22, borderRadius: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.28)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2 4.8-4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Col 2: Týdenní kalendář */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+            {(() => {
+              const today = new Date();
+              const dow = today.getDay(); // 0=Sun
+              const monday = new Date(today);
+              monday.setDate(today.getDate() - ((dow === 0 ? 7 : dow) - 1));
+              const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d; });
+              const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+              const weekTaskMap = new Map<string, typeof topTasks>();
+              tasks.forEach(t => {
+                const d = parseDeadline(t.deadline);
+                if (!d) return;
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                if (!weekTaskMap.has(key)) weekTaskMap.set(key, []);
+                weekTaskMap.get(key)!.push(t);
+              });
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Tento týden</p>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>
+                      {monday.getDate()}. – {week[6].getDate()}. {week[6].toLocaleDateString("cs-CZ", { month: "long" })}
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                    {dayNames.map(d => (
+                      <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", paddingBottom: 6 }}>{d}</div>
+                    ))}
+                    {week.map((d, i) => {
+                      const isToday = d.toDateString() === today.toDateString();
+                      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                      const dayTasks = weekTaskMap.get(key) ?? [];
+                      const hasUrgent = dayTasks.some(t => { const dd = parseDeadline(t.deadline); return dd && daysUntil(dd) <= 1; });
+                      return (
+                        <div key={i} style={{
+                          display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", borderRadius: 9, cursor: "pointer",
+                          ...(isToday ? { background: "linear-gradient(135deg, rgba(83,83,246,0.28), rgba(83,83,246,0.14))", border: "1px solid rgba(83,83,246,0.35)" } : {}),
+                        }}>
+                          <div style={{ fontSize: 13, fontWeight: isToday ? 800 : 600, color: isToday ? "#8b8bff" : "rgba(255,255,255,0.55)" } as React.CSSProperties}>{d.getDate()}</div>
+                          {hasUrgent && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.7)" }} />}
+                          {!hasUrgent && dayTasks.length > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#8080ff" }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Agenda dne */}
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                      Dnes · {today.getDate()}. {today.toLocaleDateString("cs-CZ", { month: "long" })}
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {(() => {
+                        const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+                        const todayTasks = weekTaskMap.get(todayKey) ?? [];
+                        if (todayTasks.length === 0) return <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.30)" }}>Dnes žádné deadliny 👌</p>;
+                        return todayTasks.slice(0, 3).map(t => (
+                          <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5 }}>
+                            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 10, flexShrink: 0 }}>⚑ DL</span>
+                            <span style={{ color: "rgba(255,255,255,0.70)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Col 3: Dnešní úkoly */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Dnešní úkoly</p>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>{tasks.filter(t => t.status === "Hotovo").length} z {tasks.length} hotových</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", maxHeight: 240, overflowY: "auto", scrollbarWidth: "thin" }}>
+              <AnimatePresence mode="popLayout">
+                {tasks.slice(0, 7).map(t => {
+                  const isDone = t.status === "Hotovo";
+                  const tagMap: Record<string, { bg: string; col: string }> = {
+                    "Urgentní": { bg: "rgba(239,68,68,0.15)", col: "#ef4444" },
+                    "Vysoká":   { bg: "rgba(83,83,246,0.15)", col: "#8080ff" },
+                    "Střední":  { bg: "rgba(167,139,250,0.15)", col: "#a78bfa" },
+                    "Nízká":    { bg: "rgba(255,255,255,0.06)", col: "rgba(255,255,255,0.38)" },
+                  };
+                  const tag = tagMap[t.priorita] ?? tagMap["Střední"];
+                  return (
+                    <motion.div key={t.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <button
+                        onClick={() => markTaskDone(t.id)}
+                        style={{
+                          width: 15, height: 15, borderRadius: 4, flexShrink: 0, marginTop: 1, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          ...(isDone
+                            ? { background: "rgba(83,83,246,0.22)", border: "1.5px solid rgba(83,83,246,0.55)" }
+                            : { background: "transparent", border: "1.5px solid rgba(255,255,255,0.18)" }),
+                        }}
+                      >
+                        {isDone && <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1.5 4l2 2 3.5-3.5" stroke="#8080ff" strokeWidth="1.5"/></svg>}
+                      </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.72)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
+                        <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, marginTop: 3, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
+                      </div>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", flexShrink: 0 }}>{t.deadline || ""}</span>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+            {/* Add task quick input */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <input
+                style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-jakarta)", outline: "none" }}
+                placeholder="Přidat úkol…"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                    setQaUkolNazev(e.currentTarget.value.trim());
+                    e.currentTarget.value = "";
+                    handleQaUkolSubmit();
+                  }
+                }}
+              />
+              <button
+                onClick={() => setQaOpen(v => !v)}
+                style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#5353F6,#3b35d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── 4. Finance chart (full width) ── */}
         <motion.div
           variants={item}
           className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4"
         >
           {/* Left: Finance chart */}
-          <div style={{ ...cardStyle, padding: "22px 22px 16px" }}>
+          <div className={cardClass} style={{ ...cardStyle, padding: "22px 22px 16px" }}>
             <p
               style={{
                 fontFamily: "var(--font-outfit)",
@@ -1402,151 +1456,69 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right: Tasks by deadline */}
-          <div style={{ ...cardStyle, padding: "22px 20px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
-              <p
-                style={{
-                  fontFamily: "var(--font-outfit)",
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  fontSize: 15,
-                  color: "oklch(0.92 0.005 222)",
-                }}
-              >
-                Nejbližší deadliny
+          {/* Right: Aktivní klienti */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "22px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <p style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, letterSpacing: "-0.02em", fontSize: 15, color: "rgba(255,255,255,0.88)" }}>
+                Aktivní klienti
               </p>
-              {topTasks.length > 0 && (
-                <span style={{ fontSize: 11, color: "oklch(0.42 0.005 222)" }}>
-                  {topTasks.filter(t => { const d = parseDeadline(t.deadline); return d && daysUntil(d) <= 3; }).length} blíží se
-                </span>
-              )}
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(83,83,246,0.15)", color: "#a78bfa", border: "1px solid rgba(83,83,246,0.25)" }}>
+                {activeClients.length} retainer
+              </span>
             </div>
-            <p style={{ fontSize: 12, color: "oklch(0.45 0.005 222)", marginBottom: 16 }}>
-              Seřazeno podle termínu odevzdání
-            </p>
 
-            {topTasks.length === 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 120,
-                  color: "oklch(0.40 0.005 222)",
-                  fontSize: 13,
-                }}
-              >
-                Žádné otevřené úkoly
+            {activeClients.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "rgba(255,255,255,0.25)", fontSize: 13 }}>
+                Žádní aktivní klienti
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", maxHeight: 340 }}>
-                <AnimatePresence mode="popLayout">
-                  {topTasks.map((t) => {
-                    const d = parseDeadline(t.deadline);
-                    const days = d ? daysUntil(d) : null;
-                    const isUrgent = days !== null && days <= 1;
-                    return (
-                      <motion.div
-                        key={t.id}
-                        layout
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 20, transition: { duration: 0.18 } }}
-                        transition={{ duration: 0.22, ease: "easeOut" }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "9px 8px 9px 12px",
-                          borderRadius: 8,
-                          background: isUrgent
-                            ? "oklch(0.65 0.22 25 / 0.06)"
-                            : "oklch(1 0 0 / 0.025)",
-                          border: `1px solid ${isUrgent ? "oklch(0.65 0.22 25 / 0.18)" : "oklch(1 0 0 / 0.06)"}`,
-                        }}
-                      >
-                        {/* Left: task info */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, overflowY: "auto", maxHeight: 300 }}>
+                {displayClients.map((c) => {
+                  const total = c.deliverables.length;
+                  const done = c.deliverables.filter((d) => d.done).length;
+                  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                  const abbr = c.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+                  return (
+                    <div key={c.id}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+                        <div style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: c.color || "#5353F6",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, fontWeight: 800, color: "#fff",
+                          fontFamily: "var(--font-jakarta)", flexShrink: 0,
+                        }}>
+                          {abbr}
+                        </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: "oklch(0.90 0.005 222)",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              fontFamily: "var(--font-outfit)",
-                              letterSpacing: "-0.01em",
-                              marginBottom: 3,
-                            }}
-                          >
-                            {t.nazev}
-                          </p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                color: "oklch(0.40 0.005 222)",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {t.projekt}
-                            </span>
-                          </div>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.82)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", fontFamily: "var(--font-jakarta)" }}>
+                            {c.name}
+                          </span>
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)" }}>
+                            {fmt(c.pausal)} / měsíc
+                          </span>
                         </div>
-                        {/* Right: priority + avatar + deadline + done */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                          <PriorityBadge p={t.priorita} />
-                          <Avatar name={t.prirazeno} />
-                          {/* Deadline + done button share a sub-flex so the ✓ aligns with the pill, not the sublabel */}
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                          <DeadlinePill deadline={t.deadline} />
-                          {/* Mark done button */}
-                          <button
-                            onClick={() => markTaskDone(t.id)}
-                            title="Označit jako hotovo"
-                            style={{
-                              width: 26,
-                              height: 26,
-                              borderRadius: 6,
-                              background: "transparent",
-                              border: "1px solid oklch(1 0 0 / 0.10)",
-                              color: "oklch(0.35 0.005 222)",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                              transition: "background 0.15s, border-color 0.15s, color 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              const el = e.currentTarget as HTMLButtonElement;
-                              el.style.background = "oklch(0.67 0.155 155 / 0.15)";
-                              el.style.borderColor = "oklch(0.67 0.155 155 / 0.40)";
-                              el.style.color = "oklch(0.72 0.2 155)";
-                            }}
-                            onMouseLeave={(e) => {
-                              const el = e.currentTarget as HTMLButtonElement;
-                              el.style.background = "transparent";
-                              el.style.borderColor = "oklch(1 0 0 / 0.10)";
-                              el.style.color = "oklch(0.35 0.005 222)";
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path d="M2 6.5l2.8 2.8 5.2-5.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
-                          </div>{/* end deadline+done sub-flex */}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: pct >= 100 ? "#34d399" : pct >= 50 ? "#a78bfa" : "rgba(255,255,255,0.38)", flexShrink: 0 }}>
+                          {pct}&nbsp;%
+                        </span>
+                      </div>
+                      <div style={{ height: 3, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                        <motion.div
+                          style={{ height: "100%", borderRadius: 99, background: c.color || "#5353F6" }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
+
+            <Link href="/projects/monthly" style={{ display: "block", marginTop: 14, fontSize: 12, color: "rgba(130,130,255,0.75)", fontWeight: 600, textDecoration: "none" }}>
+              Všichni klienti →
+            </Link>
           </div>
         </motion.div>
 

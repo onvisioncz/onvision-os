@@ -124,9 +124,9 @@ function NavItem({
             animate={{ scale: 1, opacity: 1 }}
             className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1"
             style={{
-              background: "oklch(0.65 0.22 25)",
+              background: "#5353F6",
               color: "#fff",
-              boxShadow: "0 0 8px oklch(0.65 0.22 25 / 0.5)",
+              boxShadow: "0 0 8px rgba(83,83,246,0.5)",
               fontFamily: "var(--font-jakarta)",
             }}
           >
@@ -296,11 +296,11 @@ export function SidebarNav() {
             />
           </div>
           <div className="flex flex-col leading-none gap-[3px]">
-            <span style={{ fontFamily: "var(--font-outfit)", fontWeight: 800, fontSize: "14px", letterSpacing: "-0.04em", color: "oklch(0.96 0.01 265)", lineHeight: 1 }}>
-              OnVision
+            <span style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: "14px", letterSpacing: "-0.04em", color: "#ffffff", lineHeight: 1 }}>
+              OnVision OS
             </span>
-            <span style={{ fontFamily: "var(--font-jakarta)", fontWeight: 500, fontSize: "8.5px", letterSpacing: "0.16em", textTransform: "uppercase", color: "oklch(0.35 0.01 265)", lineHeight: 1 }}>
-              OS Platform
+            <span style={{ fontFamily: "var(--font-jakarta)", fontWeight: 500, fontSize: "8.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)", lineHeight: 1 }}>
+              CRM Systém
             </span>
           </div>
         </div>
@@ -345,17 +345,13 @@ export function SidebarNav() {
             onClick={toggleAi}
             className={cn(
               "relative w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[6px] text-[13px] font-medium select-none",
-              aiOpen ? "text-[--primary]" : "text-[--muted-foreground] nav-item-hover"
+              aiOpen ? "text-white" : "text-white"
             )}
-            style={
-              aiOpen ? {
-                background: "oklch(0.62 0.27 265 / 0.12)",
-                border: "1px solid oklch(0.62 0.27 265 / 0.18)",
-              } : {
-                border: "1px solid oklch(0.62 0.27 265 / 0.14)",
-                background: "oklch(0.62 0.27 265 / 0.05)",
-              }
-            }
+            style={{
+              background: "linear-gradient(130deg, #5353F6, #3b35d4)",
+              border: "1px solid rgba(83,83,246,0.55)",
+              boxShadow: "0 2px 14px rgba(83,83,246,0.30)",
+            }}
             whileHover={!aiOpen ? { color: "oklch(0.82 0.005 222)" } : {}}
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
@@ -415,7 +411,7 @@ export function SidebarNav() {
         )}
 
         <div className="mt-1 flex items-center gap-2.5 px-3 py-2 rounded-[6px]"
-          style={{ background: "oklch(1 0 0 / 0.025)", border: "1px solid oklch(1 0 0 / 0.06)" }}>
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
             style={{ background: avatarColor, color: "oklch(0.97 0.004 265)", fontFamily: "var(--font-outfit)", fontWeight: 700 }}>
             {initials}
