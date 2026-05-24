@@ -73,12 +73,9 @@ export function TopBar() {
     <div
       className="sticky top-0 z-40 flex items-center justify-end px-4 gap-2"
       style={{
-        background: "rgba(10, 8, 28, 0.50)",
-        backdropFilter: "blur(20px) saturate(1.3)",
-        WebkitBackdropFilter: "blur(20px) saturate(1.3)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-        paddingBottom: "8px",
+        background: "transparent",
+        paddingTop: "max(env(safe-area-inset-top, 0px), 10px)",
+        paddingBottom: "10px",
       }}
     >
       {/* Chat — jen na mobilu (desktop má v sidebaru) */}
@@ -121,15 +118,16 @@ export function TopBar() {
         onClick={handleUndo}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-medium overflow-hidden"
         style={{
-          color: undoFeedback ? "oklch(0.67 0.155 155)" : "oklch(0.48 0.005 222)",
-          background: undoFeedback ? "oklch(0.67 0.155 155 / 0.1)" : "oklch(1 0 0 / 0.04)",
-          border: `1px solid ${undoFeedback ? "oklch(0.67 0.155 155 / 0.3)" : "oklch(1 0 0 / 0.07)"}`,
+          color: undoFeedback ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.50)",
+          background: undoFeedback ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
+          border: `1px solid ${undoFeedback ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.09)"}`,
           fontFamily: "var(--font-jakarta)",
-          transition: "color 0.2s, background 0.2s, border-color 0.2s",
+          transition: "color 0.14s, background 0.14s, border-color 0.14s",
         }}
         whileHover={!undoFeedback ? {
-          color: "oklch(0.75 0.005 222)",
-          background: "oklch(1 0 0 / 0.07)",
+          color: "rgba(255,255,255,0.80)",
+          background: "rgba(255,255,255,0.08)",
+          borderColor: "rgba(255,255,255,0.15)",
         } : {}}
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.12 }}
@@ -190,22 +188,22 @@ export function TopBar() {
       </AnimatePresence>
 
       {/* Divider */}
-      <div className="w-px h-4" style={{ background: "oklch(1 0 0 / 0.08)" }} />
+      <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.08)" }} />
 
       {/* Odhlásit */}
       <motion.button
         onClick={handleLogout}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-medium"
         style={{
-          color: "oklch(0.48 0.005 222)",
-          background: "oklch(1 0 0 / 0.04)",
-          border: "1px solid oklch(1 0 0 / 0.07)",
+          color: "rgba(255,255,255,0.50)",
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.09)",
           fontFamily: "var(--font-jakarta)",
         }}
         whileHover={{
-          color: "oklch(0.72 0.18 25)",
-          background: "oklch(0.62 0.22 25 / 0.08)",
-          borderColor: "oklch(0.62 0.22 25 / 0.25)",
+          color: "rgba(255,255,255,0.80)",
+          background: "rgba(255,255,255,0.08)",
+          borderColor: "rgba(255,255,255,0.15)",
         }}
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.12 }}

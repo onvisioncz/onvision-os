@@ -524,6 +524,31 @@ export default function DashboardPage() {
     }));
   }, [summaries]);
 
+  /* ── MoM trend % (latest vs prev month) ── */
+  const momTrend = useMemo(() => {
+    const withData = summaries.filter((s) => s.prijemCelkovy > 0);
+    if (withData.length < 2) return null;
+    const cur = withData[withData.length - 1].prijemCelkovy;
+    const prev = withData[withData.length - 2].prijemCelkovy;
+    if (prev === 0) return null;
+    return ((cur - prev) / prev) * 100;
+  }, [summaries]);
+
+  /* ── Tasks due today + overdue ── */
+  const { tasksDueToday, tasksOverdue } = useMemo(() => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    let dueToday = 0, overdue = 0;
+    tasks.filter(t => t.status !== "Hotovo").forEach(t => {
+      const d = parseDeadline(t.deadline);
+      if (!d) return;
+      const days = daysUntil(d);
+      if (days === 0) dueToday++;
+      if (days < 0) overdue++;
+    });
+    return { tasksDueToday: dueToday, tasksOverdue: overdue };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
+
   /* ── Finance YTD stats ── */
   const ytd = useMemo(() => {
     const prijmy = summaries.reduce((s, m) => s + m.prijemCelkovy, 0);
@@ -799,22 +824,26 @@ export default function DashboardPage() {
                 onClick={() => setQaOpen((v) => !v)}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "7px 16px", borderRadius: 20,
-                  fontSize: 12, fontWeight: 700, fontFamily: "var(--font-jakarta)",
+                  padding: "7px 15px", borderRadius: 20,
+                  fontSize: 12, fontWeight: 600, fontFamily: "var(--font-jakarta)",
                   cursor: "pointer",
                   background: qaOpen ? "rgba(255,255,255,0.08)" : "linear-gradient(130deg,#5353F6,#3b35d4)",
                   border: qaOpen ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,83,246,0.5)",
                   color: "#ffffff",
+                  boxShadow: qaOpen ? "none" : "0 2px 14px rgba(83,83,246,0.35)",
                   animation: qaOpen ? "none" : "ov-btn-pulse 2.4s ease-in-out infinite",
                 }}
               >
                 {qaOpen ? <X size={12} /> : <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
                 {qaOpen ? "Zavřít" : "Nový úkol"}
               </button>
-              {/* Uzavřít měsíc */}
-              <button
-                onClick={() => setClosingOpen(true)}
-                style={{
+              {/* Ghost buttons — dle mockupu */}
+              {[
+                { label: "📝 Rychlá poznámka", onClick: () => {} },
+                { label: "✦ Zeptej se AI", onClick: () => {} },
+                { label: "▶ Spustit agenta", onClick: () => {} },
+              ].map(({ label, onClick }) => (
+                <button key={label} onClick={onClick} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   padding: "7px 14px", borderRadius: 20,
                   fontSize: 12, fontWeight: 600, fontFamily: "var(--font-jakarta)",
@@ -822,15 +851,32 @@ export default function DashboardPage() {
                   background: "rgba(83,83,246,0.08)",
                   border: "1px solid rgba(83,83,246,0.18)",
                   color: "rgba(255,255,255,0.62)",
+                  transition: "background 0.14s, color 0.14s",
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.14)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.85)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.62)"; }}
+                >
+                  {label}
+                </button>
+              ))}
+              {/* Uzavřít měsíc — diskrétní, s tečkou */}
+              <button
+                onClick={() => setClosingOpen(true)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "5px 10px", borderRadius: 16,
+                  fontSize: 11, fontWeight: 600, fontFamily: "var(--font-jakarta)",
+                  cursor: "pointer",
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.30)",
+                  transition: "color 0.14s, border-color 0.14s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.60)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.30)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
               >
                 📋 Uzavřít měsíc
               </button>
-              {/* Live indicator */}
-              <div className="hidden md:flex" style={{ alignItems: "center", gap: 5, marginLeft: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0, animation: "ov-pulse 2s ease-in-out infinite" }} />
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>Live</span>
-              </div>
             </div>
           </div>
 
@@ -1072,9 +1118,18 @@ export default function DashboardPage() {
                   {mrr > 0 ? fmt(mrr) : "-- Kč"}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.18)", border: "1px solid rgba(83,83,246,0.32)", color: "#8080ff", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
-                    ↑ {activeClients.length} klientů
-                  </span>
+                  {momTrend !== null ? (
+                    <>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: momTrend >= 0 ? "rgba(83,83,246,0.18)" : "rgba(239,68,68,0.15)", border: `1px solid ${momTrend >= 0 ? "rgba(83,83,246,0.32)" : "rgba(239,68,68,0.30)"}`, color: momTrend >= 0 ? "#8080ff" : "#ef4444", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                        {momTrend >= 0 ? "↑" : "↓"} {Math.abs(momTrend).toFixed(1).replace(".", ",")} %
+                      </span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.30)" }}>vs. minulý měsíc</span>
+                    </>
+                  ) : (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.18)", border: "1px solid rgba(83,83,246,0.32)", color: "#8080ff", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                      ↑ {activeClients.length} klientů
+                    </span>
+                  )}
                 </div>
               </div>
               <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
@@ -1098,9 +1153,11 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.15)", border: "1px solid rgba(83,83,246,0.28)", color: "#8080ff", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#34d399", display: "block" }} />
-                    {urgentTasks.length} urgentních
+                    {tasksDueToday} dnes
                   </span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{reviewTasks} v review</span>
+                  {tasksOverdue > 0 && (
+                    <span style={{ fontSize: 10, color: "rgba(239,68,68,0.75)", fontWeight: 600 }}>{tasksOverdue} po deadline</span>
+                  )}
                 </div>
               </div>
               <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
