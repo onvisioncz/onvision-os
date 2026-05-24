@@ -671,6 +671,9 @@ export default function DashboardPage() {
     );
   }, [setTasks]);
 
+  /* ── Calendar selected day ── */
+  const [selectedCalDay, setSelectedCalDay] = useState<Date | null>(null);
+
   /* ── Monthly Closing state ── */
   const [closingOpen, setClosingOpen] = useState(false);
   const [closingInvoices, setClosingInvoices] = useState<IssuedInvoice[] | null>(null);
@@ -1224,10 +1227,20 @@ export default function DashboardPage() {
                   const daysLabel = days === null ? t.deadline : days <= 0 ? "Dnes!" : days === 1 ? "Zítra" : `${days} dní`;
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{
-                        width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4,
-                        ...(isUrgent ? { boxShadow: "0 0 6px rgba(239,68,68,0.7)", animation: "dl-pulse-red 1.4s ease-in-out infinite" } : {}),
-                      }} />
+                      <motion.span
+                        style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4, display: "block" }}
+                        animate={isUrgent ? {
+                          scale: [1, 1.35, 1],
+                          boxShadow: [
+                            "0 0 0px 0px rgba(239,68,68,0.0), 0 0 4px rgba(239,68,68,0.5)",
+                            "0 0 0px 6px rgba(239,68,68,0.0), 0 0 10px rgba(239,68,68,0.9)",
+                            "0 0 0px 0px rgba(239,68,68,0.0), 0 0 4px rgba(239,68,68,0.5)",
+                          ],
+                        } : isSoon ? {
+                          opacity: [1, 0.5, 1],
+                        } : {}}
+                        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                      />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
                         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.30)" }}>{t.projekt}</p>
@@ -1250,75 +1263,96 @@ export default function DashboardPage() {
           </div>
 
           {/* Col 2: Týdenní kalendář */}
-          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
-            {(() => {
-              const today = new Date();
-              const dow = today.getDay(); // 0=Sun
-              const monday = new Date(today);
-              monday.setDate(today.getDate() - ((dow === 0 ? 7 : dow) - 1));
-              const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d; });
-              const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
-              const weekTaskMap = new Map<string, typeof topTasks>();
-              tasks.forEach(t => {
-                const d = parseDeadline(t.deadline);
-                if (!d) return;
-                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                if (!weekTaskMap.has(key)) weekTaskMap.set(key, []);
-                weekTaskMap.get(key)!.push(t);
-              });
-              return (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Tento týden</p>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>
-                      {monday.getDate()}. – {week[6].getDate()}. {week[6].toLocaleDateString("cs-CZ", { month: "long" })}
-                    </span>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-                    {dayNames.map(d => (
-                      <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", paddingBottom: 6 }}>{d}</div>
-                    ))}
-                    {week.map((d, i) => {
-                      const isToday = d.toDateString() === today.toDateString();
-                      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                      const dayTasks = weekTaskMap.get(key) ?? [];
-                      const hasUrgent = dayTasks.some(t => { const dd = parseDeadline(t.deadline); return dd && daysUntil(dd) <= 1; });
-                      return (
-                        <div key={i} style={{
-                          display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", borderRadius: 9, cursor: "pointer",
-                          ...(isToday ? { background: "linear-gradient(135deg, rgba(83,83,246,0.28), rgba(83,83,246,0.14))", border: "1px solid rgba(83,83,246,0.35)" } : {}),
-                        }}>
-                          <div style={{ fontSize: 13, fontWeight: isToday ? 800 : 600, color: isToday ? "#8b8bff" : "rgba(255,255,255,0.55)" } as React.CSSProperties}>{d.getDate()}</div>
-                          {hasUrgent && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.7)" }} />}
-                          {!hasUrgent && dayTasks.length > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#8080ff" }} />}
-                        </div>
-                      );
-                    })}
-                  </div>
+          {(() => {
+            const today = new Date();
+            const dow = today.getDay();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - ((dow === 0 ? 7 : dow) - 1));
+            const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d; });
+            const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+            const weekTaskMap = new Map<string, typeof topTasks>();
+            tasks.forEach(t => {
+              const d = parseDeadline(t.deadline);
+              if (!d) return;
+              const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+              if (!weekTaskMap.has(key)) weekTaskMap.set(key, []);
+              weekTaskMap.get(key)!.push(t);
+            });
+            // Resolve which day to show in agenda — selected or today
+            const agendaDay = selectedCalDay ?? today;
+            const agendaKey = `${agendaDay.getFullYear()}-${agendaDay.getMonth()}-${agendaDay.getDate()}`;
+            const agendaTasks = weekTaskMap.get(agendaKey) ?? [];
+            const agendaLabel = agendaDay.toDateString() === today.toDateString()
+              ? `Dnes · ${today.getDate()}. ${today.toLocaleDateString("cs-CZ", { month: "long" })}`
+              : `${agendaDay.getDate()}. ${agendaDay.toLocaleDateString("cs-CZ", { month: "long" })}`;
+            return (
+              <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Tento týden</p>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>
+                    {monday.getDate()}. – {week[6].getDate()}. {week[6].toLocaleDateString("cs-CZ", { month: "long" })}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                  {dayNames.map(d => (
+                    <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", paddingBottom: 6 }}>{d}</div>
+                  ))}
+                  {week.map((d, i) => {
+                    const isToday = d.toDateString() === today.toDateString();
+                    const isSelected = selectedCalDay && d.toDateString() === selectedCalDay.toDateString();
+                    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                    const dayTasks = weekTaskMap.get(key) ?? [];
+                    const hasUrgent = dayTasks.some(t => { const dd = parseDeadline(t.deadline); return dd && daysUntil(dd) <= 1; });
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setSelectedCalDay(isSelected ? null : d)}
+                        style={{
+                          display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                          padding: "6px 2px", borderRadius: 9, cursor: "pointer",
+                          transition: "background 0.14s, border-color 0.14s",
+                          ...(isSelected
+                            ? { background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)" }
+                            : isToday
+                            ? { background: "linear-gradient(135deg, rgba(83,83,246,0.28), rgba(83,83,246,0.14))", border: "1px solid rgba(83,83,246,0.35)" }
+                            : { border: "1px solid transparent" }),
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: (isToday || isSelected) ? 800 : 600, color: isSelected ? "rgba(255,255,255,0.90)" : isToday ? "#8b8bff" : "rgba(255,255,255,0.55)" } as React.CSSProperties}>{d.getDate()}</div>
+                        {hasUrgent && <motion.div
+                          style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }}
+                          animate={{ boxShadow: ["0 0 3px rgba(239,68,68,0.5)", "0 0 7px rgba(239,68,68,0.9)", "0 0 3px rgba(239,68,68,0.5)"] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                        />}
+                        {!hasUrgent && dayTasks.length > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#8080ff" }} />}
+                      </div>
+                    );
+                  })}
+                </div>
 
-                  {/* Agenda dne */}
-                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
-                      Dnes · {today.getDate()}. {today.toLocaleDateString("cs-CZ", { month: "long" })}
-                    </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                      {(() => {
-                        const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-                        const todayTasks = weekTaskMap.get(todayKey) ?? [];
-                        if (todayTasks.length === 0) return <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.30)" }}>Dnes žádné deadliny 👌</p>;
-                        return todayTasks.slice(0, 3).map(t => (
-                          <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5 }}>
-                            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 10, flexShrink: 0 }}>⚑ DL</span>
-                            <span style={{ color: "rgba(255,255,255,0.70)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+                {/* Agenda — reaguje na klik */}
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                    {agendaLabel}
+                  </p>
+                  <AnimatePresence mode="popLayout">
+                    {agendaTasks.length === 0 ? (
+                      <motion.p key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{ fontSize: 11.5, color: "rgba(255,255,255,0.30)" }}>
+                        Žádné deadliny 👌
+                      </motion.p>
+                    ) : agendaTasks.slice(0, 3).map(t => (
+                      <motion.div key={t.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, marginBottom: 4 }}>
+                        <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 10, flexShrink: 0 }}>⚑</span>
+                        <span style={{ color: "rgba(255,255,255,0.70)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Col 3: Dnešní úkoly */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
