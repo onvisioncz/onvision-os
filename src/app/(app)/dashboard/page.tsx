@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart,
@@ -23,6 +24,7 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DashboardAIWidget } from "@/components/dashboard/ai-widget";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
+import { useChatContext } from "@/components/chat/chat-shell";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -431,6 +433,24 @@ export default function DashboardPage() {
   /* ── Auth ── */
   const { user } = useUserRole();
   const isAdmin = user?.roles.includes("admin") ?? false;
+  const router = useRouter();
+  const { toggleAi } = useChatContext();
+
+  /* ── Quick Note modal ── */
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [noteSaved, setNoteSaved] = useState(false);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSaveNote = useCallback(() => {
+    if (!noteText.trim()) return;
+    const notes = JSON.parse(localStorage.getItem("ov-quick-notes") ?? "[]") as { text: string; ts: number }[];
+    notes.unshift({ text: noteText.trim(), ts: Date.now() });
+    localStorage.setItem("ov-quick-notes", JSON.stringify(notes.slice(0, 50)));
+    setNoteSaved(true);
+    setNoteText("");
+    setTimeout(() => { setNoteSaved(false); setNoteOpen(false); }, 1000);
+  }, [noteText]);
 
   /* ── Data ── */
   const [clients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", () => []);
@@ -842,9 +862,9 @@ export default function DashboardPage() {
               </button>
               {/* Ghost buttons — dle mockupu */}
               {[
-                { label: "📝 Rychlá poznámka", onClick: () => {} },
-                { label: "✦ Zeptej se AI", onClick: () => {} },
-                { label: "▶ Spustit agenta", onClick: () => {} },
+                { label: "📝 Rychlá poznámka", onClick: () => setNoteOpen(true) },
+                { label: "✦ Zeptej se AI", onClick: toggleAi },
+                { label: "▶ Spustit agenta", onClick: () => router.push("/ai") },
               ].map(({ label, onClick }) => (
                 <button key={label} onClick={onClick} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
@@ -906,12 +926,18 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Input row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-jakarta)" }}>
+            {/* Input row — opens AI overlay on click */}
+            <div
+              onClick={toggleAi}
+              style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+            >
+              <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-jakarta)", userSelect: "none" }}>
                 Napiš zprávu nebo příkaz…
               </div>
-              <button style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#5353F6,#7c3aed)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleAi(); }}
+                style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#5353F6,#7c3aed)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 2l3 6-3 6 12-6z" fill="white"/></svg>
               </button>
             </div>
@@ -1101,6 +1127,130 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Quick Note modal ── */}
+        <AnimatePresence>
+          {noteOpen && (
+            <motion.div
+              key="note-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setNoteOpen(false)}
+              style={{
+                position: "fixed", inset: 0, zIndex: 60,
+                background: "rgba(0,0,0,0.55)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <motion.div
+                key="note-modal"
+                initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 12 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: "rgba(14, 10, 42, 0.92)",
+                  backdropFilter: "blur(32px) saturate(1.5)",
+                  WebkitBackdropFilter: "blur(32px) saturate(1.5)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 16,
+                  padding: "24px 26px",
+                  width: "min(480px, 94vw)",
+                  boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(83,83,246,0.10)",
+                  fontFamily: "var(--font-jakarta)",
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 15 }}>📝</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)" }}>Rychlá poznámka</span>
+                  </div>
+                  <button
+                    onClick={() => setNoteOpen(false)}
+                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.30)", cursor: "pointer", padding: 4, lineHeight: 1, borderRadius: 6 }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Textarea */}
+                <textarea
+                  ref={noteRef}
+                  autoFocus
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSaveNote();
+                    if (e.key === "Escape") setNoteOpen(false);
+                  }}
+                  placeholder="Zapiš si co potřebuješ…"
+                  rows={5}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.09)",
+                    borderRadius: 10,
+                    color: "rgba(255,255,255,0.88)",
+                    fontSize: 13,
+                    fontFamily: "var(--font-jakarta)",
+                    lineHeight: 1.65,
+                    padding: "12px 14px",
+                    outline: "none",
+                    resize: "vertical",
+                    marginBottom: 14,
+                  }}
+                />
+
+                {/* Footer */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.22)", letterSpacing: "0.02em" }}>
+                    Uloží se lokálně · Ctrl+Enter pro uložení
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setNoteOpen(false)}
+                      style={{
+                        padding: "7px 14px", borderRadius: 8,
+                        background: "transparent", border: "1px solid rgba(255,255,255,0.09)",
+                        color: "rgba(255,255,255,0.40)", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "var(--font-jakarta)",
+                      }}
+                    >
+                      Zrušit
+                    </button>
+                    <button
+                      onClick={handleSaveNote}
+                      disabled={!noteText.trim()}
+                      style={{
+                        padding: "7px 18px", borderRadius: 8,
+                        background: noteText.trim()
+                          ? (noteSaved ? "rgba(52,211,153,0.2)" : "linear-gradient(130deg,#5353F6,#3b35d4)")
+                          : "rgba(83,83,246,0.08)",
+                        border: noteText.trim()
+                          ? (noteSaved ? "1px solid rgba(52,211,153,0.35)" : "1px solid rgba(83,83,246,0.4)")
+                          : "1px solid rgba(83,83,246,0.12)",
+                        color: noteText.trim()
+                          ? (noteSaved ? "rgba(52,211,153,0.9)" : "#ffffff")
+                          : "rgba(255,255,255,0.28)",
+                        fontSize: 12, fontWeight: 600, cursor: noteText.trim() ? "pointer" : "not-allowed",
+                        fontFamily: "var(--font-jakarta)",
+                        transition: "all 0.18s",
+                      }}
+                    >
+                      {noteSaved ? "✓ Uloženo" : "Uložit"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
