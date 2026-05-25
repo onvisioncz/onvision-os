@@ -355,11 +355,7 @@ export default function ReportyPage() {
 
         {/* ── Generator card ─────────────────────────────────────────────── */}
         <div
-          className="rounded-[14px] p-5"
-          style={{
-            background: "oklch(1 0 0 / 0.04)",
-            border: "1px solid oklch(1 0 0 / 0.09)",
-          }}
+          className="rounded-[14px] py-2"
         >
           <h2
             className="text-[14px] font-bold mb-4"
