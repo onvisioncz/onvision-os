@@ -67,9 +67,7 @@ function ProgressIndicator({ step, total }: { step: number; total: number }) {
       exit={{ opacity: 0, y: -8 }}
       className="rounded-[14px] p-5 space-y-4"
       style={{
-        background: "rgba(12, 10, 35, 0.55)",
-        backdropFilter: "blur(24px) saturate(1.3)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+        background: "oklch(0.62 0.27 265 / 0.06)",
         border: "1px solid oklch(0.62 0.27 265 / 0.2)",
       }}
     >
@@ -359,10 +357,8 @@ export default function ReportyPage() {
         <div
           className="rounded-[14px] p-5"
           style={{
-            background: "rgba(12, 10, 35, 0.55)",
-            backdropFilter: "blur(24px) saturate(1.3)",
-            WebkitBackdropFilter: "blur(24px) saturate(1.3)",
-            border: "1px solid rgba(255,255,255,0.09)",
+            background: "oklch(1 0 0 / 0.04)",
+            border: "1px solid oklch(1 0 0 / 0.09)",
           }}
         >
           <h2
