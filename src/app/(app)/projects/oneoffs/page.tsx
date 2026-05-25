@@ -380,7 +380,7 @@ export default function OneoffsPage() {
         ].map((s) => (
           <div key={s.label}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"
-            style={{ background: "oklch(0.13 0.008 222)", border: "1px solid oklch(1 0 0 / 0.07)" }}
+            style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
           >
             <span style={{ color: "oklch(0.45 0.005 222)" }}>{s.label}</span>
             <span className="font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>
@@ -401,7 +401,7 @@ export default function OneoffsPage() {
             style={
               filterTyp === t
                 ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }
-                : { background: "oklch(0.13 0.008 222)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }
+                : { background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", color: "oklch(0.55 0.005 222)", border: "1px solid rgba(255,255,255,0.09)" }
             }
           >
             {t || "Vše"}
@@ -417,7 +417,7 @@ export default function OneoffsPage() {
             style={
               filterClen === c
                 ? { background: "oklch(0.62 0.27 265)", color: "oklch(0.97 0.004 265)" }
-                : { background: "oklch(0.13 0.008 222)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }
+                : { background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", color: "oklch(0.55 0.005 222)", border: "1px solid rgba(255,255,255,0.09)" }
             }
           >
             {c || "Všichni"}
@@ -611,7 +611,7 @@ function KanbanCardInner({ project: p }: { project: Project }) {
   return (
     <div
       className="rounded-lg p-3 select-none"
-      style={{ background: "oklch(0.12 0.008 222)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+      style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
     >
       <div className="flex items-center gap-1.5 mb-2">
         <span className="inline-flex px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: pri.color, background: pri.bg, border: `1px solid ${pri.border}` }}>
@@ -667,7 +667,7 @@ function KanbanCard({
     <motion.div
       variants={stagger.item}
       className="rounded-lg p-3 cursor-pointer select-none group"
-      style={{ background: "oklch(0.12 0.008 222)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+      style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
       whileHover={{ scale: 1.01, transition: { duration: 0.15 } }}
       onClick={onOpen}
     >
@@ -813,14 +813,14 @@ function ProjectModal({
       {/* Panel */}
       <motion.div
         className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl flex flex-col"
-        style={{ background: "oklch(0.12 0.008 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+        style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 24, opacity: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
       >
         {/* Modal header */}
-        <div className="flex items-start justify-between p-5 pb-3 sticky top-0 z-10 rounded-t-2xl" style={{ background: "oklch(0.12 0.008 222)" }}>
+        <div className="flex items-start justify-between p-5 pb-3 sticky top-0 z-10 rounded-t-2xl" style={{ background: "rgba(12, 10, 35, 0.75)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}>
           <div className="flex-1 pr-4">
             {editing ? (
               <input

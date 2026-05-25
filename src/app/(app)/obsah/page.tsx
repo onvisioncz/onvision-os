@@ -149,7 +149,7 @@ function CardForm({
     >
       <motion.div
         className="w-full md:max-w-md rounded-t-[16px] md:rounded-[14px] overflow-hidden"
-        style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.09)" }}
+        style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }} transition={{ duration: 0.28, ease: "easeOut" }}
         onClick={e => e.stopPropagation()}
@@ -262,7 +262,7 @@ function KCard({
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className="group relative rounded-[10px] p-3 cursor-pointer"
-      style={{ background: "oklch(0.14 0.008 222)", border: "1px solid oklch(1 0 0 / 0.07)" }}
+      style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
       onClick={() => onEdit(card)}
     >
       {/* Top: typ badge + deadline */}

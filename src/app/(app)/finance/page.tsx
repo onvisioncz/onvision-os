@@ -768,7 +768,7 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
             >
               <motion.div
                 className="w-full max-w-sm rounded-[14px] p-6 space-y-4"
-                style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}
+                style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
                 initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -1107,7 +1107,7 @@ function ModalWrap({ title, onClose, onSave, children }: {
       style={{ background: "oklch(0 0 0 / 0.6)", backdropFilter: "blur(4px)" }}
       onClick={onClose}>
       <motion.div className="relative w-full md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
-        style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.09)" }}
+        style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
         onClick={e => e.stopPropagation()}>
@@ -1316,7 +1316,7 @@ function FakturyTab({ items, setItems }: { items:Faktura[]; setItems:(fn:(p:Fakt
             initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
             style={{background:"oklch(0 0 0 / 0.6)",backdropFilter:"blur(4px)"}} onClick={()=>setModal(null)}>
             <motion.div className="relative w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
-              style={{background:"oklch(0.11 0.008 222)",border:"1px solid oklch(1 0 0 / 0.09)"}}
+              style={{background:"rgba(12, 10, 35, 0.55)",backdropFilter:"blur(24px) saturate(1.3)",WebkitBackdropFilter:"blur(24px) saturate(1.3)",border:"1px solid rgba(255,255,255,0.09)"}}
               initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
               transition={{duration:0.3,ease:[0.23,1,0.32,1]}} onClick={e=>e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
@@ -1518,7 +1518,7 @@ function DokladyTab({ items, setItems }: { items:Doklad[]; setItems:(fn:(p:Dokla
             initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
             style={{background:"oklch(0 0 0 / 0.6)",backdropFilter:"blur(4px)"}} onClick={()=>setModal(null)}>
             <motion.div className="relative w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
-              style={{background:"oklch(0.11 0.008 222)",border:"1px solid oklch(1 0 0 / 0.09)"}}
+              style={{background:"rgba(12, 10, 35, 0.55)",backdropFilter:"blur(24px) saturate(1.3)",WebkitBackdropFilter:"blur(24px) saturate(1.3)",border:"1px solid rgba(255,255,255,0.09)"}}
               initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
               transition={{duration:0.3,ease:[0.23,1,0.32,1]}} onClick={e=>e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"oklch(1 0 0 / 0.08)"}}>
@@ -1786,7 +1786,9 @@ function PredplatneTab({ subs, setSubs }: PredplatneTabProps) {
             >
               <div style={{
                 margin: "12px 16px",
-                background: "oklch(0.10 0.010 222)",
+                background: "rgba(12, 10, 35, 0.55)",
+                backdropFilter: "blur(24px) saturate(1.3)",
+                WebkitBackdropFilter: "blur(24px) saturate(1.3)",
                 border: `1px solid ${mode === "edit" ? "oklch(0.65 0.18 310 / 0.25)" : "oklch(0.62 0.27 265 / 0.20)"}`,
                 borderRadius: 10, padding: "14px 16px",
                 display: "flex", flexDirection: "column", gap: 10,

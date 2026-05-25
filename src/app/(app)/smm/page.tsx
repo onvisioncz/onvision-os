@@ -610,8 +610,10 @@ function PostModal({
         transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         className="relative w-full max-w-lg md:max-w-4xl rounded-[14px] overflow-hidden"
         style={{
-          background: "oklch(0.12 0.008 222)",
-          border: "1px solid oklch(1 0 0 / 0.1)",
+          background: "rgba(12, 10, 35, 0.55)",
+          backdropFilter: "blur(24px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+          border: "1px solid rgba(255,255,255,0.09)",
           boxShadow: "0 24px 64px oklch(0 0 0 / 0.6)",
         }}
       >
@@ -1378,8 +1380,10 @@ function KlientPostCard({
       className="flex flex-col rounded-[10px] overflow-hidden text-left shrink-0"
       style={{
         width: 140,
-        background: "oklch(0.12 0.008 222)",
-        border: `1px solid ${pillar ? pillar.color + "40" : "oklch(1 0 0 / 0.09)"}`,
+        background: "rgba(12, 10, 35, 0.55)",
+        backdropFilter: "blur(24px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+        border: `1px solid ${pillar ? pillar.color + "40" : "rgba(255,255,255,0.09)"}`,
         boxShadow: "0 2px 8px oklch(0 0 0 / 0.3)",
       }}
     >
@@ -1540,7 +1544,7 @@ export default function SmmPage() {
       {/* Header */}
       <div
         className="px-5 py-4 shrink-0"
-        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}
       >
         <div className="flex items-start justify-between gap-4">
           <div>

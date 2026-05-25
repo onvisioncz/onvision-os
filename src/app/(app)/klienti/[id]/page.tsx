@@ -309,7 +309,7 @@ export default function KlientDetailPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "oklch(0.09 0.008 222)" }}
+        style={{ background: "transparent" }}
       >
         <Spinner />
       </div>
@@ -321,7 +321,7 @@ export default function KlientDetailPage() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ background: "oklch(0.09 0.008 222)", fontFamily: "var(--font-jakarta)" }}
+        style={{ background: "transparent", fontFamily: "var(--font-jakarta)" }}
       >
         <p
           className="text-lg font-semibold"
@@ -348,7 +348,7 @@ export default function KlientDetailPage() {
   return (
     <div
       className="min-h-screen px-6 py-8 max-w-5xl mx-auto"
-      style={{ background: "oklch(0.09 0.008 222)", fontFamily: "var(--font-jakarta)" }}
+      style={{ background: "transparent", fontFamily: "var(--font-jakarta)" }}
     >
       {/* ── 1. Hero bar ── */}
       <motion.div {...fadeUp} className="mb-6">
@@ -962,8 +962,8 @@ function SectionCard({
     <div
       className="rounded-[14px] p-5"
       style={{
-        background: "oklch(1 0 0 / 0.035)",
-        border: "1px solid oklch(1 0 0 / 0.08)",
+        background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+        border: "1px solid rgba(255,255,255,0.09)",
       }}
     >
       <div className="flex items-center justify-between mb-4">
@@ -998,8 +998,8 @@ function StatTile({
     <div
       className="flex flex-col gap-2 px-4 py-3 rounded-[12px]"
       style={{
-        background: "oklch(1 0 0 / 0.035)",
-        border: "1px solid oklch(1 0 0 / 0.08)",
+        background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+        border: "1px solid rgba(255,255,255,0.09)",
       }}
     >
       <span style={{ color }}>{icon}</span>

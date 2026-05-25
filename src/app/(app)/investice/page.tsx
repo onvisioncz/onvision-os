@@ -128,8 +128,10 @@ function KategorieBadge({ k }: { k: string }) {
 /* ── Shared styles ─────────────────────────────────────────────────────────── */
 
 const cardStyle: React.CSSProperties = {
-  background: "oklch(0.12 0.008 222)",
-  border: "1px solid oklch(1 0 0 / 0.07)",
+  background: "rgba(12, 10, 35, 0.55)",
+  backdropFilter: "blur(24px) saturate(1.3)",
+  WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+  border: "1px solid rgba(255,255,255,0.09)",
   borderRadius: 12,
 };
 
@@ -291,7 +293,9 @@ function AddOwnedForm({ onAdd, onCancel }: AddOwnedFormProps) {
   return (
     <div
       style={{
-        background: "oklch(0.10 0.010 222)",
+        background: "rgba(12, 10, 35, 0.55)",
+        backdropFilter: "blur(24px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.3)",
         border: "1px solid oklch(0.62 0.27 265 / 0.25)",
         borderRadius: 10,
         padding: "16px 18px",
@@ -407,7 +411,9 @@ function AddPlannedForm({ onAdd, onCancel }: AddPlannedFormProps) {
   return (
     <div
       style={{
-        background: "oklch(0.10 0.010 222)",
+        background: "rgba(12, 10, 35, 0.55)",
+        backdropFilter: "blur(24px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.3)",
         border: "1px solid oklch(0.75 0.20 265 / 0.20)",
         borderRadius: 10,
         padding: "16px 18px",
@@ -561,7 +567,7 @@ export default function InvesticePage() {
   return (
     <div
       style={{
-        background: "oklch(0.09 0.008 222)",
+        background: "transparent",
         minHeight: "100vh",
         fontFamily: "var(--font-sans)",
         padding: "16px 16px 80px",

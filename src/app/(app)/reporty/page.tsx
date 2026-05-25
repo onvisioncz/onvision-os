@@ -67,7 +67,9 @@ function ProgressIndicator({ step, total }: { step: number; total: number }) {
       exit={{ opacity: 0, y: -8 }}
       className="rounded-[14px] p-5 space-y-4"
       style={{
-        background: "oklch(0.12 0.012 265)",
+        background: "rgba(12, 10, 35, 0.55)",
+        backdropFilter: "blur(24px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.3)",
         border: "1px solid oklch(0.62 0.27 265 / 0.2)",
       }}
     >
@@ -315,7 +317,7 @@ export default function ReportyPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div
         className="px-5 py-4 shrink-0"
-        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -357,8 +359,10 @@ export default function ReportyPage() {
         <div
           className="rounded-[14px] p-5"
           style={{
-            background: "oklch(0.10 0.008 222)",
-            border: "1px solid oklch(1 0 0 / 0.09)",
+            background: "rgba(12, 10, 35, 0.55)",
+            backdropFilter: "blur(24px) saturate(1.3)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+            border: "1px solid rgba(255,255,255,0.09)",
           }}
         >
           <h2

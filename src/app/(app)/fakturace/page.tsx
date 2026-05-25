@@ -524,7 +524,7 @@ function IssueModal({
     >
       <motion.div
         className="relative w-full md:max-w-2xl max-h-[94vh] overflow-y-auto rounded-t-[16px] md:rounded-[14px]"
-        style={{ background: "oklch(0.11 0.008 222)", border: "1px solid oklch(1 0 0 / 0.09)" }}
+        style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
@@ -532,7 +532,7 @@ function IssueModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 z-10"
-          style={{ borderColor: "oklch(1 0 0 / 0.08)", background: "oklch(0.11 0.008 222)" }}>
+          style={{ borderColor: "oklch(1 0 0 / 0.08)", background: "rgba(12, 10, 35, 0.75)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}>
           <div>
             <h2 className="text-[15px] font-bold text-[--foreground]"
               style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.02em" }}>
@@ -662,7 +662,7 @@ function IssueModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2.5 px-5 py-4 border-t sticky bottom-0"
-          style={{ borderColor: "oklch(1 0 0 / 0.08)", background: "oklch(0.11 0.008 222)" }}>
+          style={{ borderColor: "oklch(1 0 0 / 0.08)", background: "rgba(12, 10, 35, 0.75)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}>
 
           {downloaded ? (
             /* Post-download state */

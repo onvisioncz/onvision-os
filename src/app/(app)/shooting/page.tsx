@@ -219,8 +219,10 @@ function ShootModal({
         exit={{ scale: 0.94, opacity: 0, y: 12 }}
         transition={{ type: "spring", stiffness: 400, damping: 32 }}
         style={{
-          background: "oklch(0.13 0.008 222)",
-          border: "1px solid oklch(1 0 0 / 0.10)",
+          background: "rgba(12, 10, 35, 0.55)",
+          backdropFilter: "blur(24px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+          border: "1px solid rgba(255,255,255,0.09)",
           borderRadius: 14,
           width: "100%",
           maxWidth: 480,
@@ -618,7 +620,7 @@ export default function ShootingPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "oklch(0.09 0.008 222)",
+        background: "transparent",
         fontFamily: "var(--font-jakarta)",
         padding: "clamp(16px, 4vw, 28px) clamp(14px, 4vw, 24px)",
       }}
@@ -970,8 +972,10 @@ export default function ShootingPage() {
           pointerEvents: "none",
         }}>
           <div style={{
-            background: "oklch(0.13 0.008 222)",
-            border: "1px solid oklch(1 0 0 / 0.10)",
+            background: "rgba(12, 10, 35, 0.55)",
+            backdropFilter: "blur(24px) saturate(1.3)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+            border: "1px solid rgba(255,255,255,0.09)",
             borderRadius: 10,
             padding: "14px 22px",
             fontSize: 13, color: "oklch(0.6 0 0)",

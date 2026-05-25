@@ -129,12 +129,12 @@ export default function KlientiPage() {
   return (
     <div
       className="min-h-screen"
-      style={{ background: "oklch(0.09 0.008 222)", fontFamily: "var(--font-jakarta)" }}
+      style={{ background: "transparent", fontFamily: "var(--font-jakarta)" }}
     >
       {/* ── Header ── */}
       <div
         className="px-4 md:px-6 py-4 md:py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+        style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)" }}
       >
         <div className="flex items-center gap-3">
           <div
@@ -232,7 +232,7 @@ export default function KlientiPage() {
             <div
               className="grid items-center px-5 py-3"
               style={{
-                background: "oklch(0.11 0.009 222)",
+                background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
                 borderBottom: "1px solid oklch(1 0 0 / 0.08)",
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
                 gap: "12px",
@@ -344,7 +344,7 @@ export default function KlientiPage() {
                   gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto",
                   gap: "12px",
                   borderTop: "1px solid oklch(1 0 0 / 0.1)",
-                  background: "oklch(0.11 0.009 222)",
+                  background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
                 }}
               >
                 <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "oklch(0.40 0.005 222)" }}>
@@ -388,8 +388,8 @@ export default function KlientiPage() {
                   <div
                     className="rounded-[12px] p-4 flex flex-col gap-3"
                     style={{
-                      background: "oklch(0.11 0.009 222)",
-                      border: "1px solid oklch(1 0 0 / 0.08)",
+                      background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+                      border: "1px solid rgba(255,255,255,0.09)",
                       borderLeft: `3px solid ${client.color}`,
                     }}
                   >
