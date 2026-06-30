@@ -4,8 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Veřejné cesty — bez autentizace
-  const publicPaths = ["/login", "/auth/callback"];
+  // Veřejné cesty — bez cookie autentizace.
+  // /api/cron se chrání vlastním CRON_SECRET (volá ho Vercel Cron, ne prohlížeč).
+  const publicPaths = ["/login", "/auth/callback", "/api/cron"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Pokud chybí env vars, pusť dál bez auth kontroly
