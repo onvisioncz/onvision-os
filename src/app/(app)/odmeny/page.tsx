@@ -214,8 +214,8 @@ export default function OdmenyPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       {canEdit && (
-                        <button onClick={() => sendPerson(p)} disabled={sending === p.id || !p.email || castka <= 0}
-                          title={!p.email ? "Chybí e-mail" : castka <= 0 ? "Nulová částka" : "Poslat info o odměně"}
+                        <button onClick={() => sendPerson(p)} disabled={sending === p.id || !p.email || castka <= 0 || p.typ === "DPP"}
+                          title={p.typ === "DPP" ? "DPP — nefakturuje se, jen evidence" : !p.email ? "Chybí e-mail" : castka <= 0 ? "Nulová částka" : "Poslat výzvu k fakturaci"}
                           className="btn-tactile p-1.5 rounded-[6px] disabled:opacity-30" style={{ border: "1px solid var(--border)" }}>
                           <Send className="w-3.5 h-3.5" style={{ color: PRIMARY }} />
                         </button>

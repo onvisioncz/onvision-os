@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
   if (body.kind === "person") {
     const person = lidi.find((p) => p.id === body.personId);
     if (!person) return NextResponse.json({ error: "Osoba nenalezena." }, { status: 404 });
+    if (person.typ === "DPP") return NextResponse.json({ error: "DPP se nefakturuje — slouží jen pro evidenci a CSV." }, { status: 400 });
     if (!person.email) return NextResponse.json({ error: `${person.jmeno} nemá e-mail.` }, { status: 400 });
 
     const mail = mailProSpolupracovnika(person, month);

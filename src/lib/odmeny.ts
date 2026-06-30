@@ -90,11 +90,25 @@ export function fmtKc(n: number): string {
 }
 
 /* ── Texty e-mailů ──────────────────────────────────────────────────────── */
-/** Mail pro spolupracovníka — kolik mu za měsíc od OnVision půjde a za co. */
+/** Fakturační údaje OnVision pro výzvu k fakturaci. */
+export const ONVISION_BILLING = {
+  nazev: "OnVision s.r.o.",
+  adresa: "Křenová 64/13, 602 00 Brno",
+  ico: "23052341",
+  dph: "Firma není plátce DPH",
+  email: "fakturace@onvision.cz",
+  splatnostDni: 14,
+};
+
+/**
+ * Mail pro spolupracovníka na IČO (OSVČ) — VÝZVA K FAKTURACI.
+ * Pro DPP se nepoužívá (DPP nefakturuje — jen evidence + CSV).
+ */
 export function mailProSpolupracovnika(p: OdmenaPerson, key: string) {
   const castka = castkaZaMesic(p, key);
   const obdobi = monthLabel(key);
   const m = p.mesice?.[key];
+  const b = ONVISION_BILLING;
 
   const radky: string[] = [];
   if (p.model === "Projekty" && m?.projekty?.length) {
@@ -104,26 +118,32 @@ export function mailProSpolupracovnika(p: OdmenaPerson, key: string) {
 
   const text = `Ahoj ${p.jmeno},
 
-za období ${obdobi} ti od OnVision s.r.o. půjde odměna ve výši ${fmtKc(castka)} (${p.typ}).${rozpis}
+za období ${obdobi} ti náleží odměna ve výši ${fmtKc(castka)}.${rozpis}
 
-Pokud něco nesedí, ozvi se prosím na fakturace@onvision.cz.
+Prosím vystav na tuto částku fakturu na odběratele:
+${b.nazev}
+${b.adresa}
+IČO: ${b.ico}
+(${b.dph})
+
+Fakturu prosím pošli na ${b.email}, splatnost ${b.splatnostDni} dní.
 
 Děkujeme za spolupráci,
 OnVision s.r.o.`;
 
   const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#111">
     <p>Ahoj <strong>${p.jmeno}</strong>,</p>
-    <p>za období <strong>${obdobi}</strong> ti od OnVision s.r.o. půjde odměna ve výši <strong>${fmtKc(castka)}</strong> (${p.typ}).</p>
+    <p>za období <strong>${obdobi}</strong> ti náleží odměna ve výši <strong>${fmtKc(castka)}</strong>.</p>
     ${radky.length ? `<p><strong>Rozpis:</strong></p><ul>${(m?.projekty ?? []).map((x) => `<li>${x.nazev}: ${fmtKc(x.castka)}</li>`).join("")}</ul>` : ""}
-    <p style="color:#666">Pokud něco nesedí, ozvi se prosím na fakturace@onvision.cz.</p>
+    <p>Prosím vystav na tuto částku fakturu na odběratele:</p>
+    <p style="margin-left:8px">
+      <strong>${b.nazev}</strong><br>${b.adresa}<br>IČO: ${b.ico}<br><span style="color:#666">${b.dph}</span>
+    </p>
+    <p>Fakturu prosím pošli na <a href="mailto:${b.email}">${b.email}</a>, splatnost ${b.splatnostDni} dní.</p>
     <p style="color:#666">Děkujeme za spolupráci,<br>OnVision s.r.o.</p>
   </div>`;
 
-  return {
-    subject: `Odměna ${obdobi} — OnVision s.r.o.`,
-    text,
-    html,
-  };
+  return { subject: `Výzva k fakturaci — ${obdobi} (${fmtKc(castka)})`, text, html };
 }
 
 /** Souhrnný mail pro účetní / vedení — všechny odměny za měsíc. */
