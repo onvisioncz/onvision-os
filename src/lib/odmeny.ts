@@ -6,6 +6,8 @@
  * tedy "kolik od OnVision odejde" — odvody/daně řeší účetní).
  */
 
+import { brandedEmailHtml, accentChip, billingBox } from "@/lib/email/template";
+
 export const ODMENY_KEY = "ov-odmeny";
 
 export type OdmenaTyp = "OSVČ" | "DPP";
@@ -131,17 +133,20 @@ Fakturu prosím pošli na ${b.email}, splatnost ${b.splatnostDni} dní.
 Děkujeme za spolupráci,
 OnVision s.r.o.`;
 
-  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#111">
-    <p>Ahoj <strong>${p.jmeno}</strong>,</p>
-    <p>za období <strong>${obdobi}</strong> ti náleží odměna ve výši <strong>${fmtKc(castka)}</strong>.</p>
-    ${radky.length ? `<p><strong>Rozpis:</strong></p><ul>${(m?.projekty ?? []).map((x) => `<li>${x.nazev}: ${fmtKc(x.castka)}</li>`).join("")}</ul>` : ""}
-    <p>Prosím vystav na tuto částku fakturu na odběratele:</p>
-    <p style="margin-left:8px">
-      <strong>${b.nazev}</strong><br>${b.adresa}<br>IČO: ${b.ico}<br><span style="color:#666">${b.dph}</span>
-    </p>
-    <p>Fakturu prosím pošli na <a href="mailto:${b.email}">${b.email}</a>, splatnost ${b.splatnostDni} dní.</p>
-    <p style="color:#666">Děkujeme za spolupráci,<br>OnVision s.r.o.</p>
-  </div>`;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;">Ahoj <strong style="color:#fff;">${p.jmeno}</strong>,</p>
+    <p style="margin:0 0 14px;">za období <strong style="color:#fff;">${obdobi}</strong> ti náleží odměna ve výši ${accentChip(fmtKc(castka))}.</p>
+    ${radky.length ? `<p style="margin:0 0 6px;">Rozpis:</p><ul style="margin:0 0 14px;padding-left:18px;">${(m?.projekty ?? []).map((x) => `<li>${x.nazev}: ${fmtKc(x.castka)}</li>`).join("")}</ul>` : ""}
+    <p style="margin:0 0 4px;">Prosím vystav na tuto částku fakturu na odběratele:</p>
+    ${billingBox([`<strong style="color:#fff;">${b.nazev}</strong>`, b.adresa, `IČO: ${b.ico}`, b.dph])}
+    <p style="margin:14px 0 0;">Fakturu prosím pošli na <a href="mailto:${b.email}" style="color:#5B5EFF;text-decoration:none;">${b.email}</a>, splatnost ${b.splatnostDni} dní.</p>
+    <p style="margin:18px 0 0;">Děkujeme za spolupráci.</p>`;
+
+  const html = brandedEmailHtml({
+    preheader: `Výzva k fakturaci za ${obdobi} — ${fmtKc(castka)}`,
+    heading: `Výzva k fakturaci · ${obdobi}`,
+    bodyHtml,
+  });
 
   return { subject: `Výzva k fakturaci — ${obdobi} (${fmtKc(castka)})`, text, html };
 }
@@ -159,7 +164,11 @@ export function mailSouhrn(lidi: OdmenaPerson[], key: string) {
   const radkyHtml = aktivni
     .map(
       (p) =>
-        `<tr><td style="padding:4px 12px 4px 0">${p.jmeno}</td><td style="padding:4px 12px 4px 0;color:#666">${p.typ}</td><td style="padding:4px 0;text-align:right;font-weight:600">${fmtKc(castkaZaMesic(p, key))}</td></tr>`
+        `<tr>
+          <td style="padding:7px 12px 7px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#fff;">${p.jmeno}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);">${p.typ}</td>
+          <td style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;font-weight:600;color:#fff;">${fmtKc(castkaZaMesic(p, key))}</td>
+        </tr>`
     )
     .join("");
 
@@ -171,12 +180,16 @@ CELKEM: ${fmtKc(celkem)}
 
 — OnVision OS`;
 
-  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#111">
-    <p><strong>Souhrn odměn za období ${obdobi}</strong></p>
-    <table style="border-collapse:collapse;font-size:14px">${radkyHtml}</table>
-    <p style="margin-top:12px;font-size:16px"><strong>CELKEM: ${fmtKc(celkem)}</strong></p>
-    <p style="color:#666">— OnVision OS</p>
-  </div>`;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;">Přehled odměn za období <strong style="color:#fff;">${obdobi}</strong> (OSVČ i DPP):</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;">${radkyHtml}</table>
+    <p style="margin:16px 0 0;font-size:16px;">Celkem odejde: ${accentChip(fmtKc(celkem))}</p>`;
+
+  const html = brandedEmailHtml({
+    preheader: `Souhrn odměn ${obdobi} — celkem ${fmtKc(celkem)}`,
+    heading: `Souhrn odměn · ${obdobi}`,
+    bodyHtml,
+  });
 
   return { subject: `Souhrn odměn ${obdobi} — OnVision s.r.o.`, text, html };
 }

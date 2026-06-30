@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { identityFromEmail } from "@/lib/agent/identity";
 import { isEmailConfigured, sendMail } from "@/lib/email/gmail";
+import { brandedEmailHtml } from "@/lib/email/template";
 
 export const runtime = "nodejs";
 
@@ -37,12 +38,14 @@ export async function GET() {
     to: user.email,
     subject: "OnVision OS — test odesílání ✅",
     text: `Ahoj ${identity.displayName},\n\ntenhle e-mail potvrzuje, že OnVision OS umí odesílat poštu přes Gmail. Pokud ti dorazil, máme hotovo — modul odměn pak bude maily posílat stejnou cestou.\n\n— OnVision OS`,
-    html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#111">
-      <p>Ahoj <strong>${identity.displayName}</strong>,</p>
-      <p>tenhle e-mail potvrzuje, že <strong>OnVision OS umí odesílat poštu přes Gmail</strong>. ✅</p>
-      <p>Pokud ti dorazil, máme hotovo — modul odměn pak bude maily posílat stejnou cestou.</p>
-      <p style="color:#666">— OnVision OS</p>
-    </div>`,
+    html: brandedEmailHtml({
+      preheader: "Test odesílání OnVision OS",
+      heading: "Test odesílání ✅",
+      bodyHtml: `
+        <p style="margin:0 0 14px;">Ahoj <strong style="color:#fff;">${identity.displayName}</strong>,</p>
+        <p style="margin:0 0 14px;">tenhle e-mail potvrzuje, že <strong style="color:#fff;">OnVision OS umí odesílat poštu přes Gmail</strong>.</p>
+        <p style="margin:0;">Pokud ti dorazil v téhle podobě, máme hotovo — modul odměn posílá maily stejnou brandovanou cestou.</p>`,
+    }),
   });
 
   if (!result.ok) {
