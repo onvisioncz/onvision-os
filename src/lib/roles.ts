@@ -1,6 +1,6 @@
 /* ── Role definitions for OnVision OS ─────────────────────────────────────── */
 
-export type Role = "admin" | "fakturace" | "produkce" | "grafik" | "smm" | "pm";
+export type Role = "admin" | "fakturace" | "ucetni" | "produkce" | "grafik" | "smm" | "pm";
 
 export interface UserConfig {
   email: string;
@@ -110,6 +110,7 @@ export const DEFAULT_USERS: UserConfig[] = [
 export const ROLE_LABELS: Record<Role, string> = {
   admin:     "Jednatel",
   fakturace: "Fakturace",
+  ucetni:    "Účetní",
   produkce:  "Produkce",
   grafik:    "Grafik",
   smm:       "SMM",
@@ -119,6 +120,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_COLORS: Record<Role, string> = {
   admin:     "oklch(0.62 0.27 265)",
   fakturace: "oklch(0.67 0.155 155)",
+  ucetni:    "oklch(0.70 0.14 195)",
   produkce:  "oklch(0.75 0.19 48)",
   grafik:    "oklch(0.72 0.2 310)",
   smm:       "oklch(0.65 0.22 25)",
@@ -129,7 +131,8 @@ export const ROLE_COLORS: Record<Role, string> = {
 // "*" = all routes (admin only)
 export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
-  fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti"],
+  fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny"],
+  ucetni:    ["/dashboard", "/odmeny", "/fakturace"],
   produkce:  ["/dashboard", "/shooting", "/produkce", "/ukoly", "/outputs"],
   grafik:    ["/ukoly", "/outputs"],
   smm:       ["/smm", "/calendar", "/outputs", "/reporty"],
