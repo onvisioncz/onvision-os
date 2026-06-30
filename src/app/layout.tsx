@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { SwRegister } from "@/components/sw-register";
 
-const outfit = Outfit({
+// Brand fonty dle webu/manuálu: Space Grotesk (nadpisy/UI) + Inter (text).
+// Názvy CSS proměnných zůstávají, aby je celá appka chytla bez dalších změn.
+const outfit = Space_Grotesk({
   variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
+const jakarta = Inter({
   variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
