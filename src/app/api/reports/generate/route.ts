@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { ReportPDF, type ReportData } from "@/components/reports/report-pdf";
@@ -147,6 +148,10 @@ async function handleGenerate(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
+
+  if (!(await aiRateLimitOk(user.email))) {
+    return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });
+  }
 
   let body: { client?: string; month?: string };
   try { body = await req.json(); }

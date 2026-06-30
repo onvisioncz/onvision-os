@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 
 export const runtime = "nodejs";
 
@@ -112,6 +113,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
+
+  if (!(await aiRateLimitOk(user.email))) {
+    return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const userName: string = body.userName ?? user.email?.split("@")[0] ?? "kolego";

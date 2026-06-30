@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 
 const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -8,6 +9,11 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
+
+  // ── Rate limit ────────────────────────────────────────────────────────────
+  if (!(await aiRateLimitOk(user.email))) {
+    return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });
+  }
 
   // ── API key ──────────────────────────────────────────────────────────────────
   const apiKey = process.env.ANTHROPIC_API_KEY;

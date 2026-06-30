@@ -1,5 +1,6 @@
 import { getUserFromRequest, EDGE_UNAUTHORIZED } from "@/lib/supabase/edge";
 import { NextRequest } from "next/server";
+import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 
 export const runtime = "edge";
 
@@ -15,6 +16,14 @@ export async function POST(req: NextRequest) {
   // ── Auth check ──────────────────────────────────────────────────────────────
   const user = await getUserFromRequest(req);
   if (!user) return EDGE_UNAUTHORIZED;
+
+  // ── Rate limit ────────────────────────────────────────────────────────────
+  if (!(await aiRateLimitOk(user.email))) {
+    return new Response(JSON.stringify({ error: RATE_LIMIT_MSG }), {
+      status: 429,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   // ── API key ──────────────────────────────────────────────────────────────────
   const apiKey = process.env.ANTHROPIC_API_KEY;
