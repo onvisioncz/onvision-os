@@ -133,9 +133,9 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
   fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy"],
   ucetni:    ["/dashboard", "/odmeny", "/fakturace"],
-  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/vykazy", "/ukoly", "/outputs"],
-  grafik:    ["/ukoly", "/outputs", "/technika", "/vykazy"],
-  smm:       ["/smm", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy"],
+  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/vykazy", "/ukoly", "/outputs", "/delivery"],
+  grafik:    ["/ukoly", "/outputs", "/technika", "/vykazy", "/delivery"],
+  smm:       ["/smm", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery"],
   pm:        ["/smm", "/ukoly", "/outputs", "/technika", "/vykazy"],
 };
 

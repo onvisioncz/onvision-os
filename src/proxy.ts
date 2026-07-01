@@ -5,8 +5,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Veřejné cesty — bez cookie autentizace.
-  // /api/cron se chrání vlastním CRON_SECRET (volá ho Vercel Cron, ne prohlížeč).
-  const publicPaths = ["/login", "/auth/callback", "/api/cron"];
+  // /api/cron se chrání vlastním CRON_SECRET; /d a /l jsou veřejné sdílené
+  // stránky pro klienty (delivery odkazy, showcase lokací) — chráněné jen
+  // neuhodnutelným tokenem v URL.
+  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Pokud chybí env vars, pusť dál bez auth kontroly
