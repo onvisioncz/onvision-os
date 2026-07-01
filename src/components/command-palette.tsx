@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, CornerDownLeft, ArrowRight, Plus } from "lucide-react";
 
-/* Cíle a rychlé akce. Skupina "akce" = vytvoření/nástroj. */
 interface Cmd { label: string; href: string; group: "Přejít na" | "Akce" | "Nástroje"; keywords?: string }
 
 const COMMANDS: Cmd[] = [
-  // Přejít na
   { label: "Dashboard", href: "/dashboard", group: "Přejít na" },
   { label: "Upozornění", href: "/inbox", group: "Přejít na" },
   { label: "Úkoly", href: "/ukoly", group: "Přejít na" },
@@ -18,7 +16,7 @@ const COMMANDS: Cmd[] = [
   { label: "Výkazy hodin", href: "/vykazy", group: "Přejít na", keywords: "time tracking" },
   { label: "Finance", href: "/finance", group: "Přejít na" },
   { label: "Ziskovost", href: "/ziskovost", group: "Přejít na", keywords: "marže zisk" },
-  { label: "Cashflow & výhledy", href: "/cashflow", group: "Přejít na", keywords: "cashflow předpověď" },
+  { label: "Cashflow & výhledy", href: "/cashflow", group: "Přejít na", keywords: "předpověď" },
   { label: "Fakturace", href: "/fakturace", group: "Přejít na", keywords: "faktury" },
   { label: "Odměny", href: "/odmeny", group: "Přejít na", keywords: "výplaty osvč dpp" },
   { label: "Investice", href: "/investice", group: "Přejít na" },
@@ -27,75 +25,91 @@ const COMMANDS: Cmd[] = [
   { label: "Reporty", href: "/reporty", group: "Přejít na" },
   { label: "Kalendář", href: "/calendar", group: "Přejít na" },
   { label: "Výstupy", href: "/outputs", group: "Přejít na" },
-  { label: "Delivery", href: "/delivery", group: "Přejít na", keywords: "sdílení klient stažení" },
+  { label: "Delivery", href: "/delivery", group: "Přejít na", keywords: "sdílení stažení" },
   { label: "Klientská sdílení", href: "/klient-share", group: "Přejít na", keywords: "portál schválení nps" },
   { label: "Reklamy", href: "/ads", group: "Přejít na", keywords: "meta ads" },
   { label: "Produkční plán", href: "/shooting", group: "Přejít na", keywords: "natáčení" },
-  { label: "Call sheety", href: "/call-sheet", group: "Přejít na", keywords: "natáčení produkční list" },
+  { label: "Call sheety", href: "/call-sheet", group: "Přejít na", keywords: "produkční list" },
   { label: "Technika", href: "/technika", group: "Přejít na", keywords: "rezervace kamera sklad" },
-  { label: "Lokace", href: "/lokace", group: "Přejít na", keywords: "místa natáčení" },
+  { label: "Lokace", href: "/lokace", group: "Přejít na", keywords: "místa" },
   { label: "Kreativa", href: "/produkce", group: "Přejít na" },
   { label: "Nastavení", href: "/nastaveni", group: "Přejít na" },
-  // Akce
   { label: "Nový úkol", href: "/ukoly", group: "Akce", keywords: "vytvořit task" },
   { label: "Nová faktura", href: "/fakturace", group: "Akce" },
   { label: "Nový call sheet", href: "/call-sheet", group: "Akce", keywords: "natáčení" },
   { label: "Rezervovat techniku", href: "/technika", group: "Akce", keywords: "kamera" },
   { label: "Nová delivery klientovi", href: "/delivery", group: "Akce" },
   { label: "Zapsat hodiny", href: "/vykazy", group: "Akce", keywords: "výkaz" },
-  // Nástroje
-  { label: "AI obsah (captiony, hashtagy)", href: "/smm-ai", group: "Nástroje", keywords: "smm generovat" },
+  { label: "AI obsah (captiony, hashtagy)", href: "/smm-ai", group: "Nástroje", keywords: "smm" },
   { label: "Zápis z porady → úkoly", href: "/zapis", group: "Nástroje", keywords: "ai poznámky" },
   { label: "AI asistent", href: "/ai", group: "Nástroje" },
 ];
 
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+interface Entity { label: string; sub: string; href: string }
+interface FlatItem { label: string; sub?: string; href: string; group: string }
+
+const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : []);
+const str = (v: unknown) => (v == null ? "" : String(v));
 
 export function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
+  const [entities, setEntities] = useState<Entity[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const loadedRef = useRef(false);
 
-  const openPalette = useCallback(() => { setOpen(true); setQ(""); setActive(0); }, []);
+  const loadEntities = useCallback(async () => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    const keys = ["ov-monthly-clients", "ov-ukoly-tasks", "ov-issued-invoices", "ov-gear", "ov-lokace", "ov-call-sheets", "ov-oneoffs-projects"];
+    try {
+      const res = await Promise.all(keys.map((k) => fetch(`/api/sync?key=${k}`).then((r) => r.json()).catch(() => ({}))));
+      const v = (i: number) => arr(res[i]?.value);
+      const e: Entity[] = [];
+      v(0).forEach((c) => str(c.name) && e.push({ label: str(c.name), sub: "Klient", href: "/klienti" }));
+      v(1).forEach((t) => str(t.nazev) && e.push({ label: str(t.nazev), sub: `Úkol${t.prirazeno ? ` · ${str(t.prirazeno)}` : ""}`, href: "/ukoly" }));
+      v(2).forEach((f) => (str(f.cislo) || str(f.klient)) && e.push({ label: `${str(f.cislo)} ${str(f.klient)}`.trim(), sub: "Faktura", href: "/fakturace" }));
+      v(3).forEach((g) => str(g.nazev) && e.push({ label: str(g.nazev), sub: "Technika", href: "/technika" }));
+      v(4).forEach((l) => str(l.nazev) && e.push({ label: str(l.nazev), sub: "Lokace", href: "/lokace" }));
+      v(5).forEach((cs) => str(cs.nazev) && e.push({ label: str(cs.nazev), sub: "Call sheet", href: "/call-sheet" }));
+      v(6).forEach((p) => str(p.title) && e.push({ label: str(p.title), sub: `Projekt${p.klient ? ` · ${str(p.klient)}` : ""}`, href: "/projects/oneoffs" }));
+      setEntities(e);
+    } catch { /* data hledání je bonus */ }
+  }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((o) => !o); setQ(""); setActive(0); }
-      if (e.key === "Escape") setOpen(false);
+    const onKey = (ev: KeyboardEvent) => {
+      if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); setOpen((o) => !o); setQ(""); setActive(0); loadEntities(); }
+      if (ev.key === "Escape") setOpen(false);
     };
-    const onCustom = () => openPalette();
+    const onCustom = () => { setOpen(true); setQ(""); setActive(0); loadEntities(); };
     window.addEventListener("keydown", onKey);
     window.addEventListener("ov-command-palette", onCustom);
     return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("ov-command-palette", onCustom); };
-  }, [openPalette]);
+  }, [loadEntities]);
 
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 30); }, [open]);
-
-  const results = useMemo(() => {
-    const nq = norm(q.trim());
-    if (!nq) return COMMANDS;
-    return COMMANDS.filter((c) => norm(c.label).includes(nq) || (c.keywords && norm(c.keywords).includes(nq)));
-  }, [q]);
-
   useEffect(() => { setActive(0); }, [q]);
 
-  const go = (c: Cmd) => { setOpen(false); router.push(c.href); };
+  const flat = useMemo<FlatItem[]>(() => {
+    const nq = norm(q.trim());
+    const items: FlatItem[] = [];
+    if (nq) entities.filter((e) => norm(e.label).includes(nq) || norm(e.sub).includes(nq)).slice(0, 8).forEach((e) => items.push({ ...e, group: "Výsledky" }));
+    const cmds = nq ? COMMANDS.filter((c) => norm(c.label).includes(nq) || (c.keywords && norm(c.keywords).includes(nq))) : COMMANDS;
+    cmds.forEach((c) => items.push({ label: c.label, href: c.href, group: c.group }));
+    return items;
+  }, [q, entities]);
 
-  const onListKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, results.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-    else if (e.key === "Enter" && results[active]) { e.preventDefault(); go(results[active]); }
+  const go = (it: FlatItem) => { setOpen(false); router.push(it.href); };
+
+  const onListKey = (ev: React.KeyboardEvent) => {
+    if (ev.key === "ArrowDown") { ev.preventDefault(); setActive((a) => Math.min(a + 1, flat.length - 1)); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+    else if (ev.key === "Enter" && flat[active]) { ev.preventDefault(); go(flat[active]); }
   };
-
-  // seskupení pro render
-  const groups = useMemo(() => {
-    const order = ["Přejít na", "Akce", "Nástroje"] as const;
-    const map = new Map<string, { cmd: Cmd; idx: number }[]>();
-    results.forEach((cmd, idx) => { const arr = map.get(cmd.group) ?? []; arr.push({ cmd, idx }); map.set(cmd.group, arr); });
-    return order.filter((g) => map.has(g)).map((g) => ({ group: g, items: map.get(g)! }));
-  }, [results]);
 
   return (
     <AnimatePresence>
@@ -106,26 +120,27 @@ export function CommandPalette() {
             className="glass-panel w-full max-w-[560px] overflow-hidden" style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.6)" }}>
             <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
               <Search className="w-4 h-4 text-[--muted-foreground]" />
-              <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledej stránku nebo akci…" className="flex-1 bg-transparent outline-none text-[14px] text-[--foreground] placeholder:text-[--muted-foreground]" />
+              <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledej stránku, klienta, fakturu, úkol…" className="flex-1 bg-transparent outline-none text-[14px] text-[--foreground] placeholder:text-[--muted-foreground]" />
               <kbd className="text-[10px] px-1.5 py-0.5 rounded border text-[--muted-foreground]" style={{ borderColor: "rgba(255,255,255,0.12)" }}>Esc</kbd>
             </div>
-            <div className="max-h-[52vh] overflow-y-auto py-2">
-              {results.length === 0 ? (
+            <div className="max-h-[54vh] overflow-y-auto py-2">
+              {flat.length === 0 ? (
                 <div className="px-4 py-6 text-center text-[13px] text-[--muted-foreground]">Nic nenalezeno.</div>
-              ) : groups.map(({ group, items }) => (
-                <div key={group} className="mb-1">
-                  <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground]">{group}</div>
-                  {items.map(({ cmd, idx }) => (
-                    <button key={cmd.href + cmd.label} onMouseEnter={() => setActive(idx)} onClick={() => go(cmd)}
+              ) : flat.map((it, idx) => {
+                const newGroup = idx === 0 || flat[idx - 1].group !== it.group;
+                return (
+                  <div key={`${it.group}-${it.href}-${it.label}-${idx}`}>
+                    {newGroup && <div className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground]">{it.group}</div>}
+                    <button onMouseEnter={() => setActive(idx)} onClick={() => go(it)}
                       className="w-full flex items-center gap-3 px-4 py-2 text-left text-[13.5px]"
                       style={{ background: idx === active ? "rgba(91,94,255,0.16)" : "transparent", color: idx === active ? "#fff" : "var(--foreground)" }}>
-                      {cmd.group === "Přejít na" ? <ArrowRight className="w-3.5 h-3.5 opacity-60" /> : <Plus className="w-3.5 h-3.5 opacity-60" />}
-                      <span className="flex-1">{cmd.label}</span>
+                      {it.group === "Výsledky" ? <Search className="w-3.5 h-3.5 opacity-50" /> : it.group === "Přejít na" ? <ArrowRight className="w-3.5 h-3.5 opacity-60" /> : <Plus className="w-3.5 h-3.5 opacity-60" />}
+                      <span className="flex-1 truncate">{it.label}{it.sub && <span className="text-[--muted-foreground] text-[12px]"> · {it.sub}</span>}</span>
                       {idx === active && <CornerDownLeft className="w-3.5 h-3.5 opacity-50" />}
                     </button>
-                  ))}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         </motion.div>
