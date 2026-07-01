@@ -20,6 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { ClientHub } from "@/components/klienti/client-hub";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -464,6 +465,8 @@ export default function KlientDetailPage() {
           icon={<BarChart2 className="w-4 h-4" />}
         />
       </motion.div>
+
+      <ClientHub klientName={client.name} />
 
       {/* ── 3. Deliverables ── */}
       {deliverables.length > 0 && (

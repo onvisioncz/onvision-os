@@ -12,11 +12,11 @@ Odškrtávej hotové `[x]`.
 - [x] 5. **Cíle & benchmarky** — nastav cíl (obrat/marže/výstupy), sleduj vs realita *(S)*
 
 ## 🔗 Propojení modulů (data zadáš jednou, tečou všude)
-- [ ] 6. **Řetězec Call sheet → Výkazy → Ziskovost → Cashflow** *(M)*
-- [ ] 7. **Výstupy → Delivery / Klient. sdílení** jedním klikem *(S)*
-- [ ] 8. **Technika ↔ Shooting/Call sheet** — rezervace se tvoří z call sheetu, kolize hlídané *(M)*
-- [ ] 9. **Odměny „podle projektů" ← Výkazy** (hodiny × sazba = automatický náklad) *(S)*
-- [ ] 10. **Klient jako hub** — u klienta vidíš vše (faktury, projekty, odměny, ziskovost, sdílení, NPS) *(M)*
+- [x] 6. **Řetězec Call sheet → Výkazy → Ziskovost → Cashflow** *(M)*
+- [x] 7. **Výstupy → Delivery / Klient. sdílení** jedním klikem *(S)*
+- [x] 8. **Technika ↔ Shooting/Call sheet** — rezervace se tvoří z call sheetu, kolize hlídané *(M)*
+- [x] 9. **Odměny „podle projektů" ← Výkazy** (hodiny × sazba = automatický náklad) *(S)*
+- [x] 10. **Klient jako hub** — u klienta vidíš vše (faktury, projekty, odměny, ziskovost, sdílení, NPS) *(M)*
 
 ## 🤖 AI vrstva
 - [ ] 11. **Nasadit Telegram agenta** — hlas/mobil, už postavený *(S)*
