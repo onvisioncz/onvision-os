@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
   Plus, Trash2, Sparkles, Loader2, ArrowLeft, Clapperboard, MapPin, Calendar,
+  Send, CalendarPlus, ListChecks, Cloud,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { DEFAULT_USERS } from "@/lib/roles";
@@ -35,6 +36,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 interface RetainerClient { name: string }
+interface ShootingDay { id: number; datum: string; klient: string; typ: string; lokace: string; clenove: string[]; zacatek: string; konec: string; poznamka: string }
+interface Task { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
 
 export default function CallSheetPage() {
   const [sheets, setSheets] = useSupabaseData<CallSheet[]>(CALLSHEET_KEY, () => []);
@@ -102,9 +105,62 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
   const [aiText, setAiText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
+  const [, setShooting] = useSupabaseData<ShootingDay[]>("ov-shooting-days", () => []);
+  const [, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3500); };
   const isNew = !sheet.nazev && sheet.crew.length === 0;
 
   const set = <K extends keyof CallSheet>(k: K, v: CallSheet[K]) => setCs((p) => ({ ...p, [k]: v }));
+
+  /* ── Integrace ────────────────────────────────────────────────────────── */
+  const sendCrew = async () => {
+    setBusy("send");
+    try {
+      const res = await fetch("/api/call-sheet/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sheet: cs }) });
+      const j = await res.json();
+      if (j.ok) flash(`Odesláno crew (${j.sent})${j.skipped?.length ? ` · bez e-mailu: ${j.skipped.join(", ")}` : ""}`);
+      else flash(`Chyba: ${j.error ?? "nepodařilo se"}`);
+    } catch { flash("Chyba sítě."); } finally { setBusy(null); }
+  };
+
+  const toShooting = () => {
+    setShooting((prev) => [...prev, {
+      id: Date.now(), datum: cs.datum, klient: cs.klient, typ: cs.typ, lokace: cs.adresa,
+      clenove: cs.crew.map((c) => c.jmeno).filter(Boolean), zacatek: cs.casSrazu, konec: cs.konec,
+      poznamka: `Z call sheetu: ${cs.nazev}`,
+    }]);
+    flash("Přidáno do produkčního plánu.");
+  };
+
+  const genTasks = () => {
+    const proj = cs.nazev || cs.klient || "Natáčení";
+    const assign = cs.crew[0]?.jmeno || "Produkce";
+    const items: string[] = [];
+    cs.pujcenaTechnika.forEach((r) => r.nazev && items.push(`Půjčit: ${r.nazev}${r.odkud ? ` (${r.odkud})` : ""}`));
+    if (cs.catering) items.push(`Zajistit catering: ${cs.catering}`);
+    if (cs.rekvizity) items.push(`Připravit rekvizity: ${cs.rekvizity}`);
+    if (cs.doprava) items.push(`Doprava techniky: ${cs.doprava}`);
+    if (items.length === 0) { flash("Není z čeho úkoly vytvořit (vyplň techniku/catering…)."); return; }
+    setTasks((prev) => {
+      let id = Date.now();
+      const nove: Task[] = items.map((nazev) => ({ id: id++, nazev, projekt: proj, prirazeno: assign, priorita: "Střední", status: "Nové", deadline: cs.datum }));
+      return [...prev, ...nove];
+    });
+    flash(`Vytvořeno ${items.length} úkolů.`);
+  };
+
+  const loadWeather = async () => {
+    if (!cs.adresa || !cs.datum) { flash("Vyplň nejdřív adresu a datum."); return; }
+    setBusy("weather");
+    try {
+      const res = await fetch("/api/call-sheet/weather", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ adresa: cs.adresa, datum: cs.datum }) });
+      const j = await res.json();
+      if (j.pocasi) { setCs((p) => ({ ...p, pocasi: j.pocasi, golden: j.golden || p.golden })); flash("Počasí načteno."); }
+      else flash(`Chyba: ${j.error ?? "nepodařilo se"}`);
+    } catch { flash("Chyba sítě."); } finally { setBusy(null); }
+  };
 
   const runAi = async () => {
     if (!aiText.trim()) return;
@@ -159,6 +215,19 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
           </button>
         </div>
         {aiErr && <p className="text-[12px] mt-1.5" style={{ color: "oklch(0.65 0.22 25)" }}>{aiErr}</p>}
+      </div>
+
+      {/* Akce / integrace */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={sendCrew} disabled={busy === "send"} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold disabled:opacity-40" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+          {busy === "send" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" style={{ color: PRIMARY }} />} Rozeslat crew
+        </button>
+        <button onClick={toShooting} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+          <CalendarPlus className="w-3.5 h-3.5" style={{ color: PRIMARY }} /> Do produkčního plánu
+        </button>
+        <button onClick={genTasks} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+          <ListChecks className="w-3.5 h-3.5" style={{ color: PRIMARY }} /> Vygenerovat úkoly
+        </button>
       </div>
 
       {/* Hlavička */}
@@ -243,6 +312,9 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
 
       {/* Podmínky */}
       <Section title="Podmínky (venku / sport)">
+        <button onClick={loadWeather} disabled={busy === "weather"} className="btn-tactile flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-[12px] font-semibold mb-3 disabled:opacity-40" style={{ border: "1px solid var(--border)" }}>
+          {busy === "weather" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" style={{ color: PRIMARY }} />} Načíst počasí z adresy
+        </button>
         <div className="grid md:grid-cols-3 gap-3">
           <div><L>Počasí</L><input className={iCls} style={iStyle} value={cs.pocasi} onChange={(e) => set("pocasi", e.target.value)} placeholder="Předpověď" /></div>
           <div><L>Východ / západ slunce</L><input className={iCls} style={iStyle} value={cs.golden} onChange={(e) => set("golden", e.target.value)} placeholder="Golden hour" /></div>
@@ -278,6 +350,10 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
         ) : <span />}
         <button onClick={() => onSave(cs)} disabled={!cs.nazev.trim()} className="btn-tactile px-5 py-2 rounded-[8px] text-[13px] font-semibold disabled:opacity-40" style={{ background: PRIMARY, color: "white" }}>Uložit call sheet</button>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-[8px] text-[13px] font-medium shadow-lg" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>{toast}</div>
+      )}
     </div>
   );
 }

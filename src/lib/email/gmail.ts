@@ -15,6 +15,8 @@ export interface MailInput {
   text: string;
   /** Volitelné HTML tělo. */
   html?: string;
+  /** Volitelné přílohy (např. call sheet PDF). */
+  attachments?: { filename: string; content: Buffer }[];
 }
 
 export interface MailResult {
@@ -61,6 +63,7 @@ export async function sendMail(input: MailInput): Promise<MailResult> {
       subject: input.subject,
       text: input.text,
       html: input.html,
+      attachments: input.attachments,
     });
     return { ok: true, messageId: info.messageId };
   } catch (e) {
