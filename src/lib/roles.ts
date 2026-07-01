@@ -133,10 +133,10 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
   fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow"],
   ucetni:    ["/dashboard", "/odmeny", "/fakturace"],
-  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/ukoly", "/outputs"],
-  grafik:    ["/ukoly", "/outputs"],
-  smm:       ["/smm", "/calendar", "/outputs", "/reporty"],
-  pm:        ["/smm", "/ukoly", "/outputs"],
+  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/ukoly", "/outputs"],
+  grafik:    ["/ukoly", "/outputs", "/technika"],
+  smm:       ["/smm", "/calendar", "/outputs", "/reporty", "/technika"],
+  pm:        ["/smm", "/ukoly", "/outputs", "/technika"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */
