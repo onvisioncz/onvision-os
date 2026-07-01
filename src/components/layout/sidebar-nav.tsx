@@ -172,7 +172,7 @@ function NavGroup({
       >
         <span
           className="text-[10px] font-bold tracking-widest uppercase transition-colors"
-          style={{ color: hasActive ? "oklch(0.58 0.15 265)" : "oklch(0.36 0.005 222)" }}
+          style={{ color: "oklch(0.58 0.15 265)" }}
         >
           {group.label}
         </span>
@@ -182,7 +182,7 @@ function NavGroup({
         >
           <ChevronRight
             className="w-3 h-3"
-            style={{ color: hasActive ? "oklch(0.58 0.15 265)" : "oklch(0.30 0.005 222)" }}
+            style={{ color: "oklch(0.58 0.15 265)" }}
           />
         </motion.div>
       </button>
