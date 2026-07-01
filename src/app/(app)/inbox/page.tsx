@@ -260,6 +260,25 @@ function eventToNotif(e: NotifEvent): Notif {
   };
 }
 
+/* ── Nové moduly → notifikace ───────────────────────────────────────────── */
+interface CApproval { id: number; klient: string; nazev: string; status: string; comments?: { autor: string; text: string; cas: string }[] }
+interface NpsItem { id: number; klient: string; score: number }
+interface GearRes { id: number; kdo: string; od: string; do: string; projekt: string }
+
+function generateNew(approvals: CApproval[], nps: NpsItem[], reservations: GearRes[]): Notif[] {
+  const out: Notif[] = [];
+  approvals.filter((a) => a.status === "Čeká").forEach((a) =>
+    out.push({ id: `appr-${a.id}`, type: "schvaleni", title: `Čeká na schválení klientem`, body: `${a.nazev} · ${a.klient}`, cas: "", urgency: 1, link: "/klient-share", linkLabel: "Otevřít sdílení" }));
+  approvals.forEach((a) => (a.comments ?? []).filter((c) => c.autor === "Klient").forEach((c, idx) =>
+    out.push({ id: `cmt-${a.id}-${idx}`, type: "upozorneni", title: `Komentář klienta · ${a.klient}`, body: `${c.cas ? `${c.cas} — ` : ""}${c.text}`, cas: "", urgency: 2, link: "/klient-share", linkLabel: "Otevřít" })));
+  nps.forEach((n) =>
+    out.push({ id: `nps-${n.id}`, type: "upozorneni", title: `Hodnocení klienta: ${n.score}/10`, body: n.klient, cas: "", urgency: n.score < 7 ? 1 : 3, link: "/klient-share", linkLabel: "Otevřít" }));
+  const today = new Date().toISOString().slice(0, 10);
+  reservations.filter((r) => r.do >= today).forEach((r) =>
+    out.push({ id: `gear-${r.id}`, type: "upozorneni", title: `Rezervace techniky`, body: `${r.kdo} · ${r.od}–${r.do}${r.projekt ? ` · ${r.projekt}` : ""}`, cas: "", urgency: 3, link: "/technika", linkLabel: "Otevřít techniku" }));
+  return out;
+}
+
 export default function InboxPage() {
   const router = useRouter();
 
@@ -272,6 +291,9 @@ export default function InboxPage() {
   const [schvaleni, setSchvaleni] = useState<SchvaleniItem[]>([]);
   const [incomes,   setIncomes]   = useState<IncomeItem[]>([]);
   const [events,    setEvents]    = useState<NotifEvent[]>([]);
+  const [cApprovals, setCApprovals] = useState<CApproval[]>([]);
+  const [npsList,    setNpsList]    = useState<NpsItem[]>([]);
+  const [gearRes,    setGearRes]    = useState<GearRes[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
@@ -283,19 +305,25 @@ export default function InboxPage() {
       fetch("/api/sync?key=ov-schvaleni-items").then(r => r.json()),
       fetch("/api/sync?key=ov-finance-incomes").then(r => r.json()),
       fetch("/api/sync?key=ov-notif-events").then(r => r.json()),
-    ]).then(([t, f, s, i, ev]) => {
+      fetch("/api/sync?key=ov-client-approvals").then(r => r.json()),
+      fetch("/api/sync?key=ov-nps").then(r => r.json()),
+      fetch("/api/sync?key=ov-gear-reservations").then(r => r.json()),
+    ]).then(([t, f, s, i, ev, ca, np, gr]) => {
       if (Array.isArray(t.value)) setTasks(t.value);
       if (Array.isArray(f.value)) setFaktury(f.value);
       if (Array.isArray(s.value)) setSchvaleni(s.value);
       if (Array.isArray(i.value)) setIncomes(i.value);
       if (Array.isArray(ev.value)) setEvents(ev.value);
+      if (Array.isArray(ca.value)) setCApprovals(ca.value);
+      if (Array.isArray(np.value)) setNpsList(np.value);
+      if (Array.isArray(gr.value)) setGearRes(gr.value);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [lastRefresh]);
 
   /* Generate notifications from live data + stored events */
   const allNotifs = useMemo(() => {
-    const system = generate(tasks, faktury, schvaleni, incomes);
+    const system = [...generate(tasks, faktury, schvaleni, incomes), ...generateNew(cApprovals, npsList, gearRes)];
     // Convert stored events to Notif format; deduplicate by id
     const existingIds = new Set(system.map(n => n.id));
     const eventNotifs = events
@@ -305,7 +333,7 @@ export default function InboxPage() {
       .reverse();
     // Events go after system alerts
     return [...system, ...eventNotifs];
-  }, [tasks, faktury, schvaleni, incomes, events]);
+  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes]);
 
   /* Apply read/archived state */
   const notifs = useMemo(
