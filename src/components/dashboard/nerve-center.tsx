@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, FileWarning, CheckSquare, ClipboardCheck, TrendingDown, Star, Camera, ShieldCheck, ArrowRight,
+  AlertTriangle, FileWarning, CheckSquare, ClipboardCheck, TrendingDown, Star, Camera, ShieldCheck,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
@@ -76,31 +76,22 @@ export function NerveCenter() {
   }, [invoices, tasks, approvals, nps, reservations, costs, timeEntries, rates]);
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2 mb-2.5">
-        <AlertTriangle className="w-3.5 h-3.5" style={{ color: signals.length ? AMBER : GREEN }} />
-        <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground]">Nervové centrum</span>
-      </div>
+    <div className="mb-6 flex flex-wrap items-center gap-2">
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[--muted-foreground] mr-1 flex items-center gap-1.5">
+        <AlertTriangle className="w-3 h-3" style={{ color: signals.length ? AMBER : GREEN }} /> Nervové centrum
+      </span>
       {signals.length === 0 ? (
-        <div className="glass-panel flex items-center gap-2 px-4 py-3 text-[13px]" style={{ color: GREEN }}>
-          <ShieldCheck className="w-4 h-4" /> Vše v klidu — nic nehoří. 🎉
-        </div>
-      ) : (
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {signals.map((s) => (
-            <Link key={s.key} href={s.href} className="glass-panel group flex items-center gap-3 px-4 py-3" style={{ borderColor: `${s.color.replace(")", " / 0.35)")}` }}>
-              <s.icon className="w-4 h-4 shrink-0" style={{ color: s.color }} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-bold leading-none" style={{ color: s.color, fontFamily: "var(--font-heading)" }}>
-                  {s.count}{s.detail ? <span className="text-[12px] font-medium text-[--muted-foreground]"> · {s.detail}</span> : null}
-                </div>
-                <div className="text-[12px] text-[--muted-foreground] truncate">{s.label}</div>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[--muted-foreground] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
-          ))}
-        </div>
-      )}
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold" style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>
+          <ShieldCheck className="w-3.5 h-3.5" /> Vše v klidu 🎉
+        </span>
+      ) : signals.map((s) => (
+        <Link key={s.key} href={s.href} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition-transform hover:-translate-y-0.5"
+          style={{ color: s.color, background: s.color.replace(")", " / 0.12)"), border: `1px solid ${s.color.replace(")", " / 0.28)")}` }}>
+          <s.icon className="w-3.5 h-3.5 shrink-0" />
+          <span className="font-bold" style={{ fontFamily: "var(--font-heading)" }}>{s.count}</span>
+          <span className="font-medium opacity-90">{s.label}{s.detail ? ` · ${s.detail}` : ""}</span>
+        </Link>
+      ))}
     </div>
   );
 }
