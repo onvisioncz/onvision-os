@@ -22,6 +22,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
+import { NerveCenter } from "@/components/dashboard/nerve-center";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
 
@@ -1253,6 +1254,8 @@ export default function DashboardPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <NerveCenter />
 
         {/* ── 2. Metric cards (aligned with top grid, 6-col) ── */}
         <motion.div
