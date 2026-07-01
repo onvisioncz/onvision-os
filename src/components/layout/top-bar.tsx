@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2, LogOut, Check, Cloud, CloudOff, Loader } from "lucide-react";
+import { Undo2, LogOut, Check, Cloud, CloudOff, Loader, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { globalUndo, type SyncStatus } from "@/lib/hooks/use-supabase-data";
 import { PushSubscribeIconButton } from "@/components/push-subscribe-button";
@@ -78,6 +78,16 @@ export function TopBar() {
         paddingBottom: "10px",
       }}
     >
+      {/* Command palette trigger */}
+      <button
+        onClick={() => window.dispatchEvent(new Event("ov-command-palette"))}
+        className="hidden md:flex items-center gap-2 mr-auto glass-input px-3 h-8 text-[12px] text-[--muted-foreground]"
+        title="Hledat / skočit (⌘K)"
+      >
+        <Search style={{ width: 13, height: 13 }} /> Hledat…
+        <kbd className="text-[10px] px-1 py-0.5 rounded" style={{ border: "1px solid oklch(1 0 0 / 0.14)" }}>⌘K</kbd>
+      </button>
+
       {/* Chat — jen na mobilu (desktop má v sidebaru) */}
       <div className="md:hidden">
         <button

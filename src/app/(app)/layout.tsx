@@ -3,6 +3,7 @@ import { TopBar } from "@/components/layout/top-bar";
 import { ChatShell } from "@/components/chat/chat-shell";
 import { NotifBanner } from "@/components/notif-banner";
 import { VystupyFab } from "@/components/layout/vystup-fab";
+import { CommandPalette } from "@/components/command-palette";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <NotifBanner />
         <VystupyFab />
       </div>
+      <CommandPalette />
     </ChatShell>
   );
 }
