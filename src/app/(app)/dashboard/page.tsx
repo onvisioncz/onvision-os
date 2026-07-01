@@ -829,7 +829,7 @@ export default function DashboardPage() {
         >
           {/* Greeting card */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 4", padding: "24px 26px" }}>
-            <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
             </p>
             <h1 style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, fontSize: "clamp(28px,3.2vw,38px)", letterSpacing: "-0.03em", lineHeight: 1.08, margin: 0, marginBottom: 10 }}>
@@ -892,11 +892,11 @@ export default function DashboardPage() {
                   cursor: "pointer",
                   background: "transparent",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.30)",
+                  color: "rgba(255,255,255,0.42)",
                   transition: "color 0.14s, border-color 0.14s",
                 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.60)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.30)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.42)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
               >
                 📋 Uzavřít měsíc
               </button>
@@ -910,7 +910,7 @@ export default function DashboardPage() {
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)" }}>AI Asistent</span>
               </div>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", letterSpacing: "0.05em" }}>online · claude-3.5</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.40)", letterSpacing: "0.05em" }}>online · claude-3.5</span>
             </div>
 
             {/* Návrh dne — derived from real task data */}
@@ -1176,7 +1176,7 @@ export default function DashboardPage() {
                   </div>
                   <button
                     onClick={() => setNoteOpen(false)}
-                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.30)", cursor: "pointer", padding: 4, lineHeight: 1, borderRadius: 6 }}
+                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.42)", cursor: "pointer", padding: 4, lineHeight: 1, borderRadius: 6 }}
                   >
                     <X size={16} />
                   </button>
@@ -1240,7 +1240,7 @@ export default function DashboardPage() {
                           : "1px solid rgba(83,83,246,0.12)",
                         color: noteText.trim()
                           ? (noteSaved ? "rgba(52,211,153,0.9)" : "#ffffff")
-                          : "rgba(255,255,255,0.28)",
+                          : "rgba(255,255,255,0.40)",
                         fontSize: 12, fontWeight: 600, cursor: noteText.trim() ? "pointer" : "not-allowed",
                         fontFamily: "var(--font-jakarta)",
                         transition: "all 0.18s",
@@ -1264,7 +1264,7 @@ export default function DashboardPage() {
         >
           {/* Tile 1: Příjmy (MRR) — cols 1-2 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 3", padding: "18px 20px" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)", marginBottom: 10 }}>
               Příjmy tento měsíc
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1278,7 +1278,7 @@ export default function DashboardPage() {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: momTrend >= 0 ? "rgba(83,83,246,0.18)" : "rgba(239,68,68,0.15)", border: `1px solid ${momTrend >= 0 ? "rgba(83,83,246,0.32)" : "rgba(239,68,68,0.30)"}`, color: momTrend >= 0 ? "#8080ff" : "#ef4444", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
                         {momTrend >= 0 ? "↑" : "↓"} {Math.abs(momTrend).toFixed(1).replace(".", ",")} %
                       </span>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.30)" }}>vs. minulý měsíc</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)" }}>vs. minulý měsíc</span>
                     </>
                   ) : (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.18)", border: "1px solid rgba(83,83,246,0.32)", color: "#8080ff", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
@@ -1287,17 +1287,12 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
-                <defs><linearGradient id="mg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#5353F6" stopOpacity="0.45"/><stop offset="100%" stopColor="#5353F6" stopOpacity="0"/></linearGradient></defs>
-                <path d="M0 36 C12 33 22 28 34 22 C46 16 56 11 70 7 C80 4 84 2 88 1 L88 44 L0 44Z" fill="url(#mg1)"/>
-                <path d="M0 36 C12 33 22 28 34 22 C46 16 56 11 70 7 C80 4 84 2 88 1" stroke="#7070ff" strokeWidth="1.8" fill="none"/>
-              </svg>
             </div>
           </div>
 
           {/* Tile 2: Otevřené úkoly — cols 3-4 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "3 / 5", padding: "18px 20px" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)", marginBottom: 10 }}>
               Otevřené úkoly
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1315,16 +1310,13 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M0 36 T14 32 T28 28 T42 20 T56 26 T70 16 T88 12" stroke="rgba(167,139,250,0.7)" strokeWidth="1.8" fill="none"/>
-              </svg>
             </div>
           </div>
 
           {/* Tile 3: Aktivní zakázky — cols 5-6 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "5 / 7", padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.30)" }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)" }}>
                 Aktivní zakázky
               </p>
               <span style={{ fontSize: 9, background: "rgba(83,83,246,0.18)", color: "#a78bfa", border: "1px solid rgba(83,83,246,0.25)", padding: "1px 7px", borderRadius: 8, letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>
@@ -1334,20 +1326,15 @@ export default function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 3 }}>Retainer</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 3 }}>Retainer</div>
                   <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeClients.length}</div>
                 </div>
                 <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", marginBottom: 3 }} />
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 3 }}>Jednorázový</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 3 }}>Jednorázový</div>
                   <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeOneoffs.length}</div>
                 </div>
               </div>
-              <svg width="88" height="44" viewBox="0 0 88 44" fill="none" style={{ flexShrink: 0 }}>
-                <defs><linearGradient id="mg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#5353F6" stopOpacity="0.35"/><stop offset="100%" stopColor="#5353F6" stopOpacity="0"/></linearGradient></defs>
-                <path d="M0 34 T22 28 T44 20 T66 16 T88 13 L88 44 L0 44Z" fill="url(#mg3)"/>
-                <path d="M0 34 T22 28 T44 20 T66 16 T88 13" stroke="rgba(83,83,246,0.75)" strokeWidth="1.8" fill="none"/>
-              </svg>
             </div>
           </div>
         </motion.div>
@@ -1364,7 +1351,7 @@ export default function DashboardPage() {
               <Link href="/ukoly" style={{ fontSize: 11, color: "rgba(130,130,255,0.75)", textDecoration: "none" }}>Zobrazit vše →</Link>
             </div>
             {topTasks.length === 0 ? (
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.42)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {topTasks.slice(0, 6).map((t) => {
@@ -1395,7 +1382,7 @@ export default function DashboardPage() {
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.30)" }}>{t.projekt}</p>
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.42)" }}>{t.projekt}</p>
                       </div>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 7, background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, flexShrink: 0 }}>
                         {daysLabel}
@@ -1403,7 +1390,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => markTaskDone(t.id)}
                         title="Hotovo"
-                        style={{ width: 22, height: 22, borderRadius: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.28)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                        style={{ width: 22, height: 22, borderRadius: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.40)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                       >
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2 4.8-4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
@@ -1490,7 +1477,7 @@ export default function DashboardPage() {
                   <AnimatePresence mode="popLayout">
                     {agendaTasks.length === 0 ? (
                       <motion.p key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        style={{ fontSize: 11.5, color: "rgba(255,255,255,0.30)" }}>
+                        style={{ fontSize: 11.5, color: "rgba(255,255,255,0.42)" }}>
                         Žádné deadliny 👌
                       </motion.p>
                     ) : agendaTasks.slice(0, 3).map(t => (
@@ -1539,7 +1526,7 @@ export default function DashboardPage() {
                         {isDone && <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1.5 4l2 2 3.5-3.5" stroke="#8080ff" strokeWidth="1.5"/></svg>}
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.72)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
+                        <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.72)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
                         <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, marginTop: 3, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
                       </div>
                       <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", flexShrink: 0 }}>{t.deadline || ""}</span>
