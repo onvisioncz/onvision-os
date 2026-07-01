@@ -8,8 +8,8 @@ import { DEFAULT_USERS } from "@/lib/roles";
 import { TIME_KEY, monthPrefix, monthLabel, fmtHod, sumBy, type TimeEntry } from "@/lib/vykazy";
 
 const PRIMARY = "oklch(0.62 0.27 265)";
-const iCls = "px-3 py-2 rounded-[7px] text-[13px] outline-none";
-const iStyle = { background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" } as const;
+const iCls = "glass-input px-3 py-2 text-[13px]";
+const iStyle = {} as const;
 
 function exportCSV(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;
@@ -72,7 +72,7 @@ export default function VykazyPage() {
       </div>
 
       {/* Quick log */}
-      <div className="flex flex-wrap items-end gap-2 p-4 rounded-[12px] mb-5" style={{ background: "oklch(0.62 0.27 265 / 0.06)", border: "1px solid oklch(0.62 0.27 265 / 0.18)" }}>
+      <div className="glass-panel flex flex-wrap items-end gap-2 p-4 mb-5">
         <div><label className="text-[11px] text-[--muted-foreground]">Klient</label><input list="vk-clients" className={iCls} style={{ ...iStyle, minWidth: 150 }} value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} placeholder="Klient" /><datalist id="vk-clients">{clientNames.map((n) => <option key={n} value={n} />)}</datalist></div>
         <div className="flex-1"><label className="text-[11px] text-[--muted-foreground]">Projekt</label><input className={iCls} style={{ ...iStyle, width: "100%" }} value={form.projekt} onChange={(e) => setForm({ ...form, projekt: e.target.value })} placeholder="Na čem" /></div>
         <div><label className="text-[11px] text-[--muted-foreground]">Datum</label><input type="date" className={iCls} style={iStyle} value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} /></div>
