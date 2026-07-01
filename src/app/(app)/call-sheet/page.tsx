@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
   Plus, Trash2, Sparkles, Loader2, ArrowLeft, Clapperboard, MapPin, Calendar,
-  Send, CalendarPlus, ListChecks, Cloud,
+  Send, CalendarPlus, ListChecks, Cloud, Clock, Camera,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { DEFAULT_USERS } from "@/lib/roles";
@@ -13,6 +13,23 @@ import {
   CALLSHEET_KEY, emptyCallSheet, mapsLink, SHOOT_TYPY, CALL_STATUSY,
   type CallSheet, type ShootTyp, type CallStatus,
 } from "@/lib/callsheet";
+import { TIME_KEY, type TimeEntry } from "@/lib/vykazy";
+import { GEAR_KEY, GEAR_RES_KEY, hasConflict, type GearItem, type GearReservation } from "@/lib/gear";
+
+/* "D. M. YYYY" → "YYYY-MM-DD" */
+function csDateISO(d: string): string {
+  const m = (d || "").match(/(\d{1,2})\.\s*(\d{1,2})\.?(?:\s*(\d{4}))?/);
+  if (!m) return new Date().toISOString().slice(0, 10);
+  const y = m[3] ? +m[3] : new Date().getFullYear();
+  return `${y}-${String(+m[2]).padStart(2, "0")}-${String(+m[1]).padStart(2, "0")}`;
+}
+/* "8:00","16:00" → hodiny (default 8) */
+function hoursBetween(a: string, b: string): number {
+  const pa = (a || "").match(/(\d{1,2}):(\d{2})/), pb = (b || "").match(/(\d{1,2}):(\d{2})/);
+  if (!pa || !pb) return 8;
+  const diff = (+pb[1] * 60 + +pb[2]) - (+pa[1] * 60 + +pa[2]);
+  return diff > 0 ? Math.round(diff / 60 * 10) / 10 : 8;
+}
 
 const CallSheetDownloadButton = dynamic(
   () => import("@/components/call-sheet/CallSheetDownloadButton").then((m) => m.CallSheetDownloadButton),
@@ -107,6 +124,10 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
   const [aiErr, setAiErr] = useState<string | null>(null);
   const [, setShooting] = useSupabaseData<ShootingDay[]>("ov-shooting-days", () => []);
   const [, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
+  const [, setTimeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [gear] = useSupabaseData<GearItem[]>(GEAR_KEY, () => []);
+  const [gearRes, setGearRes] = useSupabaseData<GearReservation[]>(GEAR_RES_KEY, () => []);
+  const [selGear, setSelGear] = useState<number[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3500); };
@@ -149,6 +170,34 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
       return [...prev, ...nove];
     });
     flash(`Vytvořeno ${items.length} úkolů.`);
+  };
+
+  // #6 — hodiny crew → Výkazy
+  const logHours = () => {
+    const crew = cs.crew.filter((c) => c.jmeno);
+    if (!crew.length) { flash("Doplň členy crew."); return; }
+    const iso = csDateISO(cs.datum);
+    const h = hoursBetween(cs.casSrazu, cs.konec);
+    let id = Date.now();
+    const entries: TimeEntry[] = crew.map((c) => ({ id: id++, kdo: c.jmeno, klient: cs.klient, projekt: cs.nazev || "Natáčení", datum: iso, hodiny: h, popis: "Natáčení" }));
+    setTimeEntries((prev) => [...prev, ...entries]);
+    flash(`Zapsáno ${entries.length}× ${h} h do výkazů.`);
+  };
+
+  // #8 — rezervace skladové techniky na den natáčení (s kontrolou kolizí)
+  const reserveGear = () => {
+    if (!selGear.length) { flash("Vyber techniku ze skladu."); return; }
+    const iso = csDateISO(cs.datum);
+    const kdo = cs.crew[0]?.jmeno || "Produkce";
+    const created: GearReservation[] = [];
+    const skipped: string[] = [];
+    selGear.forEach((gid, i) => {
+      if (hasConflict([...gearRes, ...created], gid, iso, iso)) { skipped.push(gear.find((g) => g.id === gid)?.nazev ?? ""); return; }
+      created.push({ id: Date.now() + i, gearId: gid, kdo, od: iso, do: iso, projekt: cs.nazev, createdAt: new Date().toISOString() });
+    });
+    if (created.length) setGearRes((prev) => [...prev, ...created]);
+    setSelGear([]);
+    flash(`Rezervováno ${created.length} kusů${skipped.filter(Boolean).length ? ` · kolize: ${skipped.filter(Boolean).join(", ")}` : ""}.`);
   };
 
   const loadWeather = async () => {
@@ -228,7 +277,24 @@ function Editor({ sheet, team, clientNames, onSave, onCancel, onDelete }: {
         <button onClick={genTasks} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
           <ListChecks className="w-3.5 h-3.5" style={{ color: PRIMARY }} /> Vygenerovat úkoly
         </button>
+        <button onClick={logHours} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold" style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+          <Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} /> Zapsat hodiny crew
+        </button>
       </div>
+
+      {/* #8 — rezervace skladové techniky na den natáčení */}
+      {gear.length > 0 && (
+        <div className="rounded-[12px] p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <div className="flex items-center gap-2 mb-2"><Camera className="w-4 h-4" style={{ color: PRIMARY }} /><span className="text-[13px] font-semibold">Rezervovat techniku ze skladu na {cs.datum || "den natáčení"}</span></div>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {gear.map((g) => {
+              const on = selGear.includes(g.id);
+              return <button key={g.id} onClick={() => setSelGear((s) => on ? s.filter((x) => x !== g.id) : [...s, g.id])} className="px-2.5 py-1 rounded-[6px] text-[12px]" style={{ border: `1px solid ${on ? PRIMARY : "var(--border)"}`, background: on ? "oklch(0.62 0.27 265 / 0.14)" : "transparent", color: on ? PRIMARY : "var(--muted-foreground)" }}>{g.nazev}</button>;
+            })}
+          </div>
+          <button onClick={reserveGear} disabled={!selGear.length} className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold disabled:opacity-40" style={{ background: PRIMARY, color: "white" }}><Camera className="w-3.5 h-3.5" /> Rezervovat vybrané ({selGear.length})</button>
+        </div>
+      )}
 
       {/* Hlavička */}
       <Section title="Hlavička">
