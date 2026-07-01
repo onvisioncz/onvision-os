@@ -19,6 +19,7 @@ export default function KlientSharePage() {
   const [approvals, setApprovals] = useSupabaseData<ClientApproval[]>(APPROVALS_KEY, () => []);
   const [nps] = useSupabaseData<NpsRating[]>(NPS_KEY, () => []);
   const [clients] = useSupabaseData<{ name: string }[]>("ov-monthly-clients", () => []);
+  const [outputs] = useSupabaseData<{ id: string; nazev: string; projektNazev?: string; mediaUrl?: string }[]>("ov-output-messages", () => []);
   const [sel, setSel] = useState<ClientShare | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [newKlient, setNewKlient] = useState("");
@@ -41,6 +42,8 @@ export default function KlientSharePage() {
     const clientNps = nps.filter((n) => n.klient === share.klient);
 
     const addApproval = () => setApprovals((prev) => [...prev, { id: Date.now(), klient: share.klient, nazev: "Nový obsah", videoUrl: "", popis: "", status: "Čeká", comments: [], createdAt: new Date().toISOString() }]);
+    const addFromOutput = (id: string) => { const o = outputs.find((x) => x.id === id); if (!o) return; setApprovals((prev) => [...prev, { id: Date.now(), klient: share.klient, nazev: o.nazev || "Obsah", videoUrl: o.mediaUrl || "", popis: "", status: "Čeká", comments: [], createdAt: new Date().toISOString() }]); };
+    const relevantOutputs = [...outputs].reverse().sort((a) => (a.projektNazev === share.klient ? -1 : 0)).slice(0, 40);
     const setApproval = (id: number, patch: Partial<ClientApproval>) => setApprovals((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a));
     const delApproval = (id: number) => setApprovals((prev) => prev.filter((a) => a.id !== id));
 
@@ -58,7 +61,17 @@ export default function KlientSharePage() {
 
         {/* Obsah ke schválení */}
         <div className="rounded-[12px] p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-          <div className="flex items-center justify-between mb-3"><h3 className="text-[13px] font-bold" style={{ color: PRIMARY }}>Obsah ke schválení</h3><button onClick={addApproval} className="btn-tactile flex items-center gap-1 px-2.5 py-1.5 rounded-[7px] text-[12px] font-semibold" style={{ border: "1px solid var(--border)" }}><Plus className="w-3.5 h-3.5" /> Přidat</button></div>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2"><h3 className="text-[13px] font-bold" style={{ color: PRIMARY }}>Obsah ke schválení</h3>
+            <div className="flex items-center gap-2">
+              {relevantOutputs.length > 0 && (
+                <select className="glass-input px-2.5 py-1.5 text-[12px]" defaultValue="" onChange={(e) => { addFromOutput(e.target.value); e.target.value = ""; }}>
+                  <option value="">+ z výstupu</option>
+                  {relevantOutputs.map((o) => <option key={o.id} value={o.id}>{o.nazev}{o.projektNazev ? ` · ${o.projektNazev}` : ""}</option>)}
+                </select>
+              )}
+              <button onClick={addApproval} className="btn-tactile flex items-center gap-1 px-2.5 py-1.5 rounded-[7px] text-[12px] font-semibold" style={{ border: "1px solid var(--border)" }}><Plus className="w-3.5 h-3.5" /> Přidat</button>
+            </div>
+          </div>
           {clientApprovals.length === 0 ? <p className="text-[12px] text-[--muted-foreground]">Zatím nic. Přidej video/obsah ke schválení.</p> : (
             <div className="space-y-3">
               {clientApprovals.map((a) => (

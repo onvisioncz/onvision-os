@@ -74,18 +74,36 @@ export default function DeliveryPage() {
   );
 }
 
+interface OutputLite { id: string; nazev: string; projektNazev?: string; mediaUrl?: string; thumbnail?: string }
+
 function Editor({ delivery, clientNames, onSave, onCancel, onDelete }: {
   delivery: Delivery; clientNames: string[]; onSave: (d: Delivery) => void; onCancel: () => void; onDelete: (id: number) => void;
 }) {
   const [d, setD] = useState<Delivery>(delivery);
+  const [outputs] = useSupabaseData<OutputLite[]>("ov-output-messages", () => []);
   const isNew = !delivery.nazev;
   const setPreview = (i: number, v: string) => setD({ ...d, previews: d.previews.map((p, j) => j === i ? v : p) });
+
+  const fromOutput = (id: string) => {
+    const o = outputs.find((x) => x.id === id);
+    if (!o) return;
+    setD((p) => ({ ...p, klient: o.projektNazev || p.klient, nazev: o.nazev || p.nazev, driveUrl: o.mediaUrl || p.driveUrl, previews: o.thumbnail ? [...p.previews.filter(Boolean), o.thumbnail] : p.previews }));
+  };
 
   return (
     <div className="p-5 md:p-7 max-w-[720px] mx-auto space-y-4">
       <button onClick={onCancel} className="btn-tactile flex items-center gap-1.5 text-[13px] text-[--muted-foreground]"><ArrowLeft className="w-4 h-4" /> Zpět</button>
 
       <div className="rounded-[12px] p-5 space-y-3" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+        {outputs.length > 0 && (
+          <div>
+            <label className="text-[11px] font-semibold text-[--muted-foreground] uppercase">Načíst z výstupu (rychlé předvyplnění)</label>
+            <select className={iCls} style={iStyle} defaultValue="" onChange={(e) => { fromOutput(e.target.value); e.target.value = ""; }}>
+              <option value="">— vyber hotový výstup —</option>
+              {[...outputs].reverse().slice(0, 40).map((o) => <option key={o.id} value={o.id}>{o.nazev}{o.projektNazev ? ` · ${o.projektNazev}` : ""}</option>)}
+            </select>
+          </div>
+        )}
         <div className="grid md:grid-cols-2 gap-3">
           <div><label className="text-[11px] font-semibold text-[--muted-foreground] uppercase">Klient</label><input list="dl-clients" className={iCls} style={iStyle} value={d.klient} onChange={(e) => setD({ ...d, klient: e.target.value })} /><datalist id="dl-clients">{clientNames.map((n) => <option key={n} value={n} />)}</datalist></div>
           <div><label className="text-[11px] font-semibold text-[--muted-foreground] uppercase">Název zakázky</label><input className={iCls} style={iStyle} value={d.nazev} onChange={(e) => setD({ ...d, nazev: e.target.value })} placeholder="Promo video — červen" /></div>
