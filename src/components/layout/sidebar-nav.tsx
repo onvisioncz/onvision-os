@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target,
+  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -23,6 +23,7 @@ import { useTaskBadge, markTaskBadgeSeen } from "@/lib/hooks/use-task-badge";
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
   { label: "Dashboard", short: "Přehled",  href: "/dashboard",  icon: LayoutDashboard },
+  { label: "Gameplán",  short: "Plán",     href: "/gameplan",   icon: Rocket },
   { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
   { label: "Úkoly",     short: "Úkoly",    href: "/ukoly",      icon: CheckSquare },
 ];
