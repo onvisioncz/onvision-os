@@ -94,12 +94,12 @@ export function NotifBanner() {
             marginRight: "auto",
             width: "min(90vw, 420px)",
             zIndex: 9999,
-            background: "oklch(0.11 0.015 222)",
-            border: "1px solid oklch(0.55 0.20 222 / 0.40)",
+            background: "oklch(0.11 0.02 265)",
+            border: "1px solid oklch(0.62 0.27 265 / 0.40)",
             borderRadius: 14,
             padding: "12px 14px",
             boxShadow:
-              "0 12px 40px oklch(0 0 0 / 0.55), 0 0 0 1px oklch(0.55 0.20 222 / 0.10), 0 0 28px oklch(0.55 0.20 222 / 0.06)",
+              "0 12px 40px oklch(0 0 0 / 0.55), 0 0 0 1px oklch(0.62 0.27 265 / 0.10), 0 0 28px oklch(0.62 0.27 265 / 0.06)",
             fontFamily: "var(--font-jakarta)",
             display: "flex",
             alignItems: "flex-start",
@@ -113,8 +113,8 @@ export function NotifBanner() {
               height: 34,
               borderRadius: 9,
               flexShrink: 0,
-              background: "oklch(0.55 0.20 222 / 0.10)",
-              border: "1px solid oklch(0.55 0.20 222 / 0.18)",
+              background: "oklch(0.62 0.27 265 / 0.10)",
+              border: "1px solid oklch(0.62 0.27 265 / 0.18)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -125,7 +125,7 @@ export function NotifBanner() {
               style={{
                 width: 14,
                 height: 14,
-                color: "oklch(0.82 0.16 222)",
+                color: "oklch(0.80 0.20 265)",
               }}
             />
           </div>
@@ -139,7 +139,7 @@ export function NotifBanner() {
                   fontWeight: 700,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: "oklch(0.72 0.18 222)",
+                  color: "oklch(0.70 0.22 265)",
                   marginBottom: 3,
                 }}
               >
@@ -175,7 +175,7 @@ export function NotifBanner() {
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: "oklch(0.82 0.16 222)",
+                color: "oklch(0.80 0.20 265)",
                 marginTop: 6,
                 display: "inline-block",
                 letterSpacing: "0.03em",

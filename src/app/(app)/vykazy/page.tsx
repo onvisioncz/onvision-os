@@ -75,10 +75,10 @@ export default function VykazyPage() {
 
       {/* Quick log */}
       <div className="glass-panel flex flex-wrap items-end gap-2 p-4 mb-5">
-        <div><label className="text-[11px] text-[--muted-foreground]">Klient</label><input list="vk-clients" className={iCls} style={{ ...iStyle, minWidth: 150 }} value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} placeholder="Klient" /><datalist id="vk-clients">{clientNames.map((n) => <option key={n} value={n} />)}</datalist></div>
-        <div className="flex-1"><label className="text-[11px] text-[--muted-foreground]">Projekt</label><input className={iCls} style={{ ...iStyle, width: "100%" }} value={form.projekt} onChange={(e) => setForm({ ...form, projekt: e.target.value })} placeholder="Na čem" /></div>
-        <div><label className="text-[11px] text-[--muted-foreground]">Datum</label><input type="date" className={iCls} style={iStyle} value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} /></div>
-        <div><label className="text-[11px] text-[--muted-foreground]">Hodiny</label><input type="number" step="0.5" className={iCls} style={{ ...iStyle, width: 90 }} value={form.hodiny} onChange={(e) => setForm({ ...form, hodiny: e.target.value })} placeholder="0" /></div>
+        <div><label className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground] mb-1">Klient</label><input list="vk-clients" className={iCls} style={{ ...iStyle, minWidth: 150 }} value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} placeholder="Klient" /><datalist id="vk-clients">{clientNames.map((n) => <option key={n} value={n} />)}</datalist></div>
+        <div className="flex-1"><label className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground] mb-1">Projekt</label><input className={iCls} style={{ ...iStyle, width: "100%" }} value={form.projekt} onChange={(e) => setForm({ ...form, projekt: e.target.value })} placeholder="Na čem" /></div>
+        <div><label className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground] mb-1">Datum</label><input type="date" className={iCls} style={iStyle} value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} /></div>
+        <div><label className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground] mb-1">Hodiny</label><input type="number" step="0.5" className={iCls} style={{ ...iStyle, width: 90 }} value={form.hodiny} onChange={(e) => setForm({ ...form, hodiny: e.target.value })} placeholder="0" /></div>
         <button onClick={add} disabled={!form.klient.trim() || !form.hodiny} className="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-[7px] text-[13px] font-semibold disabled:opacity-40" style={{ background: PRIMARY, color: "white" }}><Plus className="w-4 h-4" /> Zapsat</button>
       </div>
 
@@ -103,7 +103,7 @@ export default function VykazyPage() {
 
       {/* Summary */}
       <div className="grid md:grid-cols-3 gap-3 mb-6">
-        <div className="p-4 rounded-[10px]" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+        <div className="glass-panel p-4">
           <div className="flex items-center gap-2 mb-2"><Clock className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--muted-foreground]">Celkem {monthLabel(month)}</span></div>
           <div className="text-[22px] font-bold" style={{ color: PRIMARY, fontFamily: "var(--font-heading)" }}>{fmtHod(totalHod)}</div>
         </div>
@@ -139,7 +139,7 @@ export default function VykazyPage() {
 
 function SummaryList({ title, icon: Icon, rows }: { title: string; icon: React.ElementType; rows: { name: string; hodiny: number }[] }) {
   return (
-    <div className="p-4 rounded-[10px]" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+    <div className="glass-panel p-4">
       <div className="flex items-center gap-2 mb-2"><Icon className="w-3.5 h-3.5" style={{ color: PRIMARY }} /><span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[--muted-foreground]">{title}</span></div>
       {rows.length === 0 ? <p className="text-[12px] text-[--muted-foreground]">—</p> : (
         <div className="space-y-1">
