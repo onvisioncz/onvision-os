@@ -744,6 +744,29 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
   const [zeme, setZeme] = useState("Česká republika");
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
 
+  // ── ARES: z IČO doplní název, sídlo a DIČ, ať uživatel nepíše ručně ──
+  const [aresState, setAresState] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [aresMsg, setAresMsg] = useState("");
+  const lookupAres = useCallback(async (rawIco: string) => {
+    const clean = rawIco.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setAresState("loading"); setAresMsg("");
+    try {
+      const res = await fetch(`/api/ares?ico=${clean}`);
+      const d = await res.json();
+      if (!res.ok) { setAresState("error"); setAresMsg(d.error || "Nepodařilo se načíst z ARESu."); return; }
+      if (d.nazev) setNazev(d.nazev);
+      if (d.ulice) setUlice(d.ulice);
+      if (d.psc) setPsc(d.psc);
+      if (d.mesto) setMesto(d.mesto);
+      if (d.zeme) setZeme(d.zeme);
+      if (d.dic) setDic(d.dic);
+      setAresState("ok"); setAresMsg(`Načteno z ARESu: ${d.nazev}`);
+    } catch {
+      setAresState("error"); setAresMsg("ARES se nepodařilo kontaktovat.");
+    }
+  }, []);
+
   // Post-download state
   const [downloaded, setDownloaded] = useState(false);
   const [incomeLoading, setIncomeLoading] = useState(false);
@@ -872,7 +895,24 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2"><Field label="Název firmy"><FInput value={nazev} onChange={setNazev} placeholder="Název s.r.o." /></Field></div>
-          <Field label="IČ"><FInput value={ico} onChange={setIco} placeholder="12345678" /></Field>
+          <Field label="IČ">
+            <FInput
+              value={ico}
+              onChange={(v) => {
+                const clean = v.replace(/\D/g, "").slice(0, 8);
+                setIco(clean);
+                if (aresState !== "idle") { setAresState("idle"); setAresMsg(""); }
+                if (clean.length === 8) lookupAres(clean);
+              }}
+              placeholder="12345678"
+            />
+            {aresState !== "idle" && (
+              <p className="text-[10px] mt-1 flex items-center gap-1"
+                style={{ color: aresState === "error" ? "oklch(0.65 0.22 25)" : aresState === "ok" ? "oklch(0.67 0.155 155)" : "var(--muted-foreground)" }}>
+                {aresState === "loading" ? "Načítám z ARESu…" : aresMsg}
+              </p>
+            )}
+          </Field>
           <Field label="DIČ (volitelné)"><FInput value={dic} onChange={setDic} placeholder="CZ12345678" /></Field>
           <Field label="Ulice"><FInput value={ulice} onChange={setUlice} placeholder="Ulice 1/2" /></Field>
           <Field label="PSČ Město">
