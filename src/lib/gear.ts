@@ -13,7 +13,8 @@ export interface GearItem {
   id: number;
   nazev: string;
   kategorie: GearKategorie;
-  poznamka: string;
+  poznamka: string;   // popis — co to je, stav, příslušenství
+  fotoUrl?: string;   // náhledová fotka (jak vypadá)
 }
 
 export interface GearReservation {
