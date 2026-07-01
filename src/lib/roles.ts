@@ -133,10 +133,10 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
   fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy"],
   ucetni:    ["/dashboard", "/odmeny", "/fakturace"],
-  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share"],
-  grafik:    ["/ukoly", "/outputs", "/technika", "/vykazy", "/delivery"],
-  smm:       ["/smm", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share"],
-  pm:        ["/smm", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share"],
+  produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis"],
+  grafik:    ["/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis"],
+  smm:       ["/smm", "/smm-ai", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis"],
+  pm:        ["/smm", "/smm-ai", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */

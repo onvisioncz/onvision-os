@@ -35,6 +35,7 @@ const GROUPS = [
       { label: "Měsíční klienti",  short: "Měsíční",  href: "/projects/monthly", icon: Users },
       { label: "Jednorázovky",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
       { label: "Výkazy hodin",     short: "Výkazy",   href: "/vykazy", icon: Clock },
+      { label: "Zápis → úkoly",    short: "Zápis",    href: "/zapis", icon: FileText },
     ],
   },
   {
@@ -55,6 +56,7 @@ const GROUPS = [
     label: "Obsah",
     items: [
       { label: "SMM",      short: "SMM",      href: "/smm",      icon: Layers2 },
+      { label: "AI obsah", short: "AI obsah", href: "/smm-ai",   icon: Sparkles },
       { label: "Reporty",  short: "Reporty",  href: "/reporty",  icon: BarChart2 },
       { label: "Kalendář", short: "Kalendář", href: "/calendar", icon: CalendarDays },
       { label: "Výstupy",  short: "Výstupy",  href: "/outputs",  icon: PackageOpen },
