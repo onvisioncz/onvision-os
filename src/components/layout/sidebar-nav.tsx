@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera,
+  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +34,7 @@ const GROUPS = [
     items: [
       { label: "Měsíční klienti",  short: "Měsíční",  href: "/projects/monthly", icon: Users },
       { label: "Jednorázovky",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
+      { label: "Výkazy hodin",     short: "Výkazy",   href: "/vykazy", icon: Clock },
     ],
   },
   {
