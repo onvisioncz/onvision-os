@@ -12,6 +12,7 @@ import {
   CLIENT_COSTS_KEY, COST_TYPY, buildProfit, invoiceYear, fmtKc,
   type ClientCost, type CostTyp, type InvoiceLite,
 } from "@/lib/ziskovost";
+import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 
 interface RetainerLite { name: string }
 
@@ -50,6 +51,8 @@ export default function ZiskovostPage() {
   const [invoices] = useSupabaseData<InvoiceLite[]>("ov-issued-invoices", () => []);
   const [costs, setCosts] = useSupabaseData<ClientCost[]>(CLIENT_COSTS_KEY, () => []);
   const [retainers] = useSupabaseData<RetainerLite[]>("ov-monthly-clients", () => []);
+  const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
 
   const nowYear = new Date().getFullYear();
   const [rok, setRok] = useState(nowYear);
@@ -64,7 +67,8 @@ export default function ZiskovostPage() {
     return [...s].sort((a, b) => b - a);
   }, [invoices, nowYear]);
 
-  const rows = useMemo(() => buildProfit(invoices, costs, rok, jenZaplacene), [invoices, costs, rok, jenZaplacene]);
+  const labor = useMemo(() => laborByClient(timeEntries, rates, rok), [timeEntries, rates, rok]);
+  const rows = useMemo(() => buildProfit(invoices, costs, rok, jenZaplacene, labor), [invoices, costs, rok, jenZaplacene, labor]);
   const totals = useMemo(() => rows.reduce((a, r) => ({ p: a.p + r.prijmy, n: a.n + r.naklady, z: a.z + r.zisk }), { p: 0, n: 0, z: 0 }), [rows]);
   const avgMarze = totals.p > 0 ? Math.round((totals.z / totals.p) * 100) : 0;
 
@@ -179,20 +183,26 @@ export default function ZiskovostPage() {
                   {isOpen && (
                     <tr style={{ borderColor: "var(--border)" }}>
                       <td colSpan={6} className="px-4 py-3" style={{ background: "var(--background)" }}>
-                        {clientCosts.length === 0 ? (
-                          <p className="text-[12px] text-[--muted-foreground]">Žádné evidované náklady. Přidej je tlačítkem „Přidat náklad" nahoře.</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {clientCosts.map((c) => (
-                              <div key={c.id} className="flex items-center gap-3 text-[12px]">
-                                <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: PRIMARY, background: "oklch(0.62 0.27 265 / 0.1)" }}>{c.typ}</span>
-                                <span className="text-[--muted-foreground] flex-1">{c.popis || "—"}</span>
-                                <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{fmtKc(c.castka)}</span>
-                                {canEdit && <button onClick={(e) => { e.stopPropagation(); delCost(c.id); }} className="btn-tactile p-1 rounded-[5px]" style={{ border: "1px solid var(--border)" }}><Trash2 className="w-3 h-3" /></button>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div className="space-y-1.5">
+                          {labor.get(r.klient) ? (
+                            <div className="flex items-center gap-3 text-[12px]">
+                              <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>Práce</span>
+                              <span className="text-[--muted-foreground] flex-1">z výkazů (hodiny × sazba)</span>
+                              <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{fmtKc(labor.get(r.klient)!)}</span>
+                            </div>
+                          ) : null}
+                          {clientCosts.map((c) => (
+                            <div key={c.id} className="flex items-center gap-3 text-[12px]">
+                              <span className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold" style={{ color: PRIMARY, background: "oklch(0.62 0.27 265 / 0.1)" }}>{c.typ}</span>
+                              <span className="text-[--muted-foreground] flex-1">{c.popis || "—"}</span>
+                              <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{fmtKc(c.castka)}</span>
+                              {canEdit && <button onClick={(e) => { e.stopPropagation(); delCost(c.id); }} className="btn-tactile p-1 rounded-[5px]" style={{ border: "1px solid var(--border)" }}><Trash2 className="w-3 h-3" /></button>}
+                            </div>
+                          ))}
+                          {clientCosts.length === 0 && !labor.get(r.klient) && (
+                            <p className="text-[12px] text-[--muted-foreground]">Žádné náklady. Přidej je tlačítkem „Přidat náklad", nebo zapiš hodiny do Výkazů (+ nastav sazby).</p>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )}

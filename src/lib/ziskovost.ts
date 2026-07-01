@@ -51,7 +51,9 @@ export function buildProfit(
   invoices: InvoiceLite[],
   costs: ClientCost[],
   rok: number,
-  jenZaplacene: boolean
+  jenZaplacene: boolean,
+  /** volitelný náklad práce (z výkazů) per klient — přičte se k nákladům */
+  labor?: Map<string, number>
 ): ClientProfit[] {
   const rev = new Map<string, number>();
   for (const inv of invoices) {
@@ -67,11 +69,11 @@ export function buildProfit(
     cost.set(c.klient, (cost.get(c.klient) ?? 0) + (c.castka || 0));
   }
 
-  const clients = new Set<string>([...rev.keys(), ...cost.keys()]);
+  const clients = new Set<string>([...rev.keys(), ...cost.keys(), ...(labor?.keys() ?? [])]);
   const rows: ClientProfit[] = [];
   for (const klient of clients) {
     const prijmy = rev.get(klient) ?? 0;
-    const naklady = cost.get(klient) ?? 0;
+    const naklady = (cost.get(klient) ?? 0) + (labor?.get(klient) ?? 0);
     const zisk = prijmy - naklady;
     const marze = prijmy > 0 ? (zisk / prijmy) * 100 : (naklady > 0 ? -100 : 0);
     rows.push({ klient, prijmy, naklady, zisk, marze });

@@ -8,6 +8,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { overlaps, type GearReservation } from "@/lib/gear";
+import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string }
@@ -35,6 +36,8 @@ export function NerveCenter() {
   const [nps] = useSupabaseData<Nps[]>("ov-nps", () => []);
   const [reservations] = useSupabaseData<GearReservation[]>("ov-gear-reservations", () => []);
   const [costs] = useSupabaseData<ClientCost[]>("ov-client-costs", () => []);
+  const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
 
   const signals = useMemo<Signal[]>(() => {
     const now = new Date();
@@ -54,7 +57,7 @@ export function NerveCenter() {
     if (pending) out.push({ key: "appr", count: pending, label: "čeká na schválení klientem", href: "/klient-share", color: "oklch(0.62 0.27 265)", icon: ClipboardCheck });
 
     // Ztrátoví klienti (letos)
-    const loss = buildProfit(invoices, costs, year, false).filter((r) => r.zisk < 0);
+    const loss = buildProfit(invoices, costs, year, false, laborByClient(timeEntries, rates, year)).filter((r) => r.zisk < 0);
     if (loss.length) out.push({ key: "loss", count: loss.length, label: "ztrátových klientů", href: "/ziskovost", color: RED, icon: TrendingDown });
 
     // NPS pod 7 (posl. 90 dní)
@@ -70,7 +73,7 @@ export function NerveCenter() {
     if (conflicts) out.push({ key: "gear", count: conflicts, label: "kolizí rezervací techniky", href: "/technika", color: RED, icon: Camera });
 
     return out;
-  }, [invoices, tasks, approvals, nps, reservations, costs]);
+  }, [invoices, tasks, approvals, nps, reservations, costs, timeEntries, rates]);
 
   return (
     <div className="mb-6">

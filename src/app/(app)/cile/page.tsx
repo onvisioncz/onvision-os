@@ -5,6 +5,7 @@ import { Target, TrendingUp, Wallet, Percent, Film } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { buildProfit, invoiceYear, fmtKc, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
+import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 
 const PRIMARY = "oklch(0.62 0.27 265)";
 const GREEN = "oklch(0.67 0.155 155)";
@@ -59,6 +60,8 @@ export default function CilePage() {
   const [invoices] = useSupabaseData<InvoiceLite[]>("ov-issued-invoices", () => []);
   const [costs] = useSupabaseData<ClientCost[]>("ov-client-costs", () => []);
   const [vystupyMeta] = useSupabaseData<Record<string, number>>("ov-vyhledy-vystupy", () => ({}));
+  const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
   const [cile, setCile] = useSupabaseData<CileMap>("ov-cile", () => ({}));
 
   const nowYear = new Date().getFullYear();
@@ -68,13 +71,13 @@ export default function CilePage() {
 
   const actuals = useMemo(() => {
     const obrat = invoices.filter((i) => invoiceYear(i) === rok).reduce((s, i) => s + (i.castka || 0), 0);
-    const rows = buildProfit(invoices, costs, rok, false);
+    const rows = buildProfit(invoices, costs, rok, false, laborByClient(timeEntries, rates, rok));
     const prijmy = rows.reduce((s, r) => s + r.prijmy, 0);
     const zisk = rows.reduce((s, r) => s + r.zisk, 0);
     const marze = prijmy > 0 ? Math.round((zisk / prijmy) * 100) : 0;
     const vystupy = vystupyMeta[rok] ?? 0;
     return { obrat, zisk, marze, vystupy };
-  }, [invoices, costs, rok, vystupyMeta]);
+  }, [invoices, costs, rok, vystupyMeta, timeEntries, rates]);
 
   const setTarget = (k: keyof Cil, v: number) => setCile({ ...cile, [rok]: { ...cil, [k]: v } });
 

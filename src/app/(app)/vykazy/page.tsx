@@ -5,7 +5,7 @@ import { Clock, Plus, Trash2, Download, User as UserIcon, Building2 } from "luci
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DEFAULT_USERS } from "@/lib/roles";
-import { TIME_KEY, monthPrefix, monthLabel, fmtHod, sumBy, type TimeEntry } from "@/lib/vykazy";
+import { TIME_KEY, RATES_KEY, monthPrefix, monthLabel, fmtHod, sumBy, type TimeEntry } from "@/lib/vykazy";
 
 const PRIMARY = "oklch(0.62 0.27 265)";
 const iCls = "glass-input px-3 py-2 text-[13px]";
@@ -23,6 +23,8 @@ function exportCSV(rows: Record<string, unknown>[], filename: string) {
 export default function VykazyPage() {
   const { user } = useUserRole();
   const [entries, setEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [rates, setRates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
+  const [showRates, setShowRates] = useState(false);
   const [clients] = useSupabaseData<{ name: string }[]>("ov-monthly-clients", () => []);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -79,6 +81,25 @@ export default function VykazyPage() {
         <div><label className="text-[11px] text-[--muted-foreground]">Hodiny</label><input type="number" step="0.5" className={iCls} style={{ ...iStyle, width: 90 }} value={form.hodiny} onChange={(e) => setForm({ ...form, hodiny: e.target.value })} placeholder="0" /></div>
         <button onClick={add} disabled={!form.klient.trim() || !form.hodiny} className="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-[7px] text-[13px] font-semibold disabled:opacity-40" style={{ background: PRIMARY, color: "white" }}><Plus className="w-4 h-4" /> Zapsat</button>
       </div>
+
+      {/* Sazby týmu (admin) — krmí náklad práce v Ziskovosti */}
+      {user?.roles.includes("admin") && (
+        <div className="mb-5">
+          <button onClick={() => setShowRates((s) => !s)} className="btn-tactile text-[12px] font-semibold text-[--muted-foreground]">
+            {showRates ? "▾" : "▸"} Sazby týmu (Kč/h) — pro výpočet nákladu v Ziskovosti
+          </button>
+          {showRates && (
+            <div className="glass-panel p-4 mt-2 grid sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {team.map((name) => (
+                <div key={name} className="flex items-center gap-2">
+                  <span className="text-[12px] flex-1 truncate">{name}</span>
+                  <input type="number" className="glass-input px-2.5 py-1.5 text-[13px] w-24 text-right" value={rates[name] || ""} placeholder="0" onChange={(e) => setRates({ ...rates, [name]: Number(e.target.value) })} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="grid md:grid-cols-3 gap-3 mb-6">

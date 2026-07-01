@@ -3,6 +3,7 @@
  * Krmí přehled o vytížení a podklady pro Ziskovost / odměny „podle projektů".
  */
 export const TIME_KEY = "ov-time-entries";
+export const RATES_KEY = "ov-team-rates";  // { [displayName]: Kč/h }
 
 export interface TimeEntry {
   id: number;
@@ -26,6 +27,18 @@ export function monthLabel(prefix: string): string {
 
 export function fmtHod(n: number): string {
   return `${(n || 0).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} h`;
+}
+
+/** Náklad práce (hodiny × sazba osoby) per klient pro daný rok. */
+export function laborByClient(entries: TimeEntry[], rates: Record<string, number>, year: number): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const e of entries) {
+    if (!e.datum.startsWith(String(year)) || !e.klient) continue;
+    const rate = rates[e.kdo] ?? 0;
+    if (!rate) continue;
+    m.set(e.klient, (m.get(e.klient) ?? 0) + (e.hodiny || 0) * rate);
+  }
+  return m;
 }
 
 /** Součet hodin per klíč (klient/osoba/projekt) pro daný měsíc. */
