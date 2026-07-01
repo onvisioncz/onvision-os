@@ -131,7 +131,7 @@ export const ROLE_COLORS: Record<Role, string> = {
 // "*" = all routes (admin only)
 export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
-  fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost"],
+  fakturace: ["/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow"],
   ucetni:    ["/dashboard", "/odmeny", "/fakturace"],
   produkce:  ["/dashboard", "/shooting", "/produkce", "/call-sheet", "/ukoly", "/outputs"],
   grafik:    ["/ukoly", "/outputs"],
