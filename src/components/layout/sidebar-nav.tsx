@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin,
+  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -59,6 +59,7 @@ const GROUPS = [
       { label: "Kalendář", short: "Kalendář", href: "/calendar", icon: CalendarDays },
       { label: "Výstupy",  short: "Výstupy",  href: "/outputs",  icon: PackageOpen },
       { label: "Delivery", short: "Delivery", href: "/delivery", icon: Package },
+      { label: "Klient. sdílení", short: "Sdílení", href: "/klient-share", icon: Share2 },
     ],
   },
   {
