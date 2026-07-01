@@ -5,11 +5,11 @@ Legenda úsilí: **S** = malé · **M** = střední · **L** = velké.
 Odškrtávej hotové `[x]`.
 
 ## 🧠 Inteligence & cohese (aby 32 modulů byl jeden chytrý systém)
-- [ ] 1. **Command palette (⌘K)** — skok kamkoli + rychlé vytvoření *(M)*
-- [ ] 2. **Dashboard = nervové centrum v2** — signály ze VŠECH modulů na jedné obrazovce (cashflow díry, faktury, kolize, ztrátoví klienti, čekající schválení, NPS) *(M)*
-- [ ] 3. **Notifikační centrum** — jeden inbox pro všechny události napříč appkou *(M)*
-- [ ] 4. **Globální fulltext hledání** — klienti, úkoly, faktury, výstupy, lokace… *(M)*
-- [ ] 5. **Cíle & benchmarky** — nastav cíl (obrat/marže/výstupy), sleduj vs realita *(S)*
+- [x] 1. **Command palette (⌘K)** — skok kamkoli + rychlé vytvoření *(M)*
+- [x] 2. **Dashboard = nervové centrum v2** — signály ze VŠECH modulů na jedné obrazovce (cashflow díry, faktury, kolize, ztrátoví klienti, čekající schválení, NPS) *(M)*
+- [x] 3. **Notifikační centrum** — jeden inbox pro všechny události napříč appkou *(M)*
+- [x] 4. **Globální fulltext hledání** — klienti, úkoly, faktury, výstupy, lokace… *(M)*
+- [x] 5. **Cíle & benchmarky** — nastav cíl (obrat/marže/výstupy), sleduj vs realita *(S)*
 
 ## 🔗 Propojení modulů (data zadáš jednou, tečou všude)
 - [ ] 6. **Řetězec Call sheet → Výkazy → Ziskovost → Cashflow** *(M)*
