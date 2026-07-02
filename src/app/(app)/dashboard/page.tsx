@@ -1490,7 +1490,18 @@ export default function DashboardPage() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", maxHeight: 240, overflowY: "auto", scrollbarWidth: "thin" }}>
               <AnimatePresence mode="popLayout">
-                {tasks.slice(0, 7).map(t => {
+                {(() => {
+                  const prio = (p: string) => (({ "Urgentní": 0, "Vysoká": 1, "Střední": 2, "Nízká": 3 } as Record<string, number>)[p] ?? 2);
+                  const open = [...tasks].filter(t => t.status !== "Hotovo").sort((a, b) => {
+                    const dp = prio(a.priorita) - prio(b.priorita);
+                    if (dp !== 0) return dp;
+                    const da = parseDeadline(a.deadline), db = parseDeadline(b.deadline);
+                    return (da ? da.getTime() : Infinity) - (db ? db.getTime() : Infinity);
+                  }).slice(0, 7);
+                  if (open.length === 0) return (
+                    <p key="ok" style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", padding: "10px 0" }}>Všechny úkoly hotové 🎉</p>
+                  );
+                  return open.map(t => {
                   const isDone = t.status === "Hotovo";
                   const tagMap: Record<string, { bg: string; col: string }> = {
                     "Urgentní": { bg: "rgba(239,68,68,0.15)", col: "#ef4444" },
@@ -1521,7 +1532,8 @@ export default function DashboardPage() {
                       <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", flexShrink: 0 }}>{t.deadline || ""}</span>
                     </motion.div>
                   );
-                })}
+                  });
+                })()}
               </AnimatePresence>
             </div>
             {/* Add task quick input */}
