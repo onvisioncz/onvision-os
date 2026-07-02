@@ -8,14 +8,18 @@
 
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
+// Brand paleta přesně dle onvision.cz
 const HEAD = "var(--font-outfit)"; // Space Grotesk
 const BODY = "var(--font-jakarta)"; // Inter
-const INK = "oklch(0.96 0.004 265)";
-const INK2 = "oklch(0.72 0.01 265)";
-const INK3 = "oklch(0.55 0.012 265)";
-const ACCENT = "oklch(0.66 0.26 265)";
-const POS = "oklch(0.74 0.14 158)";
-const NEG = "oklch(0.68 0.2 25)";
+const NAVY = "#0D0D18";  // Night Navy — pozadí
+const SIGNAL = "#5B5EFF"; // Signal Purple — hlavní akcent
+const GLOW = "#7C7FFF";   // světlejší purpurová
+const INK = "#F4F4F8";
+const INK2 = "#A7A9C4";
+const INK3 = "#6C6E88";
+const ACCENT = SIGNAL;
+const POS = "#3FD08A";
+const NEG = "#FF6B5B";
 
 /* Mock */
 const NAME = "Adame";
@@ -34,10 +38,10 @@ const fires = [
 
 export default function DesignLab() {
   return (
-    <div style={{ minHeight: "100vh", background: "oklch(0.115 0.014 265)", fontFamily: BODY, color: INK }}>
-      {/* jemný horní glow */}
+    <div style={{ minHeight: "100vh", background: NAVY, fontFamily: BODY, color: INK }}>
+      {/* jemný horní glow — Signal Purple */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(1200px 480px at 82% -8%, oklch(0.62 0.27 265 / 0.20), transparent 60%)" }} />
+        background: `radial-gradient(1100px 460px at 82% -10%, ${SIGNAL}2E, transparent 60%)` }} />
 
       <div style={{ position: "relative", maxWidth: 1120, margin: "0 auto", padding: "72px 40px 80px" }}>
 
