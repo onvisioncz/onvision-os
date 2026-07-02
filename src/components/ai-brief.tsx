@@ -5,6 +5,7 @@ import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
+import { parseDeadline } from "@/lib/dates";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string; nazev?: string; priorita?: string }
@@ -14,12 +15,8 @@ interface MonthlyClient { name: string; pausal?: number; reklama?: number; aktiv
 
 const PRIMARY = "#5B5EFF";
 
-function parseCz(s: string, defYear: number): Date | null {
-  const m = (s || "").match(/(\d{1,2})\.\s*(\d{1,2})\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const d = new Date(m[3] ? +m[3] : defYear, +m[2] - 1, +m[1]);
-  return isNaN(d.getTime()) ? null : d;
-}
+// Sdílený parser termínů (umí "8. 7." i ISO "2026-07-08") — viz lib/dates.
+const parseCz = (s: string, _defYear: number) => parseDeadline(s || "");
 
 /** Jednoduchý render briefu: ### nadpisy + odrážky. */
 function BriefBody({ text }: { text: string }) {

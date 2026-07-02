@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, Square, X, Calendar, User, RefreshCw, ChevronDown, ChevronRight,
 } from "lucide-react";
+import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 
 /* ── Czech month helper ─────────────────────────────────────────────────────── */
 function currentMonthDeadline(den: number): string {
@@ -13,31 +14,12 @@ function currentMonthDeadline(den: number): string {
   return `${den}. ${now.getMonth() + 1}.`;
 }
 
-/* ── Deadline helpers ───────────────────────────────────────────────────────── */
-function parseDeadline(str: string): Date | null {
-  const m = str.match(/(\d+)\.\s*(\d+)\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const day = parseInt(m[1]);
-  const month = parseInt(m[2]) - 1;
-  const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
-  const d = new Date(year, month, day);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function daysUntil(d: Date): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const t = new Date(d);
-  t.setHours(0, 0, 0, 0);
-  return Math.round((t.getTime() - today.getTime()) / 86_400_000);
-}
-
 function DeadlineChip({ deadline, done }: { deadline: string; done: boolean }) {
   if (done) {
     return (
       <span className="flex items-center gap-1 text-[11px] text-[--muted-foreground]">
         <Calendar className="w-3 h-3" />
-        {deadline}
+        {fmtDeadline(deadline)}
       </span>
     );
   }
@@ -67,7 +49,7 @@ function DeadlineChip({ deadline, done }: { deadline: string; done: boolean }) {
     label = `za ${days} dny`;
   } else {
     color = "oklch(0.42 0.005 222)"; bg = "transparent"; border = "transparent";
-    label = deadline;
+    label = fmtDeadline(deadline);
     return (
       <span className="flex items-center gap-1 text-[11px]" style={{ color }}>
         <Calendar className="w-3 h-3" />

@@ -9,6 +9,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { overlaps, type GearReservation } from "@/lib/gear";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
+import { parseDeadline } from "@/lib/dates";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string }
@@ -19,12 +20,8 @@ const RED = "oklch(0.65 0.22 25)";
 const AMBER = "oklch(0.74 0.165 75)";
 const GREEN = "oklch(0.67 0.155 155)";
 
-function parseCz(s: string, defYear: number): Date | null {
-  const m = (s || "").match(/(\d{1,2})\.\s*(\d{1,2})\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const d = new Date(m[3] ? +m[3] : defYear, +m[2] - 1, +m[1]);
-  return isNaN(d.getTime()) ? null : d;
-}
+// Sdílený parser termínů (umí "8. 7." i ISO "2026-07-08") — viz lib/dates.
+const parseCz = (s: string, _defYear: number) => parseDeadline(s || "");
 const fmtKc = (n: number) => new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 }).format(n || 0);
 
 interface Signal { key: string; count: number; label: string; detail?: string; href: string; color: string; icon: React.ElementType }

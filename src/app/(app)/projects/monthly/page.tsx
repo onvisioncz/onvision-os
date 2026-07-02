@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { ClientAvatar } from "@/components/ui/client-avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, RefreshCw, Users,
@@ -67,7 +68,13 @@ const stagger = {
 };
 
 /* ── Seed data ──────────────────────────────────────────────────────────────── */
-const MONTHS_LIST = ["Březen", "Duben", "Květen"];
+const MONTHS_ALL_CZ = [
+  "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
+  "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
+];
+/** Aktuální měsíc + dva předchozí — ať výběr žije s kalendářem. */
+const CURRENT_MONTH_CZ = MONTHS_ALL_CZ[new Date().getMonth()];
+const MONTHS_LIST = [-2, -1, 0].map((d) => MONTHS_ALL_CZ[(new Date().getMonth() + d + 12) % 12]);
 
 function makeSeed(): RetainerClient[] {
   // Sorted largest → smallest paušál
@@ -711,18 +718,8 @@ function ClientCard({
       {/* Header */}
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar */}
-          <div
-            className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 font-bold text-[13px]"
-            style={{
-              background: `${client.color.replace(")", " / 0.15)")}`,
-              border: `1px solid ${client.color.replace(")", " / 0.25)")}`,
-              color: client.color,
-              fontFamily: "var(--font-outfit)",
-            }}
-          >
-            {client.logo}
-          </div>
+          {/* Avatar — logo klienta, fallback na iniciály */}
+          <ClientAvatar name={client.name} fallback={client.logo} color={client.color} boxClass="w-10 h-10 rounded-[10px]" />
           <div className="min-w-0">
             <p
               className="text-[14px] font-bold text-[--foreground] leading-snug truncate"
@@ -1459,7 +1456,8 @@ function SidebarSummary({ clients }: { clients: RetainerClient[] }) {
 export default function MonthlyPage() {
   const [clients, setClients] = useSupabaseData<RetainerClient[]>("ov-monthly-clients", makeSeed);
   const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
-  const [selectedMonth, setSelectedMonth] = useState("Květen");
+  const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH_CZ);
+  const [confirmAllMonth, setConfirmAllMonth] = useState(false);
   const [catFilter, setCatFilter] = useState<DeliverableCategory | "vše">("vše");
   const [editClient, setEditClient] = useState<RetainerClient | null | "new">(null);
 
@@ -1541,15 +1539,11 @@ export default function MonthlyPage() {
   }, []);
 
   const handleNewMonth = useCallback((clientId: number) => {
-    const MONTHS_ALL = [
-      "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
-      "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
-    ];
     setClients((prev) =>
       prev.map((c) => {
         if (c.id !== clientId) return c;
-        const idx = MONTHS_ALL.indexOf(c.mesic);
-        const next = MONTHS_ALL[(idx + 1) % 12];
+        const idx = MONTHS_ALL_CZ.indexOf(c.mesic);
+        const next = MONTHS_ALL_CZ[(idx + 1) % 12];
         return {
           ...c,
           mesic: next,
@@ -1558,6 +1552,22 @@ export default function MonthlyPage() {
       })
     );
   }, []);
+
+  /** Hromadně posune všechny aktivní klienty do dalšího cyklu a odškrtne checklisty. */
+  const handleNewMonthAll = useCallback(() => {
+    setClients((prev) =>
+      prev.map((c) => {
+        if (!c.aktivni) return c;
+        const idx = MONTHS_ALL_CZ.indexOf(c.mesic);
+        return {
+          ...c,
+          mesic: MONTHS_ALL_CZ[(idx + 1) % 12],
+          deliverables: c.deliverables.map((d) => ({ ...d, done: false })),
+        };
+      })
+    );
+    setConfirmAllMonth(false);
+  }, [setClients]);
 
   const handleSaveClient = useCallback(
     (data: ClientFormState) => {
@@ -1643,7 +1653,7 @@ export default function MonthlyPage() {
               Měsíční klienti
             </h1>
             <p className="text-[12px] text-[--muted-foreground] mt-1">
-              Retainer checklist · {selectedMonth} 2026
+              Retainer checklist · {selectedMonth} {new Date().getFullYear()}
             </p>
           </div>
         </div>
@@ -1661,6 +1671,23 @@ export default function MonthlyPage() {
             <span className="pulse w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
             MRR {fKc(totalMRR)}
           </div>
+
+          {/* Bulk: nový měsíc pro všechny (s potvrzením) */}
+          <motion.button
+            onClick={() => (confirmAllMonth ? handleNewMonthAll() : setConfirmAllMonth(true))}
+            onBlur={() => setConfirmAllMonth(false)}
+            whileTap={{ scale: 0.95 }}
+            className="btn-tactile hidden md:flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold"
+            style={
+              confirmAllMonth
+                ? { background: "oklch(0.74 0.165 75 / 0.15)", border: "1px solid oklch(0.74 0.165 75 / 0.4)", color: "oklch(0.8 0.155 75)" }
+                : { background: "transparent", border: "1px solid oklch(1 0 0 / 0.12)", color: "var(--muted-foreground)" }
+            }
+            title="Posune všechny aktivní klienty do dalšího měsíce a odškrtne checklisty"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {confirmAllMonth ? "Opravdu? Odškrtne checklisty" : "Nový měsíc (všichni)"}
+          </motion.button>
 
           {/* Add client button */}
           <motion.button

@@ -24,6 +24,7 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
 import { AiBrief } from "@/components/ai-brief";
+import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
 
@@ -113,25 +114,7 @@ function fmtShort(n: number) {
   return String(n);
 }
 
-/** Parse "15. 5." or "15. 5. 2026" → Date. Returns null on failure. */
-function parseDeadline(str: string): Date | null {
-  const m = str.match(/(\d+)\.\s*(\d+)\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const day = parseInt(m[1]);
-  const month = parseInt(m[2]) - 1;
-  const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
-  const d = new Date(year, month, day);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-/** Calendar days from today (negative = overdue). */
-function daysUntil(d: Date): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const t = new Date(d);
-  t.setHours(0, 0, 0, 0);
-  return Math.round((t.getTime() - today.getTime()) / 86_400_000);
-}
+// Sdílené parsování termínů (umí "15. 5." i ISO "2026-05-15") — viz lib/dates.
 
 const MONTH_SHORT: Record<string, string> = {
   Leden: "Led",
@@ -1536,7 +1519,7 @@ export default function DashboardPage() {
                         <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.60)" : "rgba(255,255,255,0.88)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
                         <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, marginTop: 3, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
                       </div>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", flexShrink: 0 }}>{t.deadline || ""}</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", flexShrink: 0 }}>{t.deadline ? fmtDeadline(t.deadline) : ""}</span>
                     </motion.div>
                   );
                   });
