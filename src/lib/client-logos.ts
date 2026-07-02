@@ -1,36 +1,49 @@
 /**
- * Loga klientů stažená z onvision.cz (bílé varianty pro tmavé UI),
- * uložená v /public/client-logos/. Matchování je odolné vůči právním
- * příponám (s.r.o., a.s., z.s.) a diakritice — hledá klíčové slovo v názvu.
+ * Loga klientů (bílé varianty z onvision.cz, /public/client-logos/) + brand
+ * barva pozadí čtverečku. Matchování je odolné vůči právním příponám
+ * (s.r.o., a.s., z.s.) a diakritice — hledá klíčové slovo v názvu.
+ *
+ * `bg` = brand barva pozadí dlaždice. Kde ji ještě nemáme, zůstane null a
+ * použije se neutrální tmavý čtverec (doplníme, jak dorazí brand barvy).
  */
-const LOGO_MAP: [RegExp, string][] = [
-  [/senimed/i, "senimed.png"],
-  [/imtos/i, "imtos.png"],
-  [/power\s*plate/i, "powerplate.png"],
-  [/yonex/i, "yonex.png"],
-  [/pizza\s*hut/i, "pizza-hut.png"],
-  [/akeso/i, "akeso.png"],
-  [/i-?style/i, "istyle.png"],
-  [/nera/i, "nera.png"],
-  [/behej|běhej|beh ?brno/i, "behejbrno.png"],
-  [/effect/i, "effect-clinic.png"],
-  [/firesta/i, "firesta.png"],
-  [/\bmtb\b|mtbcz/i, "mtbcz.png"],
-  [/han[aá]k/i, "hanak.png"],
-  [/stavos/i, "stavos.png"],
-  [/toffi|cukr[aá]rna/i, "toffi.png"],
-  [/east ?gate/i, "eastgate.png"],
-  [/open ?game|opengame/i, "brnoopengame.png"],
-  [/somfy/i, "somfy.png"],
-  [/tekma/i, "tekma.png"],
-  [/rematech/i, "rematech.svg"],
+export interface ClientBrand {
+  logo: string;
+  bg: string | null;
+}
+
+const LOGO_MAP: { re: RegExp; logo: string; bg?: string }[] = [
+  { re: /senimed/i, logo: "senimed.png", bg: "#7A2733" },
+  { re: /imtos/i, logo: "imtos.png" },
+  { re: /power\s*plate/i, logo: "powerplate.png" },
+  { re: /yonex/i, logo: "yonex.png" },
+  { re: /pizza\s*hut/i, logo: "pizza-hut.png" },
+  { re: /akeso/i, logo: "akeso.png" },
+  { re: /i-?style/i, logo: "istyle.png" },
+  { re: /nera/i, logo: "nera.png" },
+  { re: /behej|běhej|beh ?brno/i, logo: "behejbrno.png" },
+  { re: /effect/i, logo: "effect-clinic.png" },
+  { re: /firesta/i, logo: "firesta.png" },
+  { re: /\bmtb\b|mtbcz/i, logo: "mtbcz.png" },
+  { re: /han[aá]k/i, logo: "hanak.png" },
+  { re: /stavos/i, logo: "stavos.png" },
+  { re: /toffi|cukr[aá]rna/i, logo: "toffi.png" },
+  { re: /east ?gate/i, logo: "eastgate.png" },
+  { re: /open ?game|opengame/i, logo: "brnoopengame.png" },
+  { re: /somfy/i, logo: "somfy.png" },
+  { re: /tekma/i, logo: "tekma.png" },
+  { re: /rematech/i, logo: "rematech.svg" },
 ];
 
-/** Vrátí cestu k logu klienta podle názvu, nebo null když není. */
-export function clientLogo(name: string | undefined | null): string | null {
+/** Vrátí logo + brand pozadí klienta podle názvu, nebo null když logo není. */
+export function clientBrand(name: string | undefined | null): ClientBrand | null {
   if (!name) return null;
-  for (const [re, file] of LOGO_MAP) {
-    if (re.test(name)) return `/client-logos/${file}`;
+  for (const e of LOGO_MAP) {
+    if (e.re.test(name)) return { logo: `/client-logos/${e.logo}`, bg: e.bg ?? null };
   }
   return null;
+}
+
+/** Zpětně kompatibilní: jen cesta k logu. */
+export function clientLogo(name: string | undefined | null): string | null {
+  return clientBrand(name)?.logo ?? null;
 }

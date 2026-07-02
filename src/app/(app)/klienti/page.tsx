@@ -271,7 +271,7 @@ export default function KlientiPage() {
                   >
                     {/* Klient */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-8 h-8 rounded-[8px]" />
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
@@ -385,7 +385,7 @@ export default function KlientiPage() {
                   >
                     {/* Top row: avatar + name + arrow */}
                     <div className="flex items-center gap-3">
-                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-9 h-9 rounded-[9px]" />
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
