@@ -11,6 +11,8 @@ import { createClient } from "@/lib/supabase/server";
 import { identityFromEmail, activeUsers } from "@/lib/agent/identity";
 import { sendMail, isEmailConfigured } from "@/lib/email/gmail";
 import { brandedEmailHtml } from "@/lib/email/template";
+import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
+import { parseDeadline } from "@/lib/dates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +20,8 @@ export const dynamic = "force-dynamic";
 interface Invoice { klient: string; castka: number; stav: string; datumSplatnosti: string }
 interface Task { nazev: string; prirazeno: string; status: string; deadline: string }
 
-function parseCz(s: string, defYear: number): Date | null {
-  const m = (s || "").match(/(\d{1,2})\.\s*(\d{1,2})\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const d = new Date(m[3] ? +m[3] : defYear, +m[2] - 1, +m[1]);
-  return isNaN(d.getTime()) ? null : d;
-}
+// Sdílený parser (umí "8. 7." i ISO "2026-07-08") — viz lib/dates.
+const parseCz = (s: string, _defYear: number) => parseDeadline(s || "");
 
 async function readKey<T>(sb: ReturnType<typeof createAdminClient>, key: string): Promise<T[]> {
   const { data } = await sb.from("app_data").select("value").eq("key", key).maybeSingle();
@@ -50,10 +48,13 @@ export async function GET(req: NextRequest) {
   const in7 = new Date(now.getTime() + 7 * 86400000);
 
   const invoices = await readKey<Invoice>(sb, "ov-issued-invoices");
+  const financeFaktury = await readKey<Record<string, unknown>>(sb, "ov-finance-faktury");
   const tasks = await readKey<Task>(sb, "ov-ukoly-tasks");
 
-  const overdueInv = invoices.filter((i) => i.stav !== "Zaplacena").filter((i) => { const d = parseCz(i.datumSplatnosti, year); return d && d < now; });
-  const overdueTotal = overdueInv.reduce((s, i) => s + (i.castka || 0), 0);
+  // Sloučené oba sklady faktur (Fakturace + Finance), dedup dle čísla
+  const overdueAll = overdueInvoices(invoices as unknown as AnyInvoice[], financeFaktury as unknown as AnyInvoice[]);
+  const overdueInv = overdueAll.items.map((i) => ({ klient: i.klient, castka: i.castka, stav: "Čeká na platbu", datumSplatnosti: `před ${i.dnuPoSplatnosti} dny` }));
+  const overdueTotal = overdueAll.total;
   const lateTasks = tasks.filter((t) => t.status !== "Hotovo").filter((t) => { const d = parseCz(t.deadline, year); return d && d < now; });
   const soonTasks = tasks.filter((t) => t.status !== "Hotovo").filter((t) => { const d = parseCz(t.deadline, year); return d && d >= now && d <= in7; });
 

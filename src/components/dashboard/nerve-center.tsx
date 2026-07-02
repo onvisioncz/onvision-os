@@ -10,6 +10,7 @@ import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost"
 import { overlaps, type GearReservation } from "@/lib/gear";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 import { parseDeadline } from "@/lib/dates";
+import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string }
@@ -28,6 +29,7 @@ interface Signal { key: string; count: number; label: string; detail?: string; h
 
 export function NerveCenter() {
   const [invoices] = useSupabaseData<Inv[]>("ov-issued-invoices", () => []);
+  const [financeFaktury] = useSupabaseData<AnyInvoice[]>("ov-finance-faktury", () => []);
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [approvals] = useSupabaseData<Approval[]>("ov-client-approvals", () => []);
   const [nps] = useSupabaseData<Nps[]>("ov-nps", () => []);
@@ -41,9 +43,9 @@ export function NerveCenter() {
     const year = now.getFullYear();
     const out: Signal[] = [];
 
-    // Faktury po splatnosti
-    const overdue = invoices.filter((i) => i.stav !== "Zaplacena").filter((i) => { const d = parseCz(i.datumSplatnosti, year); return d && d < now; });
-    if (overdue.length) out.push({ key: "inv", count: overdue.length, label: "faktur po splatnosti", detail: fmtKc(overdue.reduce((s, i) => s + (i.castka || 0), 0)), href: "/fakturace", color: RED, icon: FileWarning });
+    // Faktury po splatnosti — sloučené oba sklady (Fakturace + Finance), dedup dle čísla
+    const overdue = overdueInvoices(invoices as AnyInvoice[], financeFaktury);
+    if (overdue.count) out.push({ key: "inv", count: overdue.count, label: overdue.count === 1 ? "faktura po splatnosti" : "faktur po splatnosti", detail: fmtKc(overdue.total), href: "/fakturace", color: RED, icon: FileWarning });
 
     // Úkoly po termínu
     const late = tasks.filter((t) => t.status !== "Hotovo").filter((t) => { const d = parseCz(t.deadline, year); return d && d < now; });
@@ -70,7 +72,7 @@ export function NerveCenter() {
     if (conflicts) out.push({ key: "gear", count: conflicts, label: "kolizí rezervací techniky", href: "/technika", color: RED, icon: Camera });
 
     return out;
-  }, [invoices, tasks, approvals, nps, reservations, costs, timeEntries, rates]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates]);
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">

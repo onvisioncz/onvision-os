@@ -6,6 +6,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 import { parseDeadline } from "@/lib/dates";
+import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string; nazev?: string; priorita?: string }
@@ -47,6 +48,7 @@ function inlineBold(s: string): string {
 
 export function AiBrief() {
   const [invoices] = useSupabaseData<Inv[]>("ov-issued-invoices", () => []);
+  const [financeFaktury] = useSupabaseData<AnyInvoice[]>("ov-finance-faktury", () => []);
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [approvals] = useSupabaseData<Approval[]>("ov-client-approvals", () => []);
   const [nps] = useSupabaseData<Nps[]>("ov-nps", () => []);
@@ -66,7 +68,7 @@ export function AiBrief() {
   const snapshot = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
-    const overdue = invoices.filter((i) => i.stav !== "Zaplacena").filter((i) => { const d = parseCz(i.datumSplatnosti, year); return d && d < now; });
+    const overdue = overdueInvoices(invoices as AnyInvoice[], financeFaktury);
     const late = tasks.filter((t) => t.status !== "Hotovo").filter((t) => { const d = parseCz(t.deadline, year); return d && d < now; });
     const open = tasks.filter((t) => t.status !== "Hotovo");
     const active = clients.filter((c) => c.aktivni !== false);
@@ -78,14 +80,14 @@ export function AiBrief() {
     return {
       mrr,
       aktivnichKlientu: active.length,
-      fakturyPoSplatnosti: { pocet: overdue.length, castka: overdue.reduce((s, i) => s + (i.castka || 0), 0) },
+      fakturyPoSplatnosti: { pocet: overdue.count, castka: overdue.total, kdo: overdue.items.map((i) => `${i.klient} ${i.castka} Kč (${i.dnuPoSplatnosti} dní)`) },
       ukolyPoTerminu: late.length,
       otevrenychUkolu: open.length,
       cekaNaSchvaleniKlientem: pending,
       ztratoviKlienti: loss.map((r) => r.klient).slice(0, 6),
       nizkeNPS: lowNps,
     };
-  }, [invoices, tasks, approvals, nps, costs, timeEntries, rates, clients]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, costs, timeEntries, rates, clients]);
 
   const generate = async () => {
     setLoading(true); setError(null);
