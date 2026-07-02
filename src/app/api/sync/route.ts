@@ -203,7 +203,40 @@ export async function POST(req: NextRequest) {
   // ── Push notifications (fire-and-forget, never blocks the response) ──────
   void triggerPush(supabase, key, value, user.email!, oldValue);
 
+  // ── Audit log (fire-and-forget) — kdo co kdy změnil ─────────────────────
+  void appendAudit(supabase, key, user.email!);
+
   return NextResponse.json({ ok: true });
+}
+
+/* ── Audit log ─────────────────────────────────────────────────────────── */
+// Posledních 300 zápisů: { ts, email, key }. Po sobě jdoucí zápisy stejného
+// člověka do stejného klíče v 5min okně se slučují (odškrtávání checklistu
+// tak negeneruje 20 záznamů).
+const AUDIT_SKIP = new Set(["ov-audit-log", "ov-inbox-state", "ov-notif-events", "ov-notif-last-seen"]);
+
+interface AuditEntry { ts: string; email: string; key: string }
+
+async function appendAudit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  key: string,
+  email: string
+) {
+  if (AUDIT_SKIP.has(key)) return;
+  try {
+    const { data } = await supabase
+      .from("app_data").select("value").eq("key", "ov-audit-log").maybeSingle();
+    const prev: AuditEntry[] = Array.isArray(data?.value) ? (data!.value as AuditEntry[]) : [];
+    const entry: AuditEntry = { ts: new Date().toISOString(), email, key };
+    const head = prev[0];
+    const collapse = head && head.email === email && head.key === key
+      && Date.now() - new Date(head.ts).getTime() < 5 * 60_000;
+    const next = collapse ? [entry, ...prev.slice(1)] : [entry, ...prev];
+    await supabase.from("app_data").upsert(
+      { key: "ov-audit-log", value: next.slice(0, 300), updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  } catch { /* audit nikdy nesmí rozbít zápis */ }
 }
 
 /* ── Notification event store ──────────────────────────────────────────── */

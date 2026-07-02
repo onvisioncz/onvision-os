@@ -13,6 +13,44 @@ import { TIME_KEY, monthPrefix, fmtHod, type TimeEntry } from "@/lib/vykazy";
 import { StatCard } from "@/components/ui/stat-card";
 
 interface Task { nazev: string; prirazeno: string; status: string; deadline: string }
+interface AuditEntry { ts: string; email: string; key: string }
+
+/** Lidsky čitelné názvy datových klíčů pro feed aktivity. */
+const KEY_LABELS: Record<string, string> = {
+  "ov-ukoly-tasks": "Úkoly",
+  "ov-time-entries": "Výkazy hodin",
+  "ov-monthly-clients": "Měsíční klienti",
+  "ov-oneoffs-projects": "Jednorázovky",
+  "ov-issued-invoices": "Fakturace",
+  "ov-finance-faktury": "Finance · faktury",
+  "ov-finance-incomes": "Finance · příjmy",
+  "ov-finance-expenses": "Finance · výdaje",
+  "ov-odmeny": "Odměny",
+  "ov-client-costs": "Náklady klientů",
+  "ov-team-rates": "Sazby týmu",
+  "ov-gameplan": "Gameplán",
+  "ov-cile": "Cíle",
+  "ov-gear": "Technika",
+  "ov-gear-reservations": "Rezervace techniky",
+  "ov-call-sheets": "Call sheety",
+  "ov-lokace": "Lokace",
+  "ov-outputs": "Výstupy",
+  "ov-schvaleni-items": "Schválení",
+  "ov-client-approvals": "Klientská schválení",
+  "ov-smm-posts": "SMM",
+  "ov-investice": "Investice",
+};
+const keyLabel = (k: string) => KEY_LABELS[k] ?? k.replace(/^ov-/, "");
+
+function tsRel(ts: string): string {
+  const d = new Date(ts);
+  const mins = Math.floor((Date.now() - d.getTime()) / 60_000);
+  if (mins < 1) return "právě teď";
+  if (mins < 60) return `před ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `před ${hrs} h`;
+  return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" }) + " " + d.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" });
+}
 
 const PRIMARY = "#5B5EFF";
 
@@ -40,6 +78,7 @@ export default function TymPage() {
   const { user, loading } = useUserRole();
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
   const [entries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
+  const [audit] = useSupabaseData<AuditEntry[]>("ov-audit-log", () => []);
   const [logins, setLogins] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
@@ -150,6 +189,34 @@ export default function TymPage() {
             })()}
           </div>
         ))}
+      </div>
+
+      {/* Poslední aktivita — kdo co kdy změnil (audit log) */}
+      <div className="glass-card p-5 mt-6">
+        <h2 className="text-[14px] font-bold mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
+          <Clock className="w-4 h-4" style={{ color: PRIMARY }} /> Poslední aktivita
+        </h2>
+        <p className="text-[12px] text-[--muted-foreground] mb-3">Kdo naposledy co upravil (posledních 30 změn)</p>
+        {audit.length === 0 ? (
+          <p className="text-[12px] text-[--muted-foreground]">Zatím žádné záznamy — aktivita se začne zapisovat od teď, s každou změnou v systému.</p>
+        ) : (
+          <div className="space-y-0.5">
+            {audit.slice(0, 30).map((a, i) => {
+              const person = DEFAULT_USERS.find((u) => u.email.toLowerCase() === a.email.toLowerCase());
+              return (
+                <div key={i} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: i < Math.min(audit.length, 30) - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                    style={{ background: `color-mix(in oklch, ${person?.color ?? "#5B5EFF"} 22%, transparent)`, color: person?.color ?? "#5B5EFF" }}>
+                    {person?.initials ?? a.email.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="text-[12px] font-semibold shrink-0">{person?.displayName ?? a.email}</span>
+                  <span className="text-[12px] text-[--muted-foreground] truncate flex-1">upravil(a) {keyLabel(a.key)}</span>
+                  <span className="text-[11px] text-[--muted-foreground] shrink-0">{tsRel(a.ts)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <p className="text-[11px] text-[--muted-foreground] mt-4">

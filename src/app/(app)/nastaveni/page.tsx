@@ -585,7 +585,7 @@ function MfaSection() {
 }
 
 /* ── Main ─────────────────────────────────────────────────────────────────── */
-type Tab = "users" | "roles" | "security";
+type Tab = "users" | "roles" | "security" | "data";
 
 export default function NastaveniPage() {
   const { user: currentUser } = useUserRole();
@@ -607,6 +607,7 @@ export default function NastaveniPage() {
     ...(isAdmin ? [
       { id: "users" as Tab, label: "Uživatelé" },
       { id: "roles" as Tab, label: "Role a přístupy" },
+      { id: "data" as Tab, label: "Data & záloha" },
     ] : []),
     { id: "security" as Tab, label: "Zabezpečení" },
   ];
@@ -840,6 +841,25 @@ export default function NastaveniPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Data & záloha tab */}
+      {activeTab === "data" && isAdmin && (
+        <div className="glass-card p-5">
+          <h2 className="text-[15px] font-bold mb-1" style={{ fontFamily: "var(--font-outfit)" }}>Záloha dat</h2>
+          <p className="text-[13px] text-[--muted-foreground] mb-4 max-w-[52ch]">
+            Stáhne kompletní obsah systému (klienti, faktury, úkoly, výkazy, vše) jako jeden JSON soubor.
+            Doporučujeme stáhnout jednou měsíčně a uložit mimo Supabase — je to pojistka celé firmy na jedno kliknutí.
+          </p>
+          <a href="/api/backup" download
+            className="btn-tactile inline-flex items-center gap-2 px-4 py-2.5 rounded-[9px] text-[13px] font-semibold"
+            style={{ background: "#5B5EFF", color: "white", textDecoration: "none" }}>
+            ⬇ Stáhnout zálohu (JSON)
+          </a>
+          <p className="text-[11px] text-[--muted-foreground] mt-3">
+            Soubor obsahuje citlivá firemní data — ukládej ho bezpečně (ne do sdílených složek).
+          </p>
         </div>
       )}
 
