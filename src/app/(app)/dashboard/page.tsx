@@ -824,7 +824,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
           {/* Greeting card */}
-          <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 4", padding: "24px 26px" }}>
+          <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "24px 26px" }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
             </p>
@@ -899,7 +899,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI inline card — status + suggestion */}
-          <div className={cardClass} style={{ ...cardStyle, gridColumn: "4 / 7", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0 }} />
@@ -1258,7 +1258,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
           {/* Tile 1: Příjmy (MRR) — cols 1-2 */}
-          <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 3", padding: "18px 20px" }}>
+          <div className={`${cardClass} md:col-span-2`} style={{ ...cardStyle, padding: "18px 20px" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)", marginBottom: 10 }}>
               Příjmy tento měsíc
             </p>
@@ -1286,7 +1286,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tile 2: Otevřené úkoly — cols 3-4 */}
-          <div className={cardClass} style={{ ...cardStyle, gridColumn: "3 / 5", padding: "18px 20px" }}>
+          <div className={`${cardClass} md:col-span-2`} style={{ ...cardStyle, padding: "18px 20px" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)", marginBottom: 10 }}>
               Otevřené úkoly
             </p>
@@ -1309,7 +1309,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tile 3: Aktivní zakázky — cols 5-6 */}
-          <div className={cardClass} style={{ ...cardStyle, gridColumn: "5 / 7", padding: "18px 20px" }}>
+          <div className={`${cardClass} md:col-span-2`} style={{ ...cardStyle, padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)" }}>
                 Aktivní zakázky
