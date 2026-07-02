@@ -28,6 +28,7 @@ const STANDALONE_TOP = [
   { label: "Gameplán",  short: "Plán",     href: "/gameplan",   icon: Rocket },
   { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
   { label: "Úkoly",     short: "Úkoly",    href: "/ukoly",      icon: CheckSquare },
+  { label: "Tým",       short: "Tým",      href: "/tym",        icon: Users },
 ];
 
 const GROUPS = [
@@ -327,7 +328,11 @@ export function SidebarNav() {
       {/* Nav */}
       <nav className="flex-1 px-2 overflow-y-auto space-y-px">
 
-        {/* Standalone top items */}
+        {/* Denně — to hlavní, co člověk otevírá každý den */}
+        <p className="px-3 pt-1 pb-1 text-[9px] font-bold uppercase tracking-[0.14em]"
+          style={{ color: "oklch(0.48 0.01 265)" }}>
+          Denně
+        </p>
         {STANDALONE_TOP
           .filter(({ href }) => visibleHrefs.has(href))
           .map(({ label, href, icon }) => (
@@ -338,6 +343,10 @@ export function SidebarNav() {
         }
 
         <div className="h-px mx-1 my-2" style={{ background: "var(--sidebar-border)" }} />
+        <p className="px-3 pt-1 pb-1 text-[9px] font-bold uppercase tracking-[0.14em]"
+          style={{ color: "oklch(0.48 0.01 265)" }}>
+          Nástroje
+        </p>
 
         {/* Groups */}
         <div className="space-y-1">

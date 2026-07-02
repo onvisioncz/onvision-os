@@ -16,6 +16,7 @@ const COMMANDS: Cmd[] = [
   { label: "Zápis → úkoly", href: "/zapis", group: "Přejít na", keywords: "porada meeting AI extrakce" },
   { label: "AI obsah", href: "/smm-ai", group: "Přejít na", keywords: "generování příspěvky" },
   { label: "Schválení", href: "/schvaleni", group: "Přejít na", keywords: "nabídky approval" },
+  { label: "Tým", href: "/tym", group: "Přejít na", keywords: "lidé zaměstnanci přihlášení aktivita vytížení" },
   { label: "Měsíční klienti", href: "/projects/monthly", group: "Přejít na", keywords: "retainer paušál" },
   { label: "Jednorázovky", href: "/projects/oneoffs", group: "Přejít na" },
   { label: "Výkazy hodin", href: "/vykazy", group: "Přejít na", keywords: "time tracking" },
