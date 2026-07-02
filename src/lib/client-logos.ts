@@ -13,7 +13,7 @@ export interface ClientBrand {
 
 const LOGO_MAP: { re: RegExp; logo: string; bg?: string }[] = [
   { re: /senimed/i, logo: "senimed.png", bg: "#7A2733" },
-  { re: /imtos/i, logo: "imtos-color.svg", bg: "#FFFFFF" },
+  { re: /imtos/i, logo: "imtos.png", bg: "#34312F" },
   { re: /power\s*plate/i, logo: "powerplate.png" },
   { re: /yonex/i, logo: "yonex.png" },
   { re: /pizza\s*hut/i, logo: "pizza-hut.png" },
