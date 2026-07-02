@@ -29,6 +29,17 @@ export function daysUntil(d: Date): number {
   return Math.round((t.getTime() - today.getTime()) / 86_400_000);
 }
 
+/**
+ * Kontrola, že český zápis data existuje v kalendáři.
+ * "31.6.2026" JS tiše přeteče na 1.7. — tady to odhalíme porovnáním dne.
+ */
+export function isValidCzDate(str: string): boolean {
+  const m = (str || "").match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  if (!m) return false;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return d.getDate() === +m[1] && d.getMonth() === +m[2] - 1 && d.getFullYear() === +m[3];
+}
+
 /** Zobrazení termínu vždy česky: "25. 5." (jiný rok → "25. 5. 2027"). */
 export function fmtDeadline(str: string): string {
   const d = parseDeadline(str);

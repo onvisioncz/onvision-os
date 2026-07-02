@@ -16,7 +16,7 @@ const LOGO_MAP: { re: RegExp; logo: string; bg?: string }[] = [
   { re: /imtos/i, logo: "imtos-color.svg", bg: "#2A2825" },
   { re: /power\s*plate/i, logo: "powerplate.png", bg: "#16181E" },
   { re: /yonex/i, logo: "yonex.png", bg: "#0F3A73" },
-  { re: /pizza\s*hut/i, logo: "pizza-hut.png", bg: "#FFFFFF" },
+  { re: /pizza\s*hut/i, logo: "pizza-hut.png", bg: "#EE3124" },
   { re: /akeso/i, logo: "akeso.png", bg: "#16181E" },
   { re: /i-?style/i, logo: "istyle-color.svg", bg: "#16181E" },
   { re: /nera/i, logo: "nera.png", bg: "#16181E" },

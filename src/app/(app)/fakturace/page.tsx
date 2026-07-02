@@ -9,6 +9,7 @@ import {
   Clock, TrendingUp, Trash2, CheckCheck,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { parseDeadline, daysUntil, isValidCzDate } from "@/lib/dates";
 import {
   buildInvoice, buildCisloFaktury, buildSpdString, buildOneTimeInvoice,
   fmtDate, DODAVATELE,
@@ -874,9 +875,18 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Datum vystavení"><FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} /></Field>
-        <Field label="Datum splatnosti"><FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} /></Field>
-        <Field label="Datum plnění"><FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} /></Field>
+        <Field label="Datum vystavení">
+          <FInput value={datumVystaveni} onChange={setDatumVystaveni} placeholder={today} />
+          <DateWarn value={datumVystaveni} />
+        </Field>
+        <Field label="Datum splatnosti">
+          <FInput value={datumSplatnosti} onChange={setDatumSplatnosti} placeholder={todayPlus7} />
+          <DateWarn value={datumSplatnosti} />
+        </Field>
+        <Field label="Datum plnění">
+          <FInput value={datumPlneni} onChange={setDatumPlneni} placeholder={today} />
+          <DateWarn value={datumPlneni} />
+        </Field>
       </div>
 
       <Field label="Popis služby">
@@ -967,6 +977,38 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* ── Varování na neexistující kalendářní datum ("31.6.2026") ─────────────── */
+function DateWarn({ value }: { value: string }) {
+  if (!value.trim() || isValidCzDate(value.trim())) return null;
+  return (
+    <p className="text-[10px] mt-1" style={{ color: "oklch(0.65 0.22 25)" }}>
+      Toto datum v kalendáři neexistuje — zkontroluj den a měsíc (formát 8.7.2026).
+    </p>
+  );
+}
+
+/* ── Stav pill: Zaplacena / Čeká / Po splatnosti (červeně, s počtem dní) ── */
+function StavPill({ inv, onToggle }: { inv: IssuedInvoice; onToggle: () => void }) {
+  const paid = inv.stav === "Zaplacena";
+  const due = paid ? null : parseDeadline(inv.datumSplatnosti || "");
+  const daysLate = due ? -daysUntil(due) : 0;
+  const overdue = !paid && daysLate > 0;
+  const style = paid
+    ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
+    : overdue
+    ? { background: "oklch(0.65 0.22 25 / 0.12)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.65 0.22 25 / 0.3)" }
+    : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" };
+  return (
+    <motion.button onClick={onToggle} whileTap={{ scale: 0.92 }}
+      className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+      title="Kliknutím změnit stav" style={style}>
+      {paid ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
+        : overdue ? <><AlertCircle className="w-3 h-3" /> {daysLate}d po splatnosti</>
+        : <><Clock className="w-3 h-3" /> Čeká</>}
+    </motion.button>
   );
 }
 
@@ -1092,21 +1134,7 @@ function IssuedInvoicesTab({
               </div>
 
               {/* Status toggle */}
-              <motion.button
-                onClick={() => toggleStav(inv.id)}
-                whileTap={{ scale: 0.92 }}
-                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
-                title="Kliknutím změnit stav"
-                style={inv.stav === "Zaplacena"
-                  ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
-                  : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
-                }
-              >
-                {inv.stav === "Zaplacena"
-                  ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
-                  : <><Clock className="w-3 h-3" /> Čeká</>
-                }
-              </motion.button>
+              <StavPill inv={inv} onToggle={() => toggleStav(inv.id)} />
 
               {/* Delete */}
               <motion.button
@@ -1147,21 +1175,7 @@ function IssuedInvoicesTab({
                 </div>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <motion.button
-                  onClick={() => toggleStav(inv.id)}
-                  whileTap={{ scale: 0.92 }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
-                  title="Kliknutím změnit stav"
-                  style={inv.stav === "Zaplacena"
-                    ? { background: "oklch(0.67 0.155 155 / 0.1)", color: "oklch(0.67 0.155 155)", border: "1px solid oklch(0.67 0.155 155 / 0.2)" }
-                    : { background: "oklch(0.74 0.165 75 / 0.1)", color: "oklch(0.74 0.165 75)", border: "1px solid oklch(0.74 0.165 75 / 0.2)" }
-                  }
-                >
-                  {inv.stav === "Zaplacena"
-                    ? <><CheckCircle2 className="w-3 h-3" /> Zaplacena</>
-                    : <><Clock className="w-3 h-3" /> Čeká</>
-                  }
-                </motion.button>
+                <StavPill inv={inv} onToggle={() => toggleStav(inv.id)} />
                 <motion.button
                   onClick={() => remove(inv.id)}
                   whileTap={{ scale: 0.9 }}
