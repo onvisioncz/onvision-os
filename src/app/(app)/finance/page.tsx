@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { StatCard } from "@/components/ui/stat-card";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Trash2, ChevronDown, TrendingUp, TrendingDown,
@@ -399,16 +400,6 @@ function MonthHeader({ mesic, total, count, color }: { mesic: string; total: num
 }
 
 /* ── Stat card ──────────────────────────────────────────────────────────────── */
-function StatCard({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
-  return (
-    <div className="card px-5 py-4">
-      <p className="text-[10px] text-[--muted-foreground] font-medium uppercase tracking-[0.06em] mb-2 leading-tight">{label}</p>
-      <p className="num leading-none" style={{ fontSize: "clamp(22px,3.5vw,30px)", fontWeight: 700, fontFamily: "var(--font-outfit)", color, letterSpacing: "-0.02em" }}>{value}</p>
-      {sub && <p className="text-[11px] text-[--muted-foreground] mt-1.5">{sub}</p>}
-    </div>
-  );
-}
-
 /* ── Chart tooltip ──────────────────────────────────────────────────────────── */
 function ChartTip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; color: string; value: number }>; label?: string }) {
   if (!active || !payload?.length) return null;

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { StatCard } from "@/components/ui/stat-card";
 import {
   Plus, X, Edit2, Trash2, Mail, ChevronLeft, ChevronRight,
   Download, Check, Send, Wallet, Users as UsersIcon,
@@ -46,18 +47,6 @@ const iCls = "w-full px-3 py-2 rounded-[7px] text-[13px] outline-none transition
 const iStyle = { background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" };
 
 /* ── Stat card ──────────────────────────────────────────────────────────── */
-function StatCard({ label, value, color, icon: Icon }: { label: string; value: string; color: string; icon: React.ElementType }) {
-  return (
-    <div className="flex-1 min-w-[150px] p-4 rounded-[10px]" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-3.5 h-3.5" style={{ color }} />
-        <span className="text-[11px] font-semibold tracking-[0.04em] uppercase text-[--muted-foreground]">{label}</span>
-      </div>
-      <div className="text-[22px] font-bold" style={{ color, fontFamily: "var(--font-outfit)" }}>{value}</div>
-    </div>
-  );
-}
-
 export default function OdmenyPage() {
   const { user, loading: roleLoading } = useUserRole();
   const [lidi, setLidi] = useSupabaseData<OdmenaPerson[]>(ODMENY_KEY, () => []);
@@ -168,7 +157,7 @@ export default function OdmenyPage() {
       </div>
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Celkem odejde" value={fmtKc(celkem)} color={PRIMARY} icon={Wallet} />
         <StatCard label="Spolupracovníci" value={String(aktivni.length)} color="oklch(0.70 0.14 195)" icon={UsersIcon} />
         <StatCard label="Na IČO" value={String(pocetOSVC)} color={TYP_COLOR["OSVČ"]} icon={UsersIcon} />
