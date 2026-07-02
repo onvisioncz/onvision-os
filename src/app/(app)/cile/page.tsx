@@ -29,23 +29,28 @@ function Metric({ label, icon: Icon, actual, target, unit, onTarget, canEdit, is
   label: string; icon: React.ElementType; actual: number; target: number; unit: string;
   onTarget: (v: number) => void; canEdit: boolean; isKc?: boolean;
 }) {
-  const pct = target > 0 ? Math.round((actual / target) * 100) : 0;
+  const hasTarget = target > 0;
+  const pct = hasTarget ? Math.round((actual / target) * 100) : 0;
   const fmt = (n: number) => isKc ? fmtKc(n) : `${n.toLocaleString("cs-CZ")}${unit}`;
   return (
-    <div className="rounded-[12px] p-5" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+    <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <Icon className="w-4 h-4" style={{ color: PRIMARY }} />
         <span className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[--muted-foreground]">{label}</span>
-        <span className="ml-auto text-[12px] font-bold" style={{ color: pct >= 100 ? GREEN : pct >= 70 ? AMBER : RED }}>{pct} %</span>
+        {hasTarget ? (
+          <span className="ml-auto text-[12px] font-bold" style={{ color: pct >= 100 ? GREEN : pct >= 70 ? AMBER : RED }}>{pct} %</span>
+        ) : (
+          <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.04em] text-[--muted-foreground]">cíl nenastaven</span>
+        )}
       </div>
       <div className="flex items-end justify-between gap-3">
-        <div>
-          <div className="text-[24px] font-bold leading-none" style={{ fontFamily: "var(--font-heading)" }}>{fmt(actual)}</div>
-          <div className="text-[11px] text-[--muted-foreground] mt-1">z cíle {fmt(target)}</div>
+        <div className="min-w-0">
+          <div className="text-[26px] font-bold leading-none" style={{ fontFamily: "var(--font-heading)" }}>{fmt(actual)}</div>
+          <div className="text-[11px] text-[--muted-foreground] mt-1.5">{hasTarget ? `z cíle ${fmt(target)}` : "nastav roční cíl →"}</div>
         </div>
         {canEdit && (
-          <div className="text-right">
-            <label className="text-[10px] text-[--muted-foreground] uppercase">Cíl</label>
+          <div className="text-right shrink-0">
+            <label className="block text-[9px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground] mb-1">Cíl na rok</label>
             <input type="number" className="glass-input px-2.5 py-1.5 text-[13px] w-28 text-right" value={target || ""} onChange={(e) => onTarget(Number(e.target.value))} placeholder="0" />
           </div>
         )}
