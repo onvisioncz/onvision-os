@@ -10,6 +10,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { createClient } from "@/lib/supabase/client";
+import { uploadThumb, resolveThumbUrl } from "@/lib/thumbs";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type DeliveryType = "grafika" | "foto" | "video" | "dokument" | "odkaz" | "zprava";
@@ -116,91 +117,7 @@ function timeLabel(iso: string) {
   return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "short" });
 }
 
-/**
- * Compress image to a small thumbnail blob.
- * Accepts any size input — tries WebP first (faster/smaller), falls back to
- * JPEG if WebP encoding is unsupported (older iOS) or produces too-large output.
- * Three passes guarantee the output stays ≤ 150 KB.
- */
-function compressToBlob(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-
-      function drawCanvas(dim: number): HTMLCanvasElement {
-        const scale = Math.min(dim / img.width, dim / img.height, 1);
-        const canvas = document.createElement("canvas");
-        canvas.width  = Math.round(img.width  * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return canvas;
-      }
-
-      function toBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob | null> {
-        return new Promise(res => canvas.toBlob(b => res(b), mime, quality));
-      }
-
-      async function run() {
-        // Pass 1 — 320 px WebP 0.68 (good balance: ~20–60 KB typical)
-        let blob = await toBlob(drawCanvas(320), "image/webp", 0.68);
-
-        // Pass 2 — WebP failed / not supported: JPEG 280 px 0.72
-        if (!blob || blob.type === "image/png" /* fallback type on some engines */ || blob.size > 150_000) {
-          blob = await toBlob(drawCanvas(280), "image/jpeg", 0.72);
-        }
-
-        // Pass 3 — still too large: shrink more
-        if (!blob || blob.size > 150_000) {
-          blob = await toBlob(drawCanvas(200), "image/jpeg", 0.60);
-        }
-
-        if (blob) resolve(blob);
-        else reject(new Error("Kompresi se nepodařilo dokončit"));
-      }
-
-      run().catch(reject);
-    };
-
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Obrázek se nepodařilo načíst")); };
-    img.src = url;
-  });
-}
-
-/** Upload thumbnail via server-side proxy (uses service role key, no RLS issues) */
-async function uploadThumb(file: File): Promise<string> {
-  const blob = await compressToBlob(file);
-  const ext  = blob.type === "image/jpeg" ? "jpg" : "webp";
-  const form = new FormData();
-  form.append("file", new File([blob], `thumb.${ext}`, { type: blob.type }));
-
-  const res = await fetch("/api/storage/upload-thumb", { method: "POST", body: form });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Upload failed: ${res.status}`);
-  }
-  const { path } = await res.json();
-  return `storage:${path}`;
-}
-
-/** Resolve thumbnail value to displayable URL:
- *  - "storage:thumbnails/..." → signed URL (1 year expiry)
- *  - "data:..." or "https://..." → use as-is (legacy)
- */
-async function resolveThumbUrl(
-  thumb: string,
-  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
-): Promise<string> {
-  if (!thumb.startsWith("storage:")) return thumb;
-  const path = thumb.slice(8);
-  const { data, error } = await supabase.storage
-    .from("output-thumbnails")
-    .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
-  if (error || !data) throw error ?? new Error("no signed URL");
-  return data.signedUrl;
-}
+// Komprese + upload + resolve jsou ve sdílené lib/thumbs.ts (používá i Technika).
 
 /* ── Safe config lookup (guards against old stored messages) ─────────── */
 function getCfg(type: string) {

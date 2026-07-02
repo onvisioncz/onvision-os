@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, AlertTriangle, Camera, Check, CalendarClock, X, Edit2, ChevronLeft, ChevronRight,
+  ImagePlus, Loader2,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { uploadThumb, resolveThumbUrl } from "@/lib/thumbs";
+import { createClient } from "@/lib/supabase/client";
 import {
   GEAR_KEY, GEAR_RES_KEY, GEAR_KATEGORIE, todayISO, reservedNow, hasConflict, nextReservation, fmtDate,
   type GearItem, type GearReservation, type GearKategorie,
@@ -21,12 +24,61 @@ const iStyle = { background: "var(--background)", border: "1px solid var(--borde
 type GearForm = { id: number | null; nazev: string; kategorie: GearKategorie; poznamka: string; fotoUrl: string };
 const emptyForm: GearForm = { id: null, nazev: "", kategorie: "Kamera", poznamka: "", fotoUrl: "" };
 
+/** Fotka kusu techniky: umí storage: cesty (podepsaná URL) i běžné URL.
+ *  Rozbitá/žádná fotka → ikona kamery místo rozbitého obrázku. */
+function GearPhoto({ fotoUrl, nazev }: { fotoUrl?: string; nazev: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setFailed(false);
+    if (!fotoUrl?.trim()) { setSrc(null); return; }
+    if (!fotoUrl.startsWith("storage:")) { setSrc(fotoUrl); return; }
+    resolveThumbUrl(fotoUrl, createClient())
+      .then((u) => { if (alive) setSrc(u); })
+      .catch(() => { if (alive) setFailed(true); });
+    return () => { alive = false; };
+  }, [fotoUrl]);
+
+  if (!src || failed) {
+    return (
+      <div className="w-full h-32 flex items-center justify-center" style={{ background: "var(--background)" }}>
+        <Camera className="w-6 h-6" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={nazev} className="w-full h-32 object-cover" onError={() => setFailed(true)} />
+  );
+}
+
 export default function TechnikaPage() {
   const { user, loading: roleLoading } = useUserRole();
   const [gear, setGear] = useSupabaseData<GearItem[]>(GEAR_KEY, () => []);
   const [reservations, setReservations] = useSupabaseData<GearReservation[]>(GEAR_RES_KEY, () => []);
 
   const [gearForm, setGearForm] = useState<GearForm | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  /** Nahraje vybranou fotku (komprese → Supabase storage) a uloží storage: cestu. */
+  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !gearForm) return;
+    setUploading(true);
+    try {
+      const stored = await uploadThumb(file);
+      setGearForm((f) => (f ? { ...f, fotoUrl: stored } : f));
+      flash("Fotka nahrána ✓");
+    } catch (err) {
+      flash(`Nahrání selhalo: ${err instanceof Error ? err.message : "chyba"}`);
+    } finally {
+      setUploading(false);
+    }
+  };
   const [res, setRes] = useState<{ gearId: number; kdo: string; od: string; do: string; projekt: string }>({ gearId: 0, kdo: "", od: todayISO(), do: todayISO(), projekt: "" });
   const [toast, setToast] = useState<string | null>(null);
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3500); };
@@ -82,7 +134,22 @@ export default function TechnikaPage() {
             <select className={iCls} style={iStyle} value={gearForm.kategorie} onChange={(e) => setGearForm({ ...gearForm, kategorie: e.target.value as GearKategorie })}>{GEAR_KATEGORIE.map((k) => <option key={k} value={k}>{k}</option>)}</select>
           </div>
           <input className={`${iCls} w-full`} style={iStyle} placeholder="Popis — co to je, stav, příslušenství…" value={gearForm.poznamka} onChange={(e) => setGearForm({ ...gearForm, poznamka: e.target.value })} />
-          <input className={`${iCls} w-full`} style={iStyle} placeholder="URL fotky (jak vypadá) — nepovinné" value={gearForm.fotoUrl} onChange={(e) => setGearForm({ ...gearForm, fotoUrl: e.target.value })} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="btn-tactile flex items-center gap-1.5 px-3 py-2 rounded-[7px] text-[12px] font-semibold disabled:opacity-50"
+              style={{ background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.3)", color: PRIMARY }}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+              {uploading ? "Nahrávám…" : gearForm.fotoUrl ? "Vyměnit fotku" : "Nahrát fotku"}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickPhoto} />
+            {gearForm.fotoUrl && !uploading && (
+              <span className="flex items-center gap-1.5 text-[11px]" style={{ color: GREEN }}>
+                <Check className="w-3 h-3" /> Fotka připravena
+                <button onClick={() => setGearForm({ ...gearForm, fotoUrl: "" })} className="btn-tactile text-[--muted-foreground] ml-1" title="Odebrat fotku"><X className="w-3 h-3" /></button>
+              </span>
+            )}
+            <input className={iCls} style={{ ...iStyle, flex: 1, minWidth: 180 }} placeholder="…nebo vlož URL fotky (nepovinné)" value={gearForm.fotoUrl.startsWith("storage:") ? "" : gearForm.fotoUrl} onChange={(e) => setGearForm({ ...gearForm, fotoUrl: e.target.value })} />
+          </div>
           <div className="flex gap-2">
             <button onClick={saveGear} disabled={!gearForm.nazev.trim()} className="btn-tactile px-3 py-2 rounded-[7px] text-[12px] font-semibold disabled:opacity-40" style={{ background: PRIMARY, color: "white" }}>{gearForm.id ? "Uložit" : "Přidat"}</button>
             <button onClick={() => setGearForm(null)} className="btn-tactile px-3 py-2 rounded-[7px] text-[12px]" style={{ border: "1px solid var(--border)" }}>Zrušit</button>
@@ -123,10 +190,7 @@ export default function TechnikaPage() {
             const next = !now ? nextReservation(reservations, g.id) : undefined;
             return (
               <div key={g.id} className="rounded-[12px] overflow-hidden" style={{ background: "var(--card)", border: `1px solid ${now ? "oklch(0.65 0.22 25 / 0.45)" : "var(--border)"}` }}>
-                {g.fotoUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={g.fotoUrl} alt={g.nazev} className="w-full h-32 object-cover" />
-                  : <div className="w-full h-32 flex items-center justify-center" style={{ background: "var(--background)" }}><Camera className="w-6 h-6" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} /></div>}
+                <GearPhoto fotoUrl={g.fotoUrl} nazev={g.nazev} />
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
