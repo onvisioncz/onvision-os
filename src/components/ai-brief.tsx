@@ -62,6 +62,10 @@ export function AiBrief() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+
   const snapshot = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -100,6 +104,21 @@ export function AiBrief() {
     }
   };
 
+  const ask = async () => {
+    if (!question.trim()) return;
+    setAsking(true); setAnswer(null);
+    try {
+      const res = await fetch("/api/ai/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, snapshot }) });
+      const data = await res.json();
+      if (!res.ok) { setAnswer(data.error || "Nepodařilo se odpovědět."); return; }
+      setAnswer(data.answer);
+    } catch {
+      setAnswer("Chyba spojení.");
+    } finally {
+      setAsking(false);
+    }
+  };
+
   return (
     <div className="glass-card p-5">
       <div className="flex items-center justify-between gap-3 mb-1">
@@ -122,6 +141,30 @@ export function AiBrief() {
       )}
       {loading && <p className="text-[12px] text-[--muted-foreground]">Čtu data firmy a píšu brief…</p>}
       {brief && !loading && <BriefBody text={brief} />}
+
+      {/* Mini co-pilot: zeptej se na data */}
+      <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center gap-2">
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") ask(); }}
+            placeholder="Zeptej se na data… např. kolik nám dluží klienti?"
+            className="glass-input flex-1 px-3 py-2 text-[13px]"
+          />
+          <button onClick={ask} disabled={asking || !question.trim()}
+            className="btn-tactile px-3 py-2 rounded-[8px] text-[12px] font-semibold disabled:opacity-50 shrink-0"
+            style={{ background: "rgba(91,94,255,0.14)", border: "1px solid rgba(91,94,255,0.3)", color: PRIMARY }}>
+            {asking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Zeptat se"}
+          </button>
+        </div>
+        {answer && (
+          <p className="text-[13px] leading-relaxed mt-3 px-3 py-2.5 rounded-[8px]"
+            style={{ color: "var(--foreground)", background: "rgba(91,94,255,0.06)", border: "1px solid rgba(91,94,255,0.14)" }}>
+            {answer}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

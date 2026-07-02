@@ -23,6 +23,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
+import { AiBrief } from "@/components/ai-brief";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
 
@@ -1251,6 +1252,12 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         <NerveCenter />
+
+        {isAdmin && (
+          <motion.div variants={item}>
+            <AiBrief />
+          </motion.div>
+        )}
 
         {/* ── 2. Metric cards (aligned with top grid, 6-col) ── */}
         <motion.div
