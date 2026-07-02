@@ -7,6 +7,7 @@ import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } f
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonRows } from "@/components/ui/skeleton";
+import { ClientAvatar } from "@/components/ui/client-avatar";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable { id: number; text: string; done: boolean; category: string; }
@@ -270,12 +271,7 @@ export default function KlientiPage() {
                   >
                     {/* Klient */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-8 h-8 rounded-[8px] flex items-center justify-center text-[11px] font-bold shrink-0"
-                        style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
-                      >
-                        {client.logo}
-                      </div>
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-8 h-8 rounded-[8px]" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
@@ -389,12 +385,7 @@ export default function KlientiPage() {
                   >
                     {/* Top row: avatar + name + arrow */}
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-9 h-9 rounded-[9px] flex items-center justify-center text-[11px] font-bold shrink-0"
-                        style={{ background: client.aktivni ? `${client.color} / 0.18` : "oklch(1 0 0 / 0.05)", color: client.aktivni ? client.color : "oklch(0.4 0.005 222)" }}
-                      >
-                        {client.logo}
-                      </div>
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-9 h-9 rounded-[9px]" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
