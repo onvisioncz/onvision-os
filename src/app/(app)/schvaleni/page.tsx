@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { AiReplyButton } from "@/components/ai-reply-button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClipboardCheck, CheckCircle, XCircle, Clock, FileText, Palette, FileCheck, ScrollText, X } from "lucide-react";
 
@@ -307,7 +308,10 @@ export default function SchvaleniPage() {
                   </div>
                   <p className="text-[11px] text-[--muted-foreground] truncate">{item.popis}</p>
                   {item.poznamka && (
-                    <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.65 0.22 25)" }}>{item.poznamka}</p>
+                    <>
+                      <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.65 0.22 25)" }}>{item.poznamka}</p>
+                      <AiReplyButton comment={item.poznamka} context={`${item.typ} pro ${item.klient}: ${item.popis}${item.castka !== undefined ? ` (${item.castka.toLocaleString("cs-CZ")} Kč)` : ""}`} />
+                    </>
                   )}
                   {item.castka !== undefined && (
                     <span className="sm:hidden text-[12px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.50 0.005 222)" }}>

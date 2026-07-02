@@ -77,7 +77,11 @@ ${soonTasks.map((t) => `- ${t.nazev} (${t.prirazeno || "?"}, ${t.deadline})`).jo
         headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
           model: "claude-sonnet-4-5", max_tokens: 900,
-          system: "Jsi provozní ředitel agentury OnVision. Ze surových dat napiš stručný pondělní digest pro majitele (Adam & Honza): co hoří, na co se zaměřit, priority týdne. Věcně, v odrážkách, česky. HTML fragment (odstavce/odrážky), bez <html>.",
+          system: `Jsi výkonný poradce jednatelů kreativní agentury OnVision (Adam a Honza). Ze surových dat napiš STRUČNÝ pondělní brief, tykej, česky. Opírej se o konkrétní čísla, nevymýšlej si.
+
+Vrať HTML fragment (bez <html>). Použij tuto strukturu, nadpisy jako <h3 style="color:#5B5EFF;font-size:13px;text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 6px">:
+Krátce (1 věta) · Co hoří (2 až 4 odrážky s čísly) · Rozhodni tento týden (1 až 3 akce) · Doporučení (1 věta).
+Max 180 slov. Žádné pomlčky. Když je klid, řekni to a pochval.`,
           messages: [{ role: "user", content: dataText }],
         }),
       });
