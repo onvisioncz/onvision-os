@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatCard } from "@/components/ui/stat-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Plus, X, Edit2, Trash2, Mail, ChevronLeft, ChevronRight,
   Download, Check, Send, Wallet, Users as UsersIcon,
@@ -179,8 +180,9 @@ export default function OdmenyPage() {
           </thead>
           <tbody>
             {aktivni.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-[13px] text-[--muted-foreground]">
-                Zatím žádní spolupracovníci. {canEdit && "Přidej prvního tlačítkem nahoře."}
+              <tr><td colSpan={6}>
+                <EmptyState icon={UsersIcon} title="Zatím žádní spolupracovníci"
+                  hint={canEdit ? "Přidej prvního tlačítkem nahoře. Spočítáme odměny a připravíme podklady k fakturaci." : "Až tým přidá spolupracovníky, uvidíš je tady."} />
               </td></tr>
             )}
             {aktivni.map((p) => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable { id: number; text: string; done: boolean; category: string; }
@@ -253,9 +254,8 @@ export default function KlientiPage() {
                   style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
               </div>
             ) : sorted.length === 0 ? (
-              <div className="py-16 text-center">
-                <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
-              </div>
+              <EmptyState icon={Building2} title="Zatím žádní klienti"
+                hint="Klienti se sem načtou z Měsíčních klientů a Jednorázovek. Přidej prvního tam a objeví se tu s přehledem MRR a fakturace." />
             ) : (
               sorted.map((client, idx) => (
                 <Link key={client.id} href={`/klienti/${client.id}`} className="block group">
@@ -379,9 +379,8 @@ export default function KlientiPage() {
                   style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
               </div>
             ) : sorted.length === 0 ? (
-              <div className="py-10 text-center">
-                <p className="text-[13px]" style={{ color: "oklch(0.38 0.005 222)" }}>Žádní klienti</p>
-              </div>
+              <EmptyState icon={Building2} title="Zatím žádní klienti"
+                hint="Přidej klienty v Měsíčních klientech nebo Jednorázovkách." />
             ) : (
               sorted.map(client => (
                 <Link key={client.id} href={`/klienti/${client.id}`}>
