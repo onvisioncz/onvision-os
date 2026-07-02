@@ -2,6 +2,7 @@
  * Shared inbox notification logic.
  * Used by /inbox page, useInboxUnread hook, sidebar badge, and dashboard widget.
  */
+import { parseDeadline } from "./dates";
 
 /* ── Source data types ─────────────────────────────────────────────────── */
 export interface InboxTask {
@@ -40,14 +41,10 @@ export interface InboxState { read: string[]; archived: string[]; }
 export const EMPTY_INBOX_STATE: InboxState = { read: [], archived: [] };
 
 /* ── Date helpers ──────────────────────────────────────────────────────── */
+/** Sdílený parser (umí "8. 7." i ISO "2026-07-08") — viz lib/dates. */
 export function parseCzDate(str: string): Date | null {
   if (!str || str === "—") return null;
-  const m = str.match(/(\d+)\.\s*(\d+)\.?\s*(\d{4})?/);
-  if (!m) return null;
-  const day = parseInt(m[1]), month = parseInt(m[2]) - 1;
-  const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
-  const d = new Date(year, month, day);
-  return isNaN(d.getTime()) ? null : d;
+  return parseDeadline(str);
 }
 
 export function daysDiff(d: Date): number {

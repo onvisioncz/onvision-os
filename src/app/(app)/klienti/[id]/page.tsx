@@ -20,6 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { ClientAvatar } from "@/components/ui/client-avatar";
 import { ClientHub } from "@/components/klienti/client-hub";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -378,18 +379,8 @@ export default function KlientDetailPage() {
           />
 
           <div className="flex items-center gap-4">
-            {/* Logo */}
-            <div
-              className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-[12px] text-lg font-bold"
-              style={{
-                background: `color-mix(in oklch, ${client.color} 22%, oklch(0.09 0.008 222))`,
-                border: `1px solid color-mix(in oklch, ${client.color} 40%, oklch(1 0 0 / 0.07))`,
-                color: client.color,
-                fontFamily: "var(--font-outfit)",
-              }}
-            >
-              {client.logo}
-            </div>
+            {/* Logo klienta (fallback iniciály) */}
+            <ClientAvatar name={client.name} fallback={client.logo} color={client.color} boxClass="w-14 h-14 rounded-[12px]" />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-1">

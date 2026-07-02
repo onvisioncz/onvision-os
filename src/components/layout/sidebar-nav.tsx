@@ -20,6 +20,7 @@ import { canAccess } from "@/lib/roles";
 import { ChatTrigger } from "@/components/chat/chat-overlay";
 import { useChatContext } from "@/components/chat/chat-shell";
 import { useTaskBadge, markTaskBadgeSeen } from "@/lib/hooks/use-task-badge";
+import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
@@ -260,6 +261,7 @@ export function SidebarNav() {
 
   const { toggle: toggleChat, unread: chatUnread, aiOpen, toggleAi } = useChatContext();
   const taskBadge = useTaskBadge();
+  const { count: inboxUnread } = useInboxUnread();
 
   // Clear badge when user is on /ukoly
   useEffect(() => {
@@ -331,7 +333,7 @@ export function SidebarNav() {
           .map(({ label, href, icon }) => (
             <NavItem key={href} label={label} href={href} icon={icon}
               active={path === href || path.startsWith(href + "/")}
-              badge={href === "/ukoly" ? taskBadge : 0} />
+              badge={href === "/ukoly" ? taskBadge : href === "/inbox" ? inboxUnread : 0} />
           ))
         }
 
