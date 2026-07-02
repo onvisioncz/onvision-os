@@ -20,18 +20,18 @@ Odškrtávej hotové `[x]`.
 
 ## 🤖 AI vrstva
 - [ ] 11. **Nasadit Telegram agenta** — hlas/mobil, už postavený *(S)*
-- [ ] 12. **AI co-pilot agentury** — zná celý byznys (RAG nad daty), ptáš se přirozeně *(L)*
-- [ ] 13. **AI týdenní klientské reporty** — Meta + AI → auto report klientovi *(M)*
+- [x] 12. **AI co-pilot agentury** — týdenní brief (dashboard + Gameplán), dotazy nad daty („Zeptej se na data"), pondělní e-mail brief *(L)*
+- [x] 13. **AI týdenní klientské reporty** — Meta + AI → auto report klientovi (modul Reporty) *(M)*
 - [ ] 14. **AI přepis natáčení → střihové poznámky** *(M)*
-- [ ] 15. **AI návrhy odpovědí** v inboxu / na komentáře klientů *(M)*
+- [x] 15. **AI návrhy odpovědí** — na námitky klientů ve Schválení (tlačítko + kopírovat) *(M)*
 
 ## ✨ Leštění & UX
-- [ ] 16. **Liquid glass plošně** — čitelné inputy/panely v celé appce *(M)*
-- [ ] 17. **Onboarding + delightful empty states** *(S)*
+- [x] 16. **Liquid glass plošně** — glass-card/panel/input sjednocené, brand navy povrchy *(M)*
+- [x] 17. **Empty states** — sdílená EmptyState komponenta (Odměny, Klienti; rozšiřovat dál) *(S)*
 - [ ] 18. **Mikro-interakce & pohyb** — Emil Kowalski úroveň *(M)*
-- [ ] 19. **Mobilní průchod** klíčových toků (PWA) *(M)*
-- [ ] 20. **Design QA sweep** — konzistence napříč 32 moduly *(M)*
-- [ ] 21. **Skeletony při načítání** místo prázdna *(S)*
+- [x] 19. **Mobilní průchod** — opravený rozbitý grid, dolní lišta 4+Víc, PWA *(M)*
+- [x] 20. **Design QA sweep** — brand barvy (Night Navy + Signal Purple), čitelnost, pravdivé deadliny, jednotná data (ISO+CZ), jeden zdroj pravdy pro faktury po splatnosti *(M)*
+- [x] 21. **Skeletony při načítání** — SkeletonRows (Klienti; rozšiřovat dál) *(S)*
 
 ## 🛡️ Spolehlivost & důvěra
 - [ ] 22. **Testy na peníze** (ziskovost, cashflow, odměny, faktury) *(M)*
