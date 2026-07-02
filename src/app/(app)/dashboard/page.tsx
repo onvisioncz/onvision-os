@@ -546,7 +546,7 @@ export default function DashboardPage() {
       if (days < 0) overdue++;
     });
     return { tasksDueToday: dueToday, tasksOverdue: overdue };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [tasks]);
 
   /* ── Finance YTD stats ── */

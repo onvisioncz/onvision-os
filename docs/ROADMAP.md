@@ -34,9 +34,9 @@ Odškrtávej hotové `[x]`.
 - [x] 21. **Skeletony při načítání** — SkeletonRows (Klienti; rozšiřovat dál) *(S)*
 
 ## 🛡️ Spolehlivost & důvěra
-- [ ] 22. **Testy na peníze** (ziskovost, cashflow, odměny, faktury) *(M)*
+- [x] 22. **Testy na peníze** — 27 vitest testů nad finančním jádrem (dates, overdue, ziskovost, výkazy, čísla faktur, QR platby); `npm test` *(M)*
 - [ ] 23. **RLS pravidla** — až přibydou lidé s omezeným přístupem *(M)* — viz `docs/SECURITY.md`
-- [x] 24. **Error boundaries + 404** — branded error.tsx / not-found.tsx (offline stavy zbývají) *(S)*
+- [x] 24. **Error boundaries + retry + 404** — branded error.tsx / not-found.tsx; selhané uložení se 2× automaticky opakuje (s ochranou proti přepsání novějších dat) *(S)*
 - [x] 25. **Audit log** — kdo co kdy změnil; feed „Poslední aktivita" na /tym + záloha dat jedním klikem (Nastavení → Data & záloha) *(S)*
 
 ## 🚀 Klient-facing & wow
@@ -47,7 +47,7 @@ Odškrtávej hotové `[x]`.
 - [ ] 30. **Veřejný showreel/portfolio** auto z top výstupů *(M)*
 
 ## 📊 Data & růst
-- [ ] 31. **Trendy v čase** — obrat/marže/výstupy měsíc po měsíci *(S)*
+- [x] 31. **Trendy v čase** — pokryto grafy Vývoj financí (Finance) + Finance přehled na dashboardu (příjmy/výdaje/čistý po měsících) *(S)*
 - [x] 32. **Utilizace týmu** — % vytížení z výkazů na stránce /tym *(S)*
 - [x] 33. **Churn radar** — klient 60+ dní bez faktury/hodin = signál v Nervovém centru; + Reference radar (NPS ≥ 9 → říct si o recenzi) *(M)*
 

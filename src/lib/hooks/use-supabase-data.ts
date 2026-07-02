@@ -98,7 +98,7 @@ export function useSupabaseData<T>(
         initialized.current = true;
         setLoading(false);
       });
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]);  
 
   // ── Persist to server whenever value changes ───────────────────────────────
   useEffect(() => {

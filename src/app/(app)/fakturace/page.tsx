@@ -418,7 +418,7 @@ function IssueModal({
     [known?.popisDetailSablona, nazev, mesic, rok],
   );
   const prevMesicRok = `${mesic}/${rok}`;
-  useEffect(() => { setPopisDetail(null); }, [prevMesicRok]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPopisDetail(null); }, [prevMesicRok]);  
 
   useEffect(() => {
     const t = setTimeout(() => setPdfReady(true), 400);
