@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonRows } from "@/components/ui/skeleton";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 interface Deliverable { id: number; text: string; done: boolean; category: string; }
@@ -249,10 +250,7 @@ export default function KlientiPage() {
 
             {/* Rows */}
             {loading ? (
-              <div className="py-16 flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full border-2 animate-spin"
-                  style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
-              </div>
+              <SkeletonRows rows={6} className="px-4 py-4" />
             ) : sorted.length === 0 ? (
               <EmptyState icon={Building2} title="Zatím žádní klienti"
                 hint="Klienti se sem načtou z Měsíčních klientů a Jednorázovek. Přidej prvního tam a objeví se tu s přehledem MRR a fakturace." />
@@ -374,10 +372,7 @@ export default function KlientiPage() {
           {/* ── Mobile card list ── */}
           <div className="md:hidden flex flex-col gap-2">
             {loading ? (
-              <div className="py-16 flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full border-2 animate-spin"
-                  style={{ borderColor: "oklch(0.62 0.27 265 / 0.3)", borderTopColor: "oklch(0.62 0.27 265)" }} />
-              </div>
+              <SkeletonRows rows={5} className="px-4 py-4" />
             ) : sorted.length === 0 ? (
               <EmptyState icon={Building2} title="Zatím žádní klienti"
                 hint="Přidej klienty v Měsíčních klientech nebo Jednorázovkách." />
