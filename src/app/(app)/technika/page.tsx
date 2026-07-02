@@ -24,6 +24,22 @@ const iStyle = { background: "var(--background)", border: "1px solid var(--borde
 type GearForm = { id: number | null; nazev: string; kategorie: GearKategorie; poznamka: string; fotoUrl: string };
 const emptyForm: GearForm = { id: null, nazev: "", kategorie: "Kamera", poznamka: "", fotoUrl: "" };
 
+/** Mini náhled fotky ve formuláři (umí storage: i běžné URL). */
+function FormPhotoPreview({ fotoUrl }: { fotoUrl: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!fotoUrl.startsWith("storage:")) { setSrc(fotoUrl); return; }
+    resolveThumbUrl(fotoUrl, createClient())
+      .then((u) => { if (alive) setSrc(u); })
+      .catch(() => { if (alive) setSrc(null); });
+    return () => { alive = false; };
+  }, [fotoUrl]);
+  if (!src) return <span className="w-full h-full flex items-center justify-center"><Camera className="w-3.5 h-3.5 opacity-40" /></span>;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="náhled" className="w-full h-full object-cover" />;
+}
+
 /** Fotka kusu techniky: umí storage: cesty (podepsaná URL) i běžné URL.
  *  Rozbitá/žádná fotka → ikona kamery místo rozbitého obrázku. */
 function GearPhoto({ fotoUrl, nazev }: { fotoUrl?: string; nazev: string }) {
@@ -143,8 +159,11 @@ export default function TechnikaPage() {
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickPhoto} />
             {gearForm.fotoUrl && !uploading && (
-              <span className="flex items-center gap-1.5 text-[11px]" style={{ color: GREEN }}>
-                <Check className="w-3 h-3" /> Fotka připravena
+              <span className="flex items-center gap-2 text-[11px]" style={{ color: GREEN }}>
+                <span className="w-12 h-9 rounded-[6px] overflow-hidden shrink-0" style={{ border: "1px solid var(--border)" }}>
+                  <FormPhotoPreview fotoUrl={gearForm.fotoUrl} />
+                </span>
+                <Check className="w-3 h-3" /> Fotka připravena — ulož tlačítkem níže
                 <button onClick={() => setGearForm({ ...gearForm, fotoUrl: "" })} className="btn-tactile text-[--muted-foreground] ml-1" title="Odebrat fotku"><X className="w-3 h-3" /></button>
               </span>
             )}
