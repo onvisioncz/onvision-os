@@ -8,6 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
+  LayoutGrid, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -419,24 +420,40 @@ export function MobileNav() {
   const path = usePathname();
   const { user } = useUserRole();
   const taskBadge = useTaskBadge();
-  const { aiOpen, toggleAi } = useChatContext();
+  const { toggleAi } = useChatContext();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Clear badge when user is on /ukoly
   useEffect(() => {
     if (path === "/ukoly") markTaskBadgeSeen();
   }, [path]);
 
-  const visibleNav = ALL_NAV.filter(({ href }) => !user || canAccess(user.roles, href));
+  // Vše ostatní (mimo 4 klíčové) seskupené do panelu „Víc"
+  const moreSections = [
+    { label: "Hlavní", items: [...STANDALONE_TOP, ...STANDALONE_BOTTOM] },
+    ...GROUPS.map((g) => ({ label: g.label, items: g.items })),
+    { label: "Systém", items: [{ short: "Nastavení", href: "/nastaveni", icon: Settings }] },
+  ].map((s) => ({ label: s.label, items: s.items.filter((i) => !user || canAccess(user.roles, i.href)) }))
+    .filter((s) => s.items.length > 0);
+
+  // 4 klíčové záložky pro jednatele (filtrované dle oprávnění) + „Víc"
+  const PRIMARY = [
+    { short: "Přehled", href: "/dashboard", icon: LayoutDashboard },
+    { short: "Úkoly",   href: "/ukoly",     icon: CheckSquare },
+    { short: "Finance", href: "/finance",   icon: Receipt },
+    { short: "Klienti", href: "/klienti",   icon: Building2 },
+  ].filter(({ href }) => !user || canAccess(user.roles, href));
+
+  const bar = [...PRIMARY, { short: "Víc", href: "__more__", icon: LayoutGrid }];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{ background: "oklch(0.10 0.008 222)", borderTop: "1px solid oklch(1 0 0 / 0.08)" }}>
-      <div className="flex items-stretch overflow-x-auto mobile-nav-scroll"
-        style={{ paddingTop: "8px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
-        <style>{`.mobile-nav-scroll::-webkit-scrollbar{display:none}`}</style>
-        {[...visibleNav, { label: "Nastavení", short: "Nastavení", href: "/nastaveni", icon: Settings }].map(({ short, href, icon: Icon }) => {
-          const isAiItem = href === "/ai";
-          const active = isAiItem ? aiOpen : (path === href || path.startsWith(href + "/"));
+      <div className="grid"
+        style={{ gridTemplateColumns: `repeat(${bar.length}, 1fr)`, paddingTop: "8px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)" }}>
+        {bar.map(({ short, href, icon: Icon }) => {
+          const isMore = href === "__more__";
+          const active = isMore ? moreOpen : (path === href || path.startsWith(href + "/"));
           const badge = href === "/ukoly" ? taskBadge : 0;
           const inner = (
             <motion.div className="flex flex-col items-center gap-[5px] px-2 py-1"
@@ -479,17 +496,67 @@ export function MobileNav() {
                 </span>
               </motion.div>
           );
-          return isAiItem ? (
-            <button key={href} onClick={toggleAi} className="flex-shrink-0 bg-transparent border-none p-0" style={{ minWidth: 68 }}>
+          return isMore ? (
+            <button key={href} onClick={() => setMoreOpen(true)} className="bg-transparent border-none p-0 flex justify-center">
               {inner}
             </button>
           ) : (
-            <Link key={href} href={href} className="flex-shrink-0" style={{ minWidth: 68 }}>
+            <Link key={href} href={href} className="flex justify-center">
               {inner}
             </Link>
           );
         })}
       </div>
+
+      {/* Panel „Víc" — všechny sekce přehledně, žádný nekonečný swipe */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            <motion.div key="more-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setMoreOpen(false)}
+              className="fixed inset-0 z-40" style={{ background: "oklch(0 0 0 / 0.55)", backdropFilter: "blur(2px)" }} />
+            <motion.div key="more-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed left-0 right-0 bottom-0 z-50 rounded-t-[20px] overflow-hidden"
+              style={{ background: "oklch(0.12 0.012 265)", borderTop: "1px solid oklch(1 0 0 / 0.10)", maxHeight: "82vh" }}>
+              <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                <span className="text-[12px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--muted-foreground)", fontFamily: "var(--font-outfit)" }}>Všechny sekce</span>
+                <button onClick={() => setMoreOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "oklch(1 0 0 / 0.06)" }}>
+                  <X className="w-4 h-4" style={{ color: "var(--muted-foreground)" }} />
+                </button>
+              </div>
+              <div className="overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom,0px),24px)]" style={{ maxHeight: "calc(82vh - 56px)" }}>
+                {moreSections.map((sec) => (
+                  <div key={sec.label} className="mb-3">
+                    <p className="px-2 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--muted-foreground)", opacity: 0.7 }}>{sec.label}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {sec.items.map((it) => {
+                        const ItIcon = it.icon;
+                        const act = path === it.href || path.startsWith(it.href + "/");
+                        const isAi = it.href === "/ai";
+                        const content = (
+                          <div className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-[12px]"
+                            style={act
+                              ? { background: "oklch(0.62 0.27 265 / 0.14)", border: "1px solid oklch(0.62 0.27 265 / 0.24)" }
+                              : { background: "oklch(1 0 0 / 0.03)", border: "1px solid oklch(1 0 0 / 0.06)" }}>
+                            <ItIcon className="w-5 h-5" style={{ color: act ? "#5B5EFF" : "var(--muted-foreground)" }} />
+                            <span className="text-[11px] font-medium text-center leading-tight" style={{ color: act ? "#F4F4F8" : "var(--muted-foreground)" }}>{it.short}</span>
+                          </div>
+                        );
+                        return isAi ? (
+                          <button key={it.href} onClick={() => { setMoreOpen(false); toggleAi(); }} className="bg-transparent border-none p-0">{content}</button>
+                        ) : (
+                          <Link key={it.href} href={it.href} onClick={() => setMoreOpen(false)}>{content}</Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
