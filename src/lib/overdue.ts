@@ -17,6 +17,8 @@ export interface AnyInvoice {
   stav?: string;
   splatnost?: string;       // ov-finance-faktury
   datumSplatnosti?: string; // ov-issued-invoices
+  datumVystaveni?: string;  // fallback splatnosti (vystavení + 14 dní)
+  datum?: string;           // ov-finance-faktury používá "datum"
 }
 
 export interface OverdueItem { cislo: string; klient: string; castka: number; dnuPoSplatnosti: number }
@@ -31,7 +33,7 @@ export function overdueInvoices(...sources: AnyInvoice[][]): { count: number; to
       let d = parseDeadline(inv.datumSplatnosti ?? inv.splatnost ?? "");
       // Staré záznamy bez splatnosti: konzervativní fallback vystavení + 14 dní.
       if (!d) {
-        const vyst = parseDeadline((inv as { datumVystaveni?: string; datum?: string }).datumVystaveni ?? (inv as { datum?: string }).datum ?? "");
+        const vyst = parseDeadline(inv.datumVystaveni ?? inv.datum ?? "");
         if (vyst) d = new Date(vyst.getTime() + 14 * 86_400_000);
       }
       if (!d) continue;

@@ -161,23 +161,41 @@ function writeCache(key: string, value: unknown) {
   } catch {}
 }
 
-async function saveToServer(key: string, value: unknown) {
+/**
+ * Poslední hodnota čekající na uložení per klíč. Retry vždy sáhne sem,
+ * takže opožděný opakovaný pokus nikdy nepřepíše novější zápis starými daty.
+ */
+const latestPending = new Map<string, unknown>();
+
+async function saveToServer(key: string, value: unknown, attempt = 0) {
+  latestPending.set(key, value);
   emitSync("syncing");
   try {
     const res = await fetch("/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
+      body: JSON.stringify({ key, value: latestPending.get(key) }),
     });
     const json = await res.json();
     if (!res.ok || json.error) {
       console.error(`[ov-sync] Save error for "${key}":`, json.error);
-      emitSync("error");
+      scheduleRetryOrFail(key, attempt);
     } else {
       emitSync("ok");
     }
   } catch (e) {
     console.error(`[ov-sync] Network error saving "${key}":`, e);
+    scheduleRetryOrFail(key, attempt);
+  }
+}
+
+/** Dva automatické pokusy navíc (2,5 s a 8 s), pak teprve "Chyba sync". */
+function scheduleRetryOrFail(key: string, attempt: number) {
+  if (attempt < 2) {
+    const delay = attempt === 0 ? 2500 : 8000;
+    setTimeout(() => saveToServer(key, latestPending.get(key), attempt + 1), delay);
+    emitSync("syncing");
+  } else {
     emitSync("error");
   }
 }
