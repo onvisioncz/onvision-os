@@ -221,15 +221,15 @@
     display: inline-flex; align-items: center;
     font-size: 11px; font-weight: 500;
     padding: 2px 7px; border-radius: 4px;
-    background: oklch(1 0 0 / 0.04);
-    color: oklch(0.45 0.005 222);
-    border: 1px solid oklch(1 0 0 / 0.07);
+    background: oklch(1 0 0 / 0.05);
+    color: oklch(0.62 0.008 265);
+    border: 1px solid oklch(1 0 0 / 0.09);
   }
 
   .section-label {
     font-size: 11px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: oklch(0.35 0.005 222);
+    color: oklch(0.56 0.008 265);
   }
 
   /* Perpetual pulse (status dots) */
