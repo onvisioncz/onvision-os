@@ -36,8 +36,8 @@ Odškrtávej hotové `[x]`.
 ## 🛡️ Spolehlivost & důvěra
 - [ ] 22. **Testy na peníze** (ziskovost, cashflow, odměny, faktury) *(M)*
 - [ ] 23. **RLS pravidla** — až přibydou lidé s omezeným přístupem *(M)* — viz `docs/SECURITY.md`
-- [ ] 24. **Error boundaries + retry + offline stavy** *(S)*
-- [ ] 25. **Audit log** — kdo co kdy změnil *(S)*
+- [x] 24. **Error boundaries + 404** — branded error.tsx / not-found.tsx (offline stavy zbývají) *(S)*
+- [x] 25. **Audit log** — kdo co kdy změnil; feed „Poslední aktivita" na /tym + záloha dat jedním klikem (Nastavení → Data & záloha) *(S)*
 
 ## 🚀 Klient-facing & wow
 - [ ] 26. **Klientské stránky dotáhnout** — animace, video, galerie *(M)*
@@ -48,8 +48,8 @@ Odškrtávej hotové `[x]`.
 
 ## 📊 Data & růst
 - [ ] 31. **Trendy v čase** — obrat/marže/výstupy měsíc po měsíci *(S)*
-- [ ] 32. **Utilizace týmu** — % vytížení z výkazů *(S)*
-- [ ] 33. **Predikce churnu klienta** — signály odchodu *(M)*
+- [x] 32. **Utilizace týmu** — % vytížení z výkazů na stránce /tym *(S)*
+- [x] 33. **Churn radar** — klient 60+ dní bez faktury/hodin = signál v Nervovém centru; + Reference radar (NPS ≥ 9 → říct si o recenzi) *(M)*
 
 ---
 

@@ -37,6 +37,7 @@ export function NerveCenter() {
   const [costs] = useSupabaseData<ClientCost[]>("ov-client-costs", () => []);
   const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
   const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
+  const [monthlyClients] = useSupabaseData<{ name: string; aktivni?: boolean }[]>("ov-monthly-clients", () => []);
 
   const signals = useMemo<Signal[]>(() => {
     const now = new Date();
@@ -68,6 +69,34 @@ export function NerveCenter() {
     const promoters = nps.filter((n) => new Date(n.createdAt) >= ninety && n.score >= 9).length;
     if (promoters) out.push({ key: "ref", count: promoters, label: promoters === 1 ? "klient zralý na referenci" : "klientů zralých na referenci", href: "/klient-share", color: GREEN, icon: Star });
 
+    // Churn radar: aktivní retainer klient bez jakékoli aktivity 60+ dní
+    // (žádná faktura, žádné vykázané hodiny). Klienti úplně bez historie se
+    // nepočítají — nejspíš se jen ještě nezačali trackovat.
+    const match = (a: string, b: string) => {
+      const x = (a || "").toLowerCase(), y = (b || "").toLowerCase();
+      return !!x && !!y && (x.includes(y) || y.includes(x));
+    };
+    const sixtyAgo = new Date(now.getTime() - 60 * 86400000);
+    const quiet = monthlyClients.filter((c) => c.aktivni !== false).filter((c) => {
+      const dates: Date[] = [];
+      invoices.forEach((i) => {
+        const inv = i as unknown as { klient?: string; klientNazev?: string; datumVystaveni?: string };
+        if (match(inv.klientNazev ?? inv.klient ?? "", c.name)) {
+          const d = parseDeadline(inv.datumVystaveni ?? "");
+          if (d) dates.push(d);
+        }
+      });
+      timeEntries.forEach((e) => {
+        if (match(e.klient, c.name)) {
+          const d = parseDeadline(e.datum);
+          if (d) dates.push(d);
+        }
+      });
+      if (!dates.length) return false; // bez historie neflagovat
+      return Math.max(...dates.map((d) => d.getTime())) < sixtyAgo.getTime();
+    });
+    if (quiet.length) out.push({ key: "churn", count: quiet.length, label: quiet.length === 1 ? "klient 60+ dní bez aktivity" : "klientů 60+ dní bez aktivity", detail: quiet.slice(0, 3).map((c) => c.name.split(" ")[0]).join(", "), href: "/klienti", color: AMBER, icon: TrendingDown });
+
     // Kolize techniky
     let conflicts = 0;
     for (let i = 0; i < reservations.length; i++)
@@ -76,7 +105,7 @@ export function NerveCenter() {
     if (conflicts) out.push({ key: "gear", count: conflicts, label: "kolizí rezervací techniky", href: "/technika", color: RED, icon: Camera });
 
     return out;
-  }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates, monthlyClients]);
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
