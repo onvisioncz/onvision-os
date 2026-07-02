@@ -131,6 +131,23 @@ export default function TymPage() {
                 </p>
               </div>
             </div>
+
+            {/* Vytížení vs. norma 160 h/měs */}
+            {p.hoursMonth > 0 && (() => {
+              const pct = Math.round((p.hoursMonth / 160) * 100);
+              const c = pct > 100 ? "oklch(0.65 0.22 25)" : pct >= 70 ? "oklch(0.74 0.165 75)" : "oklch(0.67 0.155 155)";
+              return (
+                <div className="mt-2.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.06em] text-[--muted-foreground]">Vytížení</span>
+                    <span className="text-[10px] font-bold" style={{ color: c }}>{pct} %</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: c }} />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>

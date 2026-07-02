@@ -28,7 +28,12 @@ export function overdueInvoices(...sources: AnyInvoice[][]): { count: number; to
     for (const inv of list ?? []) {
       const stav = inv.stav ?? "";
       if (stav === "Zaplacena" || stav === "Storno") continue;
-      const d = parseDeadline(inv.datumSplatnosti ?? inv.splatnost ?? "");
+      let d = parseDeadline(inv.datumSplatnosti ?? inv.splatnost ?? "");
+      // Staré záznamy bez splatnosti: konzervativní fallback vystavení + 14 dní.
+      if (!d) {
+        const vyst = parseDeadline((inv as { datumVystaveni?: string; datum?: string }).datumVystaveni ?? (inv as { datum?: string }).datum ?? "");
+        if (vyst) d = new Date(vyst.getTime() + 14 * 86_400_000);
+      }
       if (!d) continue;
       const days = daysUntil(d);
       if (days >= 0) continue; // splatnost dnes/v budoucnu = ještě nehoří

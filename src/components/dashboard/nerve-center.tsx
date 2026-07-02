@@ -64,6 +64,10 @@ export function NerveCenter() {
     const lowNps = nps.filter((n) => new Date(n.createdAt) >= ninety && n.score < 7).length;
     if (lowNps) out.push({ key: "nps", count: lowNps, label: "nízkých hodnocení klientů", href: "/klient-share", color: AMBER, icon: Star });
 
+    // Reference radar: nadšení klienti (NPS ≥ 9) = zralí na recenzi / case study
+    const promoters = nps.filter((n) => new Date(n.createdAt) >= ninety && n.score >= 9).length;
+    if (promoters) out.push({ key: "ref", count: promoters, label: promoters === 1 ? "klient zralý na referenci" : "klientů zralých na referenci", href: "/klient-share", color: GREEN, icon: Star });
+
     // Kolize techniky
     let conflicts = 0;
     for (let i = 0; i < reservations.length; i++)
