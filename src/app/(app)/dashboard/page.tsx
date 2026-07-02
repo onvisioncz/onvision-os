@@ -1351,13 +1351,20 @@ export default function DashboardPage() {
                 {topTasks.slice(0, 6).map((t) => {
                   const d = parseDeadline(t.deadline);
                   const days = d ? daysUntil(d) : null;
-                  const isUrgent = days !== null && days <= 2;
-                  const isSoon = days !== null && days > 2 && days <= 5;
-                  const dotColor = isUrgent ? "#ef4444" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.22)";
-                  const badgeBg = isUrgent ? "rgba(239,68,68,0.18)" : isSoon ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)";
-                  const badgeColor = isUrgent ? "#ef4444" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.38)";
-                  const badgeBorder = isUrgent ? "rgba(239,68,68,0.30)" : isSoon ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.10)";
-                  const daysLabel = days === null ? t.deadline : days <= 0 ? "Dnes!" : days === 1 ? "Zítra" : `${days} dní`;
+                  // Pravdivé stavy: po termínu (jantarová = nedodělek), dnes (červená = akce teď), brzy, později
+                  const isOverdue = days !== null && days < 0;
+                  const isToday = days === 0;
+                  const isSoon = days !== null && days > 0 && days <= 3;
+                  const dotColor = isToday ? "#ef4444" : isOverdue ? "#f59e0b" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.22)";
+                  const isUrgent = isToday; // jen dnešek dostává červený důraz
+                  const badgeBg = isToday ? "rgba(239,68,68,0.16)" : (isOverdue || isSoon) ? "rgba(245,158,11,0.13)" : "rgba(255,255,255,0.06)";
+                  const badgeColor = isToday ? "#ef4444" : (isOverdue || isSoon) ? "#f59e0b" : "rgba(255,255,255,0.42)";
+                  const badgeBorder = isToday ? "rgba(239,68,68,0.28)" : (isOverdue || isSoon) ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.10)";
+                  const daysLabel = days === null ? t.deadline
+                    : days < 0 ? "Po termínu"
+                    : days === 0 ? "Dnes"
+                    : days === 1 ? "Zítra"
+                    : `${days} dní`;
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span
