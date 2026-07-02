@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
   // /api/cron se chrání vlastním CRON_SECRET; /d a /l jsou veřejné sdílené
   // stránky pro klienty (delivery odkazy, showcase lokací) — chráněné jen
   // neuhodnutelným tokenem v URL.
-  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/", "/design-lab"];
+  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Pokud chybí env vars, pusť dál bez auth kontroly

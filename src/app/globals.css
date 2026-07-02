@@ -53,7 +53,7 @@
   --ease-spring:  cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Surfaces — nebula dark base */
-  --background:         oklch(0.095 0.012 265);
+  --background:         #0B0B14;
   --card:               oklch(0.17 0.022 265 / 0.75);
   --card-foreground:    oklch(0.93 0.004 222);
   --popover:            oklch(0.10 0.018 265 / 0.88);

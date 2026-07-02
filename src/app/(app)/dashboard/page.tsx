@@ -828,9 +828,9 @@ export default function DashboardPage() {
             <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
             </p>
-            <h1 style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, fontSize: "clamp(28px,3.2vw,38px)", letterSpacing: "-0.03em", lineHeight: 1.08, margin: 0, marginBottom: 10 }}>
-              <span style={{ color: "#ffffff" }}>{greeting}, </span>
-              <span style={{ background: "linear-gradient(125deg,#8080ff 0%,#5353F6 45%,#3535cc 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+            <h1 style={{ fontFamily: "var(--font-outfit)", fontWeight: 600, fontSize: "clamp(30px,3.6vw,44px)", letterSpacing: "-0.03em", lineHeight: 1.04, margin: 0, marginBottom: 10 }}>
+              <span style={{ color: "#F4F4F8" }}>{greeting}, </span>
+              <span style={{ color: "#5B5EFF" }}>
                 Adame.
               </span>
             </h1>
