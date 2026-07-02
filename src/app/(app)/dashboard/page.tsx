@@ -381,18 +381,13 @@ function DeadlinePill({ deadline }: { deadline: string }) {
   };
 
   const d2 = d ? daysUntil(d) : 99;
-  const redGlow = ["0 0 0px 0px rgba(220,60,40,0)", "0 0 10px 3px rgba(220,60,40,0.55)", "0 0 0px 0px rgba(220,60,40,0)"];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 2 }}>
       {urgent ? (
-        <motion.span
-          style={pillStyle}
-          animate={{ boxShadow: d2 <= 1 ? redGlow : "0 0 0px 0px rgba(220,60,40,0)" }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        >
+        <span style={{ ...pillStyle, boxShadow: d2 <= 1 ? "0 0 8px 1px rgba(220,60,40,0.35)" : "none" }}>
           {label}
-        </motion.span>
+        </span>
       ) : (
         <span style={pillStyle}>{label}</span>
       )}
@@ -838,7 +833,7 @@ export default function DashboardPage() {
                 Adame.
               </span>
             </h1>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", lineHeight: 1.6, marginBottom: 18 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 18 }}>
               {activeClients.length > 0 ? `${activeClients.length} aktivních klientů · ${urgentTasks.length > 0 ? `${urgentTasks.length} urgentních úkolů` : "vše pod kontrolou"}.` : "Načítám data…"}
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -853,8 +848,7 @@ export default function DashboardPage() {
                   background: qaOpen ? "rgba(255,255,255,0.08)" : "linear-gradient(130deg,#5353F6,#3b35d4)",
                   border: qaOpen ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,83,246,0.5)",
                   color: "#ffffff",
-                  boxShadow: qaOpen ? "none" : "0 2px 14px rgba(83,83,246,0.35)",
-                  animation: qaOpen ? "none" : "ov-btn-pulse 2.4s ease-in-out infinite",
+                  boxShadow: qaOpen ? "none" : "0 2px 14px rgba(83,83,246,0.30)",
                 }}
               >
                 {qaOpen ? <X size={12} /> : <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
@@ -910,7 +904,7 @@ export default function DashboardPage() {
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)" }}>AI Asistent</span>
               </div>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.40)", letterSpacing: "0.05em" }}>online · claude-3.5</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", letterSpacing: "0.05em" }}>připraven</span>
             </div>
 
             {/* Návrh dne — derived from real task data */}
@@ -1366,19 +1360,8 @@ export default function DashboardPage() {
                   const daysLabel = days === null ? t.deadline : days <= 0 ? "Dnes!" : days === 1 ? "Zítra" : `${days} dní`;
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <motion.span
-                        style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4, display: "block" }}
-                        animate={isUrgent ? {
-                          scale: [1, 1.35, 1],
-                          boxShadow: [
-                            "0 0 0px 0px rgba(239,68,68,0.0), 0 0 4px rgba(239,68,68,0.5)",
-                            "0 0 0px 6px rgba(239,68,68,0.0), 0 0 10px rgba(239,68,68,0.9)",
-                            "0 0 0px 0px rgba(239,68,68,0.0), 0 0 4px rgba(239,68,68,0.5)",
-                          ],
-                        } : isSoon ? {
-                          opacity: [1, 0.5, 1],
-                        } : {}}
-                        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                      <span
+                        style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4, display: "block", boxShadow: isUrgent ? "0 0 6px rgba(239,68,68,0.6)" : "none" }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
@@ -1458,10 +1441,8 @@ export default function DashboardPage() {
                         }}
                       >
                         <div style={{ fontSize: 13, fontWeight: (isToday || isSelected) ? 800 : 600, color: isSelected ? "rgba(255,255,255,0.90)" : isToday ? "#8b8bff" : "rgba(255,255,255,0.55)" } as React.CSSProperties}>{d.getDate()}</div>
-                        {hasUrgent && <motion.div
-                          style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }}
-                          animate={{ boxShadow: ["0 0 3px rgba(239,68,68,0.5)", "0 0 7px rgba(239,68,68,0.9)", "0 0 3px rgba(239,68,68,0.5)"] }}
-                          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                        {hasUrgent && <div
+                          style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 5px rgba(239,68,68,0.5)" }}
                         />}
                         {!hasUrgent && dayTasks.length > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#8080ff" }} />}
                       </div>
