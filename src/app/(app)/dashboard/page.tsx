@@ -159,9 +159,9 @@ const item = {
 
 /* ── Shared card style ─────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-  background: "rgba(31, 29, 64, 0.78)",
-  backdropFilter: "blur(28px) saturate(1.4)",
-  WebkitBackdropFilter: "blur(28px) saturate(1.4)",
+  background: "rgba(22, 23, 35, 0.72)",
+  backdropFilter: "blur(28px) saturate(1.2)",
+  WebkitBackdropFilter: "blur(28px) saturate(1.2)",
   border: "1px solid rgba(255,255,255,0.14)",
   borderRadius: 14,
   boxShadow: "0 4px 24px rgba(0,0,0,0.28)",
@@ -171,7 +171,7 @@ const cardClass = "glass-card";
 /* ── Secondary card (slightly lighter) ────────────────────────────────────── */
 const cardStyleSm: React.CSSProperties = {
   ...cardStyle,
-  background: "rgba(26, 24, 56, 0.70)",
+  background: "rgba(26, 27, 40, 0.66)",
   borderRadius: 12,
 };
 
