@@ -10,6 +10,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { uploadThumb, resolveThumbUrl } from "@/lib/thumbs";
 import { createClient } from "@/lib/supabase/client";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   GEAR_KEY, GEAR_RES_KEY, GEAR_KATEGORIE, todayISO, reservedNow, hasConflict, nextReservation, fmtDate,
   type GearItem, type GearReservation, type GearKategorie,
@@ -198,9 +199,9 @@ export default function TechnikaPage() {
       {/* Inventory */}
       <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-[--muted-foreground] mb-3 mt-8">Sklad ({gear.length})</h2>
       {gear.length === 0 ? (
-        <div className="rounded-[12px] p-8 text-center" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-          <Camera className="w-7 h-7 mx-auto mb-2" style={{ color: PRIMARY, opacity: 0.6 }} />
-          <p className="text-[13px] text-[--muted-foreground]">Zatím žádná technika. {isAdmin ? "Přidej první tlačítkem nahoře." : "Admin přidá techniku."}</p>
+        <div className="rounded-[12px]" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <EmptyState icon={Camera} title="Zatím žádná technika"
+            hint={isAdmin ? "Přidej první kus tlačítkem nahoře — s fotkou, ať sklad vypadá k světu." : "Admin přidá techniku a tady uvidíš sklad s rezervacemi."} />
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mb-8">

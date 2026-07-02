@@ -6,6 +6,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DEFAULT_USERS } from "@/lib/roles";
 import { TIME_KEY, RATES_KEY, monthPrefix, monthLabel, fmtHod, sumBy, type TimeEntry } from "@/lib/vykazy";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const PRIMARY = "oklch(0.62 0.27 265)";
 const iCls = "glass-input px-3 py-2 text-[13px]";
@@ -118,7 +119,7 @@ export default function VykazyPage() {
             <th className="px-4 py-3 font-semibold">Datum</th><th className="px-4 py-3 font-semibold">Kdo</th><th className="px-4 py-3 font-semibold">Klient</th><th className="px-4 py-3 font-semibold">Projekt</th><th className="px-4 py-3 font-semibold text-right">Hodiny</th><th className="px-4 py-3" />
           </tr></thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-[13px] text-[--muted-foreground]">Za {monthLabel(month)} zatím žádné výkazy. Zapiš hodiny formulářem nahoře.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6}><EmptyState icon={Clock} title={`Za ${monthLabel(month)} zatím žádné výkazy`} hint="Zapiš hodiny formulářem nahoře — krmí Ziskovost i odměny podle projektů." /></td></tr>}
             {[...filtered].sort((a, b) => b.datum.localeCompare(a.datum)).map((e) => (
               <tr key={e.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                 <td className="px-4 py-2.5">{e.datum.split("-").reverse().join(". ")}</td>
