@@ -22,6 +22,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { ClientAvatar } from "@/components/ui/client-avatar";
 import { ClientHub } from "@/components/klienti/client-hub";
+import { ClientPulse } from "@/components/klienti/client-pulse";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface Deliverable {
@@ -458,6 +459,7 @@ export default function KlientDetailPage() {
       </motion.div>
 
       <ClientHub klientName={client.name} />
+      <ClientPulse clientName={client.name} />
 
       {/* ── 3. Deliverables ── */}
       {deliverables.length > 0 && (

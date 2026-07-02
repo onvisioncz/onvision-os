@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, ListPlus, Check } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
@@ -10,6 +10,7 @@ import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string; nazev?: string; priorita?: string }
+interface FullTask { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
 interface Approval { status: string }
 interface Nps { score: number; createdAt: string }
 interface MonthlyClient { name: string; pausal?: number; reklama?: number; aktivni?: boolean }
@@ -64,6 +65,37 @@ export function AiBrief() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
+
+  const [, setFullTasks] = useSupabaseData<FullTask[]>("ov-ukoly-tasks", () => []);
+  const [makingTasks, setMakingTasks] = useState(false);
+  const [tasksMade, setTasksMade] = useState<number | null>(null);
+
+  /** Z briefu vytáhne akční kroky (sekce „Rozhodni tento týden") a založí je jako úkoly. */
+  const createTasksFromBrief = async () => {
+    if (!brief || makingTasks) return;
+    setMakingTasks(true); setTasksMade(null);
+    try {
+      const res = await fetch("/api/tasks/extract", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: `Týdenní brief jednatele — vytvoř úkoly z akčních kroků:\n\n${brief}` }),
+      });
+      const j = await res.json();
+      if (!res.ok) { setTasksMade(-1); return; }
+      const drafts = (j.tasks ?? []).filter((t: { nazev?: string }) => t.nazev?.trim());
+      if (!drafts.length) { setTasksMade(0); return; }
+      let id = Date.now();
+      const nove: FullTask[] = drafts.map((d: { nazev: string; prirazeno?: string; deadline?: string }) => ({
+        id: id++, nazev: d.nazev.trim(), projekt: "Interní · z briefu", prirazeno: d.prirazeno || "Adam",
+        priorita: "Vysoká", status: "Nové", deadline: d.deadline || "",
+      }));
+      setFullTasks((prev) => [...prev, ...nove]);
+      setTasksMade(nove.length);
+    } catch {
+      setTasksMade(-1);
+    } finally {
+      setMakingTasks(false);
+    }
+  };
 
   const snapshot = useMemo(() => {
     const now = new Date();
@@ -139,7 +171,27 @@ export function AiBrief() {
         <p className="text-[12px] text-[--muted-foreground]">Klikni na „Vygenerovat" a dostaneš brief z aktuálních dat.</p>
       )}
       {loading && <p className="text-[12px] text-[--muted-foreground]">Čtu data firmy a píšu brief…</p>}
-      {brief && !loading && <BriefBody text={brief} />}
+      {brief && !loading && (
+        <>
+          <BriefBody text={brief} />
+          {/* AI, co koná: akční kroky z briefu → rovnou úkoly */}
+          <div className="flex items-center gap-2 mt-3">
+            <button onClick={createTasksFromBrief} disabled={makingTasks}
+              className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold disabled:opacity-50"
+              style={{ background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.3)", color: PRIMARY }}>
+              {makingTasks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListPlus className="w-3.5 h-3.5" />}
+              {makingTasks ? "Zakládám…" : "Vytvořit úkoly z briefu"}
+            </button>
+            {tasksMade !== null && tasksMade > 0 && (
+              <span className="inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: "oklch(0.67 0.155 155)" }}>
+                <Check className="w-3.5 h-3.5" /> {tasksMade} {tasksMade === 1 ? "úkol založen" : tasksMade < 5 ? "úkoly založeny" : "úkolů založeno"} → Úkoly
+              </span>
+            )}
+            {tasksMade === 0 && <span className="text-[12px] text-[--muted-foreground]">Brief neobsahuje akční kroky.</span>}
+            {tasksMade === -1 && <span className="text-[12px]" style={{ color: "oklch(0.65 0.22 25)" }}>Nepodařilo se — zkus znovu.</span>}
+          </div>
+        </>
+      )}
 
       {/* Mini co-pilot: zeptej se na data */}
       <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
