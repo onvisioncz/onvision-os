@@ -22,7 +22,7 @@ const LOGO_MAP: { re: RegExp; logo: string; bg?: string }[] = [
   { re: /nera/i, logo: "nera.png" },
   { re: /behej|běhej|beh ?brno/i, logo: "behejbrno.png" },
   { re: /effect/i, logo: "effect-clinic.png" },
-  { re: /firesta/i, logo: "firesta.png" },
+  { re: /firesta/i, logo: "firesta.png", bg: "#45913E" },
   { re: /\bmtb\b|mtbcz/i, logo: "mtbcz.png", bg: "#16181E" },
   { re: /han[aá]k/i, logo: "hanak.png" },
   { re: /stavos/i, logo: "stavos.png" },
