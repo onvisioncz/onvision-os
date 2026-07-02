@@ -133,10 +133,17 @@ export default function TymPage() {
         {rows.map((p) => (
           <div key={p.email} className="glass-card p-4" style={{ opacity: p.aktivni ? 1 : 0.55 }}>
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
-                style={{ background: `color-mix(in oklch, ${p.color} 22%, transparent)`, color: p.color, border: `1px solid color-mix(in oklch, ${p.color} 40%, transparent)` }}>
-                {p.initials}
-              </div>
+              {p.photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.photo} alt={p.displayName}
+                  className="w-12 h-12 rounded-full object-cover shrink-0"
+                  style={{ border: `2px solid color-mix(in oklch, ${p.color} 55%, transparent)` }} />
+              ) : (
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
+                  style={{ background: `color-mix(in oklch, ${p.color} 22%, transparent)`, color: p.color, border: `1px solid color-mix(in oklch, ${p.color} 40%, transparent)` }}>
+                  {p.initials}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[14px] font-bold truncate" style={{ fontFamily: "var(--font-heading)" }}>{p.displayName}</span>
@@ -148,6 +155,7 @@ export default function TymPage() {
                   ))}
                   {!p.aktivni && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-[--muted-foreground]" style={{ background: "rgba(255,255,255,0.06)" }}><MinusCircle className="w-2.5 h-2.5 inline mr-0.5" />neaktivní</span>}
                 </div>
+                {p.pozice && <p className="text-[11px] font-medium mt-0.5 truncate" style={{ color: p.color }}>{p.pozice}</p>}
                 <p className="text-[11px] text-[--muted-foreground] mt-0.5 truncate">
                   {p.clients.length ? `Klienti: ${p.clients.join(", ")}` : "Bez přiřazených klientů"}
                 </p>
@@ -205,10 +213,15 @@ export default function TymPage() {
               const person = DEFAULT_USERS.find((u) => u.email.toLowerCase() === a.email.toLowerCase());
               return (
                 <div key={i} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: i < Math.min(audit.length, 30) - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
-                    style={{ background: `color-mix(in oklch, ${person?.color ?? "#5B5EFF"} 22%, transparent)`, color: person?.color ?? "#5B5EFF" }}>
-                    {person?.initials ?? a.email.slice(0, 2).toUpperCase()}
-                  </span>
+                  {person?.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={person.photo} alt={person.displayName} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                      style={{ background: `color-mix(in oklch, ${person?.color ?? "#5B5EFF"} 22%, transparent)`, color: person?.color ?? "#5B5EFF" }}>
+                      {person?.initials ?? a.email.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                   <span className="text-[12px] font-semibold shrink-0">{person?.displayName ?? a.email}</span>
                   <span className="text-[12px] text-[--muted-foreground] truncate flex-1">upravil(a) {keyLabel(a.key)}</span>
                   <span className="text-[11px] text-[--muted-foreground] shrink-0">{tsRel(a.ts)}</span>

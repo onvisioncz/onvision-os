@@ -10,6 +10,10 @@ export interface UserConfig {
   color: string;        // OKLCH avatar color
   initials: string;
   aktivni: boolean;
+  /** Profilovka z onvision.cz (public/team/…) */
+  photo?: string;
+  /** Pozice dle webu (hezčí popis než interní role) */
+  pozice?: string;
 }
 
 /* ── Default users (seed) ───────────────────────────────────────────────────── */
@@ -22,6 +26,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.62 0.27 265)",
     initials: "AM",
     aktivni: true,
+    photo: "/team/adam-mendrek.jpg",
+    pozice: "Jednatel · Komunikace & obchod",
   },
   {
     email: "jan@onvision.cz",
@@ -31,6 +37,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.72 0.2 310)",
     initials: "JK",
     aktivni: true,
+    photo: "/team/jan-kriz.jpg",
+    pozice: "Jednatel · Video & produkce",
   },
   {
     email: "fakturace@onvision.cz",
@@ -40,6 +48,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.67 0.155 155)",
     initials: "DM",
     aktivni: true,
+    photo: "/team/dominika-mendrek.jpg",
+    pozice: "Administrativa & fakturace",
   },
   {
     email: "zdenek@onvision.cz",
@@ -49,6 +59,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.75 0.19 48)",
     initials: "ZD",
     aktivni: true,
+    photo: "/team/zdenek-dolihal.jpg",
+    pozice: "Kreativec 3v1",
   },
   {
     email: "matej@onvision.cz",
@@ -58,6 +70,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.68 0.18 180)",
     initials: "MH",
     aktivni: true,
+    photo: "/team/matej-horak.jpg",
+    pozice: "Video produkce",
   },
   {
     email: "monika@onvision.cz",
@@ -76,6 +90,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.65 0.18 240)",
     initials: "PP",
     aktivni: true,
+    photo: "/team/patrik-petr.jpg",
+    pozice: "Grafická tvorba",
   },
   {
     email: "tereza@onvision.cz",
@@ -85,6 +101,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.70 0.18 0)",
     initials: "TB",
     aktivni: true,
+    photo: "/team/tereza-burianova.jpg",
+    pozice: "Content stratég",
   },
   {
     email: "david@onvision.cz",
@@ -94,6 +112,8 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.65 0.22 25)",
     initials: "DM",
     aktivni: true,
+    photo: "/team/david-macala.jpg",
+    pozice: "Social Media Manager",
   },
   {
     email: "martin@onvision.cz",
@@ -103,6 +123,42 @@ export const DEFAULT_USERS: UserConfig[] = [
     color: "oklch(0.67 0.155 155)",
     initials: "MF",
     aktivni: true,
+    photo: "/team/martin-fiala.jpg",
+    pozice: "Foto postprodukce & grafika",
+  },
+  // ── Doplněno dle onvision.cz/o-nas (zatím bez přístupu do OS) ──
+  {
+    email: "jakub@onvision.cz",
+    displayName: "Jakub Mendrek",
+    roles: ["pm"],
+    clients: [],
+    color: "oklch(0.70 0.16 220)",
+    initials: "JM",
+    aktivni: true,
+    photo: "/team/jakub-mendrek.jpg",
+    pozice: "Klientská komunikace",
+  },
+  {
+    email: "michael@onvision.cz",
+    displayName: "Michael Weiser",
+    roles: ["produkce"],
+    clients: [],
+    color: "oklch(0.72 0.17 140)",
+    initials: "MW",
+    aktivni: true,
+    photo: "/team/michael-weiser.jpg",
+    pozice: "Video produkce",
+  },
+  {
+    email: "tomas@onvision.cz",
+    displayName: "Tomáš Dang",
+    roles: ["smm"],
+    clients: [],
+    color: "oklch(0.75 0.15 85)",
+    initials: "TD",
+    aktivni: true,
+    photo: "/team/tomas-dang.jpg",
+    pozice: "Data analytik",
   },
 ];
 
