@@ -54,7 +54,7 @@
 
   /* Surfaces — nebula dark base */
   --background:         oklch(0.095 0.012 265);
-  --card:               oklch(0.095 0.018 265 / 0.62);
+  --card:               oklch(0.17 0.022 265 / 0.75);
   --card-foreground:    oklch(0.93 0.004 222);
   --popover:            oklch(0.10 0.018 265 / 0.88);
   --popover-foreground: oklch(0.93 0.004 222);
@@ -68,7 +68,7 @@
   --secondary:            oklch(0.16 0.006 222);
   --secondary-foreground: oklch(0.62 0.006 222);
   --muted:                oklch(0.14 0.006 222);
-  --muted-foreground:     oklch(0.40 0.005 222);
+  --muted-foreground:     oklch(0.60 0.008 265);
   --accent:               oklch(0.62 0.27 265);
   --accent-foreground:    oklch(0.09 0.008 222);
 
@@ -310,22 +310,23 @@
 
   /* ── Glass card ────────────────────────────────────────────────────────── */
   .glass-card {
-    background: rgba(12, 10, 35, 0.55);
+    background: rgba(31, 29, 64, 0.78);
     backdrop-filter: blur(28px) saturate(1.4);
     -webkit-backdrop-filter: blur(28px) saturate(1.4);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
   }
   .glass-card:hover {
-    border-color: rgba(83, 83, 246, 0.22);
+    border-color: rgba(83, 83, 246, 0.35);
   }
 
   /* Liquid-glass panel (čitelné plochy nad tmavým podkladem) */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.055);
     backdrop-filter: blur(18px) saturate(1.3);
     -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 14px;
   }
   /* Čitelný glass input — světlejší než karta, jasný okraj */

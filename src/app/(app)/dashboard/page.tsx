@@ -159,18 +159,19 @@ const item = {
 
 /* ── Shared card style ─────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-  background: "rgba(12, 10, 35, 0.55)",
+  background: "rgba(31, 29, 64, 0.78)",
   backdropFilter: "blur(28px) saturate(1.4)",
   WebkitBackdropFilter: "blur(28px) saturate(1.4)",
-  border: "1px solid rgba(255,255,255,0.09)",
+  border: "1px solid rgba(255,255,255,0.14)",
   borderRadius: 14,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.28)",
 };
 const cardClass = "glass-card";
 
 /* ── Secondary card (slightly lighter) ────────────────────────────────────── */
 const cardStyleSm: React.CSSProperties = {
   ...cardStyle,
-  background: "rgba(14, 12, 40, 0.50)",
+  background: "rgba(26, 24, 56, 0.70)",
   borderRadius: 12,
 };
 
@@ -824,7 +825,7 @@ export default function DashboardPage() {
         >
           {/* Greeting card */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 4", padding: "24px 26px" }}>
-            <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
             </p>
             <h1 style={{ fontFamily: "var(--font-jakarta)", fontWeight: 700, fontSize: "clamp(28px,3.2vw,38px)", letterSpacing: "-0.03em", lineHeight: 1.08, margin: 0, marginBottom: 10 }}>
@@ -833,7 +834,7 @@ export default function DashboardPage() {
                 Adame.
               </span>
             </h1>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 18 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.6, marginBottom: 18 }}>
               {activeClients.length > 0 ? `${activeClients.length} aktivních klientů · ${urgentTasks.length > 0 ? `${urgentTasks.length} urgentních úkolů` : "vše pod kontrolou"}.` : "Načítám data…"}
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -867,11 +868,11 @@ export default function DashboardPage() {
                   cursor: "pointer",
                   background: "rgba(83,83,246,0.08)",
                   border: "1px solid rgba(83,83,246,0.18)",
-                  color: "rgba(255,255,255,0.62)",
+                  color: "rgba(255,255,255,0.80)",
                   transition: "background 0.14s, color 0.14s",
                 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.14)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.85)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.62)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.80)"; }}
                 >
                   {label}
                 </button>
@@ -886,11 +887,11 @@ export default function DashboardPage() {
                   cursor: "pointer",
                   background: "transparent",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.42)",
+                  color: "rgba(255,255,255,0.62)",
                   transition: "color 0.14s, border-color 0.14s",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.60)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.42)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.76)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.62)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
               >
                 📋 Uzavřít měsíc
               </button>
@@ -904,13 +905,13 @@ export default function DashboardPage() {
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.7)", display: "block", flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)" }}>AI Asistent</span>
               </div>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", letterSpacing: "0.05em" }}>připraven</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.62)", letterSpacing: "0.05em" }}>připraven</span>
             </div>
 
             {/* Návrh dne — derived from real task data */}
             <div style={{ background: "rgba(83,83,246,0.10)", border: "1px solid rgba(83,83,246,0.20)", borderRadius: 10, padding: "12px 14px", flex: 1 }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Návrh dne</p>
-              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.55 }}>
+              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.90)", lineHeight: 1.55 }}>
                 {topTasks[0]
                   ? <>Začni <strong style={{ color: "rgba(255,255,255,0.95)" }}>„{topTasks[0].nazev}"</strong>
                       {(() => { const d = parseDeadline(topTasks[0].deadline); const days = d ? daysUntil(d) : null;
@@ -925,7 +926,7 @@ export default function DashboardPage() {
               onClick={toggleAi}
               style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
             >
-              <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-jakarta)", userSelect: "none" }}>
+              <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 13px", fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-jakarta)", userSelect: "none" }}>
                 Napiš zprávu nebo příkaz…
               </div>
               <button
@@ -1170,7 +1171,7 @@ export default function DashboardPage() {
                   </div>
                   <button
                     onClick={() => setNoteOpen(false)}
-                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.42)", cursor: "pointer", padding: 4, lineHeight: 1, borderRadius: 6 }}
+                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.62)", cursor: "pointer", padding: 4, lineHeight: 1, borderRadius: 6 }}
                   >
                     <X size={16} />
                   </button>
@@ -1206,7 +1207,7 @@ export default function DashboardPage() {
 
                 {/* Footer */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.22)", letterSpacing: "0.02em" }}>
+                  <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.42)", letterSpacing: "0.02em" }}>
                     Uloží se lokálně · Ctrl+Enter pro uložení
                   </span>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -1215,7 +1216,7 @@ export default function DashboardPage() {
                       style={{
                         padding: "7px 14px", borderRadius: 8,
                         background: "transparent", border: "1px solid rgba(255,255,255,0.09)",
-                        color: "rgba(255,255,255,0.40)", fontSize: 12, fontWeight: 600,
+                        color: "rgba(255,255,255,0.60)", fontSize: 12, fontWeight: 600,
                         cursor: "pointer", fontFamily: "var(--font-jakarta)",
                       }}
                     >
@@ -1234,7 +1235,7 @@ export default function DashboardPage() {
                           : "1px solid rgba(83,83,246,0.12)",
                         color: noteText.trim()
                           ? (noteSaved ? "rgba(52,211,153,0.9)" : "#ffffff")
-                          : "rgba(255,255,255,0.40)",
+                          : "rgba(255,255,255,0.60)",
                         fontSize: 12, fontWeight: 600, cursor: noteText.trim() ? "pointer" : "not-allowed",
                         fontFamily: "var(--font-jakarta)",
                         transition: "all 0.18s",
@@ -1258,7 +1259,7 @@ export default function DashboardPage() {
         >
           {/* Tile 1: Příjmy (MRR) — cols 1-2 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "1 / 3", padding: "18px 20px" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)", marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)", marginBottom: 10 }}>
               Příjmy tento měsíc
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1272,7 +1273,7 @@ export default function DashboardPage() {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: momTrend >= 0 ? "rgba(83,83,246,0.18)" : "rgba(239,68,68,0.15)", border: `1px solid ${momTrend >= 0 ? "rgba(83,83,246,0.32)" : "rgba(239,68,68,0.30)"}`, color: momTrend >= 0 ? "#8080ff" : "#ef4444", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
                         {momTrend >= 0 ? "↑" : "↓"} {Math.abs(momTrend).toFixed(1).replace(".", ",")} %
                       </span>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)" }}>vs. minulý měsíc</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.62)" }}>vs. minulý měsíc</span>
                     </>
                   ) : (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(83,83,246,0.18)", border: "1px solid rgba(83,83,246,0.32)", color: "#8080ff", padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
@@ -1286,7 +1287,7 @@ export default function DashboardPage() {
 
           {/* Tile 2: Otevřené úkoly — cols 3-4 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "3 / 5", padding: "18px 20px" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)", marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)", marginBottom: 10 }}>
               Otevřené úkoly
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1310,7 +1311,7 @@ export default function DashboardPage() {
           {/* Tile 3: Aktivní zakázky — cols 5-6 */}
           <div className={cardClass} style={{ ...cardStyle, gridColumn: "5 / 7", padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.42)" }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.62)" }}>
                 Aktivní zakázky
               </p>
               <span style={{ fontSize: 9, background: "rgba(83,83,246,0.18)", color: "#a78bfa", border: "1px solid rgba(83,83,246,0.25)", padding: "1px 7px", borderRadius: 8, letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>
@@ -1320,12 +1321,12 @@ export default function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 3 }}>Retainer</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 3 }}>Retainer</div>
                   <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeClients.length}</div>
                 </div>
                 <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", marginBottom: 3 }} />
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", marginBottom: 3 }}>Jednorázový</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 3 }}>Jednorázový</div>
                   <div style={{ fontFamily: "var(--font-jakarta)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.04em", lineHeight: 1, color: "#ffffff" }}>{activeOneoffs.length}</div>
                 </div>
               </div>
@@ -1341,11 +1342,11 @@ export default function DashboardPage() {
           {/* Col 1: Nejbližší deadliny */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Nejbližší deadliny</p>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Nejbližší deadliny</p>
               <Link href="/ukoly" style={{ fontSize: 11, color: "rgba(130,130,255,0.75)", textDecoration: "none" }}>Zobrazit vše →</Link>
             </div>
             {topTasks.length === 0 ? (
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.42)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.62)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {topTasks.slice(0, 6).map((t) => {
@@ -1355,10 +1356,10 @@ export default function DashboardPage() {
                   const isOverdue = days !== null && days < 0;
                   const isToday = days === 0;
                   const isSoon = days !== null && days > 0 && days <= 3;
-                  const dotColor = isToday ? "#ef4444" : isOverdue ? "#f59e0b" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.22)";
+                  const dotColor = isToday ? "#ef4444" : isOverdue ? "#f59e0b" : isSoon ? "#f59e0b" : "rgba(255,255,255,0.42)";
                   const isUrgent = isToday; // jen dnešek dostává červený důraz
                   const badgeBg = isToday ? "rgba(239,68,68,0.16)" : (isOverdue || isSoon) ? "rgba(245,158,11,0.13)" : "rgba(255,255,255,0.06)";
-                  const badgeColor = isToday ? "#ef4444" : (isOverdue || isSoon) ? "#f59e0b" : "rgba(255,255,255,0.42)";
+                  const badgeColor = isToday ? "#ef4444" : (isOverdue || isSoon) ? "#f59e0b" : "rgba(255,255,255,0.62)";
                   const badgeBorder = isToday ? "rgba(239,68,68,0.28)" : (isOverdue || isSoon) ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.10)";
                   const daysLabel = days === null ? t.deadline
                     : days < 0 ? "Po termínu"
@@ -1371,8 +1372,8 @@ export default function DashboardPage() {
                         style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 4, display: "block", boxShadow: isUrgent ? "0 0 6px rgba(239,68,68,0.6)" : "none" }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.42)" }}>{t.projekt}</p>
+                        <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.92)", lineHeight: 1.35, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.62)" }}>{t.projekt}</p>
                       </div>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 7, background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, flexShrink: 0 }}>
                         {daysLabel}
@@ -1380,7 +1381,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => markTaskDone(t.id)}
                         title="Hotovo"
-                        style={{ width: 22, height: 22, borderRadius: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.40)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                        style={{ width: 22, height: 22, borderRadius: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                       >
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2 4.8-4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
@@ -1417,14 +1418,14 @@ export default function DashboardPage() {
             return (
               <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Tento týden</p>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Tento týden</p>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>
                     {monday.getDate()}. – {week[6].getDate()}. {week[6].toLocaleDateString("cs-CZ", { month: "long" })}
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
                   {dayNames.map(d => (
-                    <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", paddingBottom: 6 }}>{d}</div>
+                    <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.44)", paddingBottom: 6 }}>{d}</div>
                   ))}
                   {week.map((d, i) => {
                     const isToday = d.toDateString() === today.toDateString();
@@ -1441,13 +1442,13 @@ export default function DashboardPage() {
                           padding: "6px 2px", borderRadius: 9, cursor: "pointer",
                           transition: "background 0.14s, border-color 0.14s",
                           ...(isSelected
-                            ? { background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)" }
+                            ? { background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.42)" }
                             : isToday
                             ? { background: "linear-gradient(135deg, rgba(83,83,246,0.28), rgba(83,83,246,0.14))", border: "1px solid rgba(83,83,246,0.35)" }
                             : { border: "1px solid transparent" }),
                         }}
                       >
-                        <div style={{ fontSize: 13, fontWeight: (isToday || isSelected) ? 800 : 600, color: isSelected ? "rgba(255,255,255,0.90)" : isToday ? "#8b8bff" : "rgba(255,255,255,0.55)" } as React.CSSProperties}>{d.getDate()}</div>
+                        <div style={{ fontSize: 13, fontWeight: (isToday || isSelected) ? 800 : 600, color: isSelected ? "rgba(255,255,255,0.90)" : isToday ? "#8b8bff" : "rgba(255,255,255,0.72)" } as React.CSSProperties}>{d.getDate()}</div>
                         {hasUrgent && <div
                           style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 5px rgba(239,68,68,0.5)" }}
                         />}
@@ -1459,20 +1460,20 @@ export default function DashboardPage() {
 
                 {/* Agenda — reaguje na klik */}
                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.44)", marginBottom: 8 }}>
                     {agendaLabel}
                   </p>
                   <AnimatePresence mode="popLayout">
                     {agendaTasks.length === 0 ? (
                       <motion.p key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        style={{ fontSize: 11.5, color: "rgba(255,255,255,0.42)" }}>
+                        style={{ fontSize: 11.5, color: "rgba(255,255,255,0.62)" }}>
                         Žádné deadliny 👌
                       </motion.p>
                     ) : agendaTasks.slice(0, 3).map(t => (
                       <motion.div key={t.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, marginBottom: 4 }}>
                         <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 10, flexShrink: 0 }}>⚑</span>
-                        <span style={{ color: "rgba(255,255,255,0.70)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
+                        <span style={{ color: "rgba(255,255,255,0.86)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -1484,8 +1485,8 @@ export default function DashboardPage() {
           {/* Col 3: Dnešní úkoly */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>Dnešní úkoly</p>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>{tasks.filter(t => t.status === "Hotovo").length} z {tasks.length} hotových</span>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Dnešní úkoly</p>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{tasks.filter(t => t.status === "Hotovo").length} z {tasks.length} hotových</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", maxHeight: 240, overflowY: "auto", scrollbarWidth: "thin" }}>
               <AnimatePresence mode="popLayout">
@@ -1495,7 +1496,7 @@ export default function DashboardPage() {
                     "Urgentní": { bg: "rgba(239,68,68,0.15)", col: "#ef4444" },
                     "Vysoká":   { bg: "rgba(83,83,246,0.15)", col: "#8080ff" },
                     "Střední":  { bg: "rgba(167,139,250,0.15)", col: "#a78bfa" },
-                    "Nízká":    { bg: "rgba(255,255,255,0.06)", col: "rgba(255,255,255,0.38)" },
+                    "Nízká":    { bg: "rgba(255,255,255,0.06)", col: "rgba(255,255,255,0.58)" },
                   };
                   const tag = tagMap[t.priorita] ?? tagMap["Střední"];
                   return (
@@ -1514,10 +1515,10 @@ export default function DashboardPage() {
                         {isDone && <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1.5 4l2 2 3.5-3.5" stroke="#8080ff" strokeWidth="1.5"/></svg>}
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.72)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
+                        <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.60)" : "rgba(255,255,255,0.88)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
                         <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, marginTop: 3, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
                       </div>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", flexShrink: 0 }}>{t.deadline || ""}</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", flexShrink: 0 }}>{t.deadline || ""}</span>
                     </motion.div>
                   );
                 })}
