@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { AiBrief } from "@/components/ai-brief";
 import {
   GAMEPLAN_KEY, HORIZONTY, emptyInitiative, progress, statusLabel,
   type Initiative, type Horizont, type Milnik,
@@ -39,6 +40,10 @@ export default function GameplanPage() {
         <button onClick={() => setAiOpen(true)} className="btn-tactile flex items-center gap-2 px-4 py-2.5 rounded-[8px] text-[14px] font-semibold" style={{ background: "linear-gradient(120deg,#4B4DEA,#8C64FF)", color: "white" }}>
           <Sparkles className="w-4 h-4" /> AI: navrhni posuny
         </button>
+      </div>
+
+      <div className="mb-5">
+        <AiBrief />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
