@@ -24,14 +24,8 @@ export function VystupyFab() {
             fontSize: 13,
             fontWeight: 600,
           }}
-          animate={{
-            boxShadow: [
-              "0 4px 24px oklch(0.62 0.27 265 / 0.18)",
-              "0 4px 32px oklch(0.62 0.27 265 / 0.38)",
-              "0 4px 24px oklch(0.62 0.27 265 / 0.18)",
-            ],
-          }}
-          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+          initial={false}
+          animate={{ boxShadow: "0 4px 24px oklch(0.62 0.27 265 / 0.22)" }}
           whileHover={{
             scale: 1.04,
             background: "oklch(0.62 0.27 265)",

@@ -776,7 +776,7 @@ export function AiPage() {
           ${showMobileSidebar ? "flex w-full absolute inset-0 z-20" : "hidden"}
         `}
         style={{
-          background: "oklch(0.085 0.008 222)",
+          background: "oklch(0.10 0.012 265)",
           borderRight: "1px solid oklch(1 0 0 / 0.07)",
         }}
       >
@@ -839,14 +839,14 @@ export function AiPage() {
         </div>
       </div>
 
-      {/* ── Chat area ── */}
-      {(!showMobileSidebar || typeof window === "undefined") && activeWs ? (
-        <div className="flex-1 flex flex-col min-w-0 h-screen">
+      {/* ── Chat area — na desktopu vždy; na mobilu schovaná, když je otevřený výběr prostorů ── */}
+      {activeWs ? (
+        <div className={`flex-1 flex-col min-w-0 h-screen ${showMobileSidebar ? "hidden md:flex" : "flex"}`}>
 
-          {/* Chat header */}
+          {/* Chat header — pr-14 nechává místo pro zavírací křížek overlaye */}
           <div
-            className="shrink-0 px-5 py-3 flex items-center justify-between"
-            style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+            className="shrink-0 pl-5 pr-14 py-3 flex items-center justify-between"
+            style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.105 0.012 265)" }}
           >
             <div className="flex items-center gap-3">
               {/* Mobile back */}
@@ -960,7 +960,7 @@ export function AiPage() {
           {messages.length > 0 && (
             <div
               className="shrink-0 px-4 pb-4 pt-3"
-              style={{ borderTop: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.09 0.008 222)" }}
+              style={{ borderTop: "1px solid oklch(1 0 0 / 0.07)", background: "oklch(0.105 0.012 265)" }}
             >
               <div className="max-w-3xl mx-auto">
                 <div
