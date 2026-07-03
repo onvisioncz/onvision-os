@@ -53,7 +53,7 @@ const COMMANDS: Cmd[] = [
 ];
 
 interface Entity { label: string; sub: string; href: string }
-interface FlatItem { label: string; sub?: string; href: string; group: string }
+interface FlatItem { label: string; sub?: string; href: string; group: string; action?: "create-task" }
 
 const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : []);
@@ -104,13 +104,35 @@ export function CommandPalette() {
   const flat = useMemo<FlatItem[]>(() => {
     const nq = norm(q.trim());
     const items: FlatItem[] = [];
+    const trimmed = q.trim();
+    // Rychlé založení úkolu z čehokoliv, co uživatel napsal
+    if (trimmed.length >= 3) {
+      const clean = trimmed.replace(/^(úkol|ukol|task|todo)\s*:?\s*/i, "").trim() || trimmed;
+      items.push({ label: `Vytvořit úkol: „${clean}"`, href: "/ukoly", group: "Rychlá akce", action: "create-task" });
+    }
     if (nq) entities.filter((e) => norm(e.label).includes(nq) || norm(e.sub).includes(nq)).slice(0, 8).forEach((e) => items.push({ ...e, group: "Výsledky" }));
     const cmds = nq ? COMMANDS.filter((c) => norm(c.label).includes(nq) || (c.keywords && norm(c.keywords).includes(nq))) : COMMANDS;
     cmds.forEach((c) => items.push({ label: c.label, href: c.href, group: c.group }));
     return items;
   }, [q, entities]);
 
-  const go = (it: FlatItem) => { setOpen(false); router.push(it.href); };
+  const createTask = useCallback(async (rawText: string) => {
+    const nazev = rawText.replace(/^(úkol|ukol|task|todo)\s*:?\s*/i, "").trim();
+    if (!nazev) return;
+    try {
+      const cur = await fetch("/api/sync?key=ov-ukoly-tasks").then((r) => r.json()).catch(() => ({}));
+      const tasks = arr(cur?.value);
+      const id = Math.max(0, ...tasks.map((t) => Number(t.id) || 0)) + 1;
+      const next = [...tasks, { id, nazev, projekt: "", prirazeno: "", priorita: "Střední", status: "Nové", deadline: "" }];
+      await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "ov-ukoly-tasks", value: next }) });
+    } catch { /* offline — úkol se neztratí, jen se nezaloží; uživatel to uvidí */ }
+  }, []);
+
+  const go = (it: FlatItem) => {
+    setOpen(false);
+    if (it.action === "create-task") { void createTask(q); router.push("/ukoly"); return; }
+    router.push(it.href);
+  };
 
   const onListKey = (ev: React.KeyboardEvent) => {
     if (ev.key === "ArrowDown") { ev.preventDefault(); setActive((a) => Math.min(a + 1, flat.length - 1)); }
@@ -141,7 +163,7 @@ export function CommandPalette() {
                     <button onMouseEnter={() => setActive(idx)} onClick={() => go(it)}
                       className="w-full flex items-center gap-3 px-4 py-2 text-left text-[13.5px]"
                       style={{ background: idx === active ? "rgba(91,94,255,0.16)" : "transparent", color: idx === active ? "#fff" : "var(--foreground)" }}>
-                      {it.group === "Výsledky" ? <Search className="w-3.5 h-3.5 opacity-50" /> : it.group === "Přejít na" ? <ArrowRight className="w-3.5 h-3.5 opacity-60" /> : <Plus className="w-3.5 h-3.5 opacity-60" />}
+                      {it.action === "create-task" ? <Plus className="w-3.5 h-3.5" style={{ color: "#5B5EFF" }} /> : it.group === "Výsledky" ? <Search className="w-3.5 h-3.5 opacity-50" /> : it.group === "Přejít na" ? <ArrowRight className="w-3.5 h-3.5 opacity-60" /> : <Plus className="w-3.5 h-3.5 opacity-60" />}
                       <span className="flex-1 truncate">{it.label}{it.sub && <span className="text-[--muted-foreground] text-[12px]"> · {it.sub}</span>}</span>
                       {idx === active && <CornerDownLeft className="w-3.5 h-3.5 opacity-50" />}
                     </button>
