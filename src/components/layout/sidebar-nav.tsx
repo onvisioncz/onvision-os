@@ -8,7 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
-  LayoutGrid, X,
+  LayoutGrid, X, Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +24,7 @@ import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
 
 /* ── Nav structure ──────────────────────────────────────────────────────── */
 const STANDALONE_TOP = [
+  { label: "Můj den",   short: "Dnes",     href: "/dnes",       icon: Sun },
   { label: "Dashboard", short: "Přehled",  href: "/dashboard",  icon: LayoutDashboard },
   { label: "Gameplán",  short: "Plán",     href: "/gameplan",   icon: Rocket },
   { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
@@ -447,12 +448,12 @@ export function MobileNav() {
   ].map((s) => ({ label: s.label, items: s.items.filter((i) => !user || canAccess(user.roles, i.href)) }))
     .filter((s) => s.items.length > 0);
 
-  // 4 klíčové záložky pro jednatele (filtrované dle oprávnění) + „Víc"
+  // 4 klíčové záložky (filtrované dle oprávnění) + „Víc"
   const PRIMARY = [
+    { short: "Dnes",    href: "/dnes",      icon: Sun },
     { short: "Přehled", href: "/dashboard", icon: LayoutDashboard },
     { short: "Úkoly",   href: "/ukoly",     icon: CheckSquare },
     { short: "Finance", href: "/finance",   icon: Receipt },
-    { short: "Klienti", href: "/klienti",   icon: Building2 },
   ].filter(({ href }) => !user || canAccess(user.roles, href));
 
   const bar = [...PRIMARY, { short: "Víc", href: "__more__", icon: LayoutGrid }];

@@ -8,6 +8,7 @@ import { Search, CornerDownLeft, ArrowRight, Plus } from "lucide-react";
 interface Cmd { label: string; href: string; group: "Přejít na" | "Akce" | "Nástroje"; keywords?: string }
 
 const COMMANDS: Cmd[] = [
+  { label: "Můj den", href: "/dnes", group: "Přejít na", keywords: "dnes moje úkoly natáčení hodiny" },
   { label: "Dashboard", href: "/dashboard", group: "Přejít na" },
   { label: "Gameplán", href: "/gameplan", group: "Přejít na", keywords: "strategie plán posun AI brief" },
   { label: "Upozornění", href: "/inbox", group: "Přejít na" },
