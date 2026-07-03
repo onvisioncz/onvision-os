@@ -7,6 +7,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { fmtKc } from "@/lib/ziskovost";
+import { unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
 import { castkaZaMesic, monthKey, monthLabel, celkemZaMesic, type OdmenaPerson } from "@/lib/odmeny";
 
 /* ── Typy dat ────────────────────────────────────────────────────────────── */
@@ -22,12 +23,6 @@ const AMBER = "oklch(0.74 0.165 75)";
 const EUR_CZK = 25;
 
 /* "D. M. YYYY" → "YYYY-MM" */
-function dueMonthKey(s: string): string | null {
-  const m = (s || "").match(/(\d{1,2})\.\s*(\d{1,2})\.?(?:\s*(\d{4}))?/);
-  if (!m) return null;
-  const y = m[3] ? +m[3] : new Date().getFullYear();
-  return `${y}-${String(+m[2]).padStart(2, "0")}`;
-}
 
 const iCls = "px-3 py-2 rounded-[7px] text-[13px] outline-none";
 const iStyle = { background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" } as const;
@@ -44,6 +39,8 @@ function Stat({ label, value, color, icon: Icon }: { label: string; value: strin
 export default function CashflowPage() {
   const { user, loading: roleLoading } = useUserRole();
   const [invoices] = useSupabaseData<Invoice[]>("ov-issued-invoices", () => []);
+  const [financeFaktury] = useSupabaseData<AnyInvoice[]>("ov-finance-faktury", () => []);
+  // (import níže) sdílený helper na nezaplacené faktury z obou skladů
   const [retainers] = useSupabaseData<Retainer[]>("ov-monthly-clients", () => []);
   const [odmeny] = useSupabaseData<OdmenaPerson[]>("ov-odmeny", () => []);
   const [predplatne] = useSupabaseData<Subscription[]>("ov-finance-predplatne", () => []);
@@ -61,16 +58,16 @@ export default function CashflowPage() {
   const odmenyMonthly = useMemo(() => celkemZaMesic(odmeny, monthKey(new Date())), [odmeny]);
   const predplatneMonthly = useMemo(() => predplatne.reduce((s, p) => s + (p.mena === "EUR" ? (p.castka || 0) * EUR_CZK : (p.castka || 0)), 0), [predplatne]);
 
-  // unpaid invoices by due month
+  // Nezaplacené faktury dle měsíce splatnosti — sloučené oba sklady (Fakturace + Finance), dedup
   const receivablesByMonth = useMemo(() => {
     const m = new Map<string, number>();
-    for (const inv of invoices) {
-      if (inv.stav === "Zaplacena") continue;
-      const k = dueMonthKey(inv.datumSplatnosti);
-      if (k) m.set(k, (m.get(k) ?? 0) + (inv.castka || 0));
+    for (const inv of unpaidInvoices(invoices as AnyInvoice[], financeFaktury)) {
+      if (!inv.due) continue;
+      const k = `${inv.due.getFullYear()}-${String(inv.due.getMonth() + 1).padStart(2, "0")}`;
+      m.set(k, (m.get(k) ?? 0) + inv.castka);
     }
     return m;
-  }, [invoices]);
+  }, [invoices, financeFaktury]);
   const receivablesTotal = useMemo(() => [...receivablesByMonth.values()].reduce((a, b) => a + b, 0), [receivablesByMonth]);
 
   // 6-month forecast

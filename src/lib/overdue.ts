@@ -23,6 +23,34 @@ export interface AnyInvoice {
 
 export interface OverdueItem { cislo: string; klient: string; castka: number; dnuPoSplatnosti: number }
 
+export interface UnpaidItem { cislo: string; klient: string; castka: number; due: Date | null }
+
+/**
+ * Všechny NEZAPLACENÉ faktury (i s budoucí splatností) sloučené z obou
+ * skladů, dedup dle čísla. Pro cashflow, kde se přiřazují k měsíci
+ * splatnosti — ne jen ty už po termínu.
+ */
+export function unpaidInvoices(...sources: AnyInvoice[][]): UnpaidItem[] {
+  const seen = new Set<string>();
+  const items: UnpaidItem[] = [];
+  for (const list of sources) {
+    for (const inv of list ?? []) {
+      const stav = inv.stav ?? "";
+      if (stav === "Zaplacena" || stav === "Storno") continue;
+      const key = (inv.cislo || `${inv.klient ?? inv.klientNazev ?? ""}|${inv.castka ?? 0}`).trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      let due = parseDeadline(inv.datumSplatnosti ?? inv.splatnost ?? "");
+      if (!due) {
+        const vyst = parseDeadline(inv.datumVystaveni ?? inv.datum ?? "");
+        if (vyst) due = new Date(vyst.getTime() + 14 * 86_400_000);
+      }
+      items.push({ cislo: inv.cislo ?? "", klient: inv.klientNazev ?? inv.klient ?? "?", castka: inv.castka ?? 0, due });
+    }
+  }
+  return items;
+}
+
 export function overdueInvoices(...sources: AnyInvoice[][]): { count: number; total: number; items: OverdueItem[] } {
   const seen = new Set<string>();
   const items: OverdueItem[] = [];
