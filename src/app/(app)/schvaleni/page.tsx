@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { AiReplyButton } from "@/components/ai-reply-button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -338,6 +339,13 @@ export default function SchvaleniPage() {
                 >
                   {item.status}
                 </span>
+                {/* Schválená nabídka/smlouva → rovnou k fakturaci */}
+                {item.status === "Schváleno" && item.typ !== "Faktura" && item.castka !== undefined && (
+                  <Link href="/fakturace" className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-[4px] shrink-0 btn-tactile"
+                    style={{ color: "#5B5EFF", background: "rgba(91,94,255,0.1)", border: "1px solid rgba(91,94,255,0.25)" }}>
+                    Vystavit fakturu →
+                  </Link>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
