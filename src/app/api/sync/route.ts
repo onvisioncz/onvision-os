@@ -288,21 +288,16 @@ async function triggerPush(
   authorEmail: string,
   oldValue: unknown
 ) {
-  // ── New task assigned ─────────────────────────────────────────────────
+  // ── Task changes: new assignment + new comment ───────────────────────
   if (key === "ov-ukoly-tasks" && Array.isArray(value)) {
-    // Build set of IDs that existed BEFORE this write
-    const oldIds = new Set<unknown>(
-      Array.isArray(oldValue)
-        ? (oldValue as Array<{ id?: unknown }>).map((t) => t.id)
-        : []
-    );
+    type TaskT = { id?: unknown; prirazeno?: string; nazev?: string; komentare?: Array<{ autor?: string; text?: string }> };
+    const oldArr: TaskT[] = Array.isArray(oldValue) ? (oldValue as TaskT[]) : [];
+    const oldIds = new Set<unknown>(oldArr.map((t) => t.id));
+    const oldById = new Map<unknown, TaskT>(oldArr.map((t) => [t.id, t]));
 
-    const newTasks = (value as Array<{ id?: unknown; prirazeno?: string; nazev?: string }>)
-      .filter((t) => t.id != null && !oldIds.has(t.id) && t.prirazeno);
+    const newTasks = (value as TaskT[]).filter((t) => t.id != null && !oldIds.has(t.id) && t.prirazeno);
 
-    if (newTasks.length === 0) return;
-
-    // Load user roster once for all new tasks
+    // Load user roster once
     const { data: rolesData } = await supabase
       .from("app_data")
       .select("value")
@@ -310,6 +305,42 @@ async function triggerPush(
       .maybeSingle();
     const users: Array<{ email: string; displayName?: string }> =
       Array.isArray(rolesData?.value) ? rolesData.value : DEFAULT_USERS;
+
+    const emailForName = (name: string): string | undefined => {
+      const n = (name ?? "").toLowerCase().trim();
+      if (!n) return undefined;
+      const u = users.find((x) => {
+        const full = (x.displayName ?? x.email.split("@")[0]).toLowerCase();
+        return full === n || full.split(" ")[0] === n;
+      });
+      return u?.email;
+    };
+
+    // ── Nový komentář u existujícího úkolu ──
+    for (const task of value as TaskT[]) {
+      if (task.id == null || !oldIds.has(task.id)) continue;
+      const prev = oldById.get(task.id);
+      const prevCount = prev?.komentare?.length ?? 0;
+      const nowCount = task.komentare?.length ?? 0;
+      if (nowCount <= prevCount) continue;
+      const newest = task.komentare![nowCount - 1];
+      if (!newest?.text) continue;
+
+      // Příjemci: přiřazený + všichni předchozí diskutující, kromě autora komentáře
+      const recipients = new Set<string>();
+      const assigneeEmail = emailForName(task.prirazeno ?? "");
+      if (assigneeEmail) recipients.add(assigneeEmail);
+      (task.komentare ?? []).slice(0, -1).forEach((k) => { const e = emailForName(k.autor ?? ""); if (e) recipients.add(e); });
+      recipients.delete(authorEmail);
+      if (recipients.size === 0) continue;
+
+      const title = "Nový komentář 💬";
+      const body = `${newest.autor ?? "Někdo"} u „${task.nazev ?? "úkolu"}": ${newest.text.slice(0, 80)}`;
+      await Promise.all([...recipients].map((email) => Promise.all([
+        sendPushToEmails(supabase, [email], { title, body, url: "/ukoly", tag: `task-comment-${String(task.id)}` }, []),
+        appendNotifEvent(supabase, { type: "task_assigned", title, body, url: "/ukoly", targetEmail: email }),
+      ])));
+    }
 
     for (const task of newTasks) {
       const prirazeno = (task.prirazeno ?? "").toLowerCase().trim();
