@@ -3,38 +3,40 @@
 /**
  * SMM Studio — editor carouselů a grid koláží pro Instagram (4:5).
  *
- * CAROUSEL (bezešvý pás) je plnohodnotný canvas editor:
- *  - jeden souvislý pás s VYZNAČENÝMI ŘEZY slidů (čárkované linky + čísla)
- *  - tažením FOTKY ji posouváš uvnitř jejího pole, kolečkem ZOOMUJEŠ
- *    (dvojklik = reset) → řez nikdy nemusí sedět na předěl fotky
- *  - tažením DĚLÍTKA mezi fotkami měníš jejich šířky
- *  - PROLNUTÍ (transition) mezi fotkami jako ve Photoshopu — gradient maska
- *  - FOTKA VE FOTCE (overlay): menší fotka kdekoli v pásu — táhni = přesun,
- *    roh = velikost (crop), ✕ = smazat
+ * BEZEŠVÝ PÁS (carousel editor):
+ *  - souvislý pás s vyznačenými ŘEZY slidů (2–10 slidů), fotek libovolně
+ *  - klik = výběr fotky → PROLNUTÍ ZLEVA per fotka (žádné/jemné/…)
+ *  - táhni fotku = posun, kolečko = zoom, dvojklik = reset
+ *  - táhni dělítko = šířka; MAGNET: dělítko i okraje vložené fotky se
+ *    přichytávají na řezy slidů
+ *  - FOTKA VE FOTCE: přesun, velikost (roh), OŘEZ (kolečko = zoom uvnitř,
+ *    Shift+táhni = posun uvnitř), volitelný STÍN a bílý RÁMEČEK
  *
- * Nic se neukládá na server — fotky žijí jen v prohlížeči, výsledek se
- * stáhne jako PNG slidy v plném rozlišení.
+ * Nic se neukládá na server — fotky žijí jen v prohlížeči.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   LayoutGrid, GalleryHorizontal, Upload, Download, Trash2,
-  ImagePlus, Layers, RotateCcw,
+  ImagePlus, Layers, RotateCcw, Sun, Square as SquareIcon, X,
 } from "lucide-react";
 
-const W = 1080;   // šířka slidu
-const H = 1350;   // výška 4:5
+const W = 1080;
+const H = 1350;
 const PRIMARY = "#5B5EFF";
+const SNAP = 70; // magnet: vzdálenost přichycení v px master plátna (~16px na obrazovce)
 
 /* ── Typy ────────────────────────────────────────────────────────────── */
 interface BasePhoto {
   id: number; img: HTMLImageElement; name: string;
-  weight: number;          // relativní šířka v pásu
-  zoom: number;            // 1 = cover fit
-  panX: number; panY: number; // posun v px master plátna
+  weight: number;
+  zoom: number; panX: number; panY: number;
+  fadeL: number;            // prolnutí zleva (px) — per fotka
 }
 interface Overlay {
   id: number; img: HTMLImageElement;
-  x: number; y: number; w: number; h: number; // rect v master souřadnicích
+  x: number; y: number; w: number; h: number;
+  iZoom: number; iPanX: number; iPanY: number;  // ořez uvnitř rámu
+  shadow: boolean; border: boolean;
 }
 type Mode = "grid" | "carousel";
 type GridLayout = "3x3" | "2x2" | "2x3" | "1+2";
@@ -46,7 +48,7 @@ const GRID_LAYOUTS: Record<GridLayout, { label: string; cells: [number, number, 
   "1+2": { label: "1 velká + 2", cells: [[0, 0, 1, 2 / 3], [0, 2 / 3, 1 / 2, 1 / 3], [1 / 2, 2 / 3, 1 / 2, 1 / 3]] },
 };
 
-const TRANSITIONS = [
+const FADES = [
   { label: "žádné", px: 0 },
   { label: "jemné", px: 70 },
   { label: "střední", px: 140 },
@@ -76,7 +78,6 @@ function downloadCanvas(canvas: HTMLCanvasElement, name: string) {
   }, "image/png");
 }
 
-/** Cover-fit s uživatelským zoomem a posunem, ořezané na rect. */
 function drawCoverPanned(
   ctx: CanvasRenderingContext2D, img: HTMLImageElement,
   x: number, y: number, w: number, h: number,
@@ -84,17 +85,14 @@ function drawCoverPanned(
 ) {
   const s = Math.max(w / img.width, h / img.height) * Math.max(1, zoom);
   const dw = img.width * s, dh = img.height * s;
-  // clamp posunu, aby fotka vždy pokrývala celé pole
-  const minX = w - dw, minY = h - dh;
-  const ox = Math.min(0, Math.max(minX, (w - dw) / 2 + panX));
-  const oy = Math.min(0, Math.max(minY, (h - dh) / 2 + panY));
+  const ox = Math.min(0, Math.max(w - dw, (w - dw) / 2 + panX));
+  const oy = Math.min(0, Math.max(h - dh, (h - dh) / 2 + panY));
   ctx.save();
   ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   ctx.drawImage(img, x + ox, y + oy, dw, dh);
   ctx.restore();
 }
 
-/** Pozice polí základních fotek v pásu (podle vah). */
 function baseRects(photos: BasePhoto[], totalW: number): { x: number; w: number }[] {
   const sum = photos.reduce((a, p) => a + p.weight, 0) || 1;
   let x = 0;
@@ -106,11 +104,8 @@ function baseRects(photos: BasePhoto[], totalW: number): { x: number; w: number 
   });
 }
 
-/* ── Kreslení master pásu (bez vodítek — to jde do exportu) ─────────── */
-function drawMaster(
-  canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Overlay[],
-  slides: number, transition: number, bg: string
-) {
+/* ── Master pás (čistý — bez vodítek) ────────────────────────────────── */
+function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Overlay[], slides: number, bg: string) {
   const totalW = W * slides;
   canvas.width = totalW; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
@@ -119,16 +114,14 @@ function drawMaster(
     const rects = baseRects(photos, totalW);
     photos.forEach((p, i) => {
       const r = rects[i];
-      const fadeL = i > 0 ? Math.min(transition, r.x) : 0;
-      const ex = r.x - fadeL, ew = r.w + fadeL; // rozšířené pole o zónu prolnutí
+      const fadeL = i > 0 ? Math.min(p.fadeL, r.x) : 0;
+      const ex = r.x - fadeL, ew = r.w + fadeL;
       if (fadeL > 0) {
-        // fotka s gradientovou maskou zleva
         const tmp = document.createElement("canvas");
         tmp.width = Math.ceil(ew); tmp.height = H;
         const tctx = tmp.getContext("2d")!;
         drawCoverPanned(tctx, p.img, 0, 0, ew, H, p.zoom, p.panX, p.panY);
-        // Maska musí být JEDEN tah přes celou šířku — destination-in maže
-        // vše, kam se nekreslí. Gradient: průhledná → plná přes fade zónu.
+        // maska = JEDEN tah přes celou šířku (destination-in maže nezakreslené)
         tctx.globalCompositeOperation = "destination-in";
         const g = tctx.createLinearGradient(0, 0, ew, 0);
         g.addColorStop(0, "rgba(0,0,0,0)");
@@ -142,18 +135,18 @@ function drawMaster(
       }
     });
   }
-  // overlaye (fotky ve fotce)
   overlays.forEach((o) => {
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 6;
-    ctx.beginPath(); ctx.rect(o.x, o.y, o.w, o.h); ctx.clip();
-    const s = Math.max(o.w / o.img.width, o.h / o.img.height);
-    ctx.drawImage(o.img, o.x + (o.w - o.img.width * s) / 2, o.y + (o.h - o.img.height * s) / 2, o.img.width * s, o.img.height * s);
+    if (o.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8; }
+    // podklad (kvůli stínu a rámečku)
+    ctx.fillStyle = o.border ? "#FFFFFF" : "rgba(0,0,0,0.001)";
+    ctx.fillRect(o.x, o.y, o.w, o.h);
     ctx.restore();
+    const b = o.border ? Math.max(6, Math.min(o.w, o.h) * 0.03) : 0;
+    drawCoverPanned(ctx, o.img, o.x + b, o.y + b, o.w - 2 * b, o.h - 2 * b, o.iZoom, o.iPanX, o.iPanY);
   });
 }
 
-/* ── Grid (beze změny logiky) ────────────────────────────────────────── */
 function drawGrid(canvas: HTMLCanvasElement, layout: GridLayout, cells: ({ img: HTMLImageElement } | null)[], gap: number, bg: string) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
@@ -167,6 +160,15 @@ function drawGrid(canvas: HTMLCanvasElement, layout: GridLayout, cells: ({ img: 
   });
 }
 
+/* ── Magnet na řezy slidů ────────────────────────────────────────────── */
+function snapToCuts(x: number, slides: number): number {
+  for (let s = 0; s <= slides; s++) {
+    const cut = s * W;
+    if (Math.abs(x - cut) < SNAP) return cut;
+  }
+  return x;
+}
+
 /* ── Stránka ─────────────────────────────────────────────────────────── */
 export default function SmmStudioPage() {
   const [mode, setMode] = useState<Mode>("carousel");
@@ -177,13 +179,13 @@ export default function SmmStudioPage() {
   const [pickCell, setPickCell] = useState<number | null>(null);
   const [gap, setGap] = useState(0);
 
-  // Carousel editor
+  // Carousel
   const [photos, setPhotos] = useState<BasePhoto[]>([]);
   const [overlays, setOverlays] = useState<Overlay[]>([]);
   const [slides, setSlides] = useState(4);
-  const [transition, setTransition] = useState(0);
   const [bg, setBg] = useState("#FFFFFF");
   const [selOverlay, setSelOverlay] = useState<number | null>(null);
+  const [selPhoto, setSelPhoto] = useState<number | null>(null);
   const [slidePreviews, setSlidePreviews] = useState<string[]>([]);
   const [gridPreview, setGridPreview] = useState<string | null>(null);
 
@@ -194,16 +196,15 @@ export default function SmmStudioPage() {
   const cellFileRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // drag stav (mimo React state — plynulost)
   const drag = useRef<null | {
-    kind: "photo" | "divider" | "overlay" | "overlay-resize";
-    idx: number; startX: number; startY: number;
-    orig: { panX?: number; panY?: number; weights?: number[]; x?: number; y?: number; w?: number; h?: number };
+    kind: "photo" | "photo-inner" | "divider" | "overlay" | "overlay-resize" | "overlay-inner";
+    idx: number; startX: number; startY: number; moved: boolean;
+    orig: { panX?: number; panY?: number; weights?: number[]; x?: number; y?: number; w?: number; h?: number; iPanX?: number; iPanY?: number };
   }>(null);
 
   const totalW = W * slides;
 
-  /* ── Render: master → display (s vodítky) + náhledy slidů ── */
+  /* ── Render ── */
   const renderAll = useCallback((commitPreviews: boolean) => {
     const master = masterRef.current ?? document.createElement("canvas");
     masterRef.current = master;
@@ -212,9 +213,8 @@ export default function SmmStudioPage() {
       if (commitPreviews) setGridPreview(master.toDataURL("image/jpeg", 0.82));
       return;
     }
-    drawMaster(master, photos, overlays, slides, transition, bg);
+    drawMaster(master, photos, overlays, slides, bg);
 
-    // display s vodítky
     const disp = displayRef.current;
     if (disp) {
       const availW = (wrapRef.current?.clientWidth ?? 900) - 8;
@@ -225,7 +225,6 @@ export default function SmmStudioPage() {
       dctx.drawImage(master, 0, 0, disp.width, disp.height);
 
       // řezy slidů
-      dctx.save();
       for (let s = 1; s < slides; s++) {
         const x = Math.round(s * W * scale) + 0.5;
         dctx.strokeStyle = "rgba(91,94,255,0.9)"; dctx.lineWidth = 1.5;
@@ -240,8 +239,8 @@ export default function SmmStudioPage() {
         dctx.fillStyle = "#fff"; dctx.font = "bold 12px sans-serif"; dctx.textAlign = "center"; dctx.textBaseline = "middle";
         dctx.fillText(String(s + 1), bx + 13, 18);
       }
-      // dělítka mezi fotkami
-      if (photos.length > 1) {
+      // dělítka + výběr fotky
+      if (photos.length > 0) {
         const rects = baseRects(photos, totalW);
         for (let i = 1; i < rects.length; i++) {
           const x = rects[i].x * scale;
@@ -249,11 +248,19 @@ export default function SmmStudioPage() {
           dctx.setLineDash([3, 5]);
           dctx.beginPath(); dctx.moveTo(x, 0); dctx.lineTo(x, disp.height); dctx.stroke();
           dctx.setLineDash([]);
-          // úchyt uprostřed
           dctx.fillStyle = "rgba(255,255,255,0.9)";
           dctx.beginPath(); dctx.roundRect(x - 4, disp.height / 2 - 14, 8, 28, 4); dctx.fill();
           dctx.fillStyle = "rgba(13,13,24,0.8)";
           dctx.fillRect(x - 0.75, disp.height / 2 - 9, 1.5, 18);
+        }
+        // outline vybrané fotky
+        const si = photos.findIndex((p) => p.id === selPhoto);
+        if (si >= 0) {
+          const r = rects[si];
+          dctx.strokeStyle = "rgba(91,94,255,0.85)"; dctx.lineWidth = 2;
+          dctx.setLineDash([6, 4]);
+          dctx.strokeRect(r.x * scale + 1, 1, r.w * scale - 2, disp.height - 2);
+          dctx.setLineDash([]);
         }
       }
       // overlay výběr
@@ -262,15 +269,13 @@ export default function SmmStudioPage() {
         const x = o.x * scale, y = o.y * scale, w = o.w * scale, h = o.h * scale;
         dctx.strokeStyle = PRIMARY; dctx.lineWidth = 2; dctx.strokeRect(x, y, w, h);
         dctx.fillStyle = PRIMARY;
-        dctx.fillRect(x + w - 7, y + h - 7, 14, 14); // resize roh
-        // delete křížek
+        dctx.fillRect(x + w - 7, y + h - 7, 14, 14);
         dctx.fillStyle = "#E5484D";
         dctx.beginPath(); dctx.arc(x + w - 1, y + 1, 9, 0, Math.PI * 2); dctx.fill();
         dctx.strokeStyle = "#fff"; dctx.lineWidth = 1.6;
         dctx.beginPath(); dctx.moveTo(x + w - 5, y - 3); dctx.lineTo(x + w + 3, y + 5);
         dctx.moveTo(x + w + 3, y - 3); dctx.lineTo(x + w - 5, y + 5); dctx.stroke();
       });
-      dctx.restore();
     }
 
     if (commitPreviews) {
@@ -285,7 +290,7 @@ export default function SmmStudioPage() {
       }
       setSlidePreviews(out);
     }
-  }, [mode, layout, gridCells, gap, photos, overlays, slides, transition, bg, selOverlay, totalW]);
+  }, [mode, layout, gridCells, gap, photos, overlays, slides, bg, selOverlay, selPhoto, totalW]);
 
   useEffect(() => { renderAll(true); }, [renderAll]);
   useEffect(() => {
@@ -315,7 +320,7 @@ export default function SmmStudioPage() {
       ...prev,
       ...loaded.map((l, i) => ({
         id: Date.now() + i, img: l.img, name: l.name,
-        weight: l.img.width / l.img.height, zoom: 1, panX: 0, panY: 0,
+        weight: l.img.width / l.img.height, zoom: 1, panX: 0, panY: 0, fadeL: 0,
       })),
     ]);
   };
@@ -327,67 +332,65 @@ export default function SmmStudioPage() {
       ...prev,
       ...loaded.map((l, i) => {
         const w = W * 0.38;
-        const h = (w / l.img.width) * l.img.height;
-        return { id: Date.now() + i, img: l.img, x: 60 + i * 40, y: 60 + i * 40, w, h: Math.min(h, H * 0.6) };
+        const h = Math.min((w / l.img.width) * l.img.height, H * 0.6);
+        return {
+          id: Date.now() + i, img: l.img,
+          x: 70 + i * 50, y: 70 + i * 50, w, h,
+          iZoom: 1, iPanX: 0, iPanY: 0, shadow: true, border: false,
+        };
       }),
     ]);
-    if (loaded.length) setSelOverlay(null);
   };
 
-  /* ── Pointer interakce na display canvasu ── */
-  const toMaster = (e: React.PointerEvent) => {
+  /* ── Pointer ── */
+  const toMaster = (clientX: number, clientY: number) => {
     const disp = displayRef.current!;
     const r = disp.getBoundingClientRect();
-    const scale = totalW / disp.width;
-    return { mx: (e.clientX - r.left) * (disp.width / r.width) * scale, my: (e.clientY - r.top) * (disp.height / r.height) * (H / disp.height) };
+    return { mx: (clientX - r.left) * (totalW / r.width), my: (clientY - r.top) * (H / r.height) };
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (mode !== "carousel" || photos.length === 0) return;
-    const { mx, my } = toMaster(e);
-    const scale = totalW / (displayRef.current?.width ?? totalW);
-    const tol = 14 * scale;
+    const { mx, my } = toMaster(e.clientX, e.clientY);
+    const disp = displayRef.current!;
+    const tol = 14 * (totalW / disp.width);
 
-    // 1) overlay delete / resize / move (odshora)
     for (let i = overlays.length - 1; i >= 0; i--) {
       const o = overlays[i];
       if (o.id === selOverlay) {
-        // delete kroužek (pravý horní roh)
         if (Math.hypot(mx - (o.x + o.w), my - o.y) < tol) {
           setOverlays((prev) => prev.filter((x) => x.id !== o.id));
           setSelOverlay(null);
           return;
         }
-        // resize roh (pravý dolní)
         if (Math.abs(mx - (o.x + o.w)) < tol && Math.abs(my - (o.y + o.h)) < tol) {
-          drag.current = { kind: "overlay-resize", idx: i, startX: mx, startY: my, orig: { w: o.w, h: o.h } };
+          drag.current = { kind: "overlay-resize", idx: i, startX: mx, startY: my, moved: false, orig: { w: o.w, h: o.h } };
           (e.target as Element).setPointerCapture(e.pointerId);
           return;
         }
       }
       if (mx >= o.x && mx <= o.x + o.w && my >= o.y && my <= o.y + o.h) {
-        setSelOverlay(o.id);
-        drag.current = { kind: "overlay", idx: i, startX: mx, startY: my, orig: { x: o.x, y: o.y } };
+        setSelOverlay(o.id); setSelPhoto(null);
+        drag.current = e.shiftKey
+          ? { kind: "overlay-inner", idx: i, startX: mx, startY: my, moved: false, orig: { iPanX: o.iPanX, iPanY: o.iPanY } }
+          : { kind: "overlay", idx: i, startX: mx, startY: my, moved: false, orig: { x: o.x, y: o.y } };
         (e.target as Element).setPointerCapture(e.pointerId);
         return;
       }
     }
-    setSelOverlay(null);
 
-    // 2) dělítko mezi fotkami
     const rects = baseRects(photos, totalW);
     for (let i = 1; i < rects.length; i++) {
       if (Math.abs(mx - rects[i].x) < tol) {
-        drag.current = { kind: "divider", idx: i, startX: mx, startY: my, orig: { weights: photos.map((p) => p.weight) } };
+        drag.current = { kind: "divider", idx: i, startX: mx, startY: my, moved: false, orig: { weights: photos.map((p) => p.weight) } };
         (e.target as Element).setPointerCapture(e.pointerId);
         return;
       }
     }
 
-    // 3) posun základní fotky
     const pi = rects.findIndex((r) => mx >= r.x && mx <= r.x + r.w);
     if (pi >= 0) {
-      drag.current = { kind: "photo", idx: pi, startX: mx, startY: my, orig: { panX: photos[pi].panX, panY: photos[pi].panY } };
+      drag.current = { kind: "photo", idx: pi, startX: mx, startY: my, moved: false, orig: { panX: photos[pi].panX, panY: photos[pi].panY } };
       (e.target as Element).setPointerCapture(e.pointerId);
     }
   };
@@ -395,15 +398,20 @@ export default function SmmStudioPage() {
   const onPointerMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d) return;
-    const { mx, my } = toMaster(e);
+    const { mx, my } = toMaster(e.clientX, e.clientY);
     const dx = mx - d.startX, dy = my - d.startY;
+    if (Math.hypot(dx, dy) > 6) d.moved = true;
 
     if (d.kind === "photo") {
       setPhotos((prev) => prev.map((p, i) => i === d.idx ? { ...p, panX: (d.orig.panX ?? 0) + dx, panY: (d.orig.panY ?? 0) + dy } : p));
     } else if (d.kind === "divider") {
       const weights = d.orig.weights!;
       const sum = weights.reduce((a, b) => a + b, 0);
-      const deltaW = (dx / totalW) * sum;
+      const rects0 = (() => { let x = 0; return weights.map((w) => { const r = x; x += (w / sum) * totalW; return r; }); })();
+      const origBoundary = rects0[d.idx];
+      // MAGNET: přichyť hranici na řez slidu
+      const target = snapToCuts(origBoundary + dx, slides);
+      const deltaW = ((target - origBoundary) / totalW) * sum;
       const minW = sum * 0.04;
       setPhotos((prev) => prev.map((p, i) => {
         if (i === d.idx - 1) return { ...p, weight: Math.max(minW, weights[i] + deltaW) };
@@ -411,47 +419,72 @@ export default function SmmStudioPage() {
         return { ...p, weight: weights[i] };
       }));
     } else if (d.kind === "overlay") {
-      setOverlays((prev) => prev.map((o, i) => i === d.idx ? { ...o, x: (d.orig.x ?? 0) + dx, y: (d.orig.y ?? 0) + dy } : o));
-    } else if (d.kind === "overlay-resize") {
+      // MAGNET: levý i pravý okraj overlaye na řezy
       setOverlays((prev) => prev.map((o, i) => {
         if (i !== d.idx) return o;
-        const nw = Math.max(80, (d.orig.w ?? 100) + dx);
-        const nh = Math.max(80, (d.orig.h ?? 100) + dy);
-        return { ...o, w: nw, h: nh };
+        let nx = (d.orig.x ?? 0) + dx;
+        const snapL = snapToCuts(nx, slides);
+        const snapR = snapToCuts(nx + o.w, slides) - o.w;
+        if (Math.abs(snapL - nx) < SNAP) nx = snapL;
+        else if (Math.abs(snapR - nx) < SNAP) nx = snapR;
+        return { ...o, x: nx, y: (d.orig.y ?? 0) + dy };
       }));
+    } else if (d.kind === "overlay-resize") {
+      setOverlays((prev) => prev.map((o, i) => i === d.idx
+        ? { ...o, w: Math.max(90, (d.orig.w ?? 100) + dx), h: Math.max(90, (d.orig.h ?? 100) + dy) }
+        : o));
+    } else if (d.kind === "overlay-inner") {
+      setOverlays((prev) => prev.map((o, i) => i === d.idx
+        ? { ...o, iPanX: (d.orig.iPanX ?? 0) + dx, iPanY: (d.orig.iPanY ?? 0) + dy }
+        : o));
     }
   };
 
-  const onPointerUp = () => { drag.current = null; renderAll(true); };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (d && !d.moved && d.kind === "photo") {
+      // klik bez tažení = výběr fotky (per-fotka prolnutí)
+      const p = photos[d.idx];
+      setSelPhoto((cur) => (cur === p?.id ? null : p?.id ?? null));
+      setSelOverlay(null);
+    } else if (d && !d.moved && (d.kind === "overlay" || d.kind === "overlay-inner")) {
+      // klik na overlay jen vybírá (už nastaveno v pointerdown)
+    } else if (!d) {
+      setSelPhoto(null); setSelOverlay(null);
+    }
+    void e;
+    renderAll(true);
+  };
 
   const onWheel = (e: React.WheelEvent) => {
     if (mode !== "carousel" || photos.length === 0) return;
-    const disp = displayRef.current; if (!disp) return;
-    const r = disp.getBoundingClientRect();
-    const mx = (e.clientX - r.left) * (totalW / r.width);
-    const my = (e.clientY - r.top) * (H / r.height);
-    // overlay pod kurzorem → resize kolečkem
+    const { mx, my } = toMaster(e.clientX, e.clientY);
+    const f = e.deltaY < 0 ? 1.06 : 0.94;
     for (let i = overlays.length - 1; i >= 0; i--) {
       const o = overlays[i];
       if (mx >= o.x && mx <= o.x + o.w && my >= o.y && my <= o.y + o.h) {
-        const f = e.deltaY < 0 ? 1.06 : 0.94;
-        setOverlays((prev) => prev.map((x) => x.id === o.id ? { ...x, w: Math.max(80, x.w * f), h: Math.max(80, x.h * f) } : x));
+        // kolečko nad overlayem = OŘEZ (zoom uvnitř rámu)
+        setOverlays((prev) => prev.map((x) => x.id === o.id ? { ...x, iZoom: Math.min(4, Math.max(1, x.iZoom * f)) } : x));
         return;
       }
     }
     const rects = baseRects(photos, totalW);
     const pi = rects.findIndex((rr) => mx >= rr.x && mx <= rr.x + rr.w);
     if (pi >= 0) {
-      const f = e.deltaY < 0 ? 1.06 : 0.94;
       setPhotos((prev) => prev.map((p, i) => i === pi ? { ...p, zoom: Math.min(3.5, Math.max(1, p.zoom * f)) } : p));
     }
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
     if (mode !== "carousel" || photos.length === 0) return;
-    const disp = displayRef.current; if (!disp) return;
-    const r = disp.getBoundingClientRect();
-    const mx = (e.clientX - r.left) * (totalW / r.width);
+    const { mx, my } = toMaster(e.clientX, e.clientY);
+    for (const o of overlays) {
+      if (mx >= o.x && mx <= o.x + o.w && my >= o.y && my <= o.y + o.h) {
+        setOverlays((prev) => prev.map((x) => x.id === o.id ? { ...x, iZoom: 1, iPanX: 0, iPanY: 0 } : x));
+        return;
+      }
+    }
     const rects = baseRects(photos, totalW);
     const pi = rects.findIndex((rr) => mx >= rr.x && mx <= rr.x + rr.w);
     if (pi >= 0) setPhotos((prev) => prev.map((p, i) => i === pi ? { ...p, zoom: 1, panX: 0, panY: 0 } : p));
@@ -466,7 +499,7 @@ export default function SmmStudioPage() {
       return;
     }
     const master = document.createElement("canvas");
-    drawMaster(master, photos, overlays, slides, transition, bg);
+    drawMaster(master, photos, overlays, slides, bg);
     const slice = document.createElement("canvas");
     slice.width = W; slice.height = H;
     const sctx = slice.getContext("2d")!;
@@ -478,6 +511,9 @@ export default function SmmStudioPage() {
   };
 
   const canExport = mode === "grid" ? gridCells.some(Boolean) : photos.length > 0;
+  const selPhotoObj = photos.find((p) => p.id === selPhoto) ?? null;
+  const selPhotoIdx = photos.findIndex((p) => p.id === selPhoto);
+  const selOverlayObj = overlays.find((o) => o.id === selOverlay) ?? null;
 
   const changeLayout = (l: GridLayout) => {
     setLayout(l);
@@ -495,7 +531,7 @@ export default function SmmStudioPage() {
   );
 
   return (
-    <div className="p-5 md:p-7 max-w-[1200px] mx-auto">
+    <div className="p-5 md:p-7 max-w-[1240px] mx-auto">
       <div className="mb-4">
         <h1 className="text-[22px] font-bold tracking-[-0.01em] flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
           <GalleryHorizontal className="w-5 h-5" style={{ color: PRIMARY }} /> SMM Studio
@@ -519,10 +555,7 @@ export default function SmmStudioPage() {
         ) : (
           <>
             <label className="text-[12px] text-[--muted-foreground]">Slidů:</label>
-            {[2, 3, 4, 5, 6].map((n) => <Chip key={n} active={slides === n} onClick={() => setSlides(n)}>{n}</Chip>)}
-            <span className="w-px h-5 mx-1" style={{ background: "rgba(255,255,255,0.12)" }} />
-            <label className="text-[12px] text-[--muted-foreground]">Prolnutí:</label>
-            {TRANSITIONS.map((t) => <Chip key={t.px} active={transition === t.px} onClick={() => setTransition(t.px)} title="Gradientový přechod mezi fotkami">{t.label}</Chip>)}
+            {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <Chip key={n} active={slides === n} onClick={() => setSlides(n)}>{n}</Chip>)}
           </>
         )}
         <span className="w-px h-5 mx-1" style={{ background: "rgba(255,255,255,0.12)" }} />
@@ -534,17 +567,18 @@ export default function SmmStudioPage() {
       </div>
 
       {/* Řádek 2: akce */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <button onClick={() => fileRef.current?.click()}
           className="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold"
           style={{ background: PRIMARY, color: "white" }}>
-          <Upload className="w-4 h-4" /> Nahrát fotky
+          <Upload className="w-4 h-4" /> Nahrát fotky do pásu
         </button>
         {mode === "carousel" && (
           <button onClick={() => overlayFileRef.current?.click()} disabled={photos.length === 0}
+            title={photos.length === 0 ? "Nejdřív nahraj fotky do pásu" : "Přidat menší fotku NA pás (fotka ve fotce)"}
             className="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold disabled:opacity-40"
             style={{ background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.35)", color: PRIMARY }}>
-            <Layers className="w-4 h-4" /> Fotka do koláže
+            <Layers className="w-4 h-4" /> + Fotka ve fotce
           </button>
         )}
         <button onClick={exportAll} disabled={!canExport}
@@ -553,7 +587,7 @@ export default function SmmStudioPage() {
           <Download className="w-4 h-4" /> {mode === "grid" ? "Stáhnout PNG" : `Stáhnout ${slides} slidů`}
         </button>
         {mode === "carousel" && photos.length > 0 && (
-          <button onClick={() => { setPhotos([]); setOverlays([]); setSelOverlay(null); }}
+          <button onClick={() => { setPhotos([]); setOverlays([]); setSelOverlay(null); setSelPhoto(null); }}
             className="btn-tactile flex items-center gap-1 px-2.5 py-2 rounded-[8px] text-[12px] text-[--muted-foreground]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
             <Trash2 className="w-3.5 h-3.5" /> Vyčistit
           </button>
@@ -563,14 +597,63 @@ export default function SmmStudioPage() {
         <input ref={cellFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void addBase(e.target.files); e.target.value = ""; }} />
       </div>
 
-      {/* ── EDITOR / NÁHLED ── */}
+      {/* Kontextový panel vybrané FOTKY (per-fotka prolnutí) */}
+      {mode === "carousel" && selPhotoObj && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 px-3 py-2 rounded-[10px]"
+          style={{ background: "rgba(91,94,255,0.08)", border: "1px solid rgba(91,94,255,0.28)" }}>
+          <span className="text-[12px] font-bold" style={{ color: PRIMARY }}>Fotka {selPhotoIdx + 1}</span>
+          <span className="text-[12px] text-[--muted-foreground]">· prolnutí zleva:</span>
+          {FADES.map((t) => (
+            <Chip key={t.px} active={selPhotoObj.fadeL === t.px}
+              onClick={() => setPhotos((prev) => prev.map((p) => p.id === selPhoto ? { ...p, fadeL: t.px } : p))}>
+              {t.label}
+            </Chip>
+          ))}
+          <span className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.12)" }} />
+          <button onClick={() => setPhotos((prev) => prev.map((p) => p.id === selPhoto ? { ...p, zoom: 1, panX: 0, panY: 0 } : p))}
+            className="btn-tactile flex items-center gap-1 text-[12px] text-[--muted-foreground]">
+            <RotateCcw className="w-3 h-3" /> reset posunu
+          </button>
+          <button onClick={() => { setPhotos((prev) => prev.filter((p) => p.id !== selPhoto)); setSelPhoto(null); }}
+            className="btn-tactile flex items-center gap-1 text-[12px]" style={{ color: "oklch(0.65 0.22 25)" }}>
+            <Trash2 className="w-3 h-3" /> odebrat z pásu
+          </button>
+          <button onClick={() => setSelPhoto(null)} className="btn-tactile ml-auto text-[--muted-foreground]"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+
+      {/* Kontextový panel vybrané FOTKY VE FOTCE */}
+      {mode === "carousel" && selOverlayObj && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 px-3 py-2 rounded-[10px]"
+          style={{ background: "rgba(91,94,255,0.08)", border: "1px solid rgba(91,94,255,0.28)" }}>
+          <span className="text-[12px] font-bold" style={{ color: PRIMARY }}>Fotka ve fotce</span>
+          <Chip active={selOverlayObj.shadow}
+            onClick={() => setOverlays((prev) => prev.map((o) => o.id === selOverlay ? { ...o, shadow: !o.shadow } : o))}
+            title="Jemný stín pod fotkou">
+            <Sun className="w-3 h-3 inline mr-1" />Stín
+          </Chip>
+          <Chip active={selOverlayObj.border}
+            onClick={() => setOverlays((prev) => prev.map((o) => o.id === selOverlay ? { ...o, border: !o.border } : o))}
+            title="Bílý rámeček (polaroid)">
+            <SquareIcon className="w-3 h-3 inline mr-1" />Rámeček
+          </Chip>
+          <span className="text-[11px] text-[--muted-foreground]">· kolečko = ořez (zoom) · Shift+táhni = posun uvnitř · dvojklik = reset ořezu · roh = velikost</span>
+          <button onClick={() => { setOverlays((prev) => prev.filter((o) => o.id !== selOverlay)); setSelOverlay(null); }}
+            className="btn-tactile flex items-center gap-1 text-[12px]" style={{ color: "oklch(0.65 0.22 25)" }}>
+            <Trash2 className="w-3 h-3" /> smazat
+          </button>
+          <button onClick={() => setSelOverlay(null)} className="btn-tactile ml-auto text-[--muted-foreground]"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+
+      {/* ── EDITOR ── */}
       {mode === "carousel" ? (
         <>
           <div ref={wrapRef} className="glass-card p-3 mb-3 overflow-x-auto">
             {photos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 text-center">
                 <ImagePlus className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-[13px] text-[--muted-foreground]">Nahraj fotky — vykreslí se souvislý pás s vyznačenými řezy slidů.</p>
+                <p className="text-[13px] text-[--muted-foreground]">Nahraj fotky do pásu — vykreslí se souvislá koláž s vyznačenými řezy slidů.</p>
               </div>
             ) : (
               <canvas
@@ -587,13 +670,11 @@ export default function SmmStudioPage() {
             )}
           </div>
           {photos.length > 0 && (
-            <p className="text-[11px] text-[--muted-foreground] mb-4 flex items-center gap-1.5 flex-wrap">
-              <RotateCcw className="w-3 h-3" />
-              Táhni fotku = posun uvnitř pole · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka fotky · fotka v koláži: táhni = přesun, roh = velikost, kolečko = zvětšení, červené ✕ = smazat
+            <p className="text-[11px] text-[--muted-foreground] mb-4">
+              Klik na fotku = výběr (prolnutí, odebrání) · táhni = posun · kolečko = zoom · dvojklik = reset ·
+              táhni bílý úchyt = šířka fotky (přichytává se na řezy) · fotka ve fotce se okraji přichytává na řezy slidů
             </p>
           )}
-
-          {/* Náhled hotových slidů */}
           {slidePreviews.length > 0 && photos.length > 0 && (
             <div className="glass-card p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[--muted-foreground] mb-3">Takhle to uvidí lidi na IG — slide po slidu</p>
@@ -610,7 +691,6 @@ export default function SmmStudioPage() {
           )}
         </>
       ) : (
-        /* GRID náhled s klikacími buňkami */
         <div className="glass-card p-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[--muted-foreground] mb-3">Náhled · 1080 × 1350 — klikni na pole a vlož fotku</p>
           {!gridPreview || !gridCells.some(Boolean) ? (
@@ -642,7 +722,7 @@ export default function SmmStudioPage() {
       )}
 
       <p className="text-[11px] text-[--muted-foreground] mt-4">
-        Fotky se nikam nenahrávají — vše se děje u tebe v prohlížeči. Export = PNG v plném IG rozlišení (1080×1350 na slide).
+        Fotky se nikam nenahrávají — vše se děje u tebe v prohlížeči. Export = čisté PNG v plném IG rozlišení (1080×1350 na slide).
       </p>
     </div>
   );
