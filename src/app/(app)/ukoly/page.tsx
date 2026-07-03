@@ -5,8 +5,10 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, Square, X, Calendar, User, RefreshCw, ChevronDown, ChevronRight,
+  MessageSquare, Send,
 } from "lucide-react";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
+import { useUserRole } from "@/lib/hooks/use-user-role";
 
 /* ── Czech month helper ─────────────────────────────────────────────────────── */
 function currentMonthDeadline(den: number): string {
@@ -73,6 +75,8 @@ function DeadlineChip({ deadline, done }: { deadline: string; done: boolean }) {
 type Priorita = "Nízká" | "Střední" | "Vysoká" | "Urgentní";
 type TStatus = "Nové" | "Probíhá" | "Review" | "Hotovo";
 
+interface TaskComment { autor: string; text: string; cas: string }
+
 interface Task {
   id: number;
   nazev: string;
@@ -85,6 +89,7 @@ interface Task {
   opakujeSe?: boolean;
   opakovaniDen?: number;
   opakovaniSablona?: boolean;
+  komentare?: TaskComment[];
 }
 
 /* ── Seed data ──────────────────────────────────────────────────────────────── */
@@ -370,6 +375,32 @@ function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Omit<Tas
 /* ── Edit modal ─────────────────────────────────────────────────────────────── */
 function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (t: Task) => void }) {
   const [form, setForm] = useState<Task>({ ...task });
+  const { user } = useUserRole();
+  const [novyKomentar, setNovyKomentar] = useState("");
+
+  const komentare = form.komentare ?? [];
+  const addKomentar = () => {
+    const text = novyKomentar.trim();
+    if (!text) return;
+    const k: TaskComment = {
+      autor: user?.displayName ?? "—",
+      text,
+      cas: new Date().toISOString(),
+    };
+    const updated = { ...form, komentare: [...komentare, k] };
+    setForm(updated);
+    onSave(updated);   // ulož hned, ať se komentář neztratí při zavření
+    setNovyKomentar("");
+  };
+  const komentarCas = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (mins < 1) return "teď";
+    if (mins < 60) return `${mins} min`;
+    if (mins < 1440) return `${Math.floor(mins / 60)} h`;
+    return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" });
+  };
 
   return (
     <motion.div
@@ -396,6 +427,43 @@ function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void;
         </div>
 
         <TaskForm form={form} setForm={setForm} />
+
+        {/* ── Komentáře / diskuze k úkolu ── */}
+        <div className="pt-2" style={{ borderTop: "1px solid oklch(1 0 0 / 0.08)" }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] mb-2 flex items-center gap-1.5" style={{ color: "oklch(0.55 0.008 265)" }}>
+            <MessageSquare className="w-3 h-3" /> Diskuze{komentare.length > 0 ? ` (${komentare.length})` : ""}
+          </p>
+          {komentare.length > 0 && (
+            <div className="space-y-2 mb-2 max-h-[180px] overflow-y-auto pr-1">
+              {komentare.map((k, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold"
+                    style={{ background: "rgba(91,94,255,0.14)", color: "#5B5EFF" }}>
+                    {(k.autor || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px]" style={{ color: "var(--foreground)" }}>
+                      <span className="font-semibold">{k.autor}</span>
+                      <span className="text-[10px] ml-1.5" style={{ color: "oklch(0.5 0.008 265)" }}>{komentarCas(k.cas)}</span>
+                    </p>
+                    <p className="text-[12.5px] leading-relaxed" style={{ color: "oklch(0.78 0.008 265)" }}>{k.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <input value={novyKomentar} onChange={(e) => setNovyKomentar(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKomentar(); } }}
+              placeholder="Napsat komentář…"
+              className="glass-input flex-1 px-3 py-2 text-[13px]" />
+            <button onClick={addKomentar} disabled={!novyKomentar.trim()}
+              className="btn-tactile w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0 disabled:opacity-40"
+              style={{ background: "#5B5EFF", color: "white" }}>
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         <div className="flex gap-2 justify-end pt-1">
           <button
@@ -475,6 +543,11 @@ function TaskRow({ task, onToggle, onEdit }: { task: Task; onToggle: () => void;
               <span className="w-0.5 h-0.5 rounded-full bg-[oklch(0.35_0.005_222)]" />
               <span className="text-[11px] text-[--muted-foreground] truncate max-w-[120px]">{task.popis}</span>
             </>
+          )}
+          {(task.komentare?.length ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: "#7C7FFF" }}>
+              <MessageSquare className="w-3 h-3" />{task.komentare!.length}
+            </span>
           )}
         </div>
       </div>
