@@ -190,9 +190,9 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   fakturace: ["/dnes", "/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile"],
   ucetni:    ["/dnes", "/dashboard", "/odmeny", "/fakturace"],
   produkce:  ["/dnes", "/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis"],
-  grafik:    ["/dnes", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis"],
-  smm:       ["/dnes", "/smm", "/smm-ai", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis"],
-  pm:        ["/dnes", "/smm", "/smm-ai", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis"],
+  grafik:    ["/dnes", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis"],
+  smm:       ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis"],
+  pm:        ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */

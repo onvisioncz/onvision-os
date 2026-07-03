@@ -63,6 +63,7 @@ const GROUPS = [
     items: [
       { label: "SMM",      short: "SMM",      href: "/smm",      icon: Layers2 },
       { label: "AI obsah", short: "AI obsah", href: "/smm-ai",   icon: Sparkles },
+      { label: "SMM Studio", short: "Studio", href: "/smm-studio", icon: LayoutGrid },
       { label: "Reporty",  short: "Reporty",  href: "/reporty",  icon: BarChart2 },
       { label: "Kalendář", short: "Kalendář", href: "/calendar", icon: CalendarDays },
       { label: "Výstupy",  short: "Výstupy",  href: "/outputs",  icon: PackageOpen },
