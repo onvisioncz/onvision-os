@@ -52,10 +52,10 @@ interface ReportArchiveEntry {
 
 /* ── Progress steps ──────────────────────────────────────────────────────── */
 const STEPS = [
-  { label: "Stahuju data z Meta API", icon: "⚡" },
-  { label: "Vybírám příspěvek měsíce", icon: "📸" },
-  { label: "AI píše komentáře...", icon: "✦" },
-  { label: "Generuji PDF", icon: "📄" },
+  { label: "Stahuju data z Meta API", icon: "•" },
+  { label: "Vybírám příspěvek měsíce", icon: "•" },
+  { label: "AI píše komentáře...", icon: "•" },
+  { label: "Generuji PDF", icon: "•" },
 ] as const;
 
 /* ── Step indicator ──────────────────────────────────────────────────────── */
@@ -442,7 +442,7 @@ export default function ReportyPage() {
               {generating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <span style={{ fontSize: 14 }}>✦</span>
+                <span style={{ fontSize: 14, color: "#5B5EFF" }}>•</span>
               )}
               Generovat report
             </motion.button>

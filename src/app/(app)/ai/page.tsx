@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Trash2, Copy, Check, Bot, Sparkles,
   ChevronRight, ArrowLeft,
+  User, Building2, Folder, Megaphone, PenLine, ClipboardList, CalendarDays, BarChart3, MessageCircle, Zap,
 } from "lucide-react";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
@@ -22,7 +23,6 @@ interface Workspace {
   id: string;
   label: string;
   sublabel: string;
-  emoji: string;
   color: string;
   category: WorkspaceCategory;
   clientName?: string;
@@ -65,6 +65,21 @@ const CLIENT_COLORS = [
 
 const ALL_CLIENTS = Object.keys(CLIENT_DESCS).filter(c => c !== "OnVision");
 
+/* ── Lucide ikony místo emoji (UI chrome bez emotikonů) ─────────────────── */
+const WS_ICON: Record<WorkspaceCategory, React.ElementType> = {
+  personal: User,
+  internal: Building2,
+  client: Folder,
+};
+const TASK_ICON: Record<TaskType, React.ElementType> = {
+  campaign: Megaphone,
+  caption: PenLine,
+  brief: ClipboardList,
+  "content-plan": CalendarDays,
+  analysis: BarChart3,
+  free: MessageCircle,
+};
+
 /* ── Workspace builder ───────────────────────────────────────────────────── */
 function buildWorkspaces(user: UserConfig | null, email: string | null): Workspace[] {
   if (!user || !email) return [];
@@ -76,7 +91,6 @@ function buildWorkspaces(user: UserConfig | null, email: string | null): Workspa
     id: `personal-${email}`,
     label: `${user.displayName.split(" ")[0]} — Osobní`,
     sublabel: "Vidí jen tebe",
-    emoji: "👤",
     color: user.color,
     category: "personal",
     ownerEmail: email,
@@ -88,7 +102,6 @@ function buildWorkspaces(user: UserConfig | null, email: string | null): Workspa
       id: "internal-onvision",
       label: "OnVision — Interní",
       sublabel: "Jen jednatelé",
-      emoji: "🏢",
       color: "oklch(0.62 0.27 265)",
       category: "internal",
     });
@@ -101,7 +114,6 @@ function buildWorkspaces(user: UserConfig | null, email: string | null): Workspa
       id: `client-${client.toLowerCase().replace(/[\s/]+/g, "-")}`,
       label: client,
       sublabel: CLIENT_DESCS[client] ?? "klient",
-      emoji: "📁",
       color: CLIENT_COLORS[i % CLIENT_COLORS.length],
       category: "client",
       clientName: client,
@@ -125,45 +137,39 @@ function buildSystemPrompt(ws: Workspace, userName: string): string {
 }
 
 /* ── Task definitions ────────────────────────────────────────────────────── */
-const TASKS: { id: TaskType; emoji: string; label: string; color: string; promptBase: (c?: string) => string }[] = [
+const TASKS: { id: TaskType; label: string; color: string; promptBase: (c?: string) => string }[] = [
   {
     id: "campaign",
-    emoji: "📣",
     label: "Kampaň",
     color: "oklch(0.72 0.2 310)",
     promptBase: (c) => `Chci naplánovat kampaň na sociálních sítích${c ? ` pro klienta ${c}` : ""}.\n\n`,
   },
   {
     id: "caption",
-    emoji: "✍️",
     label: "Caption / Copy",
     color: "oklch(0.72 0.18 265)",
     promptBase: (c) => `Potřebuji napsat caption nebo copy${c ? ` pro ${c}` : ""}. Navrhni 3 varianty: formální, casual a energický.\n\n`,
   },
   {
     id: "brief",
-    emoji: "📋",
     label: "Kreativní brief",
     color: "oklch(0.75 0.19 48)",
     promptBase: (c) => `Pomoz mi sestavit kreativní brief${c ? ` pro projekt klienta ${c}` : ""}.\n\n`,
   },
   {
     id: "content-plan",
-    emoji: "📅",
     label: "Plán obsahu",
     color: "oklch(0.68 0.18 155)",
     promptBase: (c) => `Navrhni plán obsahu na sociální sítě${c ? ` pro ${c}` : ""} — 12 příspěvků na měsíc (3 týdně), mix formátů.\n\n`,
   },
   {
     id: "analysis",
-    emoji: "📊",
     label: "Analýza / Strategie",
     color: "oklch(0.72 0.18 190)",
     promptBase: (c) => `Potřebuji analýzu nebo strategické doporučení${c ? ` pro ${c}` : ""}.\n\n`,
   },
   {
     id: "free",
-    emoji: "💬",
     label: "Volný dotaz",
     color: "oklch(0.45 0.005 222)",
     promptBase: () => "",
@@ -372,7 +378,7 @@ function GuidedFlow({
                     border: "1px solid oklch(1 0 0 / 0.09)",
                   }}
                 >
-                  <span className="text-2xl leading-none">{t.emoji}</span>
+                  {(() => { const TI = TASK_ICON[t.id]; return <TI className="w-6 h-6" style={{ color: t.color }} />; })()}
                   <span className="text-[13px] font-semibold" style={{ color: "oklch(0.75 0.005 265)" }}>
                     {t.label}
                   </span>
@@ -399,7 +405,7 @@ function GuidedFlow({
               </button>
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: workspace.color }}>
-                  {selectedTask?.emoji} {selectedTask?.label}
+                  {selectedTask?.label}
                 </p>
                 <h2 className="text-[18px] font-bold" style={{ color: "oklch(0.94 0.01 265)", fontFamily: "var(--font-outfit)" }}>
                   Pro jakého klienta?
@@ -453,12 +459,12 @@ function GuidedFlow({
                 <div className="flex items-center gap-2 flex-wrap">
                   {selectedTask && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${selectedTask.color}18`, color: selectedTask.color }}>
-                      {selectedTask.emoji} {selectedTask.label}
+                      {selectedTask.label}
                     </span>
                   )}
                   {client && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "oklch(0.62 0.27 265 / 0.12)", color: "oklch(0.72 0.18 265)" }}>
-                      📌 {client}
+                      {client}
                     </span>
                   )}
                 </div>
@@ -548,7 +554,7 @@ function WorkspaceItem({
         className="shrink-0 w-7 h-7 rounded-[8px] flex items-center justify-center text-[14px]"
         style={{ background: `${ws.color}18`, border: `1px solid ${ws.color}28` }}
       >
-        {ws.emoji}
+        {(() => { const WI = WS_ICON[ws.category]; return <WI className="w-4 h-4" style={{ color: ws.color }} />; })()}
       </div>
 
       <div className="min-w-0 flex-1">
@@ -862,7 +868,7 @@ export function AiPage() {
                 className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base"
                 style={{ background: `${activeWs.color}18`, border: `1px solid ${activeWs.color}28` }}
               >
-                {activeWs.emoji}
+                {(() => { const WI = WS_ICON[activeWs.category]; return <WI className="w-4 h-4" style={{ color: activeWs.color }} />; })()}
               </div>
               <div>
                 <p className="text-[14px] font-bold leading-tight" style={{ color: "oklch(0.92 0.01 265)", fontFamily: "var(--font-outfit)" }}>
@@ -889,7 +895,7 @@ export function AiPage() {
                     border: "1px solid transparent",
                   }}
                 >
-                  <span className="text-[12px]">⚡</span>
+                  <Zap className="w-3 h-3" />
                   <div className="text-left">
                     <p className="text-[11px] font-bold leading-none" style={{ color: model === "haiku" ? "oklch(0.68 0.18 155)" : "oklch(0.55 0.005 222)" }}>
                       Haiku
@@ -912,7 +918,7 @@ export function AiPage() {
                     border: "1px solid transparent",
                   }}
                 >
-                  <span className="text-[12px]">✨</span>
+                  <Sparkles className="w-3 h-3" />
                   <div className="text-left">
                     <p className="text-[11px] font-bold leading-none" style={{ color: model === "sonnet" ? "oklch(0.72 0.18 265)" : "oklch(0.55 0.005 222)" }}>
                       Sonnet

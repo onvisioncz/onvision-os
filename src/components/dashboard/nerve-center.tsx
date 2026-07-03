@@ -114,7 +114,7 @@ export function NerveCenter() {
       </span>
       {signals.length === 0 ? (
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold" style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>
-          <ShieldCheck className="w-3.5 h-3.5" /> Vše v klidu 🎉
+          <ShieldCheck className="w-3.5 h-3.5" /> Vše v klidu
         </span>
       ) : signals.map((s) => (
         <Link key={s.key} href={s.href} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition-transform hover:-translate-y-0.5"

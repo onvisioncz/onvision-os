@@ -67,7 +67,7 @@ export default async function LocationPublicPage({ params }: { params: Promise<{
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 26, marginTop: 22 }}>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: C.accent, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600 }}>{l.typ}</div>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, margin: "6px 0 10px" }}>{l.nazev}</h1>
-          {l.adresa ? <a href={mapsLink(l.adresa)} target="_blank" rel="noopener noreferrer" style={{ color: C.accent, fontSize: 13, textDecoration: "none" }}>📍 {l.adresa}</a> : null}
+          {l.adresa ? <a href={mapsLink(l.adresa)} target="_blank" rel="noopener noreferrer" style={{ color: C.accent, fontSize: 13, textDecoration: "none" }}>{l.adresa}</a> : null}
           {l.popis ? <p style={{ color: C.soft, fontSize: 15, lineHeight: 1.7, margin: "14px 0" }}>{l.popis}</p> : null}
           {l.previews?.length ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, margin: "16px 0" }}>

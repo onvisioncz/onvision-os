@@ -18,6 +18,11 @@ import {
   XCircle,
   RefreshCw,
   X,
+  PenLine,
+  Sparkles,
+  Play,
+  CalendarCheck,
+  Flag,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
@@ -839,12 +844,12 @@ export default function DashboardPage() {
                 {qaOpen ? <X size={12} /> : <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
                 {qaOpen ? "Zavřít" : "Nový úkol"}
               </button>
-              {/* Ghost buttons — dle mockupu */}
+              {/* Ghost buttons — Lucide ikony, žádné emoji */}
               {[
-                { label: "📝 Rychlá poznámka", onClick: () => setNoteOpen(true) },
-                { label: "✦ Zeptej se AI", onClick: toggleAi },
-                { label: "▶ Spustit agenta", onClick: () => router.push("/ai") },
-              ].map(({ label, onClick }) => (
+                { label: "Rychlá poznámka", icon: PenLine, onClick: () => setNoteOpen(true) },
+                { label: "Zeptej se AI", icon: Sparkles, onClick: toggleAi },
+                { label: "Spustit agenta", icon: Play, onClick: () => router.push("/ai") },
+              ].map(({ label, icon: BtnIcon, onClick }) => (
                 <button key={label} onClick={onClick} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   padding: "7px 14px", borderRadius: 20,
@@ -858,6 +863,7 @@ export default function DashboardPage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.14)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.85)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(83,83,246,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.80)"; }}
                 >
+                  <BtnIcon size={13} strokeWidth={2} style={{ opacity: 0.8 }} />
                   {label}
                 </button>
               ))}
@@ -877,7 +883,8 @@ export default function DashboardPage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.76)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.62)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
               >
-                📋 Uzavřít měsíc
+                <CalendarCheck size={12} strokeWidth={2} style={{ opacity: 0.75 }} />
+                Uzavřít měsíc
               </button>
             </div>
           </div>
@@ -1150,7 +1157,7 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 15 }}>📝</span>
+                    <PenLine size={15} style={{ color: "#5B5EFF" }} />
                     <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)" }}>Rychlá poznámka</span>
                   </div>
                   <button
@@ -1336,7 +1343,7 @@ export default function DashboardPage() {
               <Link href="/ukoly" style={{ fontSize: 11, color: "rgba(130,130,255,0.75)", textDecoration: "none" }}>Zobrazit vše →</Link>
             </div>
             {topTasks.length === 0 ? (
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.62)", marginTop: 20 }}>Žádné otevřené úkoly 🎉</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.62)", marginTop: 20 }}>Žádné otevřené úkoly</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {topTasks.slice(0, 6).map((t) => {
@@ -1457,12 +1464,12 @@ export default function DashboardPage() {
                     {agendaTasks.length === 0 ? (
                       <motion.p key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         style={{ fontSize: 11.5, color: "rgba(255,255,255,0.62)" }}>
-                        Žádné deadliny 👌
+                        Žádné deadliny
                       </motion.p>
                     ) : agendaTasks.slice(0, 3).map(t => (
                       <motion.div key={t.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, marginBottom: 4 }}>
-                        <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 10, flexShrink: 0 }}>⚑</span>
+                        <Flag size={10} style={{ color: "#ef4444", flexShrink: 0 }} />
                         <span style={{ color: "rgba(255,255,255,0.86)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</span>
                       </motion.div>
                     ))}
@@ -1489,7 +1496,7 @@ export default function DashboardPage() {
                     return (da ? da.getTime() : Infinity) - (db ? db.getTime() : Infinity);
                   }).slice(0, 7);
                   if (open.length === 0) return (
-                    <p key="ok" style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", padding: "10px 0" }}>Všechny úkoly hotové 🎉</p>
+                    <p key="ok" style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", padding: "10px 0" }}>Všechny úkoly hotové</p>
                   );
                   return open.map(t => {
                   const isDone = t.status === "Hotovo";
@@ -2020,7 +2027,7 @@ export default function DashboardPage() {
                             }}
                           >
                             {member.nearestDays <= 0
-                              ? "⚠ dnes — "
+                              ? "dnes — "
                               : member.nearestDays === 1
                               ? "zítra — "
                               : `za ${member.nearestDays} d — `}

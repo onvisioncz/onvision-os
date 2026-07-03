@@ -153,7 +153,7 @@ function Nps({ token }: { token: string }) {
     await fetch(`/api/k/${token}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "nps", score, comment }) });
     setDone(true);
   };
-  if (done) return <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: 22, textAlign: "center" }}><p style={{ fontSize: 15 }}>Děkujeme za hodnocení! 🙌</p></div>;
+  if (done) return <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: 22, textAlign: "center" }}><p style={{ fontSize: 15 }}>Děkujeme za hodnocení!</p></div>;
   return (
     <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: 20 }}>
       <p style={{ fontSize: 15, margin: "0 0 14px" }}>Jak pravděpodobně byste nás doporučili? (0–10)</p>

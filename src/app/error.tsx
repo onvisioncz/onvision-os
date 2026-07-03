@@ -21,7 +21,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           width: 52, height: 52, borderRadius: 14, margin: "0 auto 18px",
           background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-        }}>⚡</div>
+        }}><span style={{ color: "#5B5EFF", fontWeight: 700, fontSize: 18, fontFamily: "var(--font-outfit), sans-serif" }}>On</span></div>
         <h1 style={{ color: "#F4F4F8", fontSize: 20, fontWeight: 700, margin: "0 0 8px", fontFamily: "var(--font-outfit), sans-serif" }}>
           Něco se pokazilo
         </h1>

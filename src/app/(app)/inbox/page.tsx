@@ -512,7 +512,7 @@ export default function InboxPage() {
               >
                 <Bell className="w-8 h-8 mb-3 opacity-25" />
                 <p className="text-[14px] font-medium">Žádné notifikace</p>
-                <p className="text-[12px] mt-1 opacity-60">Vše je v pořádku 👍</p>
+                <p className="text-[12px] mt-1 opacity-60">Vše je v pořádku</p>
               </motion.div>
             ) : (
               visible.map((notif, idx) => (

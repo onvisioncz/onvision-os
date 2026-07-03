@@ -11,6 +11,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { createClient } from "@/lib/supabase/client";
 import { uploadThumb, resolveThumbUrl } from "@/lib/thumbs";
+import { Palette, Camera, Clapperboard, FileText, MessageSquare } from "lucide-react";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type DeliveryType = "grafika" | "foto" | "video" | "dokument" | "odkaz" | "zprava";
@@ -91,13 +92,13 @@ const MESICNI_KLIENTI = [
   "BEHEJ BRNO", "TOFFI", "SENIMED", "EASTGATE BRNO", "POWERPLATE", "OnVision",
 ];
 
-const TYPE_CONFIG: Record<DeliveryType, { label: string; emoji: string; color: string; urlLabel: string }> = {
-  grafika:  { label: "Grafika",   emoji: "🎨", color: "oklch(0.72 0.2 310)",  urlLabel: "Odkaz na grafiku" },
-  foto:     { label: "Foto",      emoji: "📸", color: "oklch(0.72 0.19 155)", urlLabel: "Odkaz na složku" },
-  video:    { label: "Video",     emoji: "🎬", color: "oklch(0.72 0.18 265)", urlLabel: "Odkaz na video" },
-  dokument: { label: "Dokument",  emoji: "📄", color: "oklch(0.72 0.18 48)",  urlLabel: "Odkaz ke stažení" },
-  odkaz:    { label: "Odkaz",     emoji: "🔗", color: "oklch(0.65 0.22 25)",  urlLabel: "URL" },
-  zprava:   { label: "Zpráva",    emoji: "💬", color: "oklch(0.5 0.005 222)", urlLabel: "" },
+const TYPE_CONFIG: Record<DeliveryType, { label: string; color: string; urlLabel: string }> = {
+  grafika:  { label: "Grafika",   color: "oklch(0.72 0.2 310)",  urlLabel: "Odkaz na grafiku" },
+  foto:     { label: "Foto",      color: "oklch(0.72 0.19 155)", urlLabel: "Odkaz na složku" },
+  video:    { label: "Video",     color: "oklch(0.72 0.18 265)", urlLabel: "Odkaz na video" },
+  dokument: { label: "Dokument",  color: "oklch(0.72 0.18 48)",  urlLabel: "Odkaz ke stažení" },
+  odkaz:    { label: "Odkaz",     color: "oklch(0.65 0.22 25)",  urlLabel: "URL" },
+  zprava:   { label: "Zpráva",    color: "oklch(0.5 0.005 222)", urlLabel: "" },
 };
 
 const PROJEKT_TYP_CONFIG: Record<ProjektTyp, { label: string; icon: typeof Users; color: string }> = {
@@ -118,6 +119,13 @@ function timeLabel(iso: string) {
 }
 
 // Komprese + upload + resolve jsou ve sdílené lib/thumbs.ts (používá i Technika).
+
+/* ── Lucide ikony typů (UI bez emoji) ─────────────────────────────────── */
+const TYPE_ICON: Record<string, React.ElementType> = {
+  grafika: Palette, foto: Camera, video: Clapperboard,
+  dokument: FileText, odkaz: Link2, zprava: MessageSquare,
+};
+const typeIcon = (t: string): React.ElementType => TYPE_ICON[t] ?? MessageSquare;
 
 /* ── Safe config lookup (guards against old stored messages) ─────────── */
 function getCfg(type: string) {
@@ -235,7 +243,7 @@ function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDele
               {!thumbUrl && (
                 <div className="h-16 flex items-center justify-center gap-2"
                   style={{ background: `${cfg.color}10` }}>
-                  <span className="text-2xl">{cfg.emoji}</span>
+                  {(() => { const TI = typeIcon(msg.type); return <TI className="w-6 h-6" style={{ color: cfg.color }} />; })()}
                   <span className="text-[10px] font-semibold" style={{ color: cfg.color }}>
                     {cfg.label}
                   </span>
@@ -246,7 +254,7 @@ function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDele
                 {/* Type + title */}
                 <div className="space-y-0.5">
                   <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
-                    {cfg.emoji} {cfg.label}
+                    {cfg.label}
                   </span>
                   <p className="text-[13px] font-semibold leading-snug" style={{ color: "oklch(0.92 0.005 265)" }}>
                     {msg.nazev}
@@ -430,7 +438,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
                       border: "1px solid oklch(1 0 0 / 0.08)",
                     }}
                   >
-                    <span className="text-xl leading-none">{c.emoji}</span>
+                    {(() => { const TI = typeIcon(t); return <TI className="w-5 h-5" style={{ color: c.color }} />; })()}
                     <span className="text-[10px] font-semibold" style={{ color: active ? c.color : "oklch(0.42 0.005 222)" }}>
                       {c.label}
                     </span>
@@ -544,7 +552,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
                       <Sparkles className="w-5 h-5 animate-pulse" style={{ color: cfg.color }} />
                     ) : (
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-xl">{cfg.emoji}</span>
+                        {(() => { const TI = typeIcon(type); return <TI className="w-5 h-5" style={{ color: cfg.color }} />; })()}
                         <span className="text-[8px] font-medium" style={{ color: "oklch(0.38 0.005 222)" }}>
                           {type === "video" ? "Náhled" : "Foto"}
                         </span>
@@ -605,7 +613,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
               <input
                 value={nazev}
                 onChange={e => setNazev(e.target.value)}
-                placeholder={`Název — např. ${cfg.emoji} Reels duben, Logo finální...`}
+                placeholder={"Název — např. Reels duben, Logo finální..."}
                 className="w-full px-3 py-2 rounded-[8px] text-[13px] font-medium outline-none"
                 style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.92 0.005 265)" }}
               />
@@ -631,7 +639,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
               <ProjectTag typ={projektTyp} nazev={effectiveProjektNazev} />
             )}
             <span className="text-[10px]" style={{ color: `${cfg.color}` }}>
-              {cfg.emoji} {cfg.label}
+              {cfg.label}
             </span>
           </div>
 
