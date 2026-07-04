@@ -142,12 +142,13 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("app_data")
-    .select("value")
+    .select("value, updated_at")
     .eq("key", key)
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ value: data?.value ?? null });
+  // updated_at slouží jako verzovací token pro optimistický zámek při zápisu
+  return NextResponse.json({ value: data?.value ?? null, token: data?.updated_at ?? null });
 }
 
 /* ── POST /api/sync  { key, value } ────────────────────────────────────────── */
@@ -155,15 +156,18 @@ export async function POST(req: NextRequest) {
   const { supabase, user } = await getAuthenticatedClient();
   if (!supabase || !user) return UNAUTHORIZED;
 
-  let body: { key?: string; value?: unknown };
+  let body: { key?: string; value?: unknown; baseToken?: string | null };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Neplatný JSON" }, { status: 400 });
   }
 
-  const { key, value } = body;
+  const { key, value, baseToken } = body;
   if (!key) return NextResponse.json({ error: "Missing key" }, { status: 400 });
+  // Starý klient (otevřená záložka před nasazením) neposílá baseToken → dnešní
+  // chování (poslední vyhrává). Nový klient posílá string|null → optimistický zámek.
+  const legacy = baseToken === undefined;
 
   // ── Role check ───────────────────────────────────────────────────────────────
   const userRoles = await getUserRoles(supabase, user.email!);
@@ -179,34 +183,66 @@ export async function POST(req: NextRequest) {
     if (!hasPermission) return FORBIDDEN;
   }
 
-  // ── Read OLD value BEFORE write (needed for diff in push notifications) ────
-  let oldValue: unknown = null;
-  if (key === "ov-ukoly-tasks" || key === "ov-output-messages") {
-    const { data: prevData } = await supabase
-      .from("app_data")
-      .select("value")
-      .eq("key", key)
-      .maybeSingle();
-    oldValue = prevData?.value ?? null;
+  // ── Přečti AKTUÁLNÍ řádek (hodnota + token) — pro konflikt i pro push diff ──
+  const { data: cur } = await supabase
+    .from("app_data")
+    .select("value, updated_at")
+    .eq("key", key)
+    .maybeSingle();
+  const currentValue: unknown = cur?.value ?? null;
+  const currentToken: string | null = (cur?.updated_at as string | undefined) ?? null;
+
+  // ── Optimistický zámek: token se musí shodovat s tím, co klient viděl ─────
+  if (!legacy && (currentToken ?? null) !== (baseToken ?? null)) {
+    return NextResponse.json(
+      { conflict: true, value: currentValue, token: currentToken },
+      { status: 409 }
+    );
   }
 
-  // ── Write ────────────────────────────────────────────────────────────────────
-  const { error } = await supabase
-    .from("app_data")
-    .upsert(
-      { key, value, updated_at: new Date().toISOString() },
-      { onConflict: "key" }
-    );
+  // ── Zápis (podmíněný na updated_at kvůli souběhu mezi čtením a zápisem) ────
+  const newTs = new Date().toISOString();
+  let writeError: string | null = null;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (legacy || currentToken === null) {
+    // Legacy klient, nebo řádek zatím neexistuje → upsert (staré chování).
+    const { error } = await supabase
+      .from("app_data")
+      .upsert({ key, value, updated_at: newTs }, { onConflict: "key" });
+    if (error) writeError = error.message;
+  } else {
+    // Podmíněný update: projde jen když se updated_at pořád rovná baseToken.
+    const { data: upd, error } = await supabase
+      .from("app_data")
+      .update({ value, updated_at: newTs })
+      .eq("key", key)
+      .eq("updated_at", baseToken as string)
+      .select("updated_at");
+    if (error) {
+      writeError = error.message;
+    } else if (!upd || upd.length === 0) {
+      // Někdo zapsal mezi naším čtením a updatem → konflikt.
+      const { data: cur2 } = await supabase
+        .from("app_data")
+        .select("value, updated_at")
+        .eq("key", key)
+        .maybeSingle();
+      return NextResponse.json(
+        { conflict: true, value: cur2?.value ?? null, token: (cur2?.updated_at as string) ?? null },
+        { status: 409 }
+      );
+    }
+  }
+
+  if (writeError) return NextResponse.json({ error: writeError }, { status: 500 });
 
   // ── Push notifications (fire-and-forget, never blocks the response) ──────
-  void triggerPush(supabase, key, value, user.email!, oldValue);
+  void triggerPush(supabase, key, value, user.email!, currentValue);
 
   // ── Audit log (fire-and-forget) — kdo co kdy změnil ─────────────────────
   void appendAudit(supabase, key, user.email!);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, token: newTs });
 }
 
 /* ── Audit log ─────────────────────────────────────────────────────────── */

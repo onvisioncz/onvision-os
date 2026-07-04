@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { mergeForSync } from "@/lib/merge";
 
 // ── Sync status ────────────────────────────────────────────────────────────
 export type SyncStatus = "idle" | "syncing" | "ok" | "error";
@@ -35,6 +36,17 @@ export function globalUndo(): boolean {
 }
 
 const MAX_HISTORY = 30;
+
+// ── Optimistický zámek: stav per klíč ───────────────────────────────────────
+// serverToken = poslední updated_at, který jsme od serveru viděli (verze).
+// serverBase  = poslední hodnota potvrzená serverem (báze pro 3-way merge).
+// conflictHandlers = per-klíč funkce, která umí sloučit a znovu uložit.
+const serverToken = new Map<string, string | null>();
+const serverBase = new Map<string, unknown>();
+type ConflictHandler = (remote: unknown, token: string | null) => void;
+const conflictHandlers = new Map<string, ConflictHandler>();
+const conflictRounds = new Map<string, number>();
+const MAX_CONFLICT_ROUNDS = 6;
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
@@ -73,11 +85,35 @@ export function useSupabaseData<T>(
     });
   }, [key]);
 
+  // ── Register conflict handler (3-way merge + retry) ───────────────────────
+  useEffect(() => {
+    const handler: ConflictHandler = (remoteValue, token) => {
+      serverToken.set(key, token);
+      const base = serverBase.has(key) ? serverBase.get(key) : initialValueRef.current;
+      const local = latestPending.has(key) ? latestPending.get(key) : value;
+      const merged = mergeForSync(base, local, remoteValue);
+      // Nesloučitelné (objekt/číslo/pole bez id) → lokál vyhrává (staré chování).
+      const resolved = (merged ?? local) as T;
+      // Nová báze = co bylo na serveru; do stavu dáme sloučený výsledek.
+      serverBase.set(key, remoteValue);
+      skipNextSave.current = true;
+      setValueRaw(resolved);
+      writeCache(key, resolved);
+      latestPending.set(key, resolved);
+      // Ulož sloučenou hodnotu (token už máme z konfliktu).
+      saveToServer(key, resolved);
+    };
+    conflictHandlers.set(key, handler);
+    return () => {
+      if (conflictHandlers.get(key) === handler) conflictHandlers.delete(key);
+    };
+  }, [key, value]);
+
   // ── Load from server on mount ──────────────────────────────────────────────
   useEffect(() => {
     fetch(`/api/sync?key=${encodeURIComponent(key)}`)
       .then((r) => r.json())
-      .then(({ value: serverValue, error }) => {
+      .then(({ value: serverValue, token, error }) => {
         if (error) {
           console.error(`[ov-sync] Load error for "${key}":`, error);
           emitSync("error");
@@ -86,8 +122,12 @@ export function useSupabaseData<T>(
           skipNextSave.current = true;
           setValueRaw(serverValue as T);
           writeCache(key, serverValue);
+          serverToken.set(key, (token as string | null) ?? null);
+          serverBase.set(key, serverValue);
         } else {
           // Nothing in DB yet — upload current seed/cache
+          serverToken.set(key, null);
+          serverBase.set(key, null);
           saveToServer(key, initialValueRef.current);
         }
         initialized.current = true;
@@ -98,7 +138,7 @@ export function useSupabaseData<T>(
         initialized.current = true;
         setLoading(false);
       });
-  }, [key]);  
+  }, [key]);
 
   // ── Persist to server whenever value changes ───────────────────────────────
   useEffect(() => {
@@ -170,22 +210,75 @@ const latestPending = new Map<string, unknown>();
 async function saveToServer(key: string, value: unknown, attempt = 0) {
   latestPending.set(key, value);
   emitSync("syncing");
+  // Nový klient posílá baseToken (string|null); dokud neproběhl GET, pošle
+  // legacy tvar (bez tokenu) = dnešní chování.
+  const hasToken = serverToken.has(key);
+  const body = hasToken
+    ? { key, value: latestPending.get(key), baseToken: serverToken.get(key) ?? null }
+    : { key, value: latestPending.get(key) };
   try {
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+
+    // ── Konflikt: server má novější verzi → sloučit a zkusit znovu ──────────
+    if (res.status === 409 && json.conflict) {
+      const rounds = (conflictRounds.get(key) ?? 0) + 1;
+      conflictRounds.set(key, rounds);
+      const handler = conflictHandlers.get(key);
+      if (handler && rounds <= MAX_CONFLICT_ROUNDS) {
+        handler(json.value, (json.token as string | null) ?? null);
+      } else {
+        // Nelze sloučit (žádný aktivní handler) nebo příliš mnoho kol →
+        // přijmi serverovou verzi jako bázi a vynuceně zapiš (staré chování).
+        serverToken.set(key, (json.token as string | null) ?? null);
+        conflictRounds.set(key, 0);
+        forceSave(key, latestPending.get(key));
+      }
+      return;
+    }
+
+    if (!res.ok || json.error) {
+      console.error(`[ov-sync] Save error for "${key}":`, json.error);
+      scheduleRetryOrFail(key, attempt);
+    } else {
+      if (json.token) serverToken.set(key, json.token as string);
+      serverBase.set(key, latestPending.get(key));
+      conflictRounds.set(key, 0);
+      emitSync("ok");
+    }
+  } catch (e) {
+    console.error(`[ov-sync] Network error saving "${key}":`, e);
+    scheduleRetryOrFail(key, attempt);
+  }
+}
+
+/** Vynucený zápis bez optimistického zámku (fallback, když merge nelze). */
+async function forceSave(key: string, value: unknown) {
+  latestPending.set(key, value);
+  emitSync("syncing");
+  try {
+    // baseToken = undefined → server jede legacy upsert (poslední vyhrává).
     const res = await fetch("/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key, value: latestPending.get(key) }),
     });
     const json = await res.json();
-    if (!res.ok || json.error) {
-      console.error(`[ov-sync] Save error for "${key}":`, json.error);
-      scheduleRetryOrFail(key, attempt);
-    } else {
-      emitSync("ok");
-    }
-  } catch (e) {
-    console.error(`[ov-sync] Network error saving "${key}":`, e);
-    scheduleRetryOrFail(key, attempt);
+    if (!res.ok || json.error) { emitSync("error"); return; }
+    // Po legacy zápisu neznáme přesný token → přečti ho, ať další zápis zamkne.
+    try {
+      const r2 = await fetch(`/api/sync?key=${encodeURIComponent(key)}`);
+      const j2 = await r2.json();
+      serverToken.set(key, (j2.token as string | null) ?? null);
+      serverBase.set(key, latestPending.get(key));
+    } catch {}
+    emitSync("ok");
+  } catch {
+    emitSync("error");
   }
 }
 
