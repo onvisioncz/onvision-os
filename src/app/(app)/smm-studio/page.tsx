@@ -197,10 +197,13 @@ export default function SmmStudioPage() {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const drag = useRef<null | {
-    kind: "photo" | "photo-inner" | "divider" | "overlay" | "overlay-resize" | "overlay-inner";
-    idx: number; startX: number; startY: number; moved: boolean;
+    kind: "photo" | "photo-inner" | "divider" | "overlay" | "overlay-resize" | "overlay-inner" | "reorder";
+    idx: number; startX: number; startY: number; moved: boolean; to?: number;
     orig: { panX?: number; panY?: number; weights?: number[]; x?: number; y?: number; w?: number; h?: number; iPanX?: number; iPanY?: number };
   }>(null);
+
+  // přeskládání fotek tažením: { from, to } — to = kam se vloží (0..N)
+  const [reorder, setReorder] = useState<{ from: number; to: number } | null>(null);
 
   const totalW = W * slides;
 
@@ -262,6 +265,33 @@ export default function SmmStudioPage() {
           dctx.strokeRect(r.x * scale + 1, 1, r.w * scale - 2, disp.height - 2);
           dctx.setLineDash([]);
         }
+        // ztlumení taženého slajdu při přeskládání
+        if (reorder) {
+          const r = rects[reorder.from];
+          dctx.fillStyle = "rgba(11,11,20,0.55)";
+          dctx.fillRect(r.x * scale, 0, r.w * scale, disp.height);
+        }
+        // úchyty pro přeskládání (⠿) nahoře u každé fotky
+        rects.forEach((r, i) => {
+          const cx = (r.x + r.w / 2) * scale;
+          const active = reorder?.from === i;
+          dctx.fillStyle = active ? PRIMARY : "rgba(13,13,24,0.78)";
+          dctx.beginPath(); dctx.roundRect(cx - 17, 8, 34, 20, 6); dctx.fill();
+          dctx.fillStyle = active ? "#fff" : "rgba(255,255,255,0.85)";
+          for (let gy = 0; gy < 2; gy++) for (let gx = 0; gx < 3; gx++) {
+            dctx.beginPath(); dctx.arc(cx - 6 + gx * 6, 14 + gy * 6, 1.4, 0, Math.PI * 2); dctx.fill();
+          }
+        });
+        // zelený ukazatel kam fotka dopadne
+        if (reorder) {
+          const bx = reorder.to >= rects.length
+            ? disp.width - 1
+            : rects[reorder.to].x * scale;
+          dctx.strokeStyle = "#22C55E"; dctx.lineWidth = 4;
+          dctx.beginPath(); dctx.moveTo(bx, 0); dctx.lineTo(bx, disp.height); dctx.stroke();
+          dctx.fillStyle = "#22C55E";
+          dctx.beginPath(); dctx.moveTo(bx, 0); dctx.lineTo(bx - 6, 12); dctx.lineTo(bx + 6, 12); dctx.fill();
+        }
       }
       // overlay výběr
       overlays.forEach((o) => {
@@ -290,7 +320,7 @@ export default function SmmStudioPage() {
       }
       setSlidePreviews(out);
     }
-  }, [mode, layout, gridCells, gap, photos, overlays, slides, bg, selOverlay, selPhoto, totalW]);
+  }, [mode, layout, gridCells, gap, photos, overlays, slides, bg, selOverlay, selPhoto, reorder, totalW]);
 
   useEffect(() => { renderAll(true); }, [renderAll]);
   useEffect(() => {
@@ -380,6 +410,22 @@ export default function SmmStudioPage() {
     }
 
     const rects = baseRects(photos, totalW);
+    const sy = H / disp.height, sx = totalW / disp.width;
+
+    // úchyt (⠿) — horní pruh každé fotky = přeskládání
+    if (my <= 34 * sy) {
+      for (let i = 0; i < rects.length; i++) {
+        const cx = rects[i].x + rects[i].w / 2;
+        if (Math.abs(mx - cx) < 22 * sx) {
+          drag.current = { kind: "reorder", idx: i, startX: mx, startY: my, moved: false, orig: {} };
+          setReorder({ from: i, to: i });
+          setSelPhoto(null); setSelOverlay(null);
+          (e.target as Element).setPointerCapture(e.pointerId);
+          return;
+        }
+      }
+    }
+
     for (let i = 1; i < rects.length; i++) {
       if (Math.abs(mx - rects[i].x) < tol) {
         drag.current = { kind: "divider", idx: i, startX: mx, startY: my, moved: false, orig: { weights: photos.map((p) => p.weight) } };
@@ -402,7 +448,14 @@ export default function SmmStudioPage() {
     const dx = mx - d.startX, dy = my - d.startY;
     if (Math.hypot(dx, dy) > 6) d.moved = true;
 
-    if (d.kind === "photo") {
+    if (d.kind === "reorder") {
+      // cílová pozice = kolik fotek má střed nalevo od kurzoru
+      const rects = baseRects(photos, totalW);
+      let to = 0;
+      for (let i = 0; i < rects.length; i++) if (mx > rects[i].x + rects[i].w / 2) to = i + 1;
+      d.to = to;
+      setReorder((r) => (r && r.to === to ? r : r ? { ...r, to } : r));
+    } else if (d.kind === "photo") {
       setPhotos((prev) => prev.map((p, i) => i === d.idx ? { ...p, panX: (d.orig.panX ?? 0) + dx, panY: (d.orig.panY ?? 0) + dy } : p));
     } else if (d.kind === "divider") {
       const weights = d.orig.weights!;
@@ -443,6 +496,22 @@ export default function SmmStudioPage() {
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current;
     drag.current = null;
+    if (d && d.kind === "reorder") {
+      const from = d.idx;
+      const to = d.to ?? from;
+      setReorder(null);
+      if (to !== from && to !== from + 1) {
+        setPhotos((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(from, 1);
+          const insert = to > from ? to - 1 : to; // čistě, bez mutace vnějšího `to`
+          next.splice(insert, 0, moved);
+          return next;
+        });
+      }
+      renderAll(true);
+      return;
+    }
     if (d && !d.moved && d.kind === "photo") {
       // klik bez tažení = výběr fotky (per-fotka prolnutí)
       const p = photos[d.idx];
@@ -671,8 +740,9 @@ export default function SmmStudioPage() {
           </div>
           {photos.length > 0 && (
             <p className="text-[11px] text-[--muted-foreground] mb-4">
-              Klik na fotku = výběr (prolnutí, odebrání) · táhni = posun · kolečko = zoom · dvojklik = reset ·
-              táhni bílý úchyt = šířka fotky (přichytává se na řezy) · fotka ve fotce se okraji přichytává na řezy slidů
+              Táhni úchyt ⠿ nahoře = přeskládat fotku (i mezi slidy) · klik na fotku = výběr (prolnutí, odebrání) ·
+              táhni tělo = posun · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka fotky (přichytává se na řezy) ·
+              fotka ve fotce se okraji přichytává na řezy slidů
             </p>
           )}
           {slidePreviews.length > 0 && photos.length > 0 && (
