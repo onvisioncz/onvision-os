@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, AlertTriangle, Camera, Check, CalendarClock, X, Edit2, ChevronLeft, ChevronRight,
@@ -12,9 +12,15 @@ import { uploadThumb, resolveThumbUrl } from "@/lib/thumbs";
 import { createClient } from "@/lib/supabase/client";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  GEAR_KEY, GEAR_RES_KEY, GEAR_KATEGORIE, todayISO, reservedNow, hasConflict, nextReservation, fmtDate,
-  type GearItem, type GearReservation, type GearKategorie,
+  GEAR_KEY, GEAR_RES_KEY, GEAR_KATEGORIE, RETURN_STAVY, todayISO, reservedNow, hasConflict, nextReservation, fmtDate,
+  type GearItem, type GearReservation, type GearKategorie, type GearReturnStav,
 } from "@/lib/gear";
+
+/** Minimální tvar úkolu pro zápis do ov-ukoly-tasks (servis poškozené techniky). */
+interface TaskLite {
+  id: number; nazev: string; projekt: string; prirazeno: string;
+  priorita: string; status: string; deadline: string;
+}
 
 const RED = "oklch(0.65 0.22 25)";
 const GREEN = "oklch(0.67 0.155 155)";
@@ -75,6 +81,11 @@ export default function TechnikaPage() {
   const { user, loading: roleLoading } = useUserRole();
   const [gear, setGear] = useSupabaseData<GearItem[]>(GEAR_KEY, () => []);
   const [reservations, setReservations] = useSupabaseData<GearReservation[]>(GEAR_RES_KEY, () => []);
+  const [, setTasks] = useSupabaseData<TaskLite[]>("ov-ukoly-tasks", () => []);
+  // vrácení techniky: id rezervace, u které je otevřený formulář stavu
+  const [returning, setReturning] = useState<number | null>(null);
+  const [retStav, setRetStav] = useState<GearReturnStav>("OK");
+  const [retNote, setRetNote] = useState("");
 
   const [gearForm, setGearForm] = useState<GearForm | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -127,6 +138,30 @@ export default function TechnikaPage() {
     setRes({ gearId: 0, kdo: "", od: todayISO(), do: todayISO(), projekt: "" });
   };
   const delRes = (id: number) => setReservations((prev) => prev.filter((r) => r.id !== id));
+
+  /** Vrácení techniky: zapíše stav; při poškození založí servisní úkol. */
+  const confirmReturn = (r: GearReservation) => {
+    const g = gear.find((x) => x.id === r.gearId);
+    setReservations((prev) => prev.map((x) => x.id === r.id
+      ? { ...x, vraceno: { at: new Date().toISOString(), stav: retStav, poznamka: retNote.trim() || undefined } }
+      : x));
+    if (retStav !== "OK") {
+      const d = new Date();
+      setTasks((prev) => [...prev, {
+        id: Date.now(),
+        nazev: `Servis techniky: ${g?.nazev ?? "?"} — ${retStav}${retNote.trim() ? ` (${retNote.trim()})` : ""}`,
+        projekt: "Interní",
+        prirazeno: user?.displayName?.split(" ")[0] ?? "",
+        priorita: "Vysoká",
+        status: "Nové",
+        deadline: `${d.getDate()}. ${d.getMonth() + 1}.`,
+      }]);
+      flash(`Vráceno se stavem „${retStav}" — založen servisní úkol`);
+    } else {
+      flash(`${g?.nazev ?? "Technika"} vrácena v pořádku`);
+    }
+    setReturning(null); setRetStav("OK"); setRetNote("");
+  };
 
   if (roleLoading) return <div className="p-8 text-[13px] text-[--muted-foreground]">Načítám…</div>;
   if (!user) return <div className="p-8 text-[14px] text-[--muted-foreground]">Nepřihlášen.</div>;
@@ -246,14 +281,63 @@ export default function TechnikaPage() {
             <table className="w-full text-left text-[13px]"><tbody>
               {upcoming.map((r) => {
                 const g = gear.find((x) => x.id === r.gearId);
+                const mine = isAdmin || r.kdo === user.displayName;
                 return (
-                  <tr key={r.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                  <React.Fragment key={r.id}>
+                  <tr className="border-t" style={{ borderColor: "var(--border)" }}>
                     <td className="px-4 py-2.5 font-medium">{g?.nazev ?? "—"}</td>
                     <td className="px-4 py-2.5 text-[--muted-foreground]">{r.kdo}</td>
                     <td className="px-4 py-2.5">{fmtDate(r.od)} – {fmtDate(r.do)}</td>
                     <td className="px-4 py-2.5 text-[--muted-foreground]">{r.projekt}</td>
-                    <td className="px-4 py-2.5 text-right">{(isAdmin || r.kdo === user.displayName) && <button onClick={() => delRes(r.id)} className="btn-tactile p-1 rounded-[5px]" style={{ border: "1px solid var(--border)" }}><X className="w-3 h-3" /></button>}</td>
+                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                      {r.vraceno ? (
+                        <span className="text-[11px] font-semibold px-2 py-1 rounded-[5px]"
+                          style={r.vraceno.stav === "OK"
+                            ? { background: "rgba(34,197,94,0.12)", color: "oklch(0.7 0.17 155)" }
+                            : { background: "rgba(229,72,77,0.12)", color: "oklch(0.65 0.2 25)" }}
+                          title={r.vraceno.poznamka || undefined}>
+                          Vráceno · {r.vraceno.stav}
+                        </span>
+                      ) : mine ? (
+                        <>
+                          <button onClick={() => { setReturning(returning === r.id ? null : r.id); setRetStav("OK"); setRetNote(""); }}
+                            className="btn-tactile px-2 py-1 rounded-[5px] text-[11px] font-semibold mr-1.5"
+                            style={{ background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.3)", color: PRIMARY }}>
+                            Vrátit
+                          </button>
+                          <button onClick={() => delRes(r.id)} className="btn-tactile p-1 rounded-[5px]" style={{ border: "1px solid var(--border)" }}><X className="w-3 h-3" /></button>
+                        </>
+                      ) : null}
+                    </td>
                   </tr>
+                  {returning === r.id && !r.vraceno && (
+                    <tr className="border-t" style={{ borderColor: "var(--border)", background: "rgba(91,94,255,0.04)" }}>
+                      <td colSpan={5} className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[12px] font-semibold">Stav při vrácení:</span>
+                          {RETURN_STAVY.map((s) => (
+                            <button key={s} onClick={() => setRetStav(s)}
+                              className="btn-tactile px-2.5 py-1 rounded-[6px] text-[11px] font-semibold"
+                              style={retStav === s
+                                ? { background: s === "OK" ? "rgba(34,197,94,0.16)" : "rgba(229,72,77,0.16)", color: s === "OK" ? "oklch(0.7 0.17 155)" : "oklch(0.65 0.2 25)", border: "1px solid currentColor" }
+                                : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>
+                              {s}
+                            </button>
+                          ))}
+                          <input value={retNote} onChange={(e) => setRetNote(e.target.value)} placeholder="poznámka (co přesně)…"
+                            className="flex-1 min-w-[160px] px-2.5 py-1.5 rounded-[6px] text-[12px] outline-none"
+                            style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" }} />
+                          <button onClick={() => confirmReturn(r)}
+                            className="btn-tactile px-3 py-1.5 rounded-[6px] text-[12px] font-semibold"
+                            style={{ background: PRIMARY, color: "white" }}>
+                            Potvrdit vrácení
+                          </button>
+                        </div>
+                        {retStav !== "OK" && <p className="text-[11px] mt-1.5" style={{ color: "oklch(0.75 0.15 60)" }}>Založí se servisní úkol s vysokou prioritou.</p>}
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </tbody></table>

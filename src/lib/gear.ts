@@ -17,6 +17,15 @@ export interface GearItem {
   fotoUrl?: string;   // náhledová fotka (jak vypadá)
 }
 
+export const RETURN_STAVY = ["OK", "Drobné poškození", "Chybí příslušenství", "Nutný servis"] as const;
+export type GearReturnStav = (typeof RETURN_STAVY)[number];
+
+export interface GearReturn {
+  at: string;              // ISO čas vrácení
+  stav: GearReturnStav;
+  poznamka?: string;
+}
+
 export interface GearReservation {
   id: number;
   gearId: number;
@@ -25,6 +34,7 @@ export interface GearReservation {
   do: string;   // YYYY-MM-DD
   projekt: string;
   createdAt: string;
+  vraceno?: GearReturn;   // vyplněno při vrácení; ne-OK stav založí servisní úkol
 }
 
 export function todayISO(): string {
