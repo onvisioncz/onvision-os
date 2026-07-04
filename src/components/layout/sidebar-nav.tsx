@@ -8,7 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
-  LayoutGrid, X, Sun, Trash2,
+  LayoutGrid, X, Sun, Trash2, Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +53,7 @@ const GROUPS = [
       { label: "Cashflow",   short: "Cashflow",  href: "/cashflow",   icon: LineChart },
       { label: "Cíle",       short: "Cíle",      href: "/cile",       icon: Target },
       { label: "Fakturace",  short: "Faktury",   href: "/fakturace",  icon: FileText },
+      { label: "Párování plateb", short: "Párování", href: "/parovani", icon: Landmark },
       { label: "Odměny",     short: "Odměny",    href: "/odmeny",     icon: Wallet },
       { label: "Investice",  short: "Investice", href: "/investice",  icon: PackageOpen },
       { label: "Klienti",    short: "Klienti",   href: "/klienti",    icon: Building2 },
