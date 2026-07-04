@@ -1,29 +1,37 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DELIVERY_KEY, type Delivery } from "@/lib/delivery";
+import { DELIVERY_KEY, MAX_ACCESS_LOG, isExpired, type Delivery } from "@/lib/delivery";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const C = { bg: "#0D0D18", card: "#16161F", text: "#fff", soft: "rgba(255,255,255,0.62)", accent: "#5B5EFF", border: "rgba(255,255,255,0.09)" };
 
-async function loadAndCount(publicId: string): Promise<Delivery | null> {
+type LoadResult = { status: "ok"; delivery: Delivery } | { status: "expired" } | { status: "notfound" };
+
+async function loadAndCount(publicId: string): Promise<LoadResult> {
   try {
     const supabase = createAdminClient();
     const { data } = await supabase.from("app_data").select("value").eq("key", DELIVERY_KEY).maybeSingle();
     const list: Delivery[] = Array.isArray(data?.value) ? (data!.value as Delivery[]) : [];
     const d = list.find((x) => x.publicId === publicId);
-    if (!d) return null;
-    const updated = list.map((x) => x.publicId === publicId ? { ...x, views: (x.views || 0) + 1 } : x);
+    if (!d) return { status: "notfound" };
+    // Expirovaný odkaz neodhalí obsah — ani nezapočítá přístup.
+    if (isExpired(d)) return { status: "expired" };
+    const now = new Date().toISOString();
+    const updated = list.map((x) => x.publicId === publicId
+      ? { ...x, views: (x.views || 0) + 1, accessLog: [...(x.accessLog ?? []), now].slice(-MAX_ACCESS_LOG) }
+      : x);
     await supabase.from("app_data").upsert({ key: DELIVERY_KEY, value: updated, updated_at: new Date().toISOString() }, { onConflict: "key" });
-    return d;
+    return { status: "ok", delivery: d };
   } catch {
-    return null;
+    return { status: "notfound" };
   }
 }
 
 export default async function DeliveryPublicPage({ params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;
-  const d = await loadAndCount(publicId);
+  const result = await loadAndCount(publicId);
+  const d = result.status === "ok" ? result.delivery : null;
 
   const wrap: React.CSSProperties = {
     minHeight: "100vh", margin: 0, background:
@@ -33,11 +41,14 @@ export default async function DeliveryPublicPage({ params }: { params: Promise<{
   };
 
   if (!d) {
+    const msg = result.status === "expired"
+      ? "Platnost tohoto odkazu vypršela. Napiš nám a rádi ti pošleme nový."
+      : "Odkaz nenalezen nebo byl zrušen.";
     return (
       <div style={wrap}>
-        <div style={{ marginTop: 80, textAlign: "center", color: C.soft }}>
+        <div style={{ marginTop: 80, textAlign: "center", color: C.soft, maxWidth: 420 }}>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 8 }}>OnVision</div>
-          Odkaz nenalezen nebo vypršel.
+          {msg}
         </div>
       </div>
     );

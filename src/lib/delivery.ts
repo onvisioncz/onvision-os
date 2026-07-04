@@ -14,6 +14,31 @@ export interface Delivery {
   previews: string[]; // URL náhledových obrázků
   createdAt: string;
   views: number;
+  expiresAt?: string | null; // ISO — po tomto datu odkaz nefunguje (null/undefined = navždy)
+  accessLog?: string[];      // ISO časy zobrazení (posledních MAX_ACCESS_LOG)
+}
+
+export const MAX_ACCESS_LOG = 100;
+
+/** Možnosti expirace v UI. */
+export const EXPIRY_OPTIONS: { label: string; days: number | null }[] = [
+  { label: "7 dní", days: 7 },
+  { label: "30 dní", days: 30 },
+  { label: "90 dní", days: 90 },
+  { label: "Bez expirace", days: null },
+];
+
+/** Spočítá ISO datum expirace za N dní (null = bez expirace). */
+export function expiryFromDays(days: number | null, from = new Date()): string | null {
+  if (days == null) return null;
+  return new Date(from.getTime() + days * 86_400_000).toISOString();
+}
+
+/** Je delivery po expiraci? */
+export function isExpired(d: Pick<Delivery, "expiresAt">, now = Date.now()): boolean {
+  if (!d.expiresAt) return false;
+  const t = Date.parse(d.expiresAt);
+  return Number.isFinite(t) && t < now;
 }
 
 /** Náhodný token do veřejné URL. */
