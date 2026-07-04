@@ -65,13 +65,21 @@ export async function GET(req: NextRequest) {
 
   const findings: string[] = [];
 
-  // 1) Neexistující / nečitelná data splatnosti
+  // 1) Neexistující / nečitelná / CHYBĚJÍCÍ data splatnosti
   for (const inv of [...(issued ?? []), ...(finance ?? [])]) {
     if ((inv.stav ?? "") === "Zaplacena" || (inv.stav ?? "") === "Storno") continue;
     const due = inv.datumSplatnosti ?? inv.splatnost ?? "";
-    if (!due) continue;
+    if (!due) {
+      // Nezaplacená faktura bez splatnosti — nikdy nespadne do upomínek.
+      findings.push(`Faktura ${inv.cislo ?? "?"} (${inv.klient ?? "?"}) nemá vyplněné datum splatnosti`);
+      continue;
+    }
     const hasYear = /\d{4}/.test(due);
-    if (hasYear && !due.includes("-") && !isValidCzDate(due.replace(/\s/g, ""))) {
+    if (/\d[A-Za-z]|[A-Za-z]\d/.test(due.replace(/\s/g, ""))) {
+      // Písmeno vmíchané do číslic ("2O26" s O místo nuly) — parseDeadline by
+      // to tiše zparsoval bez roku, proto kontrolujeme dřív.
+      findings.push(`Faktura ${inv.cislo ?? "?"} (${inv.klient ?? "?"}) má překlep v datu splatnosti „${due}"`);
+    } else if (hasYear && !due.includes("-") && !isValidCzDate(due.replace(/\s/g, ""))) {
       findings.push(`Faktura ${inv.cislo ?? "?"} (${inv.klient ?? "?"}) má neexistující datum splatnosti „${due}"`);
     } else if (!parseDeadline(due)) {
       findings.push(`Faktura ${inv.cislo ?? "?"} (${inv.klient ?? "?"}) má nečitelné datum splatnosti „${due}"`);
@@ -112,6 +120,30 @@ export async function GET(req: NextRequest) {
       findings.push(`Faktura ${inv.cislo ?? "?"} má podezřelou částku „${String(inv.castka)}"`);
     }
   }
+
+  // 6) Osiřelé vazby deliverable → úkol (úkol smazán, odkaz zůstal)
+  try {
+    const taskIds = new Set((tasks ?? []).map((t) => (t as { id?: unknown }).id));
+    const monthly = (clients ?? []) as Array<{ name?: string; deliverables?: Array<{ text?: string; linkedTaskId?: number }> }>;
+    for (const c of monthly) {
+      for (const d of c.deliverables ?? []) {
+        if (d.linkedTaskId != null && !taskIds.has(d.linkedTaskId)) {
+          findings.push(`Deliverable „${d.text ?? "?"}" (${c.name ?? "?"}) odkazuje na smazaný úkol`);
+        }
+      }
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 7) Rezervace na neexistující techniku (kus smazán ze skladu)
+  try {
+    const gearList = await readKey<Array<{ id?: number }>>(sb, "ov-gear");
+    const gearIds = new Set((gearList ?? []).map((g) => g.id));
+    for (const r of res) {
+      if (r.gearId != null && !gearIds.has(r.gearId) && (r.do ?? "") >= new Date().toISOString().slice(0, 10)) {
+        findings.push(`Rezervace (${r.kdo ?? "?"}, ${r.od}–${r.do}) odkazuje na smazanou techniku`);
+      }
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
 
   // ── Ozvi se jen při změně nálezů ──
   const currentHash = hash(findings.slice().sort().join("|"));
