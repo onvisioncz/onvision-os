@@ -5,7 +5,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, Square, X, Calendar, User, RefreshCw, ChevronDown, ChevronRight,
-  MessageSquare, Send,
+  MessageSquare, Send, Search,
 } from "lucide-react";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { useUserRole } from "@/lib/hooks/use-user-role";
@@ -645,6 +645,7 @@ export default function UkolyPage() {
   const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => SEED);
   const [assigneeFilter, setAssigneeFilter] = useState("Vše");
   const [statusFilter, setStatusFilter] = useState<TStatus | "Vše">("Vše");
+  const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
   const [adding, setAdding] = useState(false);
   const autoGenRan = useRef(false);
@@ -710,9 +711,14 @@ export default function UkolyPage() {
   const nonTemplates = tasks.filter(t => !t.opakovaniSablona);
   const templates = tasks.filter(t => t.opakovaniSablona === true);
 
+  const needle = q.trim().toLowerCase();
   const filtered = nonTemplates.filter(t => {
     if (assigneeFilter !== "Vše" && t.prirazeno !== assigneeFilter) return false;
     if (statusFilter !== "Vše" && t.status !== statusFilter) return false;
+    if (needle) {
+      const hay = `${t.nazev} ${t.projekt} ${t.prirazeno} ${t.popis ?? ""} ${t.priorita}`.toLowerCase();
+      if (!hay.includes(needle)) return false;
+    }
     return true;
   });
 
@@ -817,6 +823,21 @@ export default function UkolyPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
+        <div className="relative">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Hledat úkol… (název, projekt, přiřazený)"
+            className="w-full md:max-w-[360px] pl-9 pr-8 py-2 rounded-[8px] text-[13px] outline-none"
+            style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+          />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[--muted-foreground]" />
+          {q && (
+            <button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[--muted-foreground]" title="Zrušit hledání">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">Člen:</span>
           {ASSIGNEES.map(a => filterChip(a, assigneeFilter === a, () => setAssigneeFilter(a)))}
