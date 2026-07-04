@@ -31,6 +31,31 @@ interface BasePhoto {
   wPx: number;              // šířka v master px — výchozí = W (1 fotka = 1 slide)
   zoom: number; panX: number; panY: number;
   fadeL: number;            // prolnutí zleva (px) — per fotka
+  jas?: number;             // 100 = beze změny (ctx.filter brightness %)
+  kontrast?: number;        // 100 = beze změny
+  sytost?: number;          // 100 = beze změny
+  preset?: FilterPreset;    // filmový look navrch
+}
+
+type FilterPreset = "none" | "bw" | "film" | "warm" | "cool";
+const PRESETS: { value: FilterPreset; label: string; css: string }[] = [
+  { value: "none", label: "žádný", css: "" },
+  { value: "bw", label: "B&W", css: "grayscale(100%) contrast(108%)" },
+  { value: "film", label: "film", css: "contrast(105%) saturate(82%) sepia(14%)" },
+  { value: "warm", label: "teplý", css: "sepia(22%) saturate(118%) brightness(103%)" },
+  { value: "cool", label: "studený", css: "saturate(92%) brightness(101%) hue-rotate(-8deg)" },
+];
+
+/** Poskládá ctx.filter string pro fotku (prázdný = žádný filtr). */
+function photoFilter(p: BasePhoto): string {
+  const parts: string[] = [];
+  const jas = p.jas ?? 100, kon = p.kontrast ?? 100, syt = p.sytost ?? 100;
+  if (jas !== 100) parts.push(`brightness(${jas}%)`);
+  if (kon !== 100) parts.push(`contrast(${kon}%)`);
+  if (syt !== 100) parts.push(`saturate(${syt}%)`);
+  const preset = PRESETS.find((x) => x.value === (p.preset ?? "none"))?.css;
+  if (preset) parts.push(preset);
+  return parts.join(" ");
 }
 interface Overlay {
   id: number; img: HTMLImageElement;
@@ -134,6 +159,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
       const r = rects[i];
       const fadeL = i > 0 ? Math.min(p.fadeL, r.x) : 0;
       const ex = r.x - fadeL, ew = r.w + fadeL;
+      const filt = photoFilter(p);
       if (fadeL > 0) {
         const tmp = document.createElement("canvas");
         tmp.width = Math.ceil(ew); tmp.height = H;
@@ -141,7 +167,9 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         // Obrázek vyplní CELOU šířku (slot + prolínací zóna) jedním cover-fit —
         // prolnutí je tak vždy vyplněné obsahem fotky. Vodorovný posun funguje,
         // dokud je vodorovná vůle (landscape fotka nebo přiblížení kolečkem).
+        if (filt) tctx.filter = filt;
         drawCoverPanned(tctx, p.img, 0, 0, ew, H, p.zoom, p.panX, p.panY, 0);
+        tctx.filter = "none"; // maska nesmí být filtrovaná
         // maska = JEDEN tah přes celou šířku (destination-in maže nezakreslené)
         tctx.globalCompositeOperation = "destination-in";
         const g = tctx.createLinearGradient(0, 0, ew, 0);
@@ -152,7 +180,9 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         tctx.fillRect(0, 0, ew, H);
         ctx.drawImage(tmp, ex, 0);
       } else {
+        if (filt) ctx.filter = filt;
         drawCoverPanned(ctx, p.img, ex, 0, ew, H, p.zoom, p.panX, p.panY, 0);
+        ctx.filter = "none";
       }
     });
   }
@@ -739,6 +769,29 @@ export default function SmmStudioPage() {
             <Trash2 className="w-3 h-3" /> odebrat z pásu
           </button>
           <button onClick={() => setSelPhoto(null)} className="btn-tactile ml-auto text-[--muted-foreground]"><X className="w-3.5 h-3.5" /></button>
+
+          {/* Filtry — druhý řádek panelu */}
+          <div className="w-full flex flex-wrap items-center gap-2 pt-1.5 mt-0.5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <span className="text-[12px] text-[--muted-foreground]">Filtr:</span>
+            {PRESETS.map((pr) => (
+              <Chip key={pr.value} active={(selPhotoObj.preset ?? "none") === pr.value}
+                onClick={() => setPhotos((prev) => prev.map((p) => p.id === selPhoto ? { ...p, preset: pr.value } : p))}>
+                {pr.label}
+              </Chip>
+            ))}
+            {([["jas", "Jas"], ["kontrast", "Kontr."], ["sytost", "Sytost"]] as ["jas" | "kontrast" | "sytost", string][]).map(([key, label]) => (
+              <span key={key} className="flex items-center gap-1.5">
+                <span className="text-[10px] text-[--muted-foreground]">{label}</span>
+                <input type="range" min={50} max={150} value={selPhotoObj[key] ?? 100}
+                  onChange={(e) => setPhotos((prev) => prev.map((p) => p.id === selPhoto ? { ...p, [key]: Number(e.target.value) } : p))}
+                  className="w-[72px]" />
+              </span>
+            ))}
+            {(selPhotoObj.jas ?? 100) === 100 && (selPhotoObj.kontrast ?? 100) === 100 && (selPhotoObj.sytost ?? 100) === 100 && (selPhotoObj.preset ?? "none") === "none" ? null : (
+              <button onClick={() => setPhotos((prev) => prev.map((p) => p.id === selPhoto ? { ...p, jas: 100, kontrast: 100, sytost: 100, preset: "none" } : p))}
+                className="btn-tactile text-[11px] text-[--muted-foreground]">reset filtru</button>
+            )}
+          </div>
         </div>
       )}
 
