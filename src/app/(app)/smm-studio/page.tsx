@@ -28,7 +28,7 @@ const SNAP = 70; // magnet: vzdálenost přichycení v px master plátna (~16px 
 /* ── Typy ────────────────────────────────────────────────────────────── */
 interface BasePhoto {
   id: number; img: HTMLImageElement; name: string;
-  weight: number;
+  wPx: number;              // šířka v master px — výchozí = W (1 fotka = 1 slide)
   zoom: number; panX: number; panY: number;
   fadeL: number;            // prolnutí zleva (px) — per fotka
 }
@@ -93,13 +93,13 @@ function drawCoverPanned(
   ctx.restore();
 }
 
-function baseRects(photos: BasePhoto[], totalW: number): { x: number; w: number }[] {
-  const sum = photos.reduce((a, p) => a + p.weight, 0) || 1;
+// Absolutní layout: každá fotka má pevnou šířku wPx, řadí se zleva doprava.
+// Když je součet < totalW, zbylé slidy zůstanou prázdné (pozadí).
+function baseRects(photos: BasePhoto[]): { x: number; w: number }[] {
   let x = 0;
   return photos.map((p) => {
-    const w = (p.weight / sum) * totalW;
-    const r = { x, w };
-    x += w;
+    const r = { x, w: p.wPx };
+    x += p.wPx;
     return r;
   });
 }
@@ -111,7 +111,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = bg; ctx.fillRect(0, 0, totalW, H);
   if (photos.length) {
-    const rects = baseRects(photos, totalW);
+    const rects = baseRects(photos);
     photos.forEach((p, i) => {
       const r = rects[i];
       const fadeL = i > 0 ? Math.min(p.fadeL, r.x) : 0;
@@ -248,9 +248,10 @@ export default function SmmStudioPage() {
       }
       // dělítka + výběr fotky
       if (photos.length > 0) {
-        const rects = baseRects(photos, totalW);
-        for (let i = 1; i < rects.length; i++) {
-          const x = rects[i].x * scale;
+        const rects = baseRects(photos);
+        // úchyty na hranicích 1..n (poslední = pravý okraj poslední fotky)
+        for (let i = 1; i <= rects.length; i++) {
+          const x = (rects[i - 1].x + rects[i - 1].w) * scale;
           dctx.strokeStyle = "rgba(255,255,255,0.55)"; dctx.lineWidth = 1;
           dctx.setLineDash([3, 5]);
           dctx.beginPath(); dctx.moveTo(x, 0); dctx.lineTo(x, disp.height); dctx.stroke();
@@ -353,7 +354,7 @@ export default function SmmStudioPage() {
     const base = Date.now();
     const additions = loaded.map((l, i) => ({
       id: base + i, img: l.img, name: l.name,
-      weight: l.img.width / l.img.height, zoom: 1, panX: 0, panY: 0, fadeL: 0,
+      wPx: W, zoom: 1, panX: 0, panY: 0, fadeL: 0,
     }));
     setPhotos((prev) => {
       if (insertAt == null) return [...prev, ...additions];
@@ -417,7 +418,7 @@ export default function SmmStudioPage() {
       }
     }
 
-    const rects = baseRects(photos, totalW);
+    const rects = baseRects(photos);
     const sy = H / disp.height, sx = totalW / disp.width;
 
     // úchyt (⠿) — horní pruh každé fotky = přeskládání
@@ -434,9 +435,11 @@ export default function SmmStudioPage() {
       }
     }
 
-    for (let i = 1; i < rects.length; i++) {
-      if (Math.abs(mx - rects[i].x) < tol) {
-        drag.current = { kind: "divider", idx: i, startX: mx, startY: my, moved: false, orig: { weights: photos.map((p) => p.weight) } };
+    // dělítka: hranice 1..n (n = pravý okraj poslední fotky → lze protáhnout na víc slidů)
+    for (let i = 1; i <= rects.length; i++) {
+      const bx = rects[i - 1].x + rects[i - 1].w;
+      if (Math.abs(mx - bx) < tol) {
+        drag.current = { kind: "divider", idx: i, startX: mx, startY: my, moved: false, orig: { weights: photos.map((p) => p.wPx) } };
         (e.target as Element).setPointerCapture(e.pointerId);
         return;
       }
@@ -458,7 +461,7 @@ export default function SmmStudioPage() {
 
     if (d.kind === "reorder") {
       // cílová pozice = kolik fotek má střed nalevo od kurzoru
-      const rects = baseRects(photos, totalW);
+      const rects = baseRects(photos);
       let to = 0;
       for (let i = 0; i < rects.length; i++) if (mx > rects[i].x + rects[i].w / 2) to = i + 1;
       d.to = to;
@@ -466,19 +469,17 @@ export default function SmmStudioPage() {
     } else if (d.kind === "photo") {
       setPhotos((prev) => prev.map((p, i) => i === d.idx ? { ...p, panX: (d.orig.panX ?? 0) + dx, panY: (d.orig.panY ?? 0) + dy } : p));
     } else if (d.kind === "divider") {
-      const weights = d.orig.weights!;
-      const sum = weights.reduce((a, b) => a + b, 0);
-      const rects0 = (() => { let x = 0; return weights.map((w) => { const r = x; x += (w / sum) * totalW; return r; }); })();
-      const origBoundary = rects0[d.idx];
-      // MAGNET: přichyť hranici na řez slidu
+      // hranice idx (1..n) resizuje LEVOU fotku (idx-1); zbytek se posune → fotka
+      // může zabrat víc slidů. MAGNET přichytí hranici přesně na řez slidu.
+      const widths = d.orig.weights!;
+      let origBoundary = 0;
+      for (let i = 0; i < d.idx; i++) origBoundary += widths[i];
       const target = snapToCuts(origBoundary + dx, slides);
-      const deltaW = ((target - origBoundary) / totalW) * sum;
-      const minW = sum * 0.04;
-      setPhotos((prev) => prev.map((p, i) => {
-        if (i === d.idx - 1) return { ...p, weight: Math.max(minW, weights[i] + deltaW) };
-        if (i === d.idx) return { ...p, weight: Math.max(minW, weights[i] - deltaW) };
-        return { ...p, weight: weights[i] };
-      }));
+      const delta = target - origBoundary;
+      const minW = W * 0.15;
+      setPhotos((prev) => prev.map((p, i) =>
+        i === d.idx - 1 ? { ...p, wPx: Math.max(minW, widths[i] + delta) } : { ...p, wPx: widths[i] }
+      ));
     } else if (d.kind === "overlay") {
       // MAGNET: levý i pravý okraj overlaye na řezy
       setOverlays((prev) => prev.map((o, i) => {
@@ -546,7 +547,7 @@ export default function SmmStudioPage() {
         return;
       }
     }
-    const rects = baseRects(photos, totalW);
+    const rects = baseRects(photos);
     const pi = rects.findIndex((rr) => mx >= rr.x && mx <= rr.x + rr.w);
     if (pi >= 0) {
       setPhotos((prev) => prev.map((p, i) => i === pi ? { ...p, zoom: Math.min(3.5, Math.max(1, p.zoom * f)) } : p));
@@ -562,7 +563,7 @@ export default function SmmStudioPage() {
         return;
       }
     }
-    const rects = baseRects(photos, totalW);
+    const rects = baseRects(photos);
     const pi = rects.findIndex((rr) => mx >= rr.x && mx <= rr.x + rr.w);
     if (pi >= 0) setPhotos((prev) => prev.map((p, i) => i === pi ? { ...p, zoom: 1, panX: 0, panY: 0 } : p));
   };
@@ -727,48 +728,66 @@ export default function SmmStudioPage() {
       {/* ── EDITOR ── */}
       {mode === "carousel" ? (
         <>
-          <div
-            ref={wrapRef}
-            className="glass-card p-3 mb-3 overflow-x-auto"
-            onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); } }}
-            onDrop={(e) => {
-              if (e.dataTransfer.files.length) { e.preventDefault(); void addBase(e.dataTransfer.files); }
-              setDragCell(null);
-            }}
-          >
-            {photos.length === 0 ? (
-              <div className="py-2">
-                <p className="text-[12px] text-[--muted-foreground] mb-3 text-center">
-                  {slides} prázdných slidů — <b style={{ color: "var(--foreground)" }}>klikni</b> na políčko a nahraj fotku,
-                  nebo <b style={{ color: "var(--foreground)" }}>přetáhni</b> fotky z počítače/galerie sem.
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {Array.from({ length: slides }).map((_, i) => (
+          {/* KROK 1 — políčka slidů: plň slide po slidu (dokud nejsou všechny plné) */}
+          {photos.length < slides && (
+            <div className="glass-card p-3 mb-3">
+              <p className="text-[12px] text-[--muted-foreground] mb-3">
+                <b style={{ color: "var(--foreground)" }}>Krok 1 — naplň slidy.</b>{" "}
+                Klikni na prázdné políčko a nahraj fotku, nebo přetáhni fotky z počítače/galerie.
+                Můžeš i nahrát všechny naráz tlačítkem nahoře.{" "}
+                <span style={{ color: PRIMARY }}>{photos.length}/{slides} hotovo</span>
+              </p>
+              <div
+                className="flex gap-2 overflow-x-auto pb-1"
+                onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
+                onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); void addBase(e.dataTransfer.files); } setDragCell(null); }}
+              >
+                {Array.from({ length: slides }).map((_, i) => {
+                  const p = photos[i];
+                  return (
                     <button
                       key={i}
-                      onClick={() => { slotIdxRef.current = i; slotFileRef.current?.click(); }}
+                      onClick={() => { if (p) { setSelPhoto(p.id); setSelOverlay(null); } else { slotIdxRef.current = i; slotFileRef.current?.click(); } }}
                       onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragCell(i); } }}
                       onDragLeave={() => setDragCell((c) => (c === i ? null : c))}
                       onDrop={(e) => {
                         e.preventDefault(); e.stopPropagation(); setDragCell(null);
                         if (e.dataTransfer.files.length) void addBase(e.dataTransfer.files, i);
                       }}
-                      className="relative shrink-0 flex flex-col items-center justify-center rounded-[10px] transition-colors"
+                      className="relative shrink-0 flex flex-col items-center justify-center rounded-[10px] overflow-hidden transition-colors"
                       style={{
                         width: "clamp(96px, 20vw, 168px)", aspectRatio: "4 / 5",
-                        border: dragCell === i ? `2px dashed ${PRIMARY}` : "1.5px dashed rgba(255,255,255,0.18)",
+                        border: dragCell === i ? `2px dashed ${PRIMARY}`
+                          : p ? "1.5px solid rgba(255,255,255,0.14)" : "1.5px dashed rgba(255,255,255,0.18)",
                         background: dragCell === i ? "rgba(91,94,255,0.14)" : "rgba(255,255,255,0.02)",
                       }}
                     >
+                      {p ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.img.src} alt={`slide ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <ImagePlus className="w-6 h-6 mb-1 opacity-40" style={{ color: PRIMARY }} />
+                          <span className="text-[11px] text-[--muted-foreground]">nahrát</span>
+                        </>
+                      )}
                       <span className="absolute top-1.5 left-2 text-[11px] font-bold px-1.5 py-0.5 rounded-[5px]"
                         style={{ background: "rgba(13,13,24,0.7)", color: "#fff" }}>{i + 1}</span>
-                      <ImagePlus className="w-6 h-6 mb-1 opacity-40" style={{ color: PRIMARY }} />
-                      <span className="text-[11px] text-[--muted-foreground]">nahrát</span>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            ) : (
+            </div>
+          )}
+
+          {/* KROK 2 — souvislý pás: doladění (jakmile je aspoň 1 fotka) */}
+          {photos.length > 0 && (
+            <div
+              ref={wrapRef}
+              className="glass-card p-3 mb-3 overflow-x-auto"
+              onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
+              onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); void addBase(e.dataTransfer.files); } setDragCell(null); }}
+            >
               <canvas
                 ref={displayRef}
                 className="rounded-[8px] touch-none select-none"
@@ -780,12 +799,13 @@ export default function SmmStudioPage() {
                 onWheel={onWheel}
                 onDoubleClick={onDoubleClick}
               />
-            )}
-          </div>
+            </div>
+          )}
           {photos.length > 0 && (
             <p className="text-[11px] text-[--muted-foreground] mb-4">
+              <b style={{ color: "var(--foreground)" }}>Krok 2 — dolaď pás.</b>{" "}
               Táhni úchyt ⠿ nahoře = přeskládat fotku (i mezi slidy) · klik na fotku = výběr (prolnutí, odebrání) ·
-              táhni tělo = posun · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka fotky (přichytává se na řezy) ·
+              táhni tělo = posun · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka fotky, protáhni na víc slidů (přichytává se na řezy) ·
               fotka ve fotce se okraji přichytává na řezy slidů
             </p>
           )}
