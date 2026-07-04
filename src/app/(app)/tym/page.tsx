@@ -13,7 +13,7 @@ import { TIME_KEY, monthPrefix, fmtHod, type TimeEntry } from "@/lib/vykazy";
 import { StatCard } from "@/components/ui/stat-card";
 
 interface Task { nazev: string; prirazeno: string; status: string; deadline: string }
-interface AuditEntry { ts: string; email: string; key: string }
+interface AuditEntry { ts: string; email: string; key: string; change?: string }
 
 /** Lidsky čitelné názvy datových klíčů pro feed aktivity. */
 const KEY_LABELS: Record<string, string> = {
@@ -223,7 +223,18 @@ export default function TymPage() {
                     </span>
                   )}
                   <span className="text-[12px] font-semibold shrink-0">{person?.displayName ?? a.email}</span>
-                  <span className="text-[12px] text-[--muted-foreground] truncate flex-1">upravil(a) {keyLabel(a.key)}</span>
+                  <span className="text-[12px] text-[--muted-foreground] truncate flex-1">
+                    {keyLabel(a.key)}
+                    {a.change && (
+                      <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-[4px]"
+                        style={{
+                          background: a.change.includes("smazáno") ? "rgba(229,72,77,0.14)" : "rgba(91,94,255,0.14)",
+                          color: a.change.includes("smazáno") ? "oklch(0.65 0.2 25)" : "#5B5EFF",
+                        }}>
+                        {a.change}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-[11px] text-[--muted-foreground] shrink-0">{tsRel(a.ts)}</span>
                 </div>
               );

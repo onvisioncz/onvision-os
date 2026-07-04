@@ -239,10 +239,24 @@ export async function POST(req: NextRequest) {
   // ── Push notifications (fire-and-forget, never blocks the response) ──────
   void triggerPush(supabase, key, value, user.email!, currentValue);
 
-  // ── Audit log (fire-and-forget) — kdo co kdy změnil ─────────────────────
-  void appendAudit(supabase, key, user.email!);
+  // ── Audit log (fire-and-forget) — kdo co kdy změnil + souhrn změny ──────
+  void appendAudit(supabase, key, user.email!, currentValue, value);
 
   return NextResponse.json({ ok: true, token: newTs });
+}
+
+/* ── Souhrn změny pro audit (co přibylo/ubylo/upravilo se) ───────────────── */
+function summarizeChange(oldV: unknown, newV: unknown): string | undefined {
+  const o = Array.isArray(oldV) ? oldV : null;
+  const n = Array.isArray(newV) ? newV : null;
+  if (o && n) {
+    const d = n.length - o.length;
+    if (d > 0) return `+${d} přidáno`;
+    if (d < 0) return `${Math.abs(d)} smazáno`;
+    return "upraveno";
+  }
+  if (oldV == null && newV != null) return "vytvořeno";
+  return "upraveno";
 }
 
 /* ── Audit log ─────────────────────────────────────────────────────────── */
@@ -251,19 +265,22 @@ export async function POST(req: NextRequest) {
 // tak negeneruje 20 záznamů).
 const AUDIT_SKIP = new Set(["ov-audit-log", "ov-inbox-state", "ov-notif-events", "ov-notif-last-seen"]);
 
-interface AuditEntry { ts: string; email: string; key: string }
+interface AuditEntry { ts: string; email: string; key: string; change?: string }
 
 async function appendAudit(
   supabase: Awaited<ReturnType<typeof createClient>>,
   key: string,
-  email: string
+  email: string,
+  oldValue?: unknown,
+  newValue?: unknown
 ) {
   if (AUDIT_SKIP.has(key)) return;
   try {
     const { data } = await supabase
       .from("app_data").select("value").eq("key", "ov-audit-log").maybeSingle();
     const prev: AuditEntry[] = Array.isArray(data?.value) ? (data!.value as AuditEntry[]) : [];
-    const entry: AuditEntry = { ts: new Date().toISOString(), email, key };
+    const change = summarizeChange(oldValue, newValue);
+    const entry: AuditEntry = { ts: new Date().toISOString(), email, key, ...(change ? { change } : {}) };
     const head = prev[0];
     const collapse = head && head.email === email && head.key === key
       && Date.now() - new Date(head.ts).getTime() < 5 * 60_000;
