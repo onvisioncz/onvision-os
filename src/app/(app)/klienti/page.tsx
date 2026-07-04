@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { parseDeadline, daysUntil } from "@/lib/dates";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { ClientAvatar } from "@/components/ui/client-avatar";
@@ -105,11 +106,42 @@ export default function KlientiPage() {
       const totalFakturovano = myInvoices.reduce((s, i) => s + i.castka, 0);
       const totalZaplaceno   = myInvoices.filter(i => i.stav === "Zaplacena").reduce((s, i) => s + i.castka, 0);
       const totalCeka        = myInvoices.filter(i => i.stav === "Čeká na platbu").reduce((s, i) => s + i.castka, 0);
+      // Po splatnosti: nezaplacené s termínem v minulosti — delikvence svítí
+      // červeně. Stejný fallback jako overdue.ts: bez čitelné splatnosti se
+      // bere vystavení + 14 dní (chytí i rozbitá data typu "31.6.").
+      const overdueSum = myInvoices
+        .filter(i => i.stav === "Čeká na platbu")
+        .filter(i => {
+          let d = parseDeadline(i.datumSplatnosti ?? "");
+          if (!d) {
+            const vyst = parseDeadline(i.datumVystaveni ?? "");
+            if (vyst) d = new Date(vyst.getTime() + 14 * 86_400_000);
+          }
+          return d ? daysUntil(d) < 0 : false;
+        })
+        .reduce((s, i) => s + i.castka, 0);
       const pocetFaktur      = myInvoices.length;
       const mrr              = c.pausal + (c.reklama ?? 0);
-      return { ...c, totalFakturovano, totalZaplaceno, totalCeka, pocetFaktur, mrr };
+      return { ...c, totalFakturovano, totalZaplaceno, totalCeka, overdueSum, pocetFaktur, mrr };
     });
   }, [clients, invoices]);
+
+  /* ── Export pro vedení: CSV všech klientů s finančním přehledem ── */
+  const exportCsv = () => {
+    const esc = (v: string | number) => { const s = String(v ?? ""); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const header = ["Klient", "Aktivní", "MRR", "Fakturováno", "Zaplaceno", "Čeká", "Po splatnosti"];
+    const lines = [header.join(";")].concat(
+      [...clientStats]
+        .sort((a, b) => b.mrr - a.mrr)
+        .map(c => [esc(c.name), c.aktivni ? "ano" : "ne", c.mrr, c.totalFakturovano, c.totalZaplaceno, c.totalCeka, c.overdueSum].join(";"))
+    );
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `onvision-klienti-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  };
 
   /* ── Sorted: active first, then by MRR ── */
   const sorted = useMemo(() =>
@@ -158,6 +190,12 @@ export default function KlientiPage() {
             </p>
           </div>
         </div>
+        <button onClick={exportCsv}
+          className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold"
+          style={{ background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.3)", color: "oklch(0.72 0.18 265)" }}
+          title="Stáhne přehled klientů (MRR, fakturováno, čeká, po splatnosti) jako CSV">
+          ↓ Export CSV
+        </button>
       </div>
 
       <div className="px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
@@ -316,10 +354,12 @@ export default function KlientiPage() {
                       {client.pocetFaktur > 0 ? fmt(client.totalFakturovano) : "—"}
                     </span>
 
-                    {/* Čeká */}
+                    {/* Čeká (červeně, když je část po splatnosti) */}
                     <span className="text-[13px] tabular-nums font-semibold"
-                      style={{ color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                      title={client.overdueSum > 0 ? `Po splatnosti: ${fmt(client.overdueSum)}` : undefined}
+                      style={{ color: client.overdueSum > 0 ? "oklch(0.62 0.24 25)" : client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
                       {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
+                      {client.overdueSum > 0 && <span className="block text-[9px] font-bold uppercase tracking-wide">po splatnosti</span>}
                     </span>
 
                     {/* Arrow */}
@@ -422,8 +462,10 @@ export default function KlientiPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.38 0.005 222)" }}>Čeká</p>
-                        <p className="text-[13px] font-semibold tabular-nums" style={{ fontFamily: "var(--font-outfit)", color: client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "oklch(0.38 0.005 222)" }}>
+                          {client.overdueSum > 0 ? "Po splatnosti" : "Čeká"}
+                        </p>
+                        <p className="text-[13px] font-semibold tabular-nums" style={{ fontFamily: "var(--font-outfit)", color: client.overdueSum > 0 ? "oklch(0.62 0.24 25)" : client.totalCeka > 0 ? "oklch(0.75 0.19 48)" : "oklch(0.40 0.005 222)" }}>
                           {client.totalCeka > 0 ? fmt(client.totalCeka) : "—"}
                         </p>
                       </div>
