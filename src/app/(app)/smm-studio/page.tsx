@@ -120,7 +120,14 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         const tmp = document.createElement("canvas");
         tmp.width = Math.ceil(ew); tmp.height = H;
         const tctx = tmp.getContext("2d")!;
-        drawCoverPanned(tctx, p.img, 0, 0, ew, H, p.zoom, p.panX, p.panY);
+        // Ořez i posun počítáme z ŠÍŘKY SLIDU (r.w) — stejná vůle na posun jako
+        // bez prolnutí. Obrázek nakreslíme posunutý o fadeL doprava; jeho vodorovný
+        // přesah přirozeně vyplní levou prolínací zónu.
+        const s = Math.max(r.w / p.img.width, H / p.img.height) * Math.max(1, p.zoom);
+        const dw = p.img.width * s, dh = p.img.height * s;
+        const ox = Math.min(0, Math.max(r.w - dw, (r.w - dw) / 2 + p.panX));
+        const oy = Math.min(0, Math.max(H - dh, (H - dh) / 2 + p.panY));
+        tctx.drawImage(p.img, fadeL + ox, oy, dw, dh);
         // maska = JEDEN tah přes celou šířku (destination-in maže nezakreslené)
         tctx.globalCompositeOperation = "destination-in";
         const g = tctx.createLinearGradient(0, 0, ew, 0);
