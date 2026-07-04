@@ -242,7 +242,72 @@ export async function POST(req: NextRequest) {
   // ── Audit log (fire-and-forget) — kdo co kdy změnil + souhrn změny ──────
   void appendAudit(supabase, key, user.email!, currentValue, value);
 
+  // ── Koš (fire-and-forget) — zachyť smazané položky pro 30denní obnovu ───
+  void captureDeletions(supabase, key, currentValue, value, user.email!);
+
   return NextResponse.json({ ok: true, token: newTs });
+}
+
+/* ── Koš: automatické zachycení smazání ─────────────────────────────────── */
+// Klíče, kde smazání položky znamená ztrátu byznys dat (chceme obnovitelnost).
+const TRASH_KEYS = new Set([
+  "ov-ukoly-tasks", "ov-issued-invoices", "ov-finance-faktury",
+  "ov-monthly-clients", "ov-oneoffs-projects", "ov-outputs",
+  "ov-output-messages", "ov-calendar-events", "ov-pipeline-deals",
+  "ov-gear-reservations", "ov-shooting-plan", "ov-schvaleni-items",
+]);
+const TRASH_TTL_DAYS = 30;
+const TRASH_MAX = 500;
+
+interface TrashEntry {
+  id: string; srcKey: string; item: unknown; label: string;
+  deletedAt: string; deletedBy: string;
+}
+type IdItem = { id?: unknown; cislo?: unknown };
+function itemKey(x: IdItem): unknown {
+  return x?.id ?? x?.cislo ?? null;
+}
+function itemLabel(x: Record<string, unknown>): string {
+  const cand = x?.nazev ?? x?.title ?? x?.klient ?? x?.klientNazev ?? x?.name ?? x?.cislo ?? x?.popis;
+  return String(cand ?? "položka");
+}
+
+async function captureDeletions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  srcKey: string,
+  oldValue: unknown,
+  newValue: unknown,
+  email: string
+) {
+  if (!TRASH_KEYS.has(srcKey)) return;
+  if (!Array.isArray(oldValue) || !Array.isArray(newValue)) return;
+  const newKeys = new Set((newValue as IdItem[]).map(itemKey).filter((k) => k != null));
+  const removed = (oldValue as IdItem[]).filter((x) => {
+    const k = itemKey(x);
+    return k != null && !newKeys.has(k);
+  });
+  if (removed.length === 0) return;
+  try {
+    const { data } = await supabase
+      .from("app_data").select("value").eq("key", "ov-trash").maybeSingle();
+    const prev: TrashEntry[] = Array.isArray(data?.value) ? (data!.value as TrashEntry[]) : [];
+    const cutoff = Date.now() - TRASH_TTL_DAYS * 86_400_000;
+    const fresh = prev.filter((e) => Date.parse(e.deletedAt) > cutoff);
+    const now = Date.now();
+    const additions: TrashEntry[] = removed.map((item, i) => ({
+      id: `tr-${now}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+      srcKey,
+      item,
+      label: itemLabel(item as Record<string, unknown>).slice(0, 80),
+      deletedAt: new Date().toISOString(),
+      deletedBy: email,
+    }));
+    const next = [...additions, ...fresh].slice(0, TRASH_MAX);
+    await supabase.from("app_data").upsert(
+      { key: "ov-trash", value: next, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
+  } catch { /* koš nikdy nesmí rozbít zápis */ }
 }
 
 /* ── Souhrn změny pro audit (co přibylo/ubylo/upravilo se) ───────────────── */
@@ -263,7 +328,7 @@ function summarizeChange(oldV: unknown, newV: unknown): string | undefined {
 // Posledních 300 zápisů: { ts, email, key }. Po sobě jdoucí zápisy stejného
 // člověka do stejného klíče v 5min okně se slučují (odškrtávání checklistu
 // tak negeneruje 20 záznamů).
-const AUDIT_SKIP = new Set(["ov-audit-log", "ov-inbox-state", "ov-notif-events", "ov-notif-last-seen"]);
+const AUDIT_SKIP = new Set(["ov-audit-log", "ov-inbox-state", "ov-notif-events", "ov-notif-last-seen", "ov-trash"]);
 
 interface AuditEntry { ts: string; email: string; key: string; change?: string }
 

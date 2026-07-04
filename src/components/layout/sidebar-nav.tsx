@@ -8,7 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
-  LayoutGrid, X, Sun,
+  LayoutGrid, X, Sun, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -30,6 +30,7 @@ const STANDALONE_TOP = [
   { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
   { label: "Úkoly",     short: "Úkoly",    href: "/ukoly",      icon: CheckSquare },
   { label: "Tým",       short: "Tým",      href: "/tym",        icon: Users },
+  { label: "Koš",       short: "Koš",      href: "/kos",        icon: Trash2 },
 ];
 
 const GROUPS = [
