@@ -15,6 +15,7 @@ import {
   fmtDate, DODAVATELE,
   type InvoiceClient, type InvoiceData, type DodavatelKlic,
 } from "@/lib/invoice";
+import { validateIco, validateDic } from "@/lib/validators";
 import QRCode from "qrcode";
 
 /* ── Dynamic import — entire PDF stack is client-only ────────────────────── */
@@ -262,6 +263,18 @@ function FInput({ value, onChange, placeholder }: {
       placeholder={placeholder} className={iCls} style={iSty}
       onFocus={e => (e.target.style.borderColor = "oklch(0.62 0.27 265 / 0.5)")}
       onBlur={e => (e.target.style.borderColor = "oklch(1 0 0 / 0.09)")} />
+  );
+}
+
+/** Malý indikátor validace pod polem (IČO/DIČ). Prázdné pole = bez hlášky. */
+function ValidHint({ value, kind }: { value: string; kind: "ico" | "dic" }) {
+  if (!value.trim()) return null;
+  const res = kind === "ico" ? validateIco(value) : validateDic(value);
+  return (
+    <p className="text-[10px] mt-0.5 flex items-center gap-1"
+      style={{ color: res.valid ? "oklch(0.7 0.17 155)" : "oklch(0.65 0.2 25)" }}>
+      {res.valid ? "✓ platné" : `✗ ${res.msg ?? "neplatné"}`}
+    </p>
   );
 }
 
@@ -639,9 +652,11 @@ function IssueModal({
               </div>
               <Field label="IČ">
                 <FInput value={ico} onChange={v => { setIco(v); setPdfReady(false); }} placeholder="46967079" />
+                <ValidHint value={ico} kind="ico" />
               </Field>
               <Field label="DIČ (volitelné)">
                 <FInput value={dic} onChange={v => { setDic(v); setPdfReady(false); }} placeholder="CZ46967079" />
+                <ValidHint value={dic} kind="dic" />
               </Field>
               <Field label="Ulice">
                 <FInput value={ulice} onChange={v => { setUlice(v); setPdfReady(false); }} placeholder="Technická 818/4" />
@@ -923,7 +938,7 @@ function OneTimeSection({ onDownloaded }: { onDownloaded: (invoice: IssuedInvoic
               </p>
             )}
           </Field>
-          <Field label="DIČ (volitelné)"><FInput value={dic} onChange={setDic} placeholder="CZ12345678" /></Field>
+          <Field label="DIČ (volitelné)"><FInput value={dic} onChange={setDic} placeholder="CZ12345678" /><ValidHint value={dic} kind="dic" /></Field>
           <Field label="Ulice"><FInput value={ulice} onChange={setUlice} placeholder="Ulice 1/2" /></Field>
           <Field label="PSČ Město">
             <div className="flex gap-2">
