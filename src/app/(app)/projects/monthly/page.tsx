@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { ClientAvatar } from "@/components/ui/client-avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -625,7 +625,8 @@ function CatBadge({
   done: number;
   total: number;
 }) {
-  const m = CAT_META[cat];
+  // Neznámá kategorie (překlep v datech, import…) nesmí shodit celou stránku.
+  const m = CAT_META[cat] ?? CAT_META["jiné"];
   return (
     <span
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[5px] text-[10px] font-semibold whitespace-nowrap"
@@ -1461,8 +1462,31 @@ export default function MonthlyPage() {
   const [catFilter, setCatFilter] = useState<DeliverableCategory | "vše">("vše");
   const [editClient, setEditClient] = useState<RetainerClient | null | "new">(null);
 
-  // suppress lint — tasks is used only in setTasks writes
-  void tasks;
+  /* ── Sync úkol → deliverable ──────────────────────────────────────────────
+   * Když někdo dokončí propojený úkol v /ukoly (status "Hotovo"), označ i
+   * deliverable jako hotový. Opačný směr řeší handleToggle. Zapisuje se jen
+   * při skutečné změně, takže nehrozí smyčka.
+   */
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) return;
+    const doneTaskIds = new Set(tasks.filter((t) => t.status === "Hotovo").map((t) => t.id));
+    if (doneTaskIds.size === 0) return;
+    setClients((prev) => {
+      let changed = false;
+      const next = prev.map((c) => {
+        if (!c.deliverables.some((d) => !d.done && d.linkedTaskId && doneTaskIds.has(d.linkedTaskId))) return c;
+        changed = true;
+        return {
+          ...c,
+          deliverables: c.deliverables.map((d) =>
+            !d.done && d.linkedTaskId && doneTaskIds.has(d.linkedTaskId) ? { ...d, done: true } : d
+          ),
+        };
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
 
   /* ── Derived ── */
   const activeClients = useMemo(
@@ -1477,6 +1501,9 @@ export default function MonthlyPage() {
 
   /* ── Handlers ── */
   const handleToggle = useCallback((clientId: number, delivId: number) => {
+    // Sync deliverable → úkol: odškrtnutí zavře i propojený úkol,
+    // vrácení zpět ho vrátí do "Probíhá" (ať neleží hotový na dashboardu).
+    const deliv = clients.find((c) => c.id === clientId)?.deliverables.find((d) => d.id === delivId);
     setClients((prev) =>
       prev.map((c) =>
         c.id !== clientId
@@ -1489,7 +1516,15 @@ export default function MonthlyPage() {
             }
       )
     );
-  }, []);
+    if (deliv?.linkedTaskId !== undefined) {
+      const linkedId = deliv.linkedTaskId;
+      const targetStatus = !deliv.done ? "Hotovo" : "Probíhá";
+      setTasks((prev) =>
+        prev.map((t) => (t.id === linkedId && t.status !== targetStatus ? { ...t, status: targetStatus as Task["status"] } : t))
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
 
   const handleAddDeliverable = useCallback(
     (clientId: number, text: string, cat: DeliverableCategory, deadline?: string, prirazeno?: string) => {
