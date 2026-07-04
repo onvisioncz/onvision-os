@@ -139,13 +139,22 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
     });
   }
   overlays.forEach((o) => {
-    ctx.save();
-    if (o.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8; }
-    // podklad (kvůli stínu a rámečku)
-    ctx.fillStyle = o.border ? "#FFFFFF" : "rgba(0,0,0,0.001)";
-    ctx.fillRect(o.x, o.y, o.w, o.h);
-    ctx.restore();
     const b = o.border ? Math.max(6, Math.min(o.w, o.h) * 0.03) : 0;
+    // Stín: vrhne NEPRŮHLEDNÝ obdélník (canvas stín má sílu podle krytí zdroje —
+    // proto musí být plný). Fotka ho pak celý překryje, viditelný zůstane jen
+    // rozmazaný okraj kolem. U rámečku je podklad bílý.
+    if (o.shadow) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 45;
+      ctx.shadowOffsetY = 14;
+      ctx.fillStyle = o.border ? "#FFFFFF" : "#0B0B14";
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+      ctx.restore();
+    } else if (o.border) {
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    }
     drawCoverPanned(ctx, o.img, o.x + b, o.y + b, o.w - 2 * b, o.h - 2 * b, o.iZoom, o.iPanX, o.iPanY);
   });
 }
