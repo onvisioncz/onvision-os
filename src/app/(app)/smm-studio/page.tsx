@@ -98,11 +98,12 @@ function downloadCanvasAsync(canvas: HTMLCanvasElement, name: string): Promise<v
 function drawCoverPanned(
   ctx: CanvasRenderingContext2D, img: HTMLImageElement,
   x: number, y: number, w: number, h: number,
-  zoom: number, panX: number, panY: number
+  zoom: number, panX: number, panY: number,
+  anchorX = 0.5   // 0 = ukotveno vlevo (zúžení ořízne zprava), 0.5 = na střed
 ) {
   const s = Math.max(w / img.width, h / img.height) * Math.max(1, zoom);
   const dw = img.width * s, dh = img.height * s;
-  const ox = Math.min(0, Math.max(w - dw, (w - dw) / 2 + panX));
+  const ox = Math.min(0, Math.max(w - dw, (w - dw) * anchorX + panX));
   const oy = Math.min(0, Math.max(h - dh, (h - dh) / 2 + panY));
   ctx.save();
   ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
@@ -140,7 +141,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         // Obrázek vyplní CELOU šířku (slot + prolínací zóna) jedním cover-fit —
         // prolnutí je tak vždy vyplněné obsahem fotky. Vodorovný posun funguje,
         // dokud je vodorovná vůle (landscape fotka nebo přiblížení kolečkem).
-        drawCoverPanned(tctx, p.img, 0, 0, ew, H, p.zoom, p.panX, p.panY);
+        drawCoverPanned(tctx, p.img, 0, 0, ew, H, p.zoom, p.panX, p.panY, 0);
         // maska = JEDEN tah přes celou šířku (destination-in maže nezakreslené)
         tctx.globalCompositeOperation = "destination-in";
         const g = tctx.createLinearGradient(0, 0, ew, 0);
@@ -151,7 +152,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         tctx.fillRect(0, 0, ew, H);
         ctx.drawImage(tmp, ex, 0);
       } else {
-        drawCoverPanned(ctx, p.img, ex, 0, ew, H, p.zoom, p.panX, p.panY);
+        drawCoverPanned(ctx, p.img, ex, 0, ew, H, p.zoom, p.panX, p.panY, 0);
       }
     });
   }
@@ -845,7 +846,7 @@ export default function SmmStudioPage() {
             <p className="text-[11px] text-[--muted-foreground] mb-4">
               <b style={{ color: "var(--foreground)" }}>Krok 2 — dolaď pás.</b>{" "}
               Táhni úchyt ⠿ nahoře = přeskládat fotku (i mezi slidy) · klik na fotku = výběr (prolnutí, odebrání) ·
-              táhni tělo = posun · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka fotky, protáhni na víc slidů (přichytává se na řezy) ·
+              táhni tělo = posun · kolečko = zoom · dvojklik = reset · táhni bílý úchyt = šířka/ořez fotky (ořízne od kraje, sousedy posune, přichytává se na řezy) ·
               fotka ve fotce se okraji přichytává na řezy slidů
             </p>
           )}
