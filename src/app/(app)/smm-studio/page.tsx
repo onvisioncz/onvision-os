@@ -78,6 +78,23 @@ function downloadCanvas(canvas: HTMLCanvasElement, name: string) {
   }, "image/png");
 }
 
+// Awaitable stažení — počká na blob a nechá prohlížeči čas mezi soubory,
+// jinak sériové stahování spustí jen poslední soubor.
+function downloadCanvasAsync(canvas: HTMLCanvasElement, name: string): Promise<void> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) { resolve(); return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => { URL.revokeObjectURL(a.href); resolve(); }, 350);
+    }, "image/png");
+  });
+}
+
 function drawCoverPanned(
   ctx: CanvasRenderingContext2D, img: HTMLImageElement,
   x: number, y: number, w: number, h: number,
@@ -581,22 +598,32 @@ export default function SmmStudioPage() {
   };
 
   /* ── Export ── */
-  const exportAll = () => {
-    if (mode === "grid") {
-      const c = document.createElement("canvas");
-      drawGrid(c, layout, gridCells, gap, bg);
-      downloadCanvas(c, "grid-1080x1350.png");
-      return;
-    }
-    const master = document.createElement("canvas");
-    drawMaster(master, photos, overlays, slides, bg);
-    const slice = document.createElement("canvas");
-    slice.width = W; slice.height = H;
-    const sctx = slice.getContext("2d")!;
-    for (let s = 0; s < slides; s++) {
-      sctx.fillStyle = bg; sctx.fillRect(0, 0, W, H);
-      sctx.drawImage(master, s * W, 0, W, H, 0, 0, W, H);
-      downloadCanvas(slice, `carousel-slide-${String(s + 1).padStart(2, "0")}.png`);
+  const [exporting, setExporting] = useState(false);
+  const exportAll = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      if (mode === "grid") {
+        const c = document.createElement("canvas");
+        drawGrid(c, layout, gridCells, gap, bg);
+        await downloadCanvasAsync(c, "grid-1080x1350.png");
+        return;
+      }
+      const master = document.createElement("canvas");
+      drawMaster(master, photos, overlays, slides, bg);
+      // 1) celý pás = náhled pro klienta (vše, co je v editoru)
+      await downloadCanvasAsync(master, `carousel-nahled-${slides}-slidu.png`);
+      // 2) každý slide zvlášť (čerstvé plátno pro každý — jinak toBlob přepíše)
+      for (let s = 0; s < slides; s++) {
+        const slice = document.createElement("canvas");
+        slice.width = W; slice.height = H;
+        const sctx = slice.getContext("2d")!;
+        sctx.fillStyle = bg; sctx.fillRect(0, 0, W, H);
+        sctx.drawImage(master, s * W, 0, W, H, 0, 0, W, H);
+        await downloadCanvasAsync(slice, `carousel-slide-${String(s + 1).padStart(2, "0")}.png`);
+      }
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -671,10 +698,11 @@ export default function SmmStudioPage() {
             <Layers className="w-4 h-4" /> + Fotka ve fotce
           </button>
         )}
-        <button onClick={exportAll} disabled={!canExport}
+        <button onClick={exportAll} disabled={!canExport || exporting}
+          title={mode === "grid" ? "Stáhne 1 PNG" : `Stáhne náhled pro klienta + ${slides} slidů zvlášť`}
           className="btn-tactile flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-[13px] font-semibold disabled:opacity-40"
           style={{ background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.35)", color: PRIMARY }}>
-          <Download className="w-4 h-4" /> {mode === "grid" ? "Stáhnout PNG" : `Stáhnout ${slides} slidů`}
+          <Download className="w-4 h-4" /> {exporting ? "Stahuji…" : mode === "grid" ? "Stáhnout PNG" : `Stáhnout náhled + ${slides} slidů`}
         </button>
         {mode === "carousel" && photos.length > 0 && (
           <button onClick={() => { setPhotos([]); setOverlays([]); setSelOverlay(null); setSelPhoto(null); }}
