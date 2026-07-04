@@ -105,10 +105,17 @@ export interface InvoiceData {
 }
 
 /* ── Build Czech SPD QR payment string ──────────────────────────────────── */
+// Pozn.: '*' je oddělovač polí SPD — v hodnotách být nesmí, jinak se QR platba
+// rozbije. MSG spec doporučuje max 60 znaků, VS jen číslice (max 10).
 export function buildSpdString(dodavatel: Dodavatel, castka: number, vs: string, msg: string): string {
-  const iban = dodavatel.iban.replace(/\s/g, "");
-  const amount = castka.toFixed(2);
-  return `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*MSG:${msg}*X-VS:${vs}`;
+  const iban = (dodavatel.iban ?? "").replace(/\s/g, "").toUpperCase();
+  const amount = (Number.isFinite(castka) ? Math.max(0, castka) : 0).toFixed(2);
+  const cleanVs = (vs ?? "").replace(/\D/g, "").slice(0, 10);
+  const cleanMsg = (msg ?? "").replace(/\*/g, " ").trim().slice(0, 60);
+  let s = `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK`;
+  if (cleanMsg) s += `*MSG:${cleanMsg}`;
+  if (cleanVs) s += `*X-VS:${cleanVs}`;
+  return s;
 }
 
 /* ── Invoice number: YY + clientCode(2) + month(5-zero-padded) ─────────── */
