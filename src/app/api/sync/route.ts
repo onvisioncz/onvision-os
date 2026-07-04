@@ -95,6 +95,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-smm-hashtag-sets":    ["admin", "smm"],
   "ov-smm-pillars":         ["admin", "smm"],
   "ov-shooting-plan":       ["admin", "produkce"],
+  "ov-shoot-checklists":    ["admin", "produkce", "pm"],
   "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
   "ov-output-messages":    ["admin", "produkce", "grafik", "smm", "pm", "fakturace"],
   "ov-calendar-events":     ["admin", "pm", "smm"],
@@ -255,6 +256,7 @@ const TRASH_KEYS = new Set([
   "ov-monthly-clients", "ov-oneoffs-projects", "ov-outputs",
   "ov-output-messages", "ov-calendar-events", "ov-pipeline-deals",
   "ov-gear-reservations", "ov-shooting-plan", "ov-schvaleni-items",
+  "ov-shoot-checklists",
 ]);
 const TRASH_TTL_DAYS = 30;
 const TRASH_MAX = 500;

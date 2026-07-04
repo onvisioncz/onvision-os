@@ -81,6 +81,7 @@ const GROUPS = [
     items: [
       { label: "Reklamy",         short: "Reklamy",  href: "/ads",      icon: Megaphone },
       { label: "Produkční plán",  short: "Produkce", href: "/shooting", icon: Film },
+      { label: "Checklist",       short: "Checklist", href: "/checklist", icon: ClipboardCheck },
       { label: "Call sheety",     short: "Call sh.", href: "/call-sheet", icon: ClipboardList },
       { label: "Technika",        short: "Technika", href: "/technika", icon: Camera },
       { label: "Lokace",          short: "Lokace",   href: "/lokace", icon: MapPin },
