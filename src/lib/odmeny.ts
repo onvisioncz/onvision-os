@@ -7,6 +7,7 @@
  */
 
 import { brandedEmailHtml, accentChip, billingBox } from "@/lib/email/template";
+import { fmtKc } from "./format";
 
 export const ODMENY_KEY = "ov-odmeny";
 
@@ -82,14 +83,8 @@ export function celkemZaMesic(lidi: OdmenaPerson[], key: string): number {
     .reduce((s, p) => s + castkaZaMesic(p, key), 0);
 }
 
-/* ── Formátování ────────────────────────────────────────────────────────── */
-export function fmtKc(n: number): string {
-  return new Intl.NumberFormat("cs-CZ", {
-    style: "currency",
-    currency: "CZK",
-    maximumFractionDigits: 0,
-  }).format(n || 0);
-}
+/* ── Formátování (jeden zdroj pravdy v lib/format) ──────────────────────── */
+export { fmtKc };
 
 /* ── Texty e-mailů ──────────────────────────────────────────────────────── */
 /** Fakturační údaje OnVision pro výzvu k fakturaci. */

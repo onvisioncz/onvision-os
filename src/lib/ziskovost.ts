@@ -27,9 +27,7 @@ export interface InvoiceLite {
   stav: string; // "Zaplacena" | "Čeká na platbu"
 }
 
-export function fmtKc(n: number): string {
-  return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 }).format(n || 0);
-}
+export { fmtKc } from "./format";
 
 /** Efektivní rok faktury: rokSluzby, jinak rok z data vystavení. */
 export function invoiceYear(inv: InvoiceLite): number {

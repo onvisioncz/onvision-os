@@ -455,6 +455,16 @@ function PrehledTab({
 
   return (
     <div className="space-y-4">
+      {/* Export pro účetní */}
+      <div className="flex justify-end">
+        <a href="/api/finance/export-csv"
+          className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold"
+          style={{ background: "rgba(91,94,255,0.12)", border: "1px solid rgba(91,94,255,0.35)", color: "#5B5EFF" }}
+          title="Stáhne všechny faktury (oba sklady sloučené) jako CSV pro účetní">
+          ↓ Export faktur (CSV)
+        </a>
+      </div>
+
       {/* YTD stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Příjmy YTD"   value={fKcShort(totalPrijem)} color="oklch(0.67 0.155 155)" sub={`${closed} uzavřených měsíců`} />
