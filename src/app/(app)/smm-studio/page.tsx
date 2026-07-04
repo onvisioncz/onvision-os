@@ -204,6 +204,10 @@ export default function SmmStudioPage() {
 
   // přeskládání fotek tažením: { from, to } — to = kam se vloží (0..N)
   const [reorder, setReorder] = useState<{ from: number; to: number } | null>(null);
+  // nahrávání do konkrétního slotu (prázdná políčka)
+  const [dragCell, setDragCell] = useState<number | null>(null);
+  const slotFileRef = useRef<HTMLInputElement>(null);
+  const slotIdxRef = useRef<number | null>(null);
 
   const totalW = W * slides;
 
@@ -330,7 +334,7 @@ export default function SmmStudioPage() {
   }, [renderAll]);
 
   /* ── Nahrávání ── */
-  const addBase = async (files: FileList | null) => {
+  const addBase = async (files: FileList | null, insertAt?: number) => {
     if (!files?.length) return;
     const loaded = await loadFiles(files);
     if (mode === "grid") {
@@ -346,13 +350,17 @@ export default function SmmStudioPage() {
       }
       return;
     }
-    setPhotos((prev) => [
-      ...prev,
-      ...loaded.map((l, i) => ({
-        id: Date.now() + i, img: l.img, name: l.name,
-        weight: l.img.width / l.img.height, zoom: 1, panX: 0, panY: 0, fadeL: 0,
-      })),
-    ]);
+    const base = Date.now();
+    const additions = loaded.map((l, i) => ({
+      id: base + i, img: l.img, name: l.name,
+      weight: l.img.width / l.img.height, zoom: 1, panX: 0, panY: 0, fadeL: 0,
+    }));
+    setPhotos((prev) => {
+      if (insertAt == null) return [...prev, ...additions];
+      const next = [...prev];
+      next.splice(Math.max(0, Math.min(insertAt, next.length)), 0, ...additions);
+      return next;
+    });
   };
 
   const addOverlay = async (files: FileList | null) => {
@@ -664,6 +672,7 @@ export default function SmmStudioPage() {
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void addBase(e.target.files); e.target.value = ""; }} />
         <input ref={overlayFileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void addOverlay(e.target.files); e.target.value = ""; }} />
         <input ref={cellFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void addBase(e.target.files); e.target.value = ""; }} />
+        <input ref={slotFileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void addBase(e.target.files, slotIdxRef.current ?? undefined); slotIdxRef.current = null; e.target.value = ""; }} />
       </div>
 
       {/* Kontextový panel vybrané FOTKY (per-fotka prolnutí) */}
@@ -718,11 +727,46 @@ export default function SmmStudioPage() {
       {/* ── EDITOR ── */}
       {mode === "carousel" ? (
         <>
-          <div ref={wrapRef} className="glass-card p-3 mb-3 overflow-x-auto">
+          <div
+            ref={wrapRef}
+            className="glass-card p-3 mb-3 overflow-x-auto"
+            onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); } }}
+            onDrop={(e) => {
+              if (e.dataTransfer.files.length) { e.preventDefault(); void addBase(e.dataTransfer.files); }
+              setDragCell(null);
+            }}
+          >
             {photos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-14 text-center">
-                <ImagePlus className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-[13px] text-[--muted-foreground]">Nahraj fotky do pásu — vykreslí se souvislá koláž s vyznačenými řezy slidů.</p>
+              <div className="py-2">
+                <p className="text-[12px] text-[--muted-foreground] mb-3 text-center">
+                  {slides} prázdných slidů — <b style={{ color: "var(--foreground)" }}>klikni</b> na políčko a nahraj fotku,
+                  nebo <b style={{ color: "var(--foreground)" }}>přetáhni</b> fotky z počítače/galerie sem.
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {Array.from({ length: slides }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { slotIdxRef.current = i; slotFileRef.current?.click(); }}
+                      onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragCell(i); } }}
+                      onDragLeave={() => setDragCell((c) => (c === i ? null : c))}
+                      onDrop={(e) => {
+                        e.preventDefault(); e.stopPropagation(); setDragCell(null);
+                        if (e.dataTransfer.files.length) void addBase(e.dataTransfer.files, i);
+                      }}
+                      className="relative shrink-0 flex flex-col items-center justify-center rounded-[10px] transition-colors"
+                      style={{
+                        width: "clamp(96px, 20vw, 168px)", aspectRatio: "4 / 5",
+                        border: dragCell === i ? `2px dashed ${PRIMARY}` : "1.5px dashed rgba(255,255,255,0.18)",
+                        background: dragCell === i ? "rgba(91,94,255,0.14)" : "rgba(255,255,255,0.02)",
+                      }}
+                    >
+                      <span className="absolute top-1.5 left-2 text-[11px] font-bold px-1.5 py-0.5 rounded-[5px]"
+                        style={{ background: "rgba(13,13,24,0.7)", color: "#fff" }}>{i + 1}</span>
+                      <ImagePlus className="w-6 h-6 mb-1 opacity-40" style={{ color: PRIMARY }} />
+                      <span className="text-[11px] text-[--muted-foreground]">nahrát</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <canvas
