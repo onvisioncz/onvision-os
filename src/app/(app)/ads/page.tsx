@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1055,9 +1055,9 @@ export default function AdsPage() {
               <tbody>
                 <AnimatePresence mode="popLayout">
                   {grouped.map(group => (
-                    <>
+                    <Fragment key={group.mesic}>
                       {/* Month header row */}
-                      <tr key={`header-${group.mesic}`}>
+                      <tr>
                         <td colSpan={12} className="px-4 pt-4 pb-1.5">
                           <div className="flex items-center gap-2.5">
                             <span
@@ -1083,7 +1083,7 @@ export default function AdsPage() {
                           onToggleDone={toggleDone}
                         />
                       ))}
-                    </>
+                    </Fragment>
                   ))}
                 </AnimatePresence>
                 {filtered.length === 0 && (
