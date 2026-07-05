@@ -6,9 +6,13 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DEFAULT_USERS } from "@/lib/roles";
 import {
-  isoWeekKey, weekRange, outlookStatus, submitKey, POST_TYPY, OUTLOOK_AUTHORS,
+  isoWeekKey, weekRange, outlookStatus, submitKey, POST_TYPY, OUTLOOK_AUTHORS, MONTHLY_CLIENTS,
   type OutlookEntry, type OutlookSubmits, type PostTyp,
 } from "@/lib/weekly-outlook";
+
+interface Task { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
+/** Členové týmu pro přiřazení (kdo tvoří copy / vizuál). */
+const TEAM = DEFAULT_USERS.filter((u) => u.aktivni).map((u) => u.displayName);
 
 const iCls = "px-2.5 py-1.5 rounded-[7px] text-[13px] outline-none";
 const iStyle = { background: "oklch(1 0 0 / 0.04)", border: "1px solid oklch(1 0 0 / 0.1)", color: "var(--foreground)" } as const;
@@ -17,7 +21,6 @@ const AMBER = "oklch(0.78 0.165 75)";
 const PRIMARY = "oklch(0.62 0.27 265)";
 
 const nameOf = (email: string) => DEFAULT_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase())?.displayName ?? email;
-const clientsOf = (email: string) => DEFAULT_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase())?.clients ?? [];
 
 function fmtRange(weekKey: string): string {
   const r = weekRange(weekKey);
@@ -30,7 +33,7 @@ export default function TydenniVyhledPage() {
   const { user, email, loading } = useUserRole();
   const [entries, setEntries] = useSupabaseData<OutlookEntry[]>("ov-weekly-outlook", () => []);
   const [submits, setSubmits] = useSupabaseData<OutlookSubmits>("ov-weekly-outlook-submits", () => ({}));
-  const [allClients] = useSupabaseData<{ name: string; aktivni?: boolean }[]>("ov-monthly-clients", () => []);
+  const [, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
 
   // Výchozí = příští týden (výhled se plánuje dopředu). Offset 0 = tento, 1 = příští.
   const [offset, setOffset] = useState(1);
@@ -53,28 +56,44 @@ export default function TydenniVyhledPage() {
   const canEdit = (autorEmail: string) => isAdmin || autorEmail.toLowerCase() === (email ?? "").toLowerCase();
 
   const addRow = (autorEmail: string) => {
-    const cs = clientsOf(autorEmail);
     setEntries((prev) => [...prev, {
       id: Date.now() + Math.floor(performance.now()),
       weekKey, autorEmail, autorName: nameOf(autorEmail),
-      klient: cs[0] ?? "", typ: "reels" as PostTyp, popis: "", createdAt: new Date().toISOString(),
+      klient: MONTHLY_CLIENTS[0], datum: "", typ: "VIDEO" as PostTyp, popis: "",
+      copywriter: "", vizual: "", createdAt: new Date().toISOString(),
     }]);
   };
   const patchRow = (id: number, patch: Partial<OutlookEntry>) =>
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   const removeRow = (id: number) => setEntries((prev) => prev.filter((e) => e.id !== id));
-  const submit = (autorEmail: string) =>
+
+  // Odeslání = označí hotovo A propíše přiřazené role do Úkolů (copy + vizuál).
+  // Sync API pak automaticky pošle oznámení/push tomu, komu je úkol přiřazen.
+  const submit = (autorEmail: string) => {
+    const mine = entries.filter((e) => e.weekKey === weekKey && e.autorEmail.toLowerCase() === autorEmail.toLowerCase());
+    const newTasks: Task[] = [];
+    const idPatch = new Map<number, Partial<OutlookEntry>>();
+    let seq = Date.now();
+    for (const e of mine) {
+      const patch: Partial<OutlookEntry> = {};
+      const mkTask = (kdo: string, role: string): number => {
+        const id = ++seq;
+        newTasks.push({
+          id, nazev: `${role}: ${e.typ} ${e.klient}${e.popis ? ` — ${e.popis}` : ""}`,
+          projekt: e.klient, prirazeno: kdo, priorita: "Střední", status: "Nové", deadline: e.datum || "",
+        });
+        return id;
+      };
+      if (e.copywriter && !e.taskCopyId) patch.taskCopyId = mkTask(e.copywriter, "COPY");
+      if (e.vizual && !e.taskVizualId) patch.taskVizualId = mkTask(e.vizual, "VIZUÁL");
+      if (Object.keys(patch).length) idPatch.set(e.id, patch);
+    }
+    if (newTasks.length) setTasks((prev) => [...prev, ...newTasks]);
+    if (idPatch.size) setEntries((prev) => prev.map((e) => idPatch.has(e.id) ? { ...e, ...idPatch.get(e.id) } : e));
     setSubmits((prev) => ({ ...prev, [submitKey(weekKey, autorEmail)]: new Date().toISOString() }));
+  };
   const unsubmit = (autorEmail: string) =>
     setSubmits((prev) => { const n = { ...prev }; delete n[submitKey(weekKey, autorEmail)]; return n; });
-
-  const clientOptions = (autorEmail: string): string[] => {
-    const own = clientsOf(autorEmail);
-    const active = allClients.filter((c) => c.aktivni !== false).map((c) => c.name);
-    // autorovi nabídneme jeho klienty první, pak zbytek (admin může přiřadit cokoli)
-    const merged = [...new Set([...own, ...(isAdmin ? active : own)])].filter(Boolean);
-    return merged.length ? merged : active;
-  };
 
   return (
     <div className="p-5 md:p-7 max-w-[1000px] mx-auto">
@@ -145,24 +164,36 @@ export default function TydenniVyhledPage() {
             ) : (
               <div className="divide-y" style={{ borderColor: "var(--border)" }}>
                 {rows.map((r) => (
-                  <div key={r.id} className="flex flex-col md:flex-row md:items-center gap-2 px-4 py-2.5">
+                  <div key={r.id} className="px-4 py-3">
                     {editable ? (
-                      <>
-                        <select className={iCls} style={{ ...iStyle, minWidth: 150 }} value={r.klient} onChange={(e) => patchRow(r.id, { klient: e.target.value })}>
-                          {[...new Set([r.klient, ...clientOptions(autorEmail)])].filter(Boolean).map((c) => <option key={c} value={c}>{c}</option>)}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select className={iCls} style={{ ...iStyle, minWidth: 170 }} value={r.klient} onChange={(e) => patchRow(r.id, { klient: e.target.value })}>
+                          {[...new Set([r.klient, ...MONTHLY_CLIENTS])].filter(Boolean).map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
-                        <select className={iCls} style={{ ...iStyle, width: 130 }} value={r.typ} onChange={(e) => patchRow(r.id, { typ: e.target.value as PostTyp })}>
+                        <input type="date" className={iCls} style={iStyle} value={r.datum} title="Datum sdílení příspěvku" onChange={(e) => patchRow(r.id, { datum: e.target.value })} />
+                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.typ} onChange={(e) => patchRow(r.id, { typ: e.target.value as PostTyp })}>
                           {POST_TYPY.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
-                        <input className={`${iCls} flex-1`} style={iStyle} value={r.popis} placeholder="Co konkrétně… (téma, poznámka)" onChange={(e) => patchRow(r.id, { popis: e.target.value })} />
+                        <input className={`${iCls} flex-1 min-w-[160px]`} style={iStyle} value={r.popis} placeholder="Co konkrétně… (téma, poznámka)" onChange={(e) => patchRow(r.id, { popis: e.target.value })} />
+                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.copywriter} onChange={(e) => patchRow(r.id, { copywriter: e.target.value })} title="Kdo tvoří COPY">
+                          <option value="">COPY — kdo?</option>
+                          {TEAM.map((n) => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.vizual} onChange={(e) => patchRow(r.id, { vizual: e.target.value })} title="Kdo tvoří vizuál">
+                          <option value="">VIZUÁL — kdo?</option>
+                          {TEAM.map((n) => <option key={n} value={n}>{n}</option>)}
+                        </select>
                         <button onClick={() => removeRow(r.id)} className="p-1.5 rounded-[6px] hover:bg-white/5 shrink-0" aria-label="Smazat"><Trash2 className="w-3.5 h-3.5 text-[--muted-foreground]" /></button>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <span className="text-[13px] font-medium min-w-[150px]">{r.klient || "—"}</span>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold capitalize" style={{ background: "oklch(0.62 0.27 265 / 0.12)", color: PRIMARY, width: "fit-content" }}>{r.typ}</span>
-                        <span className="text-[13px] text-[--muted-foreground] flex-1">{r.popis || "—"}</span>
-                      </>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="text-[13px] font-semibold min-w-[150px]">{r.klient || "—"}</span>
+                        {r.datum && <span className="text-[11px] text-[--muted-foreground]">{new Date(r.datum + "T00:00:00").toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}</span>}
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold" style={{ background: "oklch(0.62 0.27 265 / 0.12)", color: PRIMARY }}>{r.typ}</span>
+                        <span className="text-[13px] text-[--muted-foreground] flex-1 min-w-[120px]">{r.popis || "—"}</span>
+                        {r.copywriter && <span className="text-[11px]" style={{ color: "oklch(0.7 0.16 200)" }}>copy: {r.copywriter}</span>}
+                        {r.vizual && <span className="text-[11px]" style={{ color: "oklch(0.72 0.18 290)" }}>vizuál: {r.vizual}</span>}
+                      </div>
                     )}
                   </div>
                 ))}

@@ -7,11 +7,27 @@
  */
 
 export type PostTyp =
-  | "video" | "foto" | "grafika" | "carousel" | "grid"
-  | "recenze" | "reels" | "story" | "text" | "ostatní";
+  | "VIDEO" | "FOTO" | "FOTO GRID" | "FOTO CAROUSEL" | "CAROUSEL" | "GRAFIKA";
 
+/** Typy příspěvků — velkými písmeny, přesně dle domluvy s týmem. */
 export const POST_TYPY: PostTyp[] = [
-  "video", "foto", "grafika", "carousel", "grid", "recenze", "reels", "story", "text", "ostatní",
+  "VIDEO", "FOTO", "FOTO GRID", "FOTO CAROUSEL", "CAROUSEL", "GRAFIKA",
+];
+
+/**
+ * Kanonický seznam MĚSÍČNÍCH klientů — oficiální název dle obchodního
+ * rejstříku (IČO); pokud se značka liší, je v závorce. Doplňuje se postupně.
+ */
+export const MONTHLY_CLIENTS: string[] = [
+  "SENIMED s.r.o.",
+  "IMTOS, spol. s r.o.",
+  "Brno Eastgate I. s.r.o. (EASTGATE)",
+  "MTB CZ s.r.o.",
+  "DIAM s.r.o. (Toffi)",
+  "FIRESTA-Fišer, rekonstrukce, stavby a.s.",
+  "MARATON Brno, z.s. (Běhej Brno)",
+  "Nali Vital s.r.o. (POWERPLATE)",
+  "SK Brno Slatina z. s.",
 ];
 
 export interface OutlookEntry {
@@ -20,8 +36,13 @@ export interface OutlookEntry {
   autorEmail: string;
   autorName: string;
   klient: string;
+  datum: string;          // datum sdílení příspěvku (ISO YYYY-MM-DD)
   typ: PostTyp;
   popis: string;
+  copywriter: string;     // kdo tvoří COPY (jméno člena)
+  vizual: string;         // kdo tvoří vizuální obsah (jméno člena)
+  taskCopyId?: number;    // dedup: úkol pro copywritera už založen
+  taskVizualId?: number;  // dedup: úkol pro vizuál už založen
   createdAt: string;
 }
 

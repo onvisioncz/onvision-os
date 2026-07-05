@@ -29,10 +29,14 @@ describe("weekRange", () => {
   });
 });
 
+const mk = (o: Partial<OutlookEntry>): OutlookEntry => ({
+  id: 0, weekKey: "2026-W28", autorEmail: "zdenek@onvision.cz", autorName: "Zdeněk",
+  klient: "SENIMED s.r.o.", datum: "", typ: "VIDEO", popis: "", copywriter: "", vizual: "", createdAt: "", ...o,
+});
 const entries: OutlookEntry[] = [
-  { id: 1, weekKey: "2026-W28", autorEmail: "zdenek@onvision.cz", autorName: "Zdeněk", klient: "TOFFI", typ: "reels", popis: "novinka", createdAt: "" },
-  { id: 2, weekKey: "2026-W28", autorEmail: "zdenek@onvision.cz", autorName: "Zdeněk", klient: "SENIMED", typ: "grafika", popis: "akce", createdAt: "" },
-  { id: 3, weekKey: "2026-W27", autorEmail: "tereza@onvision.cz", autorName: "Tereza", klient: "POWERPLATE", typ: "video", popis: "x", createdAt: "" },
+  mk({ id: 1, klient: "DIAM s.r.o. (Toffi)", typ: "CAROUSEL", popis: "novinka" }),
+  mk({ id: 2, klient: "SENIMED s.r.o.", typ: "GRAFIKA", popis: "akce" }),
+  mk({ id: 3, weekKey: "2026-W27", autorEmail: "tereza@onvision.cz", autorName: "Tereza", klient: "Nali Vital s.r.o. (POWERPLATE)", typ: "VIDEO", popis: "x" }),
 ];
 
 describe("outlookStatus", () => {
