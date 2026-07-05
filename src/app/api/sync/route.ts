@@ -86,6 +86,17 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-issued-invoices":     ["admin", "fakturace"],
   "ov-schvaleni-items":     ["admin", "fakturace"],
   "ov-finance-incomes":     ["admin", "fakturace"],
+  // /finance — chybělo, takže role "fakturace" (má na stránku přístup přes
+  // ROLE_ROUTES) tam nemohla nic uložit; server to tiše odmítal (403).
+  "ov-finance-expenses":    ["admin", "fakturace"],
+  "ov-finance-faktury":     ["admin", "fakturace"],
+  "ov-finance-doklady":     ["admin", "fakturace"],
+  // /cile — role "fakturace" má route, ale chyběl zápis.
+  "ov-cile":                ["admin", "fakturace"],
+  // /odmeny — role "fakturace" i "ucetni" mají route, chyběl zápis oběma.
+  "ov-odmeny":              ["admin", "fakturace", "ucetni"],
+  // /cashflow — počáteční zůstatek; role "fakturace" má route, chyběl zápis.
+  "ov-vyhledy-zustatek":    ["admin", "fakturace"],
   "ov-pipeline-deals":      ["admin"],
   "ov-oneoffs-projects":    ["admin", "produkce"],
   "ov-ukoly-tasks":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
@@ -95,7 +106,14 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-smm-hashtag-sets":    ["admin", "smm"],
   "ov-smm-pillars":         ["admin", "smm"],
   "ov-shooting-plan":       ["admin", "produkce"],
+  "ov-shooting-days":       ["admin", "produkce"],
   "ov-shoot-checklists":    ["admin", "produkce", "pm"],
+  // /produkce — Zdeněk a Matěj (role "produkce") si sem zapisují vlastní
+  // odpracované položky; bez tohohle by jim server ukládání tiše odmítal (403).
+  "ov-produkce-zdenek":     ["admin", "produkce"],
+  "ov-produkce-matej":      ["admin", "produkce"],
+  "ov-produkce-grafici":    ["admin", "produkce"],
+  "ov-produkce-pending":    ["admin", "produkce"],
   "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
   "ov-output-messages":    ["admin", "produkce", "grafik", "smm", "pm", "fakturace"],
   "ov-calendar-events":     ["admin", "pm", "smm"],
