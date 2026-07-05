@@ -11,6 +11,7 @@ import { unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
 import { castkaZaMesic, monthKey, monthLabel, celkemZaMesic, type OdmenaPerson } from "@/lib/odmeny";
 import { buildForecast, minBalance as minBal, type ForecastParams } from "@/lib/forecast";
 import { mrrTrend, type MrrSnapshot } from "@/lib/mrr-history";
+import { weightedPipeline, type PipelineDeal } from "@/lib/pipeline";
 
 /* ── Typy dat ────────────────────────────────────────────────────────────── */
 interface Invoice { castka: number; stav: string; datumSplatnosti: string; klient: string }
@@ -50,10 +51,12 @@ export default function CashflowPage() {
   const [clientCosts] = useSupabaseData<ClientCost[]>("ov-client-costs", () => []);
   const [meta, setMeta] = useSupabaseData<Record<string, number>>("ov-vyhledy-vystupy", () => ({}));
   const [mrrHistory] = useSupabaseData<MrrSnapshot[]>("ov-mrr-history", () => []);
+  const [pipelineDeals] = useSupabaseData<PipelineDeal[]>("ov-pipeline-deals", () => []);
 
   const [tab, setTab] = useState<"cashflow" | "vystup" | "pausaly">("cashflow");
   const [startBalance, setStartBalance] = useSupabaseData<number>("ov-vyhledy-zustatek", () => 0);
   const [scenarioClient, setScenarioClient] = useState<string>(""); // "co když odejde klient X"
+  const [withPipeline, setWithPipeline] = useState(false); // započítat očekávaný pipeline
 
   const nowYear = new Date().getFullYear();
   const activeRetainers = useMemo(() => retainers.filter((r) => r.aktivni !== false), [retainers]);
@@ -82,25 +85,30 @@ export default function CashflowPage() {
     return c ? (c.pausal || 0) + (c.reklama || 0) : 0;
   }, [scenarioClient, activeRetainers]);
 
+  // Očekávaný příjem z pipeline = vážená hodnota otevřených dealů, rozprostřená
+  // rovnoměrně do 6 měsíců (předpoklad: dealy postupně dojednáme a naběhnou).
+  const pipelineWeighted = useMemo(() => weightedPipeline(pipelineDeals), [pipelineDeals]);
+  const pipelinePerMonth = withPipeline ? pipelineWeighted / 6 : 0;
+
   // 6-month forecast (přes sdílený lib) — s odečtením MRR odcházejícího klienta
   const baseParams = useMemo<ForecastParams>(() => ({
     startBalance,
-    retainerIncome: retainerIncome - lostMrr,
+    retainerIncome: retainerIncome - lostMrr + pipelinePerMonth,
     monthlyExpenses: odmenyMonthly + predplatneMonthly,
     receivablesByMonth,
     months: 6,
     from: new Date(),
     monthKey,
     monthLabel,
-  }), [startBalance, retainerIncome, lostMrr, odmenyMonthly, predplatneMonthly, receivablesByMonth]);
+  }), [startBalance, retainerIncome, lostMrr, pipelinePerMonth, odmenyMonthly, predplatneMonthly, receivablesByMonth]);
 
   const forecast = useMemo(() => buildForecast(baseParams), [baseParams]);
   const minBalance = minBal(forecast, startBalance);
 
   // Srovnání s "baseline" (bez scénáře) — o kolik scénář zhorší nejnižší zůstatek
   const baselineMin = useMemo(
-    () => (lostMrr ? minBal(buildForecast({ ...baseParams, retainerIncome }), startBalance) : minBalance),
-    [baseParams, retainerIncome, lostMrr, startBalance, minBalance]
+    () => (lostMrr ? minBal(buildForecast({ ...baseParams, retainerIncome: retainerIncome + pipelinePerMonth }), startBalance) : minBalance),
+    [baseParams, retainerIncome, pipelinePerMonth, lostMrr, startBalance, minBalance]
   );
 
   // Cena za výstup
@@ -181,6 +189,12 @@ export default function CashflowPage() {
                   ))}
               </select>
             </div>
+            {pipelineWeighted > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={withPipeline} onChange={(e) => setWithPipeline(e.target.checked)} className="accent-[oklch(0.62_0.27_265)]" />
+                <span className="text-[12px] text-[--muted-foreground]">Započítat pipeline (<span style={{ color: PRIMARY }}>{fmtKc(pipelineWeighted)}</span> vážený výhled → {fmtKc(pipelinePerMonth || pipelineWeighted / 6)}/měs)</span>
+              </label>
+            )}
           </div>
 
           {lostMrr > 0 && (
