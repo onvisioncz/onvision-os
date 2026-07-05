@@ -43,8 +43,8 @@ interface Notif {
 }
 
 /* ── Read/archived state stored in Supabase ─────────────────────────────────── */
-interface InboxState { read: string[]; archived: string[]; }
-const EMPTY_STATE: InboxState = { read: [], archived: [] };
+interface InboxState { read: string[]; archived: string[]; snoozed?: Record<string, string>; }
+const EMPTY_STATE: InboxState = { read: [], archived: [], snoozed: {} };
 
 /* ── Date helpers ───────────────────────────────────────────────────────────── */
 function parseCzDate(str: string): Date | null {
@@ -345,15 +345,33 @@ export default function InboxPage() {
     [allNotifs, state]
   );
 
-  const [tab, setTab] = useState<"vše" | "nepřečtené" | "archiv">("vše");
+  const [tab, setTab] = useState<"vše" | "nepřečtené" | "archiv" | "odložené">("vše");
+
+  const nowMs = Date.now();
+  const isSnoozed = (id: string) => {
+    const until = state.snoozed?.[id];
+    return until ? Date.parse(until) > nowMs : false;
+  };
 
   const visible = useMemo(() => notifs.filter(n => {
     if (tab === "archiv")      return n.archivovano;
+    if (tab === "odložené")    return isSnoozed(n.id) && !n.archivovano;
+    if (isSnoozed(n.id))       return false; // odložené se schovají, dokud nedojde čas
     if (tab === "nepřečtené")  return !n.precten && !n.archivovano;
     return !n.archivovano;
-  }), [notifs, tab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [notifs, tab, state.snoozed]);
 
-  const unreadCount = notifs.filter(n => !n.precten && !n.archivovano).length;
+  const snoozedCount = notifs.filter(n => isSnoozed(n.id) && !n.archivovano).length;
+  const unreadCount = notifs.filter(n => !n.precten && !n.archivovano && !isSnoozed(n.id)).length;
+
+  const snooze = (id: string, days: number) => {
+    const until = new Date(nowMs + days * 86_400_000).toISOString();
+    setState(prev => ({ ...prev, snoozed: { ...(prev.snoozed ?? {}), [id]: until } }));
+  };
+  const unsnooze = (id: string) => {
+    setState(prev => { const s = { ...(prev.snoozed ?? {}) }; delete s[id]; return { ...prev, snoozed: s }; });
+  };
 
   const markRead = (id: string) => {
     setState(prev => ({ ...prev, read: prev.read.includes(id) ? prev.read : [...prev.read, id] }));
@@ -381,6 +399,7 @@ export default function InboxPage() {
   const tabs = [
     { key: "vše"        as const, label: "Vše" },
     { key: "nepřečtené" as const, label: `Nepřečtené${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+    ...(snoozedCount > 0 ? [{ key: "odložené" as const, label: `Odložené (${snoozedCount})` }] : []),
     { key: "archiv"     as const, label: "Archiv" },
   ];
 
@@ -605,25 +624,57 @@ export default function InboxPage() {
                         <RotateCcw className="w-3 h-3" />
                         Obnovit
                       </motion.button>
-                    ) : (
+                    ) : tab === "odložené" ? (
                       <motion.button
-                        onClick={e => { e.preventDefault(); e.stopPropagation(); archive(notif.id); }}
+                        onClick={e => { e.stopPropagation(); unsnooze(notif.id); }}
                         className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] btn-tactile text-[11px] font-semibold"
-                        style={{
-                          background: notif.precten ? "oklch(0.67 0.155 155 / 0.08)" : "oklch(0.62 0.27 265 / 0.08)",
-                          color: notif.precten ? "oklch(0.55 0.005 222)" : "oklch(0.67 0.155 155)",
-                          border: `1px solid ${notif.precten ? "oklch(1 0 0 / 0.07)" : "oklch(0.67 0.155 155 / 0.2)"}`,
-                        }}
-                        whileHover={{
-                          background: "oklch(0.67 0.155 155 / 0.15)",
-                          color: "oklch(0.67 0.155 155)",
-                        }}
+                        style={{ background: "oklch(0.62 0.27 265 / 0.1)", color: "oklch(0.62 0.27 265)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}
                         whileTap={{ scale: 0.93 }}
-                        title="Označit jako vyřešené"
+                        title="Vrátit mezi aktivní"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Vyřešit
+                        <RotateCcw className="w-3 h-3" />
+                        Vrátit
                       </motion.button>
+                    ) : (
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        {/* Odložit — schová notifikaci do daného data */}
+                        <div className="relative group/snz">
+                          <button
+                            onClick={e => { e.preventDefault(); e.stopPropagation(); }}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-[6px] btn-tactile text-[11px] font-semibold opacity-40 group-hover:opacity-100 transition-opacity"
+                            style={{ background: "oklch(1 0 0 / 0.05)", color: "oklch(0.55 0.005 222)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+                            title="Odložit"
+                          >
+                            <Clock className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="absolute right-0 top-full mt-1 z-10 hidden group-hover/snz:flex flex-col rounded-[8px] overflow-hidden shadow-lg"
+                            style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                            {[["3 dny", 3], ["7 dní", 7], ["14 dní", 14]].map(([label, d]) => (
+                              <button key={label as string}
+                                onClick={e => { e.preventDefault(); e.stopPropagation(); snooze(notif.id, d as number); }}
+                                className="px-3 py-1.5 text-[11px] font-medium text-left whitespace-nowrap hover:bg-white/[0.06]"
+                                style={{ color: "var(--foreground)" }}>
+                                {label as string}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <motion.button
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); archive(notif.id); }}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] btn-tactile text-[11px] font-semibold"
+                          style={{
+                            background: notif.precten ? "oklch(0.67 0.155 155 / 0.08)" : "oklch(0.62 0.27 265 / 0.08)",
+                            color: notif.precten ? "oklch(0.55 0.005 222)" : "oklch(0.67 0.155 155)",
+                            border: `1px solid ${notif.precten ? "oklch(1 0 0 / 0.07)" : "oklch(0.67 0.155 155 / 0.2)"}`,
+                          }}
+                          whileHover={{ background: "oklch(0.67 0.155 155 / 0.15)", color: "oklch(0.67 0.155 155)" }}
+                          whileTap={{ scale: 0.93 }}
+                          title="Označit jako vyřešené"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Vyřešit
+                        </motion.button>
+                      </div>
                     )}
                   </div>
                 </motion.div>
