@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
-import { GitMerge, Plus, X, TrendingUp, DollarSign, CheckCircle, LayoutGrid, List } from "lucide-react";
+import { GitMerge, Plus, X, TrendingUp, DollarSign, CheckCircle, LayoutGrid, List, Percent } from "lucide-react";
+import { weightedPipeline, openValue, wonValue, winRate } from "@/lib/pipeline";
 import {
   DndContext,
   DragEndEvent,
@@ -332,9 +333,11 @@ export default function PipelinePage() {
     setEditing(null);
   };
 
-  const weighted = deals.reduce((s, d) => s + d.hodnota * d.pravdepodobnost / 100, 0);
-  const total = deals.reduce((s, d) => s + d.hodnota, 0);
-  const closed = deals.filter(d => d.faze === "Dokončeno").reduce((s, d) => s + d.hodnota, 0);
+  // Vážený forecast počítá jen OTEVŘENÉ dealy (vyhrané už nejsou „výhled").
+  const weighted = weightedPipeline(deals);
+  const total = openValue(deals);
+  const closed = wonValue(deals);
+  const win = winRate(deals);
 
   const filtered = fazFilter === "Vše" ? deals : deals.filter(d => d.faze === fazFilter);
 
@@ -421,14 +424,15 @@ export default function PipelinePage() {
 
       {/* KPI stats */}
       <motion.div
-        className="grid grid-cols-3 gap-px rounded-[12px] overflow-hidden"
+        className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-[12px] overflow-hidden"
         style={{ background: "oklch(1 0 0 / 0.06)" }}
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.06 }}>
         {[
-          { label: "Pipeline (vážená)", value: Math.round(weighted).toLocaleString("cs-CZ"), unit: "Kč", icon: TrendingUp, color: ACCENT },
-          { label: "Potenciál celkem",  value: total.toLocaleString("cs-CZ"),                unit: "Kč", icon: DollarSign, color: "oklch(0.62 0.27 265)" },
+          { label: "Vážený výhled", value: Math.round(weighted).toLocaleString("cs-CZ"), unit: "Kč", icon: TrendingUp, color: ACCENT },
+          { label: "Otevřeno celkem",  value: total.toLocaleString("cs-CZ"),                unit: "Kč", icon: DollarSign, color: "oklch(0.62 0.27 265)" },
           { label: "Uzavřeno",          value: closed.toLocaleString("cs-CZ"),               unit: "Kč", icon: CheckCircle, color: "oklch(0.67 0.155 155)" },
+          { label: "Win rate",          value: String(win),                                  unit: "%", icon: Percent, color: "oklch(0.75 0.16 85)" },
         ].map(({ label, value, unit, icon: Icon, color }) => (
           <div key={label} className="px-5 py-4 flex items-center gap-3" style={{ background: "var(--card)" }}>
             <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
