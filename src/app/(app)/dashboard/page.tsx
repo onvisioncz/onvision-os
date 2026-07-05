@@ -1247,12 +1247,6 @@ export default function DashboardPage() {
 
         {isAdmin && (
           <motion.div variants={item}>
-            <CompanyBarometer />
-          </motion.div>
-        )}
-
-        {isAdmin && (
-          <motion.div variants={item}>
             <AiBrief />
           </motion.div>
         )}
@@ -2084,6 +2078,13 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>}
+
+        {/* ── Barometr firmy (úplně dole) ── */}
+        {isAdmin && (
+          <motion.div variants={item}>
+            <CompanyBarometer />
+          </motion.div>
+        )}
       </motion.div>
 
       {/* ── Monthly Closing Modal ── */}
