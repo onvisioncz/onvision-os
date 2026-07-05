@@ -3,8 +3,19 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquareDashed } from "lucide-react";
-import OutputsPage from "@/app/(app)/outputs/page";
+import { MessageSquareDashed, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Výstupy jsou velká stránka (canvas, supabase, thumbnaily). Načteme ji až
+// při otevření popupu, ať nezatěžuje bundle všech ostatních stránek.
+const OutputsPage = dynamic(() => import("@/app/(app)/outputs/page"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center">
+      <Loader2 className="w-5 h-5 animate-spin" style={{ color: "oklch(0.62 0.27 265)" }} />
+    </div>
+  ),
+});
 
 /**
  * Floating "Výstupy" button — bottom-right. Otevírá výstupy jako velký
