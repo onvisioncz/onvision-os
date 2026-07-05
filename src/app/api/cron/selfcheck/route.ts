@@ -16,8 +16,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { identityFromEmail } from "@/lib/agent/identity";
-import { parseDeadline, isValidCzDate } from "@/lib/dates";
+import { parseDeadline, isValidCzDate, daysUntil } from "@/lib/dates";
 import { overlaps } from "@/lib/gear";
+import { clientHealth } from "@/lib/client-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,10 +38,15 @@ function hash(s: string): string {
   return String(h);
 }
 
-interface Inv { cislo?: string; klient?: string; castka?: unknown; stav?: string; datumSplatnosti?: string; splatnost?: string }
+interface Inv { cislo?: string; klient?: string; klientNazev?: string; castka?: unknown; stav?: string; datumSplatnosti?: string; splatnost?: string; datumVystaveni?: string; datum?: string }
 interface Task { nazev?: string; status?: string; deadline?: string }
 interface Res { gearId?: number; kdo?: string; od?: string; do?: string }
-interface Client { name?: string; aktivni?: boolean; fakturaRada?: number; ico?: string }
+interface Client {
+  name?: string; aktivni?: boolean; fakturaRada?: number; ico?: string;
+  pausal?: number; reklama?: number;
+  deliverables?: { done: boolean }[];
+  hodinMesic?: number; hodinOdpracovano?: number;
+}
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -109,9 +115,30 @@ export async function GET(req: NextRequest) {
       if (res[i].gearId === res[j].gearId && res[i].od && res[j].od && overlaps(res[i].od!, res[i].do!, res[j].od!, res[j].do!))
         findings.push(`Kolize rezervace techniky: ${res[i].kdo ?? "?"} × ${res[j].kdo ?? "?"} (${res[i].od}–${res[i].do})`);
 
-  // (Pozn.: kontrola fakturačních řad vynechána — řady žijí v konfigu
-  // Fakturace, ne v ov-monthly-clients, takže by hlásila falešné poplachy.)
-  void clients;
+  // 4b) Klienti v riziku péče (Health Score < 60) — proaktivní churn alarm.
+  // Zachytí i "tichý úpadek" (klient neplatí / nedodává / neaktivní), který
+  // by jinak nikoho neupozornil, dokud neodejde.
+  const match = (a: string, b: string) => {
+    const x = (a || "").toLowerCase().trim(), y = (b || "").toLowerCase().trim();
+    return !!x && !!y && (x.includes(y) || y.includes(x));
+  };
+  const allInv = [...(issued ?? []), ...(finance ?? [])];
+  for (const c of (clients ?? []).filter((c) => c.aktivni !== false && (c.name ?? "").trim())) {
+    const overdueSum = allInv
+      .filter((i) => (i.stav ?? "") !== "Zaplacena" && (i.stav ?? "") !== "Storno")
+      .filter((i) => match(i.klientNazev ?? i.klient ?? "", c.name!))
+      .filter((i) => {
+        let d = parseDeadline(i.datumSplatnosti ?? i.splatnost ?? "");
+        if (!d) { const v = parseDeadline(i.datumVystaveni ?? i.datum ?? ""); if (v) d = new Date(v.getTime() + 14 * 86_400_000); }
+        return d ? daysUntil(d) < 0 : false;
+      })
+      .reduce((s, i) => s + (Number(i.castka) || 0), 0);
+    const h = clientHealth(c, overdueSum);
+    if (h.band === "riziko") {
+      const worst = [...h.factors].sort((a, b) => a.score - b.score)[0];
+      findings.push(`Klient ${c.name} v riziku péče (health ${h.score}/100, nejhorší: ${worst.label} — ${worst.note})`);
+    }
+  }
 
   // 5) Podezřelé částky
   for (const inv of [...(issued ?? []), ...(finance ?? [])]) {

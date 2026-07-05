@@ -11,7 +11,7 @@
 
 export interface HealthDeliverable { done: boolean }
 export interface HealthClient {
-  name: string;
+  name?: string;   // jen pro referenci, do výpočtu nevstupuje
   pausal?: number;
   reklama?: number;
   aktivni?: boolean;
