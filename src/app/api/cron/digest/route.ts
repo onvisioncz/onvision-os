@@ -13,6 +13,7 @@ import { sendMail, isEmailConfigured } from "@/lib/email/gmail";
 import { brandedEmailHtml } from "@/lib/email/template";
 import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
 import { parseDeadline } from "@/lib/dates";
+import { escapeHtml } from "@/lib/format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,7 +71,9 @@ ${soonTasks.map((t) => `- ${t.nazev} (${t.prirazeno || "?"}, ${t.deadline})`).jo
 
   // ── Claude shrnutí ──
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  let summaryHtml = `<pre style="white-space:pre-wrap;font-family:inherit">${dataText}</pre>`;
+  // Fallback bez AI vloží syrová data (klient/název úkolu…) do <pre> — musí být
+  // escapované, jinak by "<" v názvu klienta/úkolu rozbilo nebo vneslo HTML.
+  let summaryHtml = `<pre style="white-space:pre-wrap;font-family:inherit">${escapeHtml(dataText)}</pre>`;
   if (apiKey) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {

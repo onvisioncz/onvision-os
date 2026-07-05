@@ -7,7 +7,7 @@
  */
 
 import { brandedEmailHtml, accentChip, billingBox } from "@/lib/email/template";
-import { fmtKc } from "./format";
+import { fmtKc, escapeHtml } from "./format";
 
 export const ODMENY_KEY = "ov-odmeny";
 
@@ -129,9 +129,9 @@ Děkujeme za spolupráci,
 OnVision s.r.o.`;
 
   const bodyHtml = `
-    <p style="margin:0 0 14px;">Ahoj <strong style="color:#fff;">${p.jmeno}</strong>,</p>
+    <p style="margin:0 0 14px;">Ahoj <strong style="color:#fff;">${escapeHtml(p.jmeno)}</strong>,</p>
     <p style="margin:0 0 14px;">za období <strong style="color:#fff;">${obdobi}</strong> ti náleží odměna ve výši ${accentChip(fmtKc(castka))}.</p>
-    ${radky.length ? `<p style="margin:0 0 6px;">Rozpis:</p><ul style="margin:0 0 14px;padding-left:18px;">${(m?.projekty ?? []).map((x) => `<li>${x.nazev}: ${fmtKc(x.castka)}</li>`).join("")}</ul>` : ""}
+    ${radky.length ? `<p style="margin:0 0 6px;">Rozpis:</p><ul style="margin:0 0 14px;padding-left:18px;">${(m?.projekty ?? []).map((x) => `<li>${escapeHtml(x.nazev)}: ${fmtKc(x.castka)}</li>`).join("")}</ul>` : ""}
     <p style="margin:0 0 4px;">Prosím vystav na tuto částku fakturu na odběratele:</p>
     ${billingBox([`<strong style="color:#fff;">${b.nazev}</strong>`, b.adresa, `IČO: ${b.ico}`, b.dph])}
     <p style="margin:14px 0 0;">Fakturu prosím pošli na <a href="mailto:${b.email}" style="color:#5B5EFF;text-decoration:none;">${b.email}</a>, splatnost ${b.splatnostDni} dní.</p>
@@ -160,8 +160,8 @@ export function mailSouhrn(lidi: OdmenaPerson[], key: string) {
     .map(
       (p) =>
         `<tr>
-          <td style="padding:7px 12px 7px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#fff;">${p.jmeno}</td>
-          <td style="padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);">${p.typ}</td>
+          <td style="padding:7px 12px 7px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#fff;">${escapeHtml(p.jmeno)}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);">${escapeHtml(p.typ)}</td>
           <td style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;font-weight:600;color:#fff;">${fmtKc(castkaZaMesic(p, key))}</td>
         </tr>`
     )
