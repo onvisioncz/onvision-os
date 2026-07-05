@@ -101,6 +101,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-oneoffs-projects":    ["admin", "produkce"],
   "ov-ukoly-tasks":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
   "ov-ads-campaigns":       ["admin", "smm"],
+  "ov-ads":                 ["admin", "smm", "pm"],
   "ov-smm-plan":            ["admin", "smm"],
   "ov-smm-posts":           ["admin", "smm"],
   "ov-smm-hashtag-sets":    ["admin", "smm"],
