@@ -20,6 +20,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { clientHealth } from "@/lib/client-health";
+import { parseDeadline, daysUntil } from "@/lib/dates";
 import { ClientAvatar } from "@/components/ui/client-avatar";
 import { ClientHub } from "@/components/klienti/client-hub";
 import { ClientPulse } from "@/components/klienti/client-pulse";
@@ -287,6 +289,20 @@ export default function KlientDetailPage() {
   const totalDel = deliverables.length;
   const delProgress = totalDel > 0 ? Math.round((doneDel / totalDel) * 100) : 0;
 
+  // ── Health score klienta (stejná logika jako přehled /klienti) ──
+  const health = useMemo(() => {
+    if (!client) return null;
+    const overdueSum = clientInvoices
+      .filter((i) => i.stav === "Čeká na platbu")
+      .filter((i) => {
+        let d = parseDeadline(i.datumSplatnosti ?? "");
+        if (!d) { const v = parseDeadline(i.datumVystaveni ?? ""); if (v) d = new Date(v.getTime() + 14 * 86_400_000); }
+        return d ? daysUntil(d) < 0 : false;
+      })
+      .reduce((s, i) => s + i.castka, 0);
+    return clientHealth(client, overdueSum);
+  }, [client, clientInvoices]);
+
   /* Edit handlers */
   function startEdit() {
     if (!client) return;
@@ -460,6 +476,42 @@ export default function KlientDetailPage() {
 
       <ClientHub klientName={client.name} />
       <ClientPulse clientName={client.name} />
+
+      {/* ── Health score s rozpadem faktorů ── */}
+      {health && client.aktivni && (
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.05 }} className="mb-5">
+          <div className="rounded-[14px] p-5" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-[18px] font-bold shrink-0"
+                  style={{ background: `color-mix(in oklch, ${health.color} 18%, transparent)`, color: health.color, fontFamily: "var(--font-outfit)" }}>
+                  {health.score}
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Health skóre</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: health.color }}>{health.band}</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-[--muted-foreground] max-w-[180px] text-right leading-snug">
+                Vážený signál z plateb, dodávek a aktivity — nižší = víc pozornosti.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              {health.factors.map((f) => (
+                <div key={f.key}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12px] font-medium">{f.label}</span>
+                    <span className="text-[11px] text-[--muted-foreground]">{f.note} · {f.score}/100</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "oklch(1 0 0 / 0.06)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${f.score}%`, background: f.score >= 80 ? "oklch(0.7 0.17 155)" : f.score >= 60 ? "oklch(0.78 0.16 75)" : "oklch(0.62 0.24 25)" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* ── 3. Deliverables ── */}
       {deliverables.length > 0 && (
