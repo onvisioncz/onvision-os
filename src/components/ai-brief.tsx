@@ -11,6 +11,7 @@ import { clientHealth } from "@/lib/client-health";
 import { buildForecast, minBalance as forecastMin } from "@/lib/forecast";
 import { celkemZaMesic, monthKey, monthLabel, type OdmenaPerson } from "@/lib/odmeny";
 import { absenceCollisions, type Absence } from "@/lib/absence";
+import { cadenceByClient, ymOf } from "@/lib/post-cadence";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string; nazev?: string; priorita?: string }
@@ -64,6 +65,7 @@ export function AiBrief() {
   const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
   const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
   const [clients] = useSupabaseData<MonthlyClient[]>("ov-monthly-clients", () => []);
+  const [smmPosts] = useSupabaseData<{ klient?: string; datum?: string; status?: string }[]>("ov-smm-posts", () => []);
   const [odmeny] = useSupabaseData<OdmenaPerson[]>("ov-odmeny", () => []);
   const [predplatne] = useSupabaseData<Subscription[]>("ov-finance-predplatne", () => []);
   const [startBalance] = useSupabaseData<number>("ov-vyhledy-zustatek", () => 0);
@@ -150,6 +152,11 @@ export function AiBrief() {
     const kolize = absenceCollisions(absences, shooting, reservations, today)
       .map((c) => `${c.name}: ${c.absenceTyp} vs. ${c.kind === "shooting" ? "natáčení" : "technika"} „${c.detail}" (${c.datum})`);
 
+    // ── Klienti potichu na sítích (churn radar) ──
+    const socialTicho = cadenceByClient(smmPosts, clients, ymOf(now.toISOString()))
+      .filter((r) => r.band === "ticho")
+      .map((r) => r.klient);
+
     return {
       mrr,
       aktivnichKlientu: active.length,
@@ -162,8 +169,9 @@ export function AiBrief() {
       rizikoviKlienti: rizikoviKlienti.map((h) => `${h.name} (health ${h.score}/100, nejhorší: ${h.worst.label} — ${h.worst.note})`),
       cashGapVyhled: cashGap,
       kolizeDovolenych: kolize,
+      klientiPotichuNaSitich: socialTicho,
     };
-  }, [invoices, financeFaktury, tasks, approvals, nps, costs, timeEntries, rates, clients, odmeny, predplatne, startBalance, absences, shooting, reservations]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, costs, timeEntries, rates, clients, odmeny, predplatne, startBalance, absences, shooting, reservations, smmPosts]);
 
   const generate = async () => {
     setLoading(true); setError(null);
