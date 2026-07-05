@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { parseDeadline, daysUntil } from "@/lib/dates";
+import { clientHealth } from "@/lib/client-health";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { ClientAvatar } from "@/components/ui/client-avatar";
@@ -28,6 +29,8 @@ interface RetainerClient {
   poznamka: string;
   kontakt: string;
   zacatek: string;
+  hodinMesic?: number;        // alokované hodiny (z /projects/monthly)
+  hodinOdpracovano?: number;  // odpracované hodiny
 }
 
 interface IssuedInvoice {
@@ -122,7 +125,8 @@ export default function KlientiPage() {
         .reduce((s, i) => s + i.castka, 0);
       const pocetFaktur      = myInvoices.length;
       const mrr              = c.pausal + (c.reklama ?? 0);
-      return { ...c, totalFakturovano, totalZaplaceno, totalCeka, overdueSum, pocetFaktur, mrr };
+      const health           = clientHealth(c, overdueSum);
+      return { ...c, totalFakturovano, totalZaplaceno, totalCeka, overdueSum, pocetFaktur, mrr, health };
     });
   }, [clients, invoices]);
 
@@ -158,7 +162,8 @@ export default function KlientiPage() {
     const totalMrr         = active.reduce((s, c) => s + c.mrr, 0);
     const totalFakturovano = clientStats.reduce((s, c) => s + c.totalFakturovano, 0);
     const totalCeka        = clientStats.reduce((s, c) => s + c.totalCeka, 0);
-    return { totalMrr, totalFakturovano, totalCeka, activeCount: active.length };
+    const atRisk           = active.filter(c => c.health.band === "riziko").length;
+    return { totalMrr, totalFakturovano, totalCeka, activeCount: active.length, atRisk };
   }, [clientStats]);
 
   return (
@@ -223,7 +228,9 @@ export default function KlientiPage() {
             <p className="text-[22px] font-bold tracking-tight" style={{ color: "oklch(0.94 0.005 265)", fontFamily: "var(--font-outfit)" }}>
               {fmt(summary.totalMrr)}
             </p>
-            <p className="text-[11px] mt-0.5" style={{ color: "oklch(0.42 0.005 222)" }}>měsíčně</p>
+            <p className="text-[11px] mt-0.5" style={{ color: summary.atRisk > 0 ? "oklch(0.62 0.24 25)" : "oklch(0.42 0.005 222)" }}>
+              měsíčně{summary.atRisk > 0 ? ` · ${summary.atRisk} v riziku` : ""}
+            </p>
           </div>
 
           <div
@@ -325,9 +332,19 @@ export default function KlientiPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px]" style={{ color: "oklch(0.36 0.005 222)" }}>
-                          {client.fakturace} · od {client.zacatek || "—"}
-                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {client.aktivni && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              title={`Health ${client.health.score}/100 · ${client.health.factors.map(f => `${f.label} ${f.score}`).join(" · ")}`}
+                              style={{ background: `color-mix(in oklch, ${client.health.color} 16%, transparent)`, color: client.health.color }}>
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ background: client.health.color }} />
+                              {client.health.score}
+                            </span>
+                          )}
+                          <span className="text-[10px]" style={{ color: "oklch(0.36 0.005 222)" }}>
+                            {client.fakturace} · od {client.zacatek || "—"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -438,6 +455,13 @@ export default function KlientiPage() {
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                               style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.38 0.005 222)" }}>
                               Neaktivní
+                            </span>
+                          )}
+                          {client.aktivni && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: `color-mix(in oklch, ${client.health.color} 16%, transparent)`, color: client.health.color }}>
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ background: client.health.color }} />
+                              {client.health.score}
                             </span>
                           )}
                         </div>
