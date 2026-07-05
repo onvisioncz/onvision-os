@@ -43,6 +43,16 @@ export async function POST(req: NextRequest) {
   try { payload = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
+  // Bezpečnost: url smí být JEN interní relativní cesta ("/…"). Bez tohohle
+  // mohl kterýkoli přihlášený uživatel rozeslat push s odkazem na podvodný
+  // web (phishing „Nová faktura" → externí stránka). Blokujeme scheme i
+  // protocol-relative ("//host") a normalizujeme na /dashboard.
+  const safeUrl = (() => {
+    const u = (payload.url ?? "").trim();
+    if (!u || !u.startsWith("/") || u.startsWith("//") || u.includes("\\")) return "/dashboard";
+    return u;
+  })();
+
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
     return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
   }
@@ -68,7 +78,7 @@ export async function POST(req: NextRequest) {
   const pushData = JSON.stringify({
     title: payload.title,
     body: payload.body,
-    url: payload.url ?? "/dashboard",
+    url: safeUrl,
     tag: payload.tag ?? payload.type,
   });
 

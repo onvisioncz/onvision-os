@@ -13,7 +13,7 @@ import { sendMail, isEmailConfigured } from "@/lib/email/gmail";
 import { brandedEmailHtml } from "@/lib/email/template";
 import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
 import { parseDeadline } from "@/lib/dates";
-import { escapeHtml } from "@/lib/format";
+import { escapeHtml, sanitizeHtml } from "@/lib/format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,7 +89,9 @@ Max 180 slov. Žádné pomlčky. Když je klid, řekni to a pochval.`,
           messages: [{ role: "user", content: dataText }],
         }),
       });
-      if (res.ok) { const d = await res.json(); summaryHtml = d.content?.[0]?.text ?? summaryHtml; }
+      // Sanitizovat AI výstup — je to sice HTML fragment (záměrně), ale může
+      // echovat uživatelské názvy úkolů/klientů s <img onerror> apod.
+      if (res.ok) { const d = await res.json(); const t = d.content?.[0]?.text; if (t) summaryHtml = sanitizeHtml(t); }
     } catch { /* fallback na raw data */ }
   }
 

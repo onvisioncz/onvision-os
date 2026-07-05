@@ -30,3 +30,21 @@ export function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/**
+ * Lehký sanitizer pro HTML, které SMÍ obsahovat formátování (např. výstup
+ * AI, který má vrátit HTML fragment), ale nesmí spustit skript. Odstraní
+ * nebezpečné tagy, event-handler atributy (on*) a javascript:/data: URL.
+ * NEnahrazuje escapeHtml pro čistě textová pole — tam vždy escapuj.
+ */
+export function sanitizeHtml(s: string): string {
+  return String(s ?? "")
+    // celé nebezpečné bloky i s obsahem
+    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base)[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    // osamocené otevírací nebezpečné tagy (bez uzavření)
+    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base)\b[^>]*>/gi, "")
+    // event-handler atributy: onclick=, onerror=, onload=…
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    // javascript: / data: v href/src
+    .replace(/(href|src)\s*=\s*("|')?\s*(javascript|data)\s*:/gi, "$1=$2#");
+}

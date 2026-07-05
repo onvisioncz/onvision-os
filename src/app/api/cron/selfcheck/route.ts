@@ -29,7 +29,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function readKey<T>(sb: ReturnType<typeof createAdminClient>, key: string): Promise<T> {
-  const { data } = await sb.from("app_data").select("value").eq("key", key).maybeSingle();
+  const { data, error } = await sb.from("app_data").select("value").eq("key", key).maybeSingle();
+  // DŮLEŽITÉ: při chybě čtení VYHODIT, ne vrátit null. Jinak by transientní
+  // DB chyba (timeout) → null → prázdné pole a následný writeKey by NENÁVRATNĚ
+  // přepsal historii/notifikace (ov-mrr-history, ov-notif-events) jedním
+  // záznamem. Fail-closed: raději selfcheck spadne, než tiše smaže data.
+  if (error) throw new Error(`readKey(${key}) failed: ${error.message}`);
   return (data?.value ?? null) as T;
 }
 

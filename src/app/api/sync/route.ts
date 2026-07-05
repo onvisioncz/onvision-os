@@ -127,6 +127,19 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   // push subscriptions — every authenticated user can write their own
   "ov-push-subscriptions":  ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
   "ov-team-chat":           ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
+  // Výkazy hodin — zapisuje je každý, kdo si trackuje práci (/vykazy, /dnes).
+  // Bez tohohle dostávaly non-admin role tiché 403 a hodiny se jim neuložily.
+  "ov-time-entries":        ["admin", "pm", "produkce", "grafik", "smm", "fakturace", "ucetni"],
+  // Technika (/technika) — rezervace i správu techniky dělá celá produkční parta.
+  "ov-gear":                ["admin", "produkce", "grafik", "smm", "pm"],
+  "ov-gear-reservations":   ["admin", "produkce", "grafik", "smm", "pm"],
+  // Call sheety (/call-sheet) a lokace (/lokace) — produkce.
+  "ov-call-sheets":         ["admin", "produkce", "pm"],
+  "ov-lokace":              ["admin", "produkce"],
+  // Brand voice klienta (/smm-ai) — správci sítí.
+  "ov-client-voice":        ["admin", "smm", "pm"],
+  // Cashflow/cíle meta (/cashflow, /cile) — fakturace.
+  "ov-vyhledy-vystupy":     ["admin", "fakturace"],
 };
 
 /* ── Per-email write allowlist ────────────────────────────────────────────────

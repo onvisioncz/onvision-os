@@ -147,7 +147,22 @@ async function handleGenerate(req: NextRequest) {
   // Auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return UNAUTHORIZED;
+  if (!user?.email) return UNAUTHORIZED;
+
+  // Autorizace: report generuje drahá Meta/Claude volání a zapisuje do
+  // sdíleného archivu — jen role, které mají na /reporty přístup (admin, smm).
+  let roles: string[] = [];
+  try {
+    const { data } = await supabase.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
+    const users: typeof DEFAULT_USERS = Array.isArray(data?.value) ? data.value : DEFAULT_USERS;
+    roles = (users.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())
+      ?? DEFAULT_USERS.find((u) => u.email!.toLowerCase() === user.email!.toLowerCase()))?.roles ?? [];
+  } catch {
+    roles = DEFAULT_USERS.find((u) => u.email!.toLowerCase() === user.email!.toLowerCase())?.roles ?? [];
+  }
+  if (!roles.includes("admin") && !roles.includes("smm")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (!(await aiRateLimitOk(user.email))) {
     return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });

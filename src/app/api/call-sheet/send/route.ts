@@ -10,6 +10,7 @@ import { CallSheetPDF } from "@/components/call-sheet/CallSheetPDF";
 import { resolveAssignee } from "@/lib/agent/identity";
 import { sendMail, isEmailConfigured } from "@/lib/email/gmail";
 import { brandedEmailHtml } from "@/lib/email/template";
+import { escapeHtml } from "@/lib/format";
 import type { CallSheet } from "@/lib/callsheet";
 
 export const runtime = "nodejs";
@@ -50,17 +51,20 @@ export async function POST(req: NextRequest) {
   }
   const fileName = `callsheet-${(sheet.nazev || "nataceni").replace(/\s+/g, "-")}.pdf`;
 
+  // Escapovat VŠECHNA uživatelsky editovatelná pole — jinak stored XSS/HTML
+  // injection v e-mailu celé crew (např. adresa s <img onerror> / phishing <a>).
+  const eNazev = escapeHtml(sheet.nazev || "Natáčení");
   const bodyHtml = `
     <p style="margin:0 0 14px;">Ahoj, posílám call sheet na natáčení:</p>
-    <p style="margin:0 0 4px;"><strong style="color:#fff;">${sheet.nazev || "Natáčení"}</strong> · ${sheet.typ}</p>
-    <p style="margin:0 0 4px;">📅 ${sheet.datum || "—"}${sheet.casSrazu ? ` · sraz ${sheet.casSrazu}` : ""}</p>
-    ${sheet.adresa ? `<p style="margin:0 0 4px;">📍 ${sheet.adresa}</p>` : ""}
-    ${sheet.sraz ? `<p style="margin:0 0 4px;color:rgba(255,255,255,0.6);">${sheet.sraz}</p>` : ""}
+    <p style="margin:0 0 4px;"><strong style="color:#fff;">${eNazev}</strong> · ${escapeHtml(sheet.typ ?? "")}</p>
+    <p style="margin:0 0 4px;">📅 ${escapeHtml(sheet.datum || "—")}${sheet.casSrazu ? ` · sraz ${escapeHtml(sheet.casSrazu)}` : ""}</p>
+    ${sheet.adresa ? `<p style="margin:0 0 4px;">📍 ${escapeHtml(sheet.adresa)}</p>` : ""}
+    ${sheet.sraz ? `<p style="margin:0 0 4px;color:rgba(255,255,255,0.6);">${escapeHtml(sheet.sraz)}</p>` : ""}
     <p style="margin:14px 0 0;">Detaily najdeš v přiloženém PDF. Ať to klapne! 🎬</p>`;
 
   const html = brandedEmailHtml({
-    preheader: `Call sheet — ${sheet.nazev} (${sheet.datum})`,
-    heading: `Call sheet · ${sheet.nazev || "Natáčení"}`,
+    preheader: `Call sheet — ${escapeHtml(sheet.nazev ?? "")} (${escapeHtml(sheet.datum ?? "")})`,
+    heading: `Call sheet · ${eNazev}`,
     bodyHtml,
   });
   const text = `Call sheet: ${sheet.nazev}\nDatum: ${sheet.datum}${sheet.casSrazu ? `, sraz ${sheet.casSrazu}` : ""}\nMísto: ${sheet.adresa}\n\nDetaily v příloze.`;
