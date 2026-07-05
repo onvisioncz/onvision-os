@@ -9,6 +9,7 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { fmtKc } from "@/lib/ziskovost";
 import { unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
 import { castkaZaMesic, monthKey, monthLabel, celkemZaMesic, type OdmenaPerson } from "@/lib/odmeny";
+import { buildForecast, minBalance as minBal, type ForecastParams } from "@/lib/forecast";
 
 /* ── Typy dat ────────────────────────────────────────────────────────────── */
 interface Invoice { castka: number; stav: string; datumSplatnosti: string; klient: string }
@@ -49,6 +50,7 @@ export default function CashflowPage() {
 
   const [tab, setTab] = useState<"cashflow" | "vystup" | "pausaly">("cashflow");
   const [startBalance, setStartBalance] = useSupabaseData<number>("ov-vyhledy-zustatek", () => 0);
+  const [scenarioClient, setScenarioClient] = useState<string>(""); // "co když odejde klient X"
 
   const nowYear = new Date().getFullYear();
   const activeRetainers = useMemo(() => retainers.filter((r) => r.aktivni !== false), [retainers]);
@@ -70,22 +72,33 @@ export default function CashflowPage() {
   }, [invoices, financeFaktury]);
   const receivablesTotal = useMemo(() => [...receivablesByMonth.values()].reduce((a, b) => a + b, 0), [receivablesByMonth]);
 
-  // 6-month forecast
-  const forecast = useMemo(() => {
-    const now = new Date();
-    let running = startBalance;
-    return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const key = monthKey(d);
-      const prijmy = retainerIncome + (receivablesByMonth.get(key) ?? 0);
-      const vydaje = odmenyMonthly + predplatneMonthly;
-      const net = prijmy - vydaje;
-      running += net;
-      return { key, label: monthLabel(key), prijmy, vydaje, net, zustatek: running };
-    });
-  }, [startBalance, retainerIncome, odmenyMonthly, predplatneMonthly, receivablesByMonth]);
+  // MRR klienta, jehož odchod simulujeme (0 = žádný scénář)
+  const lostMrr = useMemo(() => {
+    if (!scenarioClient) return 0;
+    const c = activeRetainers.find((r) => r.name === scenarioClient);
+    return c ? (c.pausal || 0) + (c.reklama || 0) : 0;
+  }, [scenarioClient, activeRetainers]);
 
-  const minBalance = Math.min(...forecast.map((f) => f.zustatek), startBalance);
+  // 6-month forecast (přes sdílený lib) — s odečtením MRR odcházejícího klienta
+  const baseParams = useMemo<ForecastParams>(() => ({
+    startBalance,
+    retainerIncome: retainerIncome - lostMrr,
+    monthlyExpenses: odmenyMonthly + predplatneMonthly,
+    receivablesByMonth,
+    months: 6,
+    from: new Date(),
+    monthKey,
+    monthLabel,
+  }), [startBalance, retainerIncome, lostMrr, odmenyMonthly, predplatneMonthly, receivablesByMonth]);
+
+  const forecast = useMemo(() => buildForecast(baseParams), [baseParams]);
+  const minBalance = minBal(forecast, startBalance);
+
+  // Srovnání s "baseline" (bez scénáře) — o kolik scénář zhorší nejnižší zůstatek
+  const baselineMin = useMemo(
+    () => (lostMrr ? minBal(buildForecast({ ...baseParams, retainerIncome }), startBalance) : minBalance),
+    [baseParams, retainerIncome, lostMrr, startBalance, minBalance]
+  );
 
   // Cena za výstup
   const odmenyRok = useMemo(() => {
@@ -138,10 +151,36 @@ export default function CashflowPage() {
             <Stat label="Nezaplacené faktury" value={fmtKc(receivablesTotal)} color={AMBER} icon={Wallet} />
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[--muted-foreground]">Aktuální zůstatek na účtu:</span>
-            <input type="number" className={iCls} style={{ ...iStyle, width: 140 }} value={startBalance || ""} onChange={(e) => setStartBalance(Number(e.target.value))} placeholder="0" />
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] text-[--muted-foreground]">Aktuální zůstatek na účtu:</span>
+              <input type="number" className={iCls} style={{ ...iStyle, width: 140 }} value={startBalance || ""} onChange={(e) => setStartBalance(Number(e.target.value))} placeholder="0" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] text-[--muted-foreground]">Scénář — co když odejde:</span>
+              <select className={iCls} style={{ ...iStyle, width: 180 }} value={scenarioClient} onChange={(e) => setScenarioClient(e.target.value)}>
+                <option value="">— nikdo (baseline) —</option>
+                {activeRetainers
+                  .filter((r) => (r.pausal || 0) + (r.reklama || 0) > 0)
+                  .sort((a, b) => ((b.pausal || 0) + (b.reklama || 0)) - ((a.pausal || 0) + (a.reklama || 0)))
+                  .map((r) => (
+                    <option key={r.name} value={r.name}>{r.name} (−{fmtKc((r.pausal || 0) + (r.reklama || 0))}/měs)</option>
+                  ))}
+              </select>
+            </div>
           </div>
+
+          {lostMrr > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-[10px] text-[13px]" style={{ background: "oklch(0.74 0.165 75 / 0.1)", border: "1px solid oklch(0.74 0.165 75 / 0.3)" }}>
+              <TrendingDown className="w-4 h-4 mt-0.5 shrink-0" style={{ color: AMBER }} />
+              <span>
+                Scénář <strong>{scenarioClient} odchází</strong>: recurring příjem klesne o <strong>{fmtKc(lostMrr)}/měs</strong>.
+                Nejnižší zůstatek za 6 měsíců by spadl z <strong>{fmtKc(baselineMin)}</strong> na <strong style={{ color: minBalance < 0 ? RED : "inherit" }}>{fmtKc(minBalance)}</strong>
+                {" "}(rozdíl {fmtKc(minBalance - baselineMin)}).
+                {baselineMin >= 0 && minBalance < 0 && <span style={{ color: RED }}> Tímto odchodem vzniká cash gap.</span>}
+              </span>
+            </div>
+          )}
 
           {minBalance < 0 && (
             <div className="flex items-center gap-2 p-3 rounded-[10px] text-[13px]" style={{ background: "oklch(0.65 0.22 25 / 0.1)", border: "1px solid oklch(0.65 0.22 25 / 0.3)", color: RED }}>
