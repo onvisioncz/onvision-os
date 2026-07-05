@@ -8,7 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
-  LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane,
+  LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane, CalendarRange,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -67,6 +67,7 @@ const GROUPS = [
     items: [
       { label: "SMM",      short: "SMM",      href: "/smm",      icon: Layers2 },
       { label: "AI obsah", short: "AI obsah", href: "/smm-ai",   icon: Sparkles },
+      { label: "Týdenní výhled", short: "Výhled", href: "/tydenni-vyhled", icon: CalendarRange },
       { label: "SMM Studio", short: "Studio", href: "/smm-studio", icon: LayoutGrid },
       { label: "Reklamy",  short: "Reklamy",  href: "/ads",      icon: Megaphone },
       { label: "Reporty",  short: "Reporty",  href: "/reporty",  icon: BarChart2 },

@@ -140,6 +140,9 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-client-voice":        ["admin", "smm", "pm"],
   // Cashflow/cíle meta (/cashflow, /cile) — fakturace.
   "ov-vyhledy-vystupy":     ["admin", "fakturace"],
+  // Týdenní výhled obsahu — vyplňují správci sítí, jednatel (admin) opravuje.
+  "ov-weekly-outlook":         ["admin", "smm", "pm"],
+  "ov-weekly-outlook-submits": ["admin", "smm", "pm"],
 };
 
 /* ── Per-email write allowlist ────────────────────────────────────────────────
