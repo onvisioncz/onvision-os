@@ -64,9 +64,11 @@ export function useSupabaseData<T>(
   // History stack for undo — stores previous values
   const historyRef = useRef<T[]>([]);
 
+  // DŮLEŽITÉ: inicializuj JEN seedem, ať se server render (bez localStorage)
+  // shoduje s prvním klient renderem → žádný hydration mismatch. Cache z
+  // localStorage se natáhne až v efektu po mountu (viz níže).
   const [value, setValueRaw] = useState<T>(() => {
-    const fromCache = readCache<T>(key);
-    const initial = fromCache ?? seed();
+    const initial = seed();
     initialValueRef.current = initial;
     return initial;
   });
@@ -75,6 +77,21 @@ export function useSupabaseData<T>(
   const initialized = useRef(false);
   const skipNextSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Natáhni cache z localStorage až PO mountu (ne v render initializeru) ────
+  // Tím se vyhneme hydration mismatchi: hydratace proběhne se seedem (jako na
+  // serveru) a hned potom se stav aktualizuje na cachovanou hodnotu — plynulý
+  // instant paint, ale bez chyby. Server fetch pak přepíše čerstvými daty.
+  useEffect(() => {
+    const fromCache = readCache<T>(key);
+    if (fromCache != null && !initialized.current) {
+      initialValueRef.current = fromCache;
+      skipNextSave.current = true;
+      setValueRaw(fromCache);
+    }
+    // Jen při změně klíče (mount). Záměrně bez `value` v deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   // ── Register undo handler for this data instance ──────────────────────────
   useEffect(() => {
