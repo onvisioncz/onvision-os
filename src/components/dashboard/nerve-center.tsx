@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, FileWarning, CheckSquare, ClipboardCheck, TrendingDown, Star, Camera, ShieldCheck,
+  AlertTriangle, FileWarning, CheckSquare, ClipboardCheck, TrendingDown, Star, Camera, ShieldCheck, Plane,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
@@ -11,6 +11,8 @@ import { overlaps, type GearReservation } from "@/lib/gear";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 import { parseDeadline } from "@/lib/dates";
 import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
+import { absenceCollisions, isAbsentOn, type Absence } from "@/lib/absence";
+import { DEFAULT_USERS } from "@/lib/roles";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string }
@@ -38,6 +40,8 @@ export function NerveCenter() {
   const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
   const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
   const [monthlyClients] = useSupabaseData<{ name: string; aktivni?: boolean }[]>("ov-monthly-clients", () => []);
+  const [absences] = useSupabaseData<Absence[]>("ov-absence", () => []);
+  const [shooting] = useSupabaseData<{ datum?: string; klient?: string; clenove?: string[] }[]>("ov-shooting-days", () => []);
 
   const signals = useMemo<Signal[]>(() => {
     const now = new Date();
@@ -104,8 +108,17 @@ export function NerveCenter() {
         if (reservations[i].gearId === reservations[j].gearId && overlaps(reservations[i].od, reservations[i].do, reservations[j].od, reservations[j].do)) conflicts++;
     if (conflicts) out.push({ key: "gear", count: conflicts, label: "kolizí rezervací techniky", href: "/technika", color: RED, icon: Camera });
 
+    // Kolize dovolených — někdo je na natáčení / technice během své absence
+    const todayISO = now.toISOString().slice(0, 10);
+    const absCol = absenceCollisions(absences, shooting, reservations as { kdo?: string; od?: string; do?: string; projekt?: string }[], todayISO);
+    if (absCol.length) out.push({ key: "abscol", count: absCol.length, label: absCol.length === 1 ? "kolize s dovolenou" : "kolizí s dovolenou", detail: absCol.slice(0, 3).map((c) => c.name.split(" ")[0]).join(", "), href: "/dovolena", color: RED, icon: Plane });
+
+    // Dnes mimo — přehled dostupnosti týmu (informativní)
+    const out2 = DEFAULT_USERS.filter((u) => u.aktivni).filter((u) => isAbsentOn(absences, u.displayName, todayISO));
+    if (out2.length) out.push({ key: "mimo", count: out2.length, label: out2.length === 1 ? "člen dnes mimo" : "členů dnes mimo", detail: out2.slice(0, 4).map((u) => u.displayName.split(" ")[0]).join(", "), href: "/dovolena", color: "oklch(0.62 0.27 265)", icon: Plane });
+
     return out;
-  }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates, monthlyClients]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates, monthlyClients, absences, shooting]);
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
