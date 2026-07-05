@@ -14,6 +14,8 @@ export interface UserConfig {
   photo?: string;
   /** Pozice dle webu (hezčí popis než interní role) */
   pozice?: string;
+  /** Extra routy povolené konkrétně tomuto člověku (nad rámec jeho rolí). */
+  extraRoutes?: string[];
 }
 
 /* ── Default users (seed) ───────────────────────────────────────────────────── */
@@ -159,6 +161,7 @@ export const DEFAULT_USERS: UserConfig[] = [
     aktivni: true,
     photo: "/team/tomas-dang.jpg",
     pozice: "Data analytik",
+    extraRoutes: ["/ads"],   // vyhodnocuje reklamy — přístup i bez admin role
   },
 ];
 
@@ -191,14 +194,25 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   ucetni:    ["/dnes", "/dashboard", "/odmeny", "/fakturace", "/parovani", "/upominky"],
   produkce:  ["/dnes", "/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
   grafik:    ["/dnes", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena"],
-  smm:       ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/ads", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
-  pm:        ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/ads", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
+  smm:       ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
+  pm:        ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */
-export function canAccess(roles: Role[], pathname: string): boolean {
+/* ── Per-e-mail extra routy (kód, nezávislé na uloženém ov-user-roles) ──────────
+ * Když je přístup pro konkrétní lidi nad rámec jejich rolí. Drží se v kódu, aby
+ * fungoval i kdyby uložený seznam týmu byl neúplný. */
+export const EXTRA_ROUTES_BY_EMAIL: Record<string, string[]> = {
+  "tomas@onvision.cz": ["/ads"],   // vyhodnocuje reklamy
+};
+
+export function extraRoutesForEmail(email?: string | null): string[] {
+  return EXTRA_ROUTES_BY_EMAIL[(email ?? "").toLowerCase()] ?? [];
+}
+
+export function canAccess(roles: Role[], pathname: string, extraRoutes: string[] = []): boolean {
   if (roles.includes("admin")) return true;
-  const allowed = new Set(roles.flatMap(r => ROLE_ROUTES[r]));
+  const allowed = new Set([...roles.flatMap(r => ROLE_ROUTES[r]), ...extraRoutes]);
   return Array.from(allowed).some(p => pathname === p || pathname.startsWith(p + "/"));
 }
 

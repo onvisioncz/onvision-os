@@ -101,7 +101,8 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-oneoffs-projects":    ["admin", "produkce"],
   "ov-ukoly-tasks":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
   "ov-ads-campaigns":       ["admin", "smm"],
-  "ov-ads":                 ["admin", "smm", "pm"],
+  // ov-ads (Reklamy) — přístup jen admini + konkrétní e-maily (viz KEY_WRITE_EMAILS).
+  // Žádná role sama o sobě nestačí, proto zde není.
   "ov-smm-plan":            ["admin", "smm"],
   "ov-smm-posts":           ["admin", "smm"],
   "ov-smm-hashtag-sets":    ["admin", "smm"],
@@ -126,6 +127,14 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   // push subscriptions — every authenticated user can write their own
   "ov-push-subscriptions":  ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
   "ov-team-chat":           ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
+};
+
+/* ── Per-email write allowlist ────────────────────────────────────────────────
+ * Pro klíče, kde přístup nemá dostat celá role, ale jen konkrétní lidé.
+ * Admini mají přístup vždy (bypass). E-maily malými písmeny.
+ * ov-ads (Reklamy) — vyhodnocuje je Tomáš Dang. */
+const KEY_WRITE_EMAILS: Record<string, string[]> = {
+  "ov-ads": ["tomas@onvision.cz"],
 };
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
@@ -196,13 +205,15 @@ export async function POST(req: NextRequest) {
   const isAdmin   = userRoles.includes("admin");
 
   if (!isAdmin) {
-    const allowed = KEY_WRITE_ROLES[key];
-    if (!allowed) {
+    const allowedRoles = KEY_WRITE_ROLES[key];
+    const allowedEmails = KEY_WRITE_EMAILS[key];
+    if (!allowedRoles && !allowedEmails) {
       // Unknown key — admin only
       return FORBIDDEN;
     }
-    const hasPermission = allowed.some((r) => userRoles.includes(r));
-    if (!hasPermission) return FORBIDDEN;
+    const roleOk = allowedRoles?.some((r) => userRoles.includes(r)) ?? false;
+    const emailOk = allowedEmails?.includes((user.email ?? "").toLowerCase()) ?? false;
+    if (!roleOk && !emailOk) return FORBIDDEN;
   }
 
   // ── Přečti AKTUÁLNÍ řádek (hodnota + token) — pro konflikt i pro push diff ──

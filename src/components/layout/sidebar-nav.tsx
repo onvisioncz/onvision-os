@@ -16,7 +16,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { PwaInstallButton } from "@/components/pwa-install-button";
-import { canAccess } from "@/lib/roles";
+import { canAccess, extraRoutesForEmail } from "@/lib/roles";
 import { ChatTrigger } from "@/components/chat/chat-overlay";
 import { useChatContext } from "@/components/chat/chat-shell";
 import { useTaskBadge, markTaskBadgeSeen } from "@/lib/hooks/use-task-badge";
@@ -284,7 +284,7 @@ export function SidebarNav() {
 
   const visibleHrefs = new Set(
     ALL_NAV
-      .filter(({ href }) => !user || canAccess(user.roles, href))
+      .filter(({ href }) => !user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]))
       .map(({ href }) => href)
   );
 
@@ -452,7 +452,7 @@ export function MobileNav() {
     { label: "Hlavní", items: [...STANDALONE_TOP, ...STANDALONE_BOTTOM] },
     ...GROUPS.map((g) => ({ label: g.label, items: g.items })),
     { label: "Systém", items: [{ short: "Nastavení", href: "/nastaveni", icon: Settings }] },
-  ].map((s) => ({ label: s.label, items: s.items.filter((i) => !user || canAccess(user.roles, i.href)) }))
+  ].map((s) => ({ label: s.label, items: s.items.filter((i) => !user || canAccess(user.roles, i.href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)])) }))
     .filter((s) => s.items.length > 0);
 
   // 4 klíčové záložky (filtrované dle oprávnění) + „Víc"
@@ -461,7 +461,7 @@ export function MobileNav() {
     { short: "Přehled", href: "/dashboard", icon: LayoutDashboard },
     { short: "Úkoly",   href: "/ukoly",     icon: CheckSquare },
     { short: "Finance", href: "/finance",   icon: Receipt },
-  ].filter(({ href }) => !user || canAccess(user.roles, href));
+  ].filter(({ href }) => !user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]));
 
   const bar = [...PRIMARY, { short: "Víc", href: "__more__", icon: LayoutGrid }];
 
