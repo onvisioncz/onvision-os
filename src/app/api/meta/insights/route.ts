@@ -55,6 +55,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const { token: userToken, isNew, expiresAt } = await getLongLivedToken();
+    if (isNew) {
+      // Vidí jen admin projektu ve Vercel logách — nikdy ne v odpovědi API.
+      console.warn(`[meta/insights] Nový long-lived token (ulož jako META_LONG_LIVED_TOKEN, platí do ${expiresAt}): ${userToken}`);
+    }
 
     // Date range: last 30 days (period=day + since/until is most compatible)
     const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
@@ -139,8 +143,10 @@ export async function GET(req: NextRequest) {
       },
       period,
       fetchedAt: new Date().toISOString(),
-      // If token was freshly exchanged, include it so admin can save it as META_LONG_LIVED_TOKEN
-      ...(isNew && expiresAt ? { newLongLivedToken: userToken, tokenExpiresAt: expiresAt } : {}),
+      // Bezpečnost: živý Meta token se NIKDY neposílá v HTTP odpovědi (šel by
+      // vidět komukoliv přihlášenému, ne jen adminovi). Místo toho jen do
+      // server logů (Vercel → Functions), kam vidí jen admini projektu.
+      ...(isNew && expiresAt ? { needsTokenSave: true, tokenExpiresAt: expiresAt } : {}),
       errors: {
         igReach:    igReach?.error    ?? null,
         igFollower: igFollower?.error ?? null,
