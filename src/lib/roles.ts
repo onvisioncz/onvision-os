@@ -190,12 +190,12 @@ export const ROLE_COLORS: Record<Role, string> = {
 // "*" = all routes (admin only)
 export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
-  fakturace: ["/dnes", "/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile", "/parovani", "/upominky", "/fakturovat"],
-  ucetni:    ["/dnes", "/dashboard", "/odmeny", "/fakturace", "/parovani", "/upominky"],
-  produkce:  ["/dnes", "/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
-  grafik:    ["/dnes", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena"],
-  smm:       ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
-  pm:        ["/dnes", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
+  fakturace: ["/dnes", "/inbox", "/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile", "/parovani", "/upominky", "/fakturovat"],
+  ucetni:    ["/dnes", "/inbox", "/dashboard", "/odmeny", "/fakturace", "/parovani", "/upominky"],
+  produkce:  ["/dnes", "/inbox", "/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
+  grafik:    ["/dnes", "/inbox", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena"],
+  smm:       ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
+  pm:        ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
 };
 
 /* ── Helper: can a user with these roles access a route ─────────────────────── */

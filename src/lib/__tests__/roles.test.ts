@@ -25,4 +25,10 @@ describe("canAccess", () => {
   it("extraRoutes nepovolí nesouvisející routu", () => {
     expect(canAccess(["smm"], "/finance", ["/ads"])).toBe(false);
   });
+
+  it("každá non-admin role vidí /inbox (Upozornění) — kvůli notifikacím", () => {
+    for (const r of ["fakturace", "ucetni", "produkce", "grafik", "smm", "pm"] as const) {
+      expect(canAccess([r], "/inbox")).toBe(true);
+    }
+  });
 });
