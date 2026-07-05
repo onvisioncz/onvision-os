@@ -29,6 +29,7 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
 import { AiBrief } from "@/components/ai-brief";
+import { VyhledGlance } from "@/components/dashboard/vyhled-glance";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
@@ -1246,6 +1247,12 @@ export default function DashboardPage() {
         {isAdmin && (
           <motion.div variants={item}>
             <AiBrief />
+          </motion.div>
+        )}
+
+        {isAdmin && (
+          <motion.div variants={item}>
+            <VyhledGlance />
           </motion.div>
         )}
 
