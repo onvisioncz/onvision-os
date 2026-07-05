@@ -129,6 +129,8 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-team-chat":           ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
   // Inbox stav (přečteno/odloženo) — každý si spravuje své notifikace.
   "ov-inbox-state":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace", "ucetni"],
+  // Evidence smluv — admini a fakturace.
+  "ov-contracts":           ["admin", "fakturace"],
   // Výkazy hodin — zapisuje je každý, kdo si trackuje práci (/vykazy, /dnes).
   // Bez tohohle dostávaly non-admin role tiché 403 a hodiny se jim neuložily.
   "ov-time-entries":        ["admin", "pm", "produkce", "grafik", "smm", "fakturace", "ucetni"],

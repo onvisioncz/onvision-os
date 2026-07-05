@@ -8,7 +8,7 @@ import {
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
   Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
-  LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane, CalendarRange,
+  LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane, CalendarRange, FileSignature,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +53,7 @@ const GROUPS = [
       { label: "Cashflow",   short: "Cashflow",  href: "/cashflow",   icon: LineChart },
       { label: "Cíle",       short: "Cíle",      href: "/cile",       icon: Target },
       { label: "Fakturace",  short: "Faktury",   href: "/fakturace",  icon: FileText },
+      { label: "Smlouvy",    short: "Smlouvy",   href: "/smlouvy",    icon: FileSignature },
       { label: "Kontrola fakturace", short: "Kontrola", href: "/fakturovat", icon: ClipboardCheck },
       { label: "Párování plateb", short: "Párování", href: "/parovani", icon: Landmark },
       { label: "Upomínky",   short: "Upomínky",  href: "/upominky",   icon: BellRing },

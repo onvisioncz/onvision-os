@@ -25,6 +25,7 @@ import { celkemZaMesic, monthKey, monthLabel } from "@/lib/odmeny";
 import { absenceCollisions } from "@/lib/absence";
 import { appendSnapshot, detectAnomalies, type MrrSnapshot } from "@/lib/mrr-history";
 import { cadenceByClient, ymOf, type CadencePost, type CadenceClient } from "@/lib/post-cadence";
+import { expiringContracts, type Contract } from "@/lib/contracts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -240,6 +241,14 @@ export async function GET(req: NextRequest) {
       for (const r of rows.filter((r) => r.band === "ticho")) {
         findings.push(`Klient ${r.klient} nemá tento měsíc na sítích žádný post (publikovaný ani naplánovaný)`);
       }
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 12) Smlouvy, které brzy vyprší nebo už vypršely (do 30 dní).
+  try {
+    const contracts = await readKey<Contract[]>(sb, "ov-contracts");
+    for (const c of expiringContracts(contracts ?? [], new Date(), 30)) {
+      findings.push(`Smlouva „${c.typ} — ${c.nazev}" ${c.expiry.label}`);
     }
   } catch { /* nikdy neshodit selfcheck */ }
 
