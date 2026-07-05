@@ -19,6 +19,9 @@ import { identityFromEmail } from "@/lib/agent/identity";
 import { parseDeadline, isValidCzDate, daysUntil } from "@/lib/dates";
 import { overlaps } from "@/lib/gear";
 import { clientHealth } from "@/lib/client-health";
+import { buildForecast, minBalance as forecastMin } from "@/lib/forecast";
+import { unpaidInvoices } from "@/lib/overdue";
+import { celkemZaMesic, monthKey, monthLabel } from "@/lib/odmeny";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -169,6 +172,34 @@ export async function GET(req: NextRequest) {
       if (r.gearId != null && !gearIds.has(r.gearId) && (r.do ?? "") >= new Date().toISOString().slice(0, 10)) {
         findings.push(`Rezervace (${r.kdo ?? "?"}, ${r.od}–${r.do}) odkazuje na smazanou techniku`);
       }
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 8) Cash-gap výhled — proaktivní varování, když 6měsíční projekce
+  // zůstatku spadne do mínusu (stejná logika jako cashflow stránka).
+  try {
+    const [odmeny, predplatne, startBalance] = await Promise.all([
+      readKey<import("@/lib/odmeny").OdmenaPerson[]>(sb, "ov-odmeny"),
+      readKey<Array<{ castka?: number; mena?: string }>>(sb, "ov-finance-predplatne"),
+      readKey<number>(sb, "ov-vyhledy-zustatek"),
+    ]);
+    const active = (clients ?? []).filter((c) => c.aktivni !== false);
+    const retainerIncome = active.reduce((s, c) => s + (c.pausal || 0) + (c.reklama || 0), 0);
+    const odmenyMonthly = celkemZaMesic(odmeny ?? [], monthKey(new Date()));
+    const predplatneMonthly = (predplatne ?? []).reduce((s, p) => s + (p.mena === "EUR" ? (p.castka || 0) * 25 : (p.castka || 0)), 0);
+    const receivablesByMonth = new Map<string, number>();
+    for (const inv of unpaidInvoices((issued ?? []) as never, (finance ?? []) as never)) {
+      if (!inv.due) continue;
+      const k = `${inv.due.getFullYear()}-${String(inv.due.getMonth() + 1).padStart(2, "0")}`;
+      receivablesByMonth.set(k, (receivablesByMonth.get(k) ?? 0) + inv.castka);
+    }
+    const forecast = buildForecast({
+      startBalance: startBalance ?? 0, retainerIncome, monthlyExpenses: odmenyMonthly + predplatneMonthly,
+      receivablesByMonth, months: 6, from: new Date(), monthKey, monthLabel,
+    });
+    const worst = forecast.reduce((a, b) => (b.zustatek < a.zustatek ? b : a), forecast[0]);
+    if (worst && forecastMin(forecast, startBalance ?? 0) < 0) {
+      findings.push(`Cash-gap výhled: v ${worst.label} klesá projektovaný zůstatek na ${Math.round(worst.zustatek).toLocaleString("cs-CZ")} Kč`);
     }
   } catch { /* nikdy neshodit selfcheck */ }
 
