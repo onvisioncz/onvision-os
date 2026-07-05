@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, Search, Megaphone,
   CheckCircle2, Clock, AlertCircle, ChevronDown, TrendingUp, Users2,
+  Eye, MousePointerClick, Target, Award,
 } from "lucide-react";
+import { adsSummary, byFormat, bestFormat } from "@/lib/ads-insights";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 type AdStatus   = "Probíhá" | "Probíhá vyhodnocení" | "Dokončeno";
@@ -764,6 +766,20 @@ function AdModal({
             <Field label="Měsíční výplata">
               <Input value={form.mesicniVyplata} onChange={set("mesicniVyplata")} placeholder="ČERVEN 2026" />
             </Field>
+
+            {/* Výsledky kampaně — napájí Výkon kampaní (dosah, CTR, CPC) */}
+            <div className="md:col-span-2 mt-1 pt-3" style={{ borderTop: "1px solid oklch(1 0 0 / 0.06)" }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[--muted-foreground]">Výsledky kampaně (po vyhodnocení)</p>
+            </div>
+            <Field label="Dosah">
+              <Input value={form.dosah != null ? String(form.dosah) : ""} onChange={v => setForm(f => ({ ...f, dosah: v.trim() === "" ? undefined : Number(v.replace(/\s/g, "")) || undefined }))} placeholder="12 400" />
+            </Field>
+            <Field label="Kliky">
+              <Input value={form.kliky != null ? String(form.kliky) : ""} onChange={v => setForm(f => ({ ...f, kliky: v.trim() === "" ? undefined : Number(v.replace(/\s/g, "")) || undefined }))} placeholder="234" />
+            </Field>
+            <Field label="Konverze">
+              <Input value={form.konverze != null ? String(form.konverze) : ""} onChange={v => setForm(f => ({ ...f, konverze: v.trim() === "" ? undefined : Number(v.replace(/\s/g, "")) || undefined }))} placeholder="8" />
+            </Field>
           </div>
 
           {/* Footer */}
@@ -793,6 +809,63 @@ function AdModal({
 }
 
 /* ── Page ───────────────────────────────────────────────────────────────────── */
+/* ── Výkon kampaní — insighty (dosah, kliky, CTR, CPC, nejlepší formát) ────── */
+function PerformanceInsights({ ads }: { ads: Ad[] }) {
+  const withData = useMemo(() => ads.filter(a => (a.dosah || a.kliky || a.konverze)), [ads]);
+  const s = useMemo(() => adsSummary(withData), [withData]);
+  const best = useMemo(() => bestFormat(withData), [withData]);
+  const formats = useMemo(() => byFormat(withData).filter(f => f.kliky > 0).slice(0, 4), [withData]);
+
+  if (withData.length === 0) return null;
+
+  const metrics = [
+    { label: "Dosah", value: s.dosah.toLocaleString("cs-CZ"), icon: Eye, color: "oklch(0.62 0.27 265)" },
+    { label: "Kliky", value: s.kliky.toLocaleString("cs-CZ"), icon: MousePointerClick, color: "oklch(0.68 0.18 275)" },
+    { label: "CTR", value: `${s.ctr.toFixed(2).replace(".", ",")} %`, icon: TrendingUp, color: "oklch(0.78 0.165 75)" },
+    { label: "Konverze", value: s.konverze.toLocaleString("cs-CZ"), icon: Target, color: "oklch(0.67 0.155 155)" },
+    { label: "Prům. CPC", value: formatKc(Math.round(s.cpc)), icon: MousePointerClick, color: "oklch(0.72 0.2 330)" },
+  ];
+
+  return (
+    <div className="rounded-[12px] overflow-hidden" style={{ background: "var(--card)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+      <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 0.06)" }}>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-3.5 h-3.5" style={{ color: "oklch(0.62 0.27 265)" }} />
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[--muted-foreground]">Výkon kampaní</span>
+          <span className="text-[10px] text-[--muted-foreground]">· {withData.length} s daty</span>
+        </div>
+        {best && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "oklch(0.67 0.155 155 / 0.12)", border: "1px solid oklch(0.67 0.155 155 / 0.25)" }}>
+            <Award className="w-3 h-3" style={{ color: "oklch(0.67 0.155 155)" }} />
+            <span className="text-[11px] font-semibold" style={{ color: "oklch(0.7 0.155 155)" }}>Nejefektivnější: {best.key} · CPC {formatKc(Math.round(best.cpc))}</span>
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-px" style={{ background: "oklch(1 0 0 / 0.05)" }}>
+        {metrics.map(m => (
+          <div key={m.label} className="px-4 py-3 flex items-center gap-2.5" style={{ background: "var(--card)" }}>
+            <m.icon className="w-4 h-4 shrink-0" style={{ color: m.color }} />
+            <div>
+              <p className="text-[9px] text-[--muted-foreground] uppercase tracking-[0.06em]">{m.label}</p>
+              <p className="leading-none mt-0.5" style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, fontSize: 16, color: m.color }}>{m.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {formats.length > 1 && (
+        <div className="px-4 py-3 flex flex-wrap gap-x-5 gap-y-1.5" style={{ borderTop: "1px solid oklch(1 0 0 / 0.06)" }}>
+          {formats.map(f => (
+            <div key={f.key} className="flex items-center gap-1.5 text-[11px]">
+              <span className="font-semibold text-[--foreground]">{f.key}</span>
+              <span className="text-[--muted-foreground]">CPC {formatKc(Math.round(f.cpc))} · CTR {f.ctr.toFixed(1).replace(".", ",")} %</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdsPage() {
   const [ads, setAds]           = useSupabaseData<Ad[]>("ov-ads", () => SEED);
   const [filter, setFilter]     = useState<AdStatus | "Vše">("Vše");
@@ -899,6 +972,11 @@ export default function AdsPage() {
         {/* Investment panel */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }}>
           <InvestmentPanel ads={ads} />
+        </motion.div>
+
+        {/* Performance insights */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+          <PerformanceInsights ads={ads} />
         </motion.div>
 
         {/* Filters */}
