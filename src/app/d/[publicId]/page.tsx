@@ -47,8 +47,12 @@ export default async function DeliveryPublicPage({ params }: { params: Promise<{
     return (
       <div style={wrap}>
         <div style={{ marginTop: 80, textAlign: "center", color: C.soft, maxWidth: 420 }}>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 8 }}>OnVision</div>
-          {msg}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/onvision-mark.png" alt="" style={{ height: 30, width: 30, borderRadius: 8 }} />
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", color: C.text }}>OnVision</span>
+          </div>
+          <div>{msg}</div>
         </div>
       </div>
     );
@@ -57,7 +61,11 @@ export default async function DeliveryPublicPage({ params }: { params: Promise<{
   return (
     <div style={wrap}>
       <div style={{ width: "100%", maxWidth: 640 }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 24 }}>OnVision</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 24 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/onvision-mark.png" alt="" style={{ height: 34, width: 34, borderRadius: 9 }} />
+          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 23, fontWeight: 700, letterSpacing: "-0.01em" }}>OnVision</span>
+        </div>
 
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28 }}>
           <div style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: C.accent, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600 }}>{d.klient}</div>
@@ -84,7 +92,7 @@ export default async function DeliveryPublicPage({ params }: { params: Promise<{
         </div>
 
         <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 20, textAlign: "center" }}>
-          OnVision s.r.o. · www.onvision.cz — díky za spolupráci 🎬
+          OnVision s.r.o. · www.onvision.cz — děkujeme za spolupráci
         </p>
       </div>
     </div>
