@@ -17,6 +17,18 @@ import { Palette, Camera, Clapperboard, FileText, MessageSquare } from "lucide-r
 type DeliveryType = "grafika" | "foto" | "video" | "dokument" | "odkaz" | "zprava";
 type ProjektTyp  = "mesicni" | "jednorizovka" | "interni";
 
+type OutputStage = "rozprac" | "revize" | "final";
+const STAGES: { key: OutputStage; label: string; color: string }[] = [
+  { key: "rozprac", label: "Rozpracováno", color: "oklch(0.75 0.15 60)" },
+  { key: "revize", label: "K revizi", color: "oklch(0.7 0.16 265)" },
+  { key: "final", label: "Finál", color: "oklch(0.7 0.17 155)" },
+];
+const nextStage = (s?: OutputStage): OutputStage => {
+  const order: OutputStage[] = ["rozprac", "revize", "final"];
+  const i = order.indexOf(s ?? "rozprac");
+  return order[(i + 1) % order.length];
+};
+
 interface OutputMessage {
   id: string;
   authorEmail: string;
@@ -32,6 +44,7 @@ interface OutputMessage {
   thumbnail?: string;
   createdAt: string;
   readBy: string[];
+  faze?: OutputStage;       // fáze postprodukce (jen u výstupů, ne u zpráv)
 }
 
 /* ── Seed ─────────────────────────────────────────────────────────────── */
@@ -150,11 +163,12 @@ function ProjectTag({ typ, nazev }: { typ?: ProjektTyp; nazev?: string }) {
 }
 
 /* ── Delivery Card ────────────────────────────────────────────────────── */
-function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDelete, supabase }: {
+function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, onSetStage, currentEmail, canDelete, supabase }: {
   msg: OutputMessage;
   isSelf: boolean;
   onMarkRead: (id: string) => void;
   onDelete?: (id: string) => void;
+  onSetStage?: (id: string, s: OutputStage) => void;
   currentEmail: string;
   canDelete?: boolean;
   supabase: ReturnType<typeof createClient>;
@@ -253,9 +267,25 @@ function DeliveryCard({ msg, isSelf, onMarkRead, onDelete, currentEmail, canDele
               <div className="px-4 py-3 space-y-2">
                 {/* Type + title */}
                 <div className="space-y-0.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
-                    {cfg.label}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
+                      {cfg.label}
+                    </span>
+                    {/* Fáze postprodukce — klik cykluje rozprac → revize → finál */}
+                    {(() => {
+                      const st = STAGES.find(s => s.key === (msg.faze ?? "rozprac"))!;
+                      return (
+                        <button
+                          onClick={() => onSetStage?.(msg.id, nextStage(msg.faze))}
+                          disabled={!onSetStage}
+                          title={onSetStage ? "Klikni pro posun fáze" : undefined}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide"
+                          style={{ background: `${st.color}1e`, color: st.color, border: `1px solid ${st.color}44` }}>
+                          {st.label}
+                        </button>
+                      );
+                    })()}
+                  </div>
                   <p className="text-[13px] font-semibold leading-snug" style={{ color: "oklch(0.92 0.005 265)" }}>
                     {msg.nazev}
                   </p>
@@ -675,6 +705,7 @@ export default function OutputsPage() {
   const [messages, setMessages] = useSupabaseData<OutputMessage[]>("ov-output-messages", () => SEED);
   const supabase = createClient();
   const [filterProjekt, setFilterProjekt] = useState<string>("Vše");
+  const [onlyFinal, setOnlyFinal] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [quickText, setQuickText] = useState("");
@@ -731,6 +762,10 @@ export default function OutputsPage() {
     setMessages(prev => prev.filter(m => m.id !== id));
   }
 
+  function setStage(id: string, s: OutputStage) {
+    setMessages(prev => prev.map(m => (m.id === id ? { ...m, faze: s } : m)));
+  }
+
   const isAdmin = user?.roles?.includes("admin") ?? false;
 
   // Build filter options from existing messages
@@ -738,9 +773,13 @@ export default function OutputsPage() {
     messages.filter(m => m.projektNazev).map(m => m.projektNazev!)
   ))];
 
-  const visible = filterProjekt === "Vše"
+  const visibleByProject = filterProjekt === "Vše"
     ? messages
     : messages.filter(m => m.projektNazev === filterProjekt);
+  // "jen finální": ukáže zprávy + výstupy ve fázi finál (zprávy fázi nemají)
+  const visible = onlyFinal
+    ? visibleByProject.filter(m => m.type === "zprava" || m.faze === "final")
+    : visibleByProject;
 
   const unreadCount = messages.filter(m => email && !m.readBy.includes(email)).length;
 
@@ -771,6 +810,17 @@ export default function OutputsPage() {
             Grafiky, videa, fotky — přiřazené ke klientům a projektům
           </p>
         </div>
+
+        {/* Jen finální */}
+        <button
+          onClick={() => setOnlyFinal(f => !f)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold mr-2"
+          style={onlyFinal
+            ? { background: "oklch(0.7 0.17 155 / 0.14)", border: "1px solid oklch(0.7 0.17 155 / 0.3)", color: "oklch(0.72 0.17 155)" }
+            : { background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.55 0.005 222)" }}
+          title="Zobrazit jen výstupy ve fázi Finál">
+          ✓ Jen finální
+        </button>
 
         {/* Filter */}
         <div className="relative">
@@ -843,6 +893,7 @@ export default function OutputsPage() {
             isSelf={msg.authorEmail === email}
             onMarkRead={markRead}
             onDelete={deleteMessage}
+            onSetStage={msg.type !== "zprava" ? setStage : undefined}
             canDelete={isAdmin || msg.authorEmail === email}
             currentEmail={email ?? ""}
             supabase={supabase}
