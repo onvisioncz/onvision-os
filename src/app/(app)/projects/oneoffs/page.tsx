@@ -358,7 +358,7 @@ export default function OneoffsPage() {
         <div className="flex items-center gap-3">
           <KanbanSquare className="w-6 h-6" style={{ color: "oklch(0.62 0.27 265)" }} />
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.95 0.005 222)" }}>
-            Jednorázovky
+            Jednorázové projekty
           </h1>
         </div>
         <button

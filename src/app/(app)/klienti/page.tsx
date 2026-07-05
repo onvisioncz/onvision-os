@@ -428,7 +428,7 @@ export default function KlientiPage() {
               <SkeletonRows rows={5} className="px-4 py-4" />
             ) : sorted.length === 0 ? (
               <EmptyState icon={Building2} title="Zatím žádní klienti"
-                hint="Přidej klienty v Měsíčních klientech nebo Jednorázovkách." />
+                hint="Přidej klienty v Měsíčních klientech nebo Jednorázových projektech." />
             ) : (
               sorted.map(client => (
                 <Link key={client.id} href={`/klienti/${client.id}`}>

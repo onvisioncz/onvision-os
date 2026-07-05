@@ -116,7 +116,7 @@ const TYPE_CONFIG: Record<DeliveryType, { label: string; color: string; urlLabel
 
 const PROJEKT_TYP_CONFIG: Record<ProjektTyp, { label: string; icon: typeof Users; color: string }> = {
   mesicni:      { label: "Měsíční klient", icon: Users,        color: "oklch(0.72 0.18 265)" },
-  jednorizovka: { label: "Jednorázovka",   icon: FolderKanban, color: "oklch(0.72 0.18 48)"  },
+  jednorizovka: { label: "Jednorázový projekt",   icon: FolderKanban, color: "oklch(0.72 0.18 48)"  },
   interni:      { label: "Interní",        icon: Building2,    color: "oklch(0.5 0.005 222)"  },
 };
 
@@ -536,7 +536,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
               </div>
             )}
 
-            {/* Jednorázovka → text input */}
+            {/* Jednorázový projekt → text input */}
             {projektTyp === "jednorizovka" && (
               <input
                 value={jednorazovkaNazev}

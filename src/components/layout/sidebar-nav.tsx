@@ -39,7 +39,7 @@ const GROUPS = [
     label: "Projekty",
     items: [
       { label: "Měsíční klienti",  short: "Měsíční",  href: "/projects/monthly", icon: Users },
-      { label: "Jednorázovky",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
+      { label: "Jednorázové projekty",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
       { label: "Výkazy hodin",     short: "Výkazy",   href: "/vykazy", icon: Clock },
       { label: "Zápis → úkoly",    short: "Zápis",    href: "/zapis", icon: FileText },
     ],

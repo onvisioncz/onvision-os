@@ -23,7 +23,7 @@ const KEY_LABELS: Record<string, string> = {
   "ov-issued-invoices": "Faktura",
   "ov-finance-faktury": "Faktura",
   "ov-monthly-clients": "Měsíční klient",
-  "ov-oneoffs-projects": "Jednorázovka",
+  "ov-oneoffs-projects": "Jednorázový projekt",
   "ov-outputs": "Výstup",
   "ov-output-messages": "Zpráva výstupu",
   "ov-calendar-events": "Událost kalendáře",

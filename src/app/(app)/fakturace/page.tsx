@@ -1241,7 +1241,7 @@ export default function FakturaPage() {
 
   const tabs = [
     { key: "mesicni",    label: "Měsíční klienti", count: null },
-    { key: "jednorazove", label: "Jednorázovky",   count: null },
+    { key: "jednorazove", label: "Jednorázové projekty",   count: null },
     { key: "vydane",     label: "Vydané faktury",   count: pendingCount > 0 ? pendingCount : null },
   ] as const;
 

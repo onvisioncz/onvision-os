@@ -20,7 +20,7 @@ const COMMANDS: Cmd[] = [
   { label: "Schválení", href: "/schvaleni", group: "Přejít na", keywords: "nabídky approval" },
   { label: "Tým", href: "/tym", group: "Přejít na", keywords: "lidé zaměstnanci přihlášení aktivita vytížení" },
   { label: "Měsíční klienti", href: "/projects/monthly", group: "Přejít na", keywords: "retainer paušál" },
-  { label: "Jednorázovky", href: "/projects/oneoffs", group: "Přejít na" },
+  { label: "Jednorázové projekty", href: "/projects/oneoffs", group: "Přejít na" },
   { label: "Výkazy hodin", href: "/vykazy", group: "Přejít na", keywords: "time tracking" },
   { label: "Finance", href: "/finance", group: "Přejít na" },
   { label: "Ziskovost", href: "/ziskovost", group: "Přejít na", keywords: "marže zisk" },

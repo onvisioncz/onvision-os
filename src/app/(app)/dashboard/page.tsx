@@ -751,7 +751,7 @@ export default function DashboardPage() {
 
   const closingCanClose = closingChecks?.fakt.status === "green" && closingChecks?.platby.status === "green";
 
-  /* ── Jednorázovky: active projects sorted by stage ── */
+  /* ── Jednorázové projekty: active projects sorted by stage ── */
   const COL_ORDER = ["poptavka","nabidka","potvrzeno","preprodukce","nataceni","postprodukce","schvaleni","dokonceno"] as const;
   const COL_META: Record<string, { label: string; color: string; bg: string }> = {
     poptavka:     { label: "Poptávka",      color: "oklch(0.70 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.12)"  },
@@ -1847,7 +1847,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Column 2: Jednorázovky */}
+          {/* Column 2: Jednorázové projekty */}
           <div style={{ ...cardStyle, padding: "20px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <p
@@ -1859,7 +1859,7 @@ export default function DashboardPage() {
                   color: "oklch(0.92 0.005 222)",
                 }}
               >
-                Jednorázovky
+                Jednorázové projekty
               </p>
               {activeOneoffs.length > 0 && (
                 <span style={{

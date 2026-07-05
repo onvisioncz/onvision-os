@@ -113,7 +113,7 @@ export default function GrowthPage() {
         {[
           { label: "Celkem dnů",        value: total,   icon: Calendar, color: "oklch(0.62 0.27 265)" },
           { label: "Měsíční klienti",   value: monthly, icon: Users,    color: "oklch(0.62 0.27 265)" },
-          { label: "Jednorázovky",      value: oneoff,  icon: Film,     color: "oklch(0.64 0.21 290)"  },
+          { label: "Jednorázové projekty",      value: oneoff,  icon: Film,     color: "oklch(0.64 0.21 290)"  },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="px-6 py-4 flex items-center gap-4">
             <div className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
@@ -169,7 +169,7 @@ export default function GrowthPage() {
                 }}
               >
                 <option value="monthly">Měsíční klient</option>
-                <option value="oneoff">Jednorázovka</option>
+                <option value="oneoff">Jednorázový projekt</option>
               </select>
             </div>
           </div>
