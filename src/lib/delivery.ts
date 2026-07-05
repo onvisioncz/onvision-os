@@ -41,7 +41,16 @@ export function isExpired(d: Pick<Delivery, "expiresAt">, now = Date.now()): boo
   return Number.isFinite(t) && t < now;
 }
 
-/** Náhodný token do veřejné URL. */
+/**
+ * Náhodný token do veřejné URL (delivery i klientský share).
+ *
+ * Bezpečnostní oprava: Math.random() je nekryptografický PRNG (V8 xorshift128+) —
+ * s dostatkem vzorků z jiných volání jde jeho vnitřní stav rekonstruovat a další
+ * výstupy predikovat. Tenhle token přitom chrání neveřejná data (faktury,
+ * schvalování, komentáře klienta) bez přihlášení, takže musí být kryptograficky
+ * bezpečný. crypto.randomUUID() je dostupné v prohlížeči (secure context / HTTPS)
+ * i v Node.js runtime; odstraníme jen pomlčky, ať je token kompaktnější v URL.
+ */
 export function newPublicId(): string {
-  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+  return crypto.randomUUID().replace(/-/g, "");
 }
