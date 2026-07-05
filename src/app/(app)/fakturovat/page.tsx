@@ -2,7 +2,12 @@
 
 /**
  * Kontrola fakturace — kteří aktivní měsíční klienti ještě nemají fakturu za
- * tento měsíc. Pojistka proti zapomenutí. Read-only, odkaz vede do Fakturace.
+ * PŘEDCHOZÍ měsíc. Pojistka proti zapomenutí. Read-only, odkaz vede do Fakturace.
+ *
+ * Konvence (viz banner ve Fakturaci): „Faktury se vydávají 1. pracovní den
+ * v měsíci za předchozí měsíc." Proto kontrolujeme měsíc M-1, ne aktuální —
+ * jinak by byli celý měsíc falešně červení všichni (fakturu za tenhle měsíc
+ * nikdo nemá, vystaví se až příští měsíc).
  */
 import { useMemo } from "react";
 import Link from "next/link";
@@ -18,8 +23,11 @@ export default function FakturovatPage() {
   const [issued] = useSupabaseData<IssuedLite[]>("ov-issued-invoices", () => []);
 
   const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
+  // Fakturuje se předchozí měsíc (arrears) → kontrolujeme M-1 se správným
+  // přechodem roku (leden → prosinec loňska).
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const month = prev.getMonth() + 1;
+  const year = prev.getFullYear();
 
   const status = useMemo(() => invoicingStatus(clients, issued, month, year), [clients, issued, month, year]);
   const pendingSum = status.pending.reduce((s, c) => s + (c.pausal ?? 0), 0);
