@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, Copy, ExternalLink, Eye, Package, ArrowLeft, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Copy, ExternalLink, Eye, Package, ArrowLeft, Check, QrCode } from "lucide-react";
+import QRCodeLib from "qrcode";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { DELIVERY_KEY, newPublicId, EXPIRY_OPTIONS, expiryFromDays, isExpired, type Delivery } from "@/lib/delivery";
 
@@ -26,6 +27,16 @@ export default function DeliveryPage() {
   const [clients] = useSupabaseData<{ name: string }[]>("ov-monthly-clients", () => []);
   const [editing, setEditing] = useState<Delivery | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [qrFor, setQrFor] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+
+  // Vygeneruj QR data URL pro rozbalený odkaz
+  useEffect(() => {
+    if (!qrFor) { setQrUrl(null); return; }
+    const url = typeof window !== "undefined" ? `${window.location.origin}/d/${qrFor}` : `/d/${qrFor}`;
+    QRCodeLib.toDataURL(url, { width: 240, margin: 1, color: { dark: "#0B0B14", light: "#FFFFFF" } })
+      .then(setQrUrl).catch(() => setQrUrl(null));
+  }, [qrFor]);
 
   const clientNames = [...new Set([...clients.map((c) => c.name), ...items.map((i) => i.klient)].filter(Boolean))].sort();
 
@@ -86,7 +97,18 @@ export default function DeliveryPage() {
                   {copied === d.publicId ? <><Check className="w-3 h-3" style={{ color: "oklch(0.67 0.155 155)" }} /> Zkopírováno</> : <><Copy className="w-3 h-3" /> Kopírovat odkaz</>}
                 </button>
                 <a href={publicUrl(d.publicId)} target="_blank" rel="noopener noreferrer" className="btn-tactile flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px]" style={{ border: "1px solid var(--border)" }}><ExternalLink className="w-3 h-3" /> Otevřít</a>
+                <button onClick={() => setQrFor(qrFor === d.publicId ? null : d.publicId)} className="btn-tactile flex items-center gap-1 px-2.5 py-1.5 rounded-[6px] text-[11px]" style={{ border: "1px solid var(--border)" }}><QrCode className="w-3 h-3" /> QR</button>
               </div>
+              {qrFor === d.publicId && qrUrl && (
+                <div className="mt-3 flex items-center gap-3 p-3 rounded-[8px]" style={{ background: "#fff" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrUrl} alt="QR odkaz" width={120} height={120} />
+                  <div className="text-[11px]" style={{ color: "#333" }}>
+                    <p className="font-semibold mb-1">Naskenuj mobilem</p>
+                    <a href={qrUrl} download={`qr-${d.klient || "delivery"}.png`} className="underline" style={{ color: PRIMARY }}>Stáhnout QR</a>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
