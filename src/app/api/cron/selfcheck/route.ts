@@ -24,6 +24,7 @@ import { unpaidInvoices } from "@/lib/overdue";
 import { celkemZaMesic, monthKey, monthLabel } from "@/lib/odmeny";
 import { absenceCollisions } from "@/lib/absence";
 import { appendSnapshot, detectAnomalies, type MrrSnapshot } from "@/lib/mrr-history";
+import { cadenceByClient, ymOf, type CadencePost, type CadenceClient } from "@/lib/post-cadence";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -224,6 +225,21 @@ export async function GET(req: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
     for (const c of absenceCollisions(absences ?? [], shootingDays ?? [], (reservations ?? []) as never, today)) {
       findings.push(`Kolize dovolené: ${c.name} má ${c.absenceTyp}, ale je ${c.kind === "shooting" ? "na natáčení" : "na rezervaci techniky"} „${c.detail}" (${c.datum})`);
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 11) Klienti potichu na sítích — churn radar. Aktivní retainer klient, který
+  // tento měsíc nemá ANI publikovaný, ANI naplánovaný post. Hlásíme až od 10.
+  // dne v měsíci, aby začátek měsíce (plán se teprve chystá) nedělal šum.
+  try {
+    const dayOfMonth = new Date().getDate();
+    if (dayOfMonth >= 10) {
+      const posts = await readKey<CadencePost[]>(sb, "ov-smm-posts");
+      const ym = ymOf(new Date().toISOString());
+      const rows = cadenceByClient(posts ?? [], (clients ?? []) as CadenceClient[], ym);
+      for (const r of rows.filter((r) => r.band === "ticho")) {
+        findings.push(`Klient ${r.klient} nemá tento měsíc na sítích žádný post (publikovaný ani naplánovaný)`);
+      }
     }
   } catch { /* nikdy neshodit selfcheck */ }
 
