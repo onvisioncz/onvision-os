@@ -12,13 +12,24 @@ export function ClientAvatar({
   color,
   aktivni = true,
   boxClass = "w-12 h-12 rounded-[11px]",
+  logoUrl,
 }: {
   name: string;
   fallback: ReactNode;
   color: string;
   aktivni?: boolean;
   boxClass?: string;
+  logoUrl?: string;
 }) {
+  // Vlastní nahraná profilovka má přednost — vyplní celý rámeček (cover).
+  if (logoUrl) {
+    return (
+      <div className={`${boxClass} shrink-0 overflow-hidden`} style={{ background: "rgba(255,255,255,0.06)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   const brand = clientBrand(name);
   if (brand) {
     return (

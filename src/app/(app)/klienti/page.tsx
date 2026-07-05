@@ -18,6 +18,7 @@ interface RetainerClient {
   id: number;
   name: string;
   logo: string;
+  logoUrl?: string;
   color: string;
   pausal: number;
   reklama?: number;
@@ -316,7 +317,7 @@ export default function KlientiPage() {
                   >
                     {/* Klient */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} logoUrl={client.logoUrl} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
@@ -442,7 +443,7 @@ export default function KlientiPage() {
                   >
                     {/* Top row: avatar + name + arrow */}
                     <div className="flex items-center gap-3">
-                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
+                      <ClientAvatar name={client.name} fallback={client.logo} color={client.color} logoUrl={client.logoUrl} aktivni={client.aktivni} boxClass="w-12 h-12 rounded-[11px]" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span

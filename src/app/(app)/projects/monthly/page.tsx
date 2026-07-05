@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { ClientAvatar } from "@/components/ui/client-avatar";
+import { uploadThumb } from "@/lib/thumbs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, RefreshCw, Users,
@@ -43,6 +44,7 @@ interface RetainerClient {
   id: number;
   name: string;
   logo: string;
+  logoUrl?: string;           // vlastní nahraná profilovka (URL); má přednost před brand logem
   color: string;
   pausal: number;
   reklama?: number;           // separate ad management fee (e.g. SENIMED)
@@ -720,7 +722,7 @@ function ClientCard({
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {/* Avatar — logo klienta, fallback na iniciály */}
-          <ClientAvatar name={client.name} fallback={client.logo} color={client.color} boxClass="w-10 h-10 rounded-[10px]" />
+          <ClientAvatar name={client.name} fallback={client.logo} color={client.color} logoUrl={client.logoUrl} boxClass="w-10 h-10 rounded-[10px]" />
           <div className="min-w-0">
             <p
               className="text-[14px] font-bold text-[--foreground] leading-snug truncate"
@@ -1189,6 +1191,7 @@ function ClientModal({
           id: client.id,
           name: client.name,
           logo: client.logo,
+          logoUrl: client.logoUrl,
           color: client.color,
           pausal: client.pausal,
           reklama: client.reklama,
@@ -1210,6 +1213,26 @@ function ClientModal({
     (v: string | boolean | number) =>
       setF((p) => ({ ...p, [k]: v }));
 
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const onPickLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // ať jde vybrat stejný soubor znovu
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setUploadErr("Vyber prosím obrázek."); return; }
+    if (file.size > 4 * 1024 * 1024) { setUploadErr("Obrázek je moc velký (max 4 MB)."); return; }
+    setUploading(true); setUploadErr(null);
+    try {
+      const url = await uploadThumb(file);
+      setF((p) => ({ ...p, logoUrl: url }));
+    } catch {
+      setUploadErr("Nahrání se nepovedlo, zkus to znovu.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <ModalWrap
       title={client ? `Upravit klienta — ${client.name}` : "Nový klient"}
@@ -1217,6 +1240,29 @@ function ClientModal({
       onSave={() => onSave(f)}
       wide
     >
+      {/* Profilovka klienta — nahrání vlastního loga */}
+      <Field label="Profilovka">
+        <div className="flex items-center gap-3">
+          <ClientAvatar name={f.name || "?"} fallback={f.logo || "?"} color={f.color} logoUrl={f.logoUrl} boxClass="w-14 h-14 rounded-[12px]" />
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="px-3 py-1.5 rounded-[8px] text-[12px] font-semibold disabled:opacity-50" style={{ background: "oklch(0.62 0.27 265)", color: "white" }}>
+                {uploading ? "Nahrávám…" : f.logoUrl ? "Změnit" : "Nahrát logo"}
+              </button>
+              {f.logoUrl && (
+                <button type="button" onClick={() => setF((p) => ({ ...p, logoUrl: undefined }))}
+                  className="px-3 py-1.5 rounded-[8px] text-[12px] font-medium" style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "var(--muted-foreground)" }}>
+                  Odebrat
+                </button>
+              )}
+            </div>
+            <span className="text-[11px] text-[--muted-foreground]">JPG/PNG, max 4 MB. Bez loga se zobrazí iniciály.</span>
+            {uploadErr && <span className="text-[11px]" style={{ color: "oklch(0.65 0.22 25)" }}>{uploadErr}</span>}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={onPickLogo} className="hidden" />
+        </div>
+      </Field>
       <Field label="Název klienta">
         <FInput value={f.name} onChange={set("name")} placeholder="SENIMED s.r.o." />
       </Field>
@@ -1614,6 +1660,7 @@ export default function MonthlyPage() {
                   ...c,
                   name: data.name,
                   logo: data.logo,
+                  logoUrl: data.logoUrl,
                   color: data.color,
                   pausal: data.pausal,
                   reklama: data.reklama,
@@ -1637,6 +1684,7 @@ export default function MonthlyPage() {
             id: Date.now(),
             name: data.name,
             logo: data.logo,
+            logoUrl: data.logoUrl,
             color: data.color,
             pausal: data.pausal,
             reklama: data.reklama,

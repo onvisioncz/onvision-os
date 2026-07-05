@@ -42,6 +42,7 @@ interface RetainerClient {
   id: number;
   name: string;
   logo: string;
+  logoUrl?: string;
   color: string;
   pausal: number;
   reklama?: number;
@@ -417,7 +418,7 @@ export default function KlientDetailPage() {
 
           <div className="flex items-center gap-4">
             {/* Logo klienta (fallback iniciály) */}
-            <ClientAvatar name={client.name} fallback={client.logo} color={client.color} boxClass="w-14 h-14 rounded-[12px]" />
+            <ClientAvatar name={client.name} fallback={client.logo} color={client.color} logoUrl={client.logoUrl} boxClass="w-14 h-14 rounded-[12px]" />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-1">
