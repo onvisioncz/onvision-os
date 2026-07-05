@@ -700,7 +700,7 @@ function ComposerModal({ onClose, onSend, email, user, supabase }: {
 }
 
 /* ── Main ─────────────────────────────────────────────────────────────── */
-export default function OutputsPage() {
+export default function OutputsPage({ onClose }: { onClose?: () => void } = {}) {
   const { user, email } = useUserRole();
   const [messages, setMessages] = useSupabaseData<OutputMessage[]>("ov-output-messages", () => SEED);
   const supabase = createClient();
@@ -784,7 +784,7 @@ export default function OutputsPage() {
   const unreadCount = messages.filter(m => email && !m.readBy.includes(email)).length;
 
   return (
-    <div className="flex flex-col h-screen" style={{ fontFamily: "var(--font-jakarta)" }}>
+    <div className={`flex flex-col ${onClose ? "h-full" : "h-screen"}`} style={{ fontFamily: "var(--font-jakarta)" }}>
 
       {/* Header */}
       <div className="shrink-0 px-5 py-4 flex items-center justify-between"
@@ -862,6 +862,18 @@ export default function OutputsPage() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Zavřít (jen v popup módu) */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Zavřít"
+            className="ml-2 w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
+            style={{ background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "oklch(0.6 0.005 222)" }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Feed */}
