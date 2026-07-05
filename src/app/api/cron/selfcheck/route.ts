@@ -22,6 +22,7 @@ import { clientHealth } from "@/lib/client-health";
 import { buildForecast, minBalance as forecastMin } from "@/lib/forecast";
 import { unpaidInvoices } from "@/lib/overdue";
 import { celkemZaMesic, monthKey, monthLabel } from "@/lib/odmeny";
+import { absenceCollisions } from "@/lib/absence";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -200,6 +201,18 @@ export async function GET(req: NextRequest) {
     const worst = forecast.reduce((a, b) => (b.zustatek < a.zustatek ? b : a), forecast[0]);
     if (worst && forecastMin(forecast, startBalance ?? 0) < 0) {
       findings.push(`Cash-gap výhled: v ${worst.label} klesá projektovaný zůstatek na ${Math.round(worst.zustatek).toLocaleString("cs-CZ")} Kč`);
+    }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 9) Kolize dovolených s natáčením / rezervací techniky
+  try {
+    const [absences, shootingDays] = await Promise.all([
+      readKey<import("@/lib/absence").Absence[]>(sb, "ov-absence"),
+      readKey<Array<{ datum?: string; klient?: string; clenove?: string[] }>>(sb, "ov-shooting-days"),
+    ]);
+    const today = new Date().toISOString().slice(0, 10);
+    for (const c of absenceCollisions(absences ?? [], shootingDays ?? [], (reservations ?? []) as never, today)) {
+      findings.push(`Kolize dovolené: ${c.name} má ${c.absenceTyp}, ale je ${c.kind === "shooting" ? "na natáčení" : "na rezervaci techniky"} „${c.detail}" (${c.datum})`);
     }
   } catch { /* nikdy neshodit selfcheck */ }
 

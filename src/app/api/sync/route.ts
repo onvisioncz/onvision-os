@@ -107,6 +107,8 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-smm-pillars":         ["admin", "smm"],
   "ov-shooting-plan":       ["admin", "produkce"],
   "ov-shooting-days":       ["admin", "produkce"],
+  // Dovolené/absence týmu — zapisovat mohou plánující role.
+  "ov-absence":             ["admin", "produkce", "pm", "smm", "grafik"],
   "ov-shoot-checklists":    ["admin", "produkce", "pm"],
   // /produkce — Zdeněk a Matěj (role "produkce") si sem zapisují vlastní
   // odpracované položky; bez tohohle by jim server ukládání tiše odmítal (403).
