@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { clientHealth } from "@/lib/client-health";
+import { adsSummary, type AdLike } from "@/lib/ads-insights";
+import { fmtKc } from "@/lib/format";
 import { parseDeadline, daysUntil } from "@/lib/dates";
 import { ClientAvatar } from "@/components/ui/client-avatar";
 import { ClientHub } from "@/components/klienti/client-hub";
@@ -212,6 +214,8 @@ export default function KlientDetailPage() {
     "ov-pipeline-deals",
     dealSeed
   );
+  const [smmPosts] = useSupabaseData<{ klient?: string; datum?: string; status?: string }[]>("ov-smm-posts", () => []);
+  const [ads] = useSupabaseData<AdLike[]>("ov-ads", () => []);
 
   const loading =
     loadingClients ||
@@ -302,6 +306,22 @@ export default function KlientDetailPage() {
       .reduce((s, i) => s + i.castka, 0);
     return clientHealth(client, overdueSum);
   }, [client, clientInvoices]);
+
+  // ── 360: obsah na sítích (tento měsíc) + reklamy (souhrn) ──
+  const contentStats = useMemo(() => {
+    if (!client) return null;
+    const ym = new Date().toISOString().slice(0, 7);
+    const mine = smmPosts.filter((p) => clientMatch(p.klient ?? "", client.name) && (p.datum ?? "").slice(0, 7) === ym);
+    const publikovano = mine.filter((p) => (p.status ?? "").toLowerCase() === "publikovano").length;
+    return { publikovano, naplanovano: mine.length - publikovano, celkem: mine.length };
+  }, [client, smmPosts]);
+
+  const adStats = useMemo(() => {
+    if (!client) return null;
+    const mine = ads.filter((a) => clientMatch(a.klient ?? "", client.name));
+    if (mine.length === 0) return null;
+    return adsSummary(mine.filter((a) => (a.dosah || a.kliky || a.konverze)));
+  }, [client, ads]);
 
   /* Edit handlers */
   function startEdit() {
@@ -585,6 +605,53 @@ export default function KlientDetailPage() {
                       {d.deadline}
                     </span>
                   )}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+      )}
+
+      {/* ── 360: Obsah na sítích ── */}
+      {contentStats && (
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.09 }} className="mb-5">
+          <SectionCard
+            title="Obsah na sítích — tento měsíc"
+            icon={<Calendar className="w-4 h-4" />}
+            iconColor="oklch(0.62 0.27 265)"
+            action={<span className="text-[12px]" style={{ color: "oklch(0.5 0.007 222)" }}>{contentStats.celkem} celkem</span>}
+          >
+            {contentStats.celkem === 0 ? (
+              <p className="text-[13px]" style={{ color: "oklch(0.72 0.19 25)" }}>Tento měsíc žádný post — ani publikovaný, ani naplánovaný. Pozor na ticho na sítích.</p>
+            ) : (
+              <div className="flex gap-6">
+                <div><p className="text-[11px] uppercase tracking-[0.05em]" style={{ color: "oklch(0.5 0.007 222)" }}>Publikováno</p><p className="text-[20px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.67 0.155 155)" }}>{contentStats.publikovano}</p></div>
+                <div><p className="text-[11px] uppercase tracking-[0.05em]" style={{ color: "oklch(0.5 0.007 222)" }}>Naplánováno</p><p className="text-[20px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.62 0.27 265)" }}>{contentStats.naplanovano}</p></div>
+              </div>
+            )}
+          </SectionCard>
+        </motion.div>
+      )}
+
+      {/* ── 360: Reklamy ── */}
+      {adStats && adStats.pocet > 0 && (
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.095 }} className="mb-5">
+          <SectionCard
+            title="Reklamy — výkon"
+            icon={<BarChart2 className="w-4 h-4" />}
+            iconColor="oklch(0.72 0.18 290)"
+            action={<span className="text-[12px]" style={{ color: "oklch(0.5 0.007 222)" }}>{adStats.pocet} kampaní · {fmtKc(adStats.spend)}</span>}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: "Dosah", value: adStats.dosah.toLocaleString("cs-CZ"), color: "oklch(0.62 0.27 265)" },
+                { label: "Kliky", value: adStats.kliky.toLocaleString("cs-CZ"), color: "oklch(0.68 0.18 275)" },
+                { label: "CTR", value: `${adStats.ctr.toFixed(2).replace(".", ",")} %`, color: "oklch(0.78 0.165 75)" },
+                { label: "Prům. CPC", value: fmtKc(Math.round(adStats.cpc)), color: "oklch(0.72 0.18 290)" },
+              ].map((m) => (
+                <div key={m.label}>
+                  <p className="text-[11px] uppercase tracking-[0.05em]" style={{ color: "oklch(0.5 0.007 222)" }}>{m.label}</p>
+                  <p className="text-[18px] font-bold" style={{ fontFamily: "var(--font-outfit)", color: m.color }}>{m.value}</p>
                 </div>
               ))}
             </div>
