@@ -10,6 +10,7 @@ import { fmtKc } from "@/lib/ziskovost";
 import { unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
 import { castkaZaMesic, monthKey, monthLabel, celkemZaMesic, type OdmenaPerson } from "@/lib/odmeny";
 import { buildForecast, minBalance as minBal, type ForecastParams } from "@/lib/forecast";
+import { mrrTrend, type MrrSnapshot } from "@/lib/mrr-history";
 
 /* ── Typy dat ────────────────────────────────────────────────────────────── */
 interface Invoice { castka: number; stav: string; datumSplatnosti: string; klient: string }
@@ -28,11 +29,12 @@ const EUR_CZK = 25;
 const iCls = "px-3 py-2 rounded-[7px] text-[13px] outline-none";
 const iStyle = { background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" } as const;
 
-function Stat({ label, value, color, icon: Icon }: { label: string; value: string; color: string; icon: React.ElementType }) {
+function Stat({ label, value, color, icon: Icon, sub }: { label: string; value: string; color: string; icon: React.ElementType; sub?: React.ReactNode }) {
   return (
     <div className="flex-1 min-w-[150px] p-4 rounded-[10px]" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
       <div className="flex items-center gap-2 mb-2"><Icon className="w-3.5 h-3.5" style={{ color }} /><span className="text-[11px] font-semibold tracking-[0.04em] uppercase text-[--muted-foreground]">{label}</span></div>
       <div className="text-[22px] font-bold" style={{ color, fontFamily: "var(--font-heading)" }}>{value}</div>
+      {sub && <div className="mt-1">{sub}</div>}
     </div>
   );
 }
@@ -47,6 +49,7 @@ export default function CashflowPage() {
   const [predplatne] = useSupabaseData<Subscription[]>("ov-finance-predplatne", () => []);
   const [clientCosts] = useSupabaseData<ClientCost[]>("ov-client-costs", () => []);
   const [meta, setMeta] = useSupabaseData<Record<string, number>>("ov-vyhledy-vystupy", () => ({}));
+  const [mrrHistory] = useSupabaseData<MrrSnapshot[]>("ov-mrr-history", () => []);
 
   const [tab, setTab] = useState<"cashflow" | "vystup" | "pausaly">("cashflow");
   const [startBalance, setStartBalance] = useSupabaseData<number>("ov-vyhledy-zustatek", () => 0);
@@ -128,6 +131,16 @@ export default function CashflowPage() {
 
   const maxBal = Math.max(...forecast.map((f) => Math.abs(f.zustatek)), 1);
 
+  // MRR trend z historie snímků (selfcheck ukládá denně) — vůči ~30 dnům zpět
+  const trend = mrrTrend(mrrHistory, 30);
+  const trendBadge = trend && trend.direction !== "flat" ? (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: trend.direction === "up" ? GREEN : RED }}>
+      {trend.direction === "up" ? "▲" : "▼"} {trend.deltaAbs >= 0 ? "+" : ""}{fmtKc(trend.deltaAbs)} ({trend.deltaPct >= 0 ? "+" : ""}{Math.round(trend.deltaPct)} %) za 30 dní
+    </span>
+  ) : trend ? (
+    <span className="text-[11px] text-[--muted-foreground]">beze změny za 30 dní</span>
+  ) : null;
+
   return (
     <div className="p-5 md:p-7 max-w-[1000px] mx-auto">
       <div className="mb-5">
@@ -146,7 +159,7 @@ export default function CashflowPage() {
       {tab === "cashflow" && (
         <div className="space-y-5">
           <div className="flex flex-wrap gap-3">
-            <Stat label="Recurring příjem / měs" value={fmtKc(retainerIncome)} color={PRIMARY} icon={Repeat} />
+            <Stat label="Recurring příjem / měs" value={fmtKc(retainerIncome)} color={PRIMARY} icon={Repeat} sub={trendBadge} />
             <Stat label="Recurring výdaje / měs" value={fmtKc(odmenyMonthly + predplatneMonthly)} color={RED} icon={TrendingDown} />
             <Stat label="Nezaplacené faktury" value={fmtKc(receivablesTotal)} color={AMBER} icon={Wallet} />
           </div>

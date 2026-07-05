@@ -23,6 +23,7 @@ import { buildForecast, minBalance as forecastMin } from "@/lib/forecast";
 import { unpaidInvoices } from "@/lib/overdue";
 import { celkemZaMesic, monthKey, monthLabel } from "@/lib/odmeny";
 import { absenceCollisions } from "@/lib/absence";
+import { appendSnapshot, detectAnomalies, type MrrSnapshot } from "@/lib/mrr-history";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -127,7 +128,10 @@ export async function GET(req: NextRequest) {
     return !!x && !!y && (x.includes(y) || y.includes(x));
   };
   const allInv = [...(issued ?? []), ...(finance ?? [])];
-  for (const c of (clients ?? []).filter((c) => c.aktivni !== false && (c.name ?? "").trim())) {
+  const activeClients = (clients ?? []).filter((c) => c.aktivni !== false && (c.name ?? "").trim());
+  let mrrTotal = 0, overdueTotal = 0, rizikCount = 0;
+  for (const c of activeClients) {
+    mrrTotal += (c.pausal ?? 0) + (c.reklama ?? 0);
     const overdueSum = allInv
       .filter((i) => (i.stav ?? "") !== "Zaplacena" && (i.stav ?? "") !== "Storno")
       .filter((i) => match(i.klientNazev ?? i.klient ?? "", c.name!))
@@ -137,8 +141,10 @@ export async function GET(req: NextRequest) {
         return d ? daysUntil(d) < 0 : false;
       })
       .reduce((s, i) => s + (Number(i.castka) || 0), 0);
+    overdueTotal += overdueSum;
     const h = clientHealth(c, overdueSum);
     if (h.band === "riziko") {
+      rizikCount++;
       const worst = [...h.factors].sort((a, b) => a.score - b.score)[0];
       findings.push(`Klient ${c.name} v riziku péče (health ${h.score}/100, nejhorší: ${worst.label} — ${worst.note})`);
     }
@@ -214,6 +220,20 @@ export async function GET(req: NextRequest) {
     for (const c of absenceCollisions(absences ?? [], shootingDays ?? [], (reservations ?? []) as never, today)) {
       findings.push(`Kolize dovolené: ${c.name} má ${c.absenceTyp}, ale je ${c.kind === "shooting" ? "na natáčení" : "na rezervaci techniky"} „${c.detail}" (${c.datum})`);
     }
+  } catch { /* nikdy neshodit selfcheck */ }
+
+  // 10) Denní snímek MRR/metrik do historie + detekce anomálií (trend v čase)
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const snap: MrrSnapshot = { date: today, mrr: mrrTotal, klientu: activeClients.length, pohledavky: overdueTotal, rizik: rizikCount };
+    const prevHistory = await readKey<MrrSnapshot[]>(sb, "ov-mrr-history") ?? [];
+    // Anomálie hlásíme jen když dnešní snímek přináší nová data (jiný den).
+    const isNewDay = !prevHistory.some((s) => s.date === today);
+    const history = appendSnapshot(prevHistory, snap);
+    if (isNewDay) {
+      for (const a of detectAnomalies(history)) findings.push(`Anomálie: ${a.message}`);
+    }
+    await writeKey(sb, "ov-mrr-history", history);
   } catch { /* nikdy neshodit selfcheck */ }
 
   // ── Ozvi se jen při změně nálezů ──
