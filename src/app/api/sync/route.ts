@@ -116,7 +116,7 @@ const KEY_WRITE_ROLES: Record<string, Role[]> = {
   // odpracované položky; bez tohohle by jim server ukládání tiše odmítal (403).
   "ov-produkce-zdenek":     ["admin", "produkce"],
   "ov-produkce-matej":      ["admin", "produkce"],
-  "ov-produkce-grafici":    ["admin", "produkce"],
+  "ov-produkce-grafici":    ["admin", "produkce", "grafik"],
   "ov-produkce-pending":    ["admin", "produkce"],
   "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
   "ov-output-messages":    ["admin", "produkce", "grafik", "smm", "pm", "fakturace"],

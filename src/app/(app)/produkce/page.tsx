@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { useUserRole } from "@/lib/hooks/use-user-role";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, ChevronDown, Layers,
@@ -1424,6 +1425,25 @@ export default function ProdukccePage() {
   const [pendingItems, setPendingItems] = useSupabaseData<QPending[]>("ov-produkce-pending", () => Q_SEED);
   const [history,      setHistory]      = useState<HistorySnap[]>([]);
 
+  // ── Kdo jsem: jednatel vidí vše, člen týmu jen SVŮJ vlastní přehled ──
+  const { email, user } = useUserRole();
+  const isAdmin = !!user?.roles.includes("admin");
+  const myTab: ProdTab | null = useMemo(() => {
+    const e = (email ?? "").toLowerCase();
+    if (e.startsWith("zdenek@")) return "zdenek";
+    if (e.startsWith("matej@"))  return "matej";
+    if (e.startsWith("monika@")) return "monika";
+    if (e.startsWith("patrik@")) return "patrik";
+    return null;
+  }, [email]);
+  const visibleTabs = isAdmin ? TABS : TABS.filter(t => t.id === myTab);
+  const allowed = (id: ProdTab) => isAdmin || id === myTab;
+
+  // Non-admina drž na jeho vlastní záložce (nikdy Přehled ani cizí).
+  useEffect(() => {
+    if (!isAdmin && myTab && tab !== myTab) setTab(myTab);
+  }, [isAdmin, myTab, tab]);
+
   const activeColor = TABS.find(t=>t.id===tab)?.color ?? "oklch(0.62 0.27 265)";
   const canUndo = history.length > 0;
 
@@ -1462,8 +1482,8 @@ export default function ProdukccePage() {
           </div>
           <div>
             <h1 className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
-              style={{fontFamily:"var(--font-outfit)",fontWeight:700,letterSpacing:"-0.03em"}}>Kreativní tým</h1>
-            <p className="text-[12px] text-[--muted-foreground] mt-1">Externisté · foto, video &amp; grafika · 2026</p>
+              style={{fontFamily:"var(--font-outfit)",fontWeight:700,letterSpacing:"-0.03em"}}>{isAdmin ? "Kreativní tým" : "Můj měsíc"}</h1>
+            <p className="text-[12px] text-[--muted-foreground] mt-1">{isAdmin ? "Externisté · foto, video & grafika · 2026" : "Tvůj přehled odvedené práce a čerpání · 2026"}</p>
           </div>
         </div>
         {/* Undo button */}
@@ -1488,7 +1508,7 @@ export default function ProdukccePage() {
 
       {/* Tab bar */}
       <motion.div className="flex items-center gap-1" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.35,delay:0.05}}>
-        {TABS.map(t=>{
+        {visibleTabs.map(t=>{
           const active = tab===t.id;
           return (
             <motion.button key={t.id} onClick={()=>setTab(t.id)} whileTap={{scale:0.95}}
@@ -1512,15 +1532,20 @@ export default function ProdukccePage() {
       <AnimatePresence mode="wait">
         <motion.div key={tab} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
           transition={{duration:0.25,ease:[0.23,1,0.32,1]}}>
-          {tab==="prehled"&&<PrehledTab zEntries={zEntries} mEntries={mEntries} gEntries={gEntries}/>}
-          {tab==="zdenek"&&<ZdenekTab
+          {!isAdmin && !myTab && (
+            <div className="p-10 text-center text-[13px] text-[--muted-foreground] rounded-[12px]" style={{background:"var(--card)",border:"1px solid var(--border)"}}>
+              Zatím tu pro tebe nejsou žádná data. Jakmile budeš mít vlastní přehled, objeví se tady.
+            </div>
+          )}
+          {tab==="prehled"&&allowed("prehled")&&<PrehledTab zEntries={zEntries} mEntries={mEntries} gEntries={gEntries}/>}
+          {tab==="zdenek"&&allowed("zdenek")&&<ZdenekTab
             entries={zEntries} setEntries={fn=>setZEntries(fn)}
             pendingItems={pendingItems} setPendingItems={setPendingItems}
             onPushHistory={pushHistory}
           />}
-          {tab==="matej"  &&<MatejTab entries={mEntries} setEntries={fn=>setMEntries(fn)}/>}
-          {tab==="monika" &&<GrafikTab grafik="Monika" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
-          {tab==="patrik" &&<GrafikTab grafik="Patrik" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
+          {tab==="matej"  &&allowed("matej") &&<MatejTab entries={mEntries} setEntries={fn=>setMEntries(fn)}/>}
+          {tab==="monika" &&allowed("monika")&&<GrafikTab grafik="Monika" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
+          {tab==="patrik" &&allowed("patrik")&&<GrafikTab grafik="Patrik" allEntries={gEntries} setEntries={fn=>setGEntries(fn)}/>}
         </motion.div>
       </AnimatePresence>
     </div>

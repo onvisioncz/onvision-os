@@ -193,7 +193,7 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   fakturace: ["/dnes", "/inbox", "/dashboard", "/finance", "/fakturace", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile", "/parovani", "/upominky", "/fakturovat"],
   ucetni:    ["/dnes", "/inbox", "/dashboard", "/odmeny", "/fakturace", "/parovani", "/upominky"],
   produkce:  ["/dnes", "/inbox", "/dashboard", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
-  grafik:    ["/dnes", "/inbox", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena"],
+  grafik:    ["/dnes", "/inbox", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena", "/produkce"],
   smm:       ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
   pm:        ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
 };
