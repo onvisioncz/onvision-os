@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { StatCard } from "@/components/ui/stat-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -711,8 +711,8 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
             </thead>
             <tbody>
               {grouped.map(group => (
-                <>
-                  <tr key={`gh-${group.mesic}`}>
+                <Fragment key={group.mesic}>
+                  <tr>
                     <td colSpan={6} className="px-4">
                       <MonthHeader mesic={group.mesic} total={group.items.reduce((s,i) => s+i.castka,0)} count={group.items.length} color="oklch(0.67 0.155 155)" />
                     </td>
@@ -746,7 +746,7 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
                       </tr>
                     );
                   })}
-                </>
+                </Fragment>
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné příjmy.</td></tr>
@@ -926,8 +926,8 @@ function VydajeTab({ items, setItems }: { items: ExpenseItem[]; setItems: (fn: (
             </thead>
             <tbody>
               {grouped.map(group => (
-                <>
-                  <tr key={`gh-${group.mesic}`}>
+                <Fragment key={group.mesic}>
+                  <tr>
                     <td colSpan={7} className="px-4">
                       <MonthHeader mesic={group.mesic} total={group.items.reduce((s,i) => s+i.castka,0)} count={group.items.length} color="oklch(0.65 0.22 25)" />
                     </td>
@@ -955,7 +955,7 @@ function VydajeTab({ items, setItems }: { items: ExpenseItem[]; setItems: (fn: (
                       </tr>
                     );
                   })}
-                </>
+                </Fragment>
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={7} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné výdaje.</td></tr>
