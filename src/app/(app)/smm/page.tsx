@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { cadenceByClient, cadenceSummary, ymOf, type CadenceClient } from "@/lib/post-cadence";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type PostStatus = "napad" | "priprava" | "ke_schvaleni" | "schvaleno" | "publikovano";
@@ -1448,6 +1449,7 @@ export default function SmmPage() {
   const [posts, setPosts] = useSupabaseData<SmmPost[]>("ov-smm-posts", () => SEED);
   const [hashtagSets, setHashtagSets] = useSupabaseData<HashtagSet[]>("ov-smm-hashtag-sets", () => DEFAULT_HASHTAG_SETS);
   const [pillars, setPillars] = useSupabaseData<ContentPillar[]>("ov-smm-pillars", () => DEFAULT_PILLARS);
+  const [cadenceClients] = useSupabaseData<CadenceClient[]>("ov-monthly-clients", () => []);
 
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(new Date().getMonth() + 1);
@@ -1949,6 +1951,43 @@ export default function SmmPage() {
       {/* ── Weekly Briefing ────────────────────────────────────────────────── */}
       {activeTab === "briefing" && (
         <div className="flex-1 px-4 py-5 max-w-2xl">
+          {/* Konzistence postů — kdo je tento měsíc pozadu / potichu */}
+          {(() => {
+            const ym = ymOf(new Date().toISOString());
+            const rows = cadenceByClient(posts as unknown as { klient?: string; datum?: string; status?: string }[], cadenceClients, ym);
+            if (rows.length === 0) return null;
+            const sum = cadenceSummary(rows);
+            const risk = rows.filter(r => r.band !== "ok");
+            const bandColor = (b: string) => b === "ticho" ? "oklch(0.65 0.22 25)" : b === "pozadu" ? "oklch(0.78 0.165 75)" : "oklch(0.67 0.155 155)";
+            const bandLabel = (b: string) => b === "ticho" ? "ticho" : b === "pozadu" ? "pozadu" : "ok";
+            return (
+              <div className="mb-6 rounded-[12px] overflow-hidden" style={{ background: "oklch(1 0 0 / 0.03)", border: "1px solid oklch(1 0 0 / 0.07)" }}>
+                <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ borderBottom: "1px solid oklch(1 0 0 / 0.06)" }}>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: "oklch(0.55 0.005 222)" }}>Konzistence postů · tento měsíc</span>
+                  <span className="text-[11px]" style={{ color: "oklch(0.45 0.005 222)" }}>
+                    {sum.ticho > 0 && <span style={{ color: "oklch(0.7 0.2 25)", fontWeight: 600 }}>{sum.ticho} ticho</span>}
+                    {sum.ticho > 0 && (sum.pozadu > 0) && " · "}
+                    {sum.pozadu > 0 && <span style={{ color: "oklch(0.8 0.16 75)", fontWeight: 600 }}>{sum.pozadu} pozadu</span>}
+                    {risk.length === 0 && <span style={{ color: "oklch(0.7 0.155 155)", fontWeight: 600 }}>vše v normě</span>}
+                  </span>
+                </div>
+                {risk.length > 0 && (
+                  <div className="divide-y" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
+                    {risk.slice(0, 6).map(r => (
+                      <div key={r.klient} className="px-4 py-2 flex items-center gap-3 text-[12px]">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: bandColor(r.band) }} />
+                        <span className="font-medium flex-1" style={{ color: "oklch(0.88 0.005 265)" }}>{r.klient}</span>
+                        <span style={{ color: "oklch(0.5 0.005 222)" }}>{r.publikovano} publ. · {r.naplanovano} v plánu</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase" style={{ background: `${bandColor(r.band).replace(")", " / 0.14)")}`, color: bandColor(r.band) }}>{bandLabel(r.band)}</span>
+                        <span className="tabular-nums" style={{ color: "oklch(0.45 0.005 222)" }}>{r.celkem}/{r.cil}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Week range */}
           <div className="mb-5">
             <h2 className="text-[15px] font-bold" style={{ color: "oklch(0.92 0.005 265)", fontFamily: "var(--font-outfit)" }}>
