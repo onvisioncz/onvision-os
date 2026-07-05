@@ -5,15 +5,22 @@ import { Sparkles, Loader2, RefreshCw, ListPlus, Check } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
-import { parseDeadline } from "@/lib/dates";
-import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
+import { parseDeadline, daysUntil } from "@/lib/dates";
+import { overdueInvoices, unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
+import { clientHealth } from "@/lib/client-health";
+import { buildForecast, minBalance as forecastMin } from "@/lib/forecast";
+import { celkemZaMesic, monthKey, monthLabel, type OdmenaPerson } from "@/lib/odmeny";
+import { absenceCollisions, type Absence } from "@/lib/absence";
 
 interface Inv extends InvoiceLite { datumSplatnosti: string }
 interface Task { status: string; deadline: string; nazev?: string; priorita?: string }
 interface FullTask { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
 interface Approval { status: string }
 interface Nps { score: number; createdAt: string }
-interface MonthlyClient { name: string; pausal?: number; reklama?: number; aktivni?: boolean }
+interface MonthlyClient { name: string; pausal?: number; reklama?: number; aktivni?: boolean; deliverables?: { done: boolean }[]; hodinMesic?: number; hodinOdpracovano?: number }
+interface Subscription { castka?: number; mena?: string }
+interface ShootingDay { datum?: string; klient?: string; clenove?: string[] }
+interface Reservation { kdo?: string; od?: string; do?: string; projekt?: string }
 
 const PRIMARY = "#5B5EFF";
 
@@ -57,6 +64,12 @@ export function AiBrief() {
   const [timeEntries] = useSupabaseData<TimeEntry[]>(TIME_KEY, () => []);
   const [rates] = useSupabaseData<Record<string, number>>(RATES_KEY, () => ({}));
   const [clients] = useSupabaseData<MonthlyClient[]>("ov-monthly-clients", () => []);
+  const [odmeny] = useSupabaseData<OdmenaPerson[]>("ov-odmeny", () => []);
+  const [predplatne] = useSupabaseData<Subscription[]>("ov-finance-predplatne", () => []);
+  const [startBalance] = useSupabaseData<number>("ov-vyhledy-zustatek", () => 0);
+  const [absences] = useSupabaseData<Absence[]>("ov-absence", () => []);
+  const [shooting] = useSupabaseData<ShootingDay[]>("ov-shooting-days", () => []);
+  const [reservations] = useSupabaseData<Reservation[]>("ov-gear-reservations", () => []);
 
   const [brief, setBrief] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +122,34 @@ export function AiBrief() {
     const ninety = new Date(now.getTime() - 90 * 86400000);
     const lowNps = nps.filter((n) => new Date(n.createdAt) >= ninety && n.score < 7).length;
     const pending = approvals.filter((a) => a.status === "Čeká").length;
+
+    // ── Rizikoví klienti (Health Score < 60) — churn signál ──
+    const allInv = [...(invoices as AnyInvoice[]), ...financeFaktury];
+    const match = (a: string, b: string) => { const x = (a || "").toLowerCase().trim(), y = (b || "").toLowerCase().trim(); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+    const rizikoviKlienti = active.map((c) => {
+      const overdueSum = allInv
+        .filter((i) => (i.stav ?? "") !== "Zaplacena" && (i.stav ?? "") !== "Storno")
+        .filter((i) => match(i.klientNazev ?? i.klient ?? "", c.name))
+        .filter((i) => { let d = parseDeadline(i.datumSplatnosti ?? i.splatnost ?? ""); if (!d) { const v = parseDeadline(i.datumVystaveni ?? i.datum ?? ""); if (v) d = new Date(v.getTime() + 14 * 86400000); } return d ? daysUntil(d) < 0 : false; })
+        .reduce((s, i) => s + (Number(i.castka) || 0), 0);
+      const h = clientHealth(c, overdueSum);
+      return { name: c.name, score: h.score, band: h.band, worst: [...h.factors].sort((a, b) => a.score - b.score)[0] };
+    }).filter((h) => h.band === "riziko").sort((a, b) => a.score - b.score);
+
+    // ── Cash-gap výhled (6 měsíců) ──
+    const odmenyMonthly = celkemZaMesic(odmeny, monthKey(now));
+    const predplatneMonthly = predplatne.reduce((s, p) => s + (p.mena === "EUR" ? (p.castka || 0) * 25 : (p.castka || 0)), 0);
+    const receivablesByMonth = new Map<string, number>();
+    for (const inv of unpaidInvoices(invoices as AnyInvoice[], financeFaktury)) { if (!inv.due) continue; const k = `${inv.due.getFullYear()}-${String(inv.due.getMonth() + 1).padStart(2, "0")}`; receivablesByMonth.set(k, (receivablesByMonth.get(k) ?? 0) + inv.castka); }
+    const forecast = buildForecast({ startBalance: startBalance || 0, retainerIncome: mrr, monthlyExpenses: odmenyMonthly + predplatneMonthly, receivablesByMonth, months: 6, from: now, monthKey, monthLabel });
+    const worstMonth = forecast.reduce((a, b) => (b.zustatek < a.zustatek ? b : a), forecast[0]);
+    const cashGap = forecastMin(forecast, startBalance || 0) < 0 ? { mesic: worstMonth?.label, zustatek: Math.round(worstMonth?.zustatek ?? 0) } : null;
+
+    // ── Kolize dovolených s natáčením / technikou ──
+    const today = now.toISOString().slice(0, 10);
+    const kolize = absenceCollisions(absences, shooting, reservations, today)
+      .map((c) => `${c.name}: ${c.absenceTyp} vs. ${c.kind === "shooting" ? "natáčení" : "technika"} „${c.detail}" (${c.datum})`);
+
     return {
       mrr,
       aktivnichKlientu: active.length,
@@ -118,8 +159,11 @@ export function AiBrief() {
       cekaNaSchvaleniKlientem: pending,
       ztratoviKlienti: loss.map((r) => r.klient).slice(0, 6),
       nizkeNPS: lowNps,
+      rizikoviKlienti: rizikoviKlienti.map((h) => `${h.name} (health ${h.score}/100, nejhorší: ${h.worst.label} — ${h.worst.note})`),
+      cashGapVyhled: cashGap,
+      kolizeDovolenych: kolize,
     };
-  }, [invoices, financeFaktury, tasks, approvals, nps, costs, timeEntries, rates, clients]);
+  }, [invoices, financeFaktury, tasks, approvals, nps, costs, timeEntries, rates, clients, odmeny, predplatne, startBalance, absences, shooting, reservations]);
 
   const generate = async () => {
     setLoading(true); setError(null);

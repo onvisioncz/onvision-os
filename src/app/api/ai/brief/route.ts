@@ -32,7 +32,7 @@ Struktura (používej přesně tyto nadpisy jako markdown ###):
 ### Krátce
 Jedna věta shrnující, jak firma stojí.
 ### Co hoří
-2 až 4 odrážky s tím nejpalčivějším (peníze, termíny, rizikoví klienti). Ke každé přidej konkrétní číslo/jméno.
+2 až 4 odrážky s tím nejpalčivějším. Priorita signálů: cashGapVyhled (hrozící díra v hotovosti), rizikoviKlienti (health score, churn), faktury po splatnosti, úkoly po termínu, kolizeDovolenych (někdo je na natáčení/technice během dovolené). Ke každé přidej konkrétní číslo/jméno.
 ### Rozhodni tento týden
 1 až 3 konkrétní rozhodnutí nebo akce, které by měl jednatel udělat.
 ### Doporučení
