@@ -39,16 +39,109 @@ interface Bg {
   gradient: number;         // index do GRADIENTS
   img?: HTMLImageElement;
   zoom: number; panX: number; panY: number;
+  grain: boolean;           // filmové zrno navrch
 }
+
+type ShapeKind = "circle" | "pill" | "star" | "heart" | "blob" | "arrow";
+interface ShapeLayer {
+  id: number;
+  kind: ShapeKind;
+  x: number; y: number;     // střed v master px
+  size: number;             // "poloměr"
+  color: string;
+}
+const SHAPE_LIST: { kind: ShapeKind; label: string }[] = [
+  { kind: "circle", label: "●" },
+  { kind: "pill", label: "▬" },
+  { kind: "star", label: "★" },
+  { kind: "heart", label: "♥" },
+  { kind: "blob", label: "⬮" },
+  { kind: "arrow", label: "➤" },
+];
 
 const GRADIENTS: { label: string; stops: [string, string, string] }[] = [
   { label: "Aura fialová", stops: ["#1B1035", "#5B5EFF", "#C86DD7"] },
   { label: "Západ", stops: ["#2D1B4E", "#E96443", "#FFC371"] },
   { label: "Oceán", stops: ["#0F2027", "#2C5364", "#7BE0AD"] },
   { label: "Noir", stops: ["#0B0B14", "#1F1F2E", "#3D3D55"] },
+  { label: "Broskev", stops: ["#3A1C24", "#FF8C69", "#FFD9B3"] },
+  { label: "Mint", stops: ["#0E2A25", "#22A699", "#C6F6D5"] },
+  { label: "Y2K chrom", stops: ["#2B2D42", "#8D99AE", "#EDF2F4"] },
+  { label: "Kosmos", stops: ["#0D0221", "#7B2FF7", "#F72585"] },
 ];
 
 const SWATCHES = ["#FFFFFF", "#0B0B14", "#5B5EFF", "#FFD166", "#EF476F", "#06D6A0"];
+
+/* ── Filmové zrno (cachovaná dlaždice) ── */
+let grainTile: HTMLCanvasElement | null = null;
+function getGrainTile(): HTMLCanvasElement {
+  if (grainTile) return grainTile;
+  const t = document.createElement("canvas");
+  t.width = 160; t.height = 160;
+  const tc = t.getContext("2d")!;
+  const img = tc.createImageData(160, 160);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = 120 + Math.floor(Math.random() * 135);
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  tc.putImageData(img, 0, 0);
+  grainTile = t;
+  return t;
+}
+
+/* ── Kreslení tvarů ── */
+function shapePath(ctx: CanvasRenderingContext2D, s: ShapeLayer) {
+  const { x, y, size: r } = s;
+  ctx.beginPath();
+  if (s.kind === "circle") {
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+  } else if (s.kind === "pill") {
+    ctx.roundRect(x - r * 1.6, y - r * 0.55, r * 3.2, r * 1.1, r * 0.55);
+  } else if (s.kind === "star") {
+    for (let i = 0; i < 10; i++) {
+      const ang = (Math.PI / 5) * i - Math.PI / 2;
+      const rad = i % 2 === 0 ? r : r * 0.42;
+      const px = x + Math.cos(ang) * rad, py = y + Math.sin(ang) * rad;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  } else if (s.kind === "heart") {
+    const w = r * 1.1;
+    ctx.moveTo(x, y + r * 0.75);
+    ctx.bezierCurveTo(x - w, y - r * 0.2, x - w * 0.5, y - r, x, y - r * 0.35);
+    ctx.bezierCurveTo(x + w * 0.5, y - r, x + w, y - r * 0.2, x, y + r * 0.75);
+    ctx.closePath();
+  } else if (s.kind === "blob") {
+    // organický blob z pár bezierů
+    ctx.moveTo(x, y - r);
+    ctx.bezierCurveTo(x + r * 1.2, y - r * 0.9, x + r * 0.9, y + r * 1.1, x, y + r);
+    ctx.bezierCurveTo(x - r * 1.1, y + r * 0.95, x - r * 1.15, y - r * 0.6, x, y - r);
+    ctx.closePath();
+  } else if (s.kind === "arrow") {
+    const w = r, h = r * 0.6;
+    ctx.moveTo(x - w, y - h * 0.35);
+    ctx.lineTo(x + w * 0.2, y - h * 0.35);
+    ctx.lineTo(x + w * 0.2, y - h);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w * 0.2, y + h);
+    ctx.lineTo(x + w * 0.2, y + h * 0.35);
+    ctx.lineTo(x - w, y + h * 0.35);
+    ctx.closePath();
+  }
+}
+function drawShape(ctx: CanvasRenderingContext2D, s: ShapeLayer) {
+  ctx.save();
+  ctx.fillStyle = s.color;
+  shapePath(ctx, s);
+  ctx.fill();
+  ctx.restore();
+}
+function shapeBounds(s: ShapeLayer): { w: number; h: number } {
+  if (s.kind === "pill") return { w: s.size * 3.2, h: s.size * 1.1 };
+  if (s.kind === "arrow") return { w: s.size * 2, h: s.size * 1.2 };
+  return { w: s.size * 2, h: s.size * 2 };
+}
 
 /* ── Kreslení ── */
 function drawBg(ctx: CanvasRenderingContext2D, bg: Bg) {
@@ -124,17 +217,32 @@ function drawLayer(ctx: CanvasRenderingContext2D, l: TextLayer) {
   return { w, h };
 }
 
-function drawStory(canvas: HTMLCanvasElement, bg: Bg, layers: TextLayer[]) {
+function drawGrain(ctx: CanvasRenderingContext2D) {
+  const tile = getGrainTile();
+  const pat = ctx.createPattern(tile, "repeat");
+  if (!pat) return;
+  ctx.save();
+  ctx.globalCompositeOperation = "overlay";
+  ctx.globalAlpha = 0.14;
+  ctx.fillStyle = pat;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+function drawStory(canvas: HTMLCanvasElement, bg: Bg, layers: TextLayer[], shapes: ShapeLayer[]) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
   drawBg(ctx, bg);
+  shapes.forEach((s) => drawShape(ctx, s));   // tvary pod text
   layers.forEach((l) => drawLayer(ctx, l));
+  if (bg.grain) drawGrain(ctx);               // zrno úplně navrch
 }
 
 /* ── Stránka ── */
 export default function StoryMakerPage() {
-  const [bg, setBg] = useState<Bg>({ kind: "gradient", color: "#0B0B14", gradient: 0, zoom: 1, panX: 0, panY: 0 });
+  const [bg, setBg] = useState<Bg>({ kind: "gradient", color: "#0B0B14", gradient: 0, zoom: 1, panX: 0, panY: 0, grain: false });
   const [layers, setLayers] = useState<TextLayer[]>([]);
+  const [shapes, setShapes] = useState<ShapeLayer[]>([]);
   const [sel, setSel] = useState<number | null>(null);
   const [safe, setSafe] = useState(true);
   const [fontLoading, setFontLoading] = useState(false);
@@ -144,13 +252,14 @@ export default function StoryMakerPage() {
   const drag = useRef<null | { id: number; startX: number; startY: number; ox: number; oy: number; moved: boolean }>(null);
 
   const selLayer = layers.find((l) => l.id === sel) ?? null;
+  const selShape = shapes.find((s) => s.id === sel) ?? null;
 
   /* ── Render ── */
   const render = useCallback(() => {
     const disp = displayRef.current;
     if (!disp) return;
     const master = document.createElement("canvas");
-    drawStory(master, bg, layers);
+    drawStory(master, bg, layers, shapes);
     const scale = Math.min(420 / W, 640 / H);
     disp.width = Math.round(W * scale); disp.height = Math.round(H * scale);
     const dctx = disp.getContext("2d")!;
@@ -173,7 +282,13 @@ export default function StoryMakerPage() {
       dctx.strokeRect((selLayer.x - w / 2 - 14) * scale, (selLayer.y - h / 2 - 10) * scale, (w + 28) * scale, (h + 20) * scale);
       dctx.setLineDash([]);
     }
-  }, [bg, layers, safe, selLayer]);
+    if (selShape) {
+      const { w, h } = shapeBounds(selShape);
+      dctx.strokeStyle = PRIMARY; dctx.lineWidth = 1.5; dctx.setLineDash([5, 4]);
+      dctx.strokeRect((selShape.x - w / 2 - 8) * scale, (selShape.y - h / 2 - 8) * scale, (w + 16) * scale, (h + 16) * scale);
+      dctx.setLineDash([]);
+    }
+  }, [bg, layers, shapes, safe, selLayer, selShape]);
 
   useEffect(() => { render(); }, [render]);
 
@@ -193,13 +308,23 @@ export default function StoryMakerPage() {
     }
     return null;
   };
+  const hitShape = (mx: number, my: number): ShapeLayer | null => {
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      const s = shapes[i];
+      const { w, h } = shapeBounds(s);
+      if (mx >= s.x - w / 2 - 10 && mx <= s.x + w / 2 + 10 && my >= s.y - h / 2 - 10 && my <= s.y + h / 2 + 10) return s;
+    }
+    return null;
+  };
 
   const onPointerDown = (e: React.PointerEvent) => {
     const { mx, my } = toMaster(e);
-    const l = hitLayer(mx, my);
-    if (l) {
-      setSel(l.id);
-      drag.current = { id: l.id, startX: mx, startY: my, ox: l.x, oy: l.y, moved: false };
+    const l = hitLayer(mx, my);              // text má přednost (bývá navrch)
+    const s = l ? null : hitShape(mx, my);
+    if (l || s) {
+      const t = (l ?? s)!;
+      setSel(t.id);
+      drag.current = { id: t.id, startX: mx, startY: my, ox: t.x, oy: t.y, moved: false };
       (e.target as Element).setPointerCapture(e.pointerId);
     } else {
       setSel(null);
@@ -219,6 +344,7 @@ export default function StoryMakerPage() {
       setBg((p) => ({ ...p, panX: d.ox + dx, panY: d.oy + dy }));
     } else {
       setLayers((prev) => prev.map((l) => (l.id === d.id ? { ...l, x: d.ox + dx, y: d.oy + dy } : l)));
+      setShapes((prev) => prev.map((s) => (s.id === d.id ? { ...s, x: d.ox + dx, y: d.oy + dy } : s)));
     }
   };
   const onPointerUp = () => { drag.current = null; };
@@ -226,8 +352,11 @@ export default function StoryMakerPage() {
     const { mx, my } = toMaster(e);
     const f = e.deltaY < 0 ? 1.06 : 0.94;
     const l = hitLayer(mx, my);
+    const s = l ? null : hitShape(mx, my);
     if (l) {
       setLayers((prev) => prev.map((x) => (x.id === l.id ? { ...x, size: Math.min(320, Math.max(24, Math.round(x.size * f))) } : x)));
+    } else if (s) {
+      setShapes((prev) => prev.map((x) => (x.id === s.id ? { ...x, size: Math.min(500, Math.max(20, Math.round(x.size * f))) } : x)));
     } else if (bg.kind === "photo") {
       setBg((p) => ({ ...p, zoom: Math.min(3.5, Math.max(1, p.zoom * f)) }));
     }
@@ -246,6 +375,15 @@ export default function StoryMakerPage() {
     if (sel == null) return;
     setLayers((prev) => prev.map((l) => (l.id === sel ? { ...l, ...patch } : l)));
   };
+  const addShape = (kind: ShapeKind) => {
+    const id = Date.now();
+    setShapes((prev) => [...prev, { id, kind, x: W / 2, y: H / 2 - 180, size: 130, color: kind === "heart" ? "#EF476F" : "#5B5EFF" }]);
+    setSel(id);
+  };
+  const patchShape = (patch: Partial<ShapeLayer>) => {
+    if (sel == null) return;
+    setShapes((prev) => prev.map((s) => (s.id === sel ? { ...s, ...patch } : s)));
+  };
   const setFont = async (f: StoryFont) => {
     setFontLoading(true);
     await ensureFontLoaded(f);
@@ -260,7 +398,7 @@ export default function StoryMakerPage() {
   };
   const exportPng = () => {
     const master = document.createElement("canvas");
-    drawStory(master, bg, layers);
+    drawStory(master, bg, layers, shapes);
     master.toBlob((blob) => {
       if (!blob) return;
       const a = document.createElement("a");
@@ -338,10 +476,40 @@ export default function StoryMakerPage() {
                   style={{ background: c, border: bg.kind === "color" && bg.color === c ? `2px solid ${PRIMARY}` : "1px solid rgba(255,255,255,0.25)" }} />
               ))}
               <span className="flex-1" />
+              <Chip active={bg.grain} onClick={() => setBg((p) => ({ ...p, grain: !p.grain }))} title="Filmové zrno navrch">Zrno</Chip>
               <Chip active={safe} onClick={() => setSafe((s) => !s)} title="Zóny, kam IG kreslí své UI (jen náhled — do exportu nejdou)">
                 {safe ? <Eye className="w-3 h-3 inline mr-1" /> : <EyeOff className="w-3 h-3 inline mr-1" />} Safe zóny
               </Chip>
             </div>
+          </div>
+
+          {/* Tvary / samolepky */}
+          <div className="glass-card p-4 space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[--muted-foreground]">Tvary</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SHAPE_LIST.map((s) => (
+                <button key={s.kind} onClick={() => addShape(s.kind)} title={`Přidat ${s.kind}`}
+                  className="btn-tactile w-9 h-9 rounded-[8px] text-[16px] flex items-center justify-center"
+                  style={{ background: "rgba(91,94,255,0.1)", border: "1px solid rgba(91,94,255,0.3)", color: PRIMARY }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            {selShape && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] text-[--muted-foreground]">Barva tvaru:</span>
+                {SWATCHES.map((c) => (
+                  <button key={c} onClick={() => patchShape({ color: c })}
+                    className="btn-tactile w-5 h-5 rounded-full"
+                    style={{ background: c, border: selShape.color === c ? `2px solid ${PRIMARY}` : "1px solid rgba(255,255,255,0.25)" }} />
+                ))}
+                <button onClick={() => { setShapes((prev) => prev.filter((s) => s.id !== sel)); setSel(null); }}
+                  className="btn-tactile p-1.5 rounded-[6px] ml-1" style={{ color: "oklch(0.6 0.2 25)" }} title="Smazat tvar">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] text-[--muted-foreground]">· kolečko = velikost · táhni = přesun</span>
+              </div>
+            )}
           </div>
 
           {/* Texty */}
@@ -421,7 +589,7 @@ export default function StoryMakerPage() {
           </div>
 
           {/* Export */}
-          <button onClick={exportPng} disabled={layers.length === 0 && bg.kind === "color"}
+          <button onClick={exportPng} disabled={layers.length === 0 && shapes.length === 0 && bg.kind === "color"}
             className="btn-tactile inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[9px] text-[13px] font-semibold disabled:opacity-40"
             style={{ background: PRIMARY, color: "white" }}>
             <Download className="w-4 h-4" /> Stáhnout PNG (1080×1920)
