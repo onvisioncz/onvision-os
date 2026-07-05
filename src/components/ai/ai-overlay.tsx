@@ -2,8 +2,19 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-import { AiPage } from "@/app/(app)/ai/page";
+import { X, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// AI workspace je velká stránka (chat, streaming, nástroje). Načteme ji až
+// při prvním otevření panelu, ať není v bundlu všech stránek.
+const AiPage = dynamic(() => import("@/app/(app)/ai/page").then((m) => m.AiPage), {
+  ssr: false,
+  loading: () => (
+    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Loader2 className="animate-spin" style={{ width: 20, height: 20, color: "oklch(0.62 0.27 265)" }} />
+    </div>
+  ),
+});
 
 interface Props {
   open: boolean;
