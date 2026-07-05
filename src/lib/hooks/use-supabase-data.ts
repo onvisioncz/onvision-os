@@ -44,6 +44,12 @@ const MAX_HISTORY = 30;
 const serverToken = new Map<string, string | null>();
 const serverBase = new Map<string, unknown>();
 type ConflictHandler = (remote: unknown, token: string | null) => void;
+// POZOR: conflictHandlers je Map key→handler, takže když by DVĚ komponenty
+// v jednom tabu volaly useSupabaseData(sameKey), poslední registrace přepíše
+// první a merge při konfliktu by cílil jen do jedné z nich. Dnes to nikde
+// nenastává (žádná stránka nepoužívá stejný klíč 2×), takže je to jen latentní
+// křehkost, ne bug. Kdyby to bylo někdy potřeba, změň hodnotu Mapy na pole
+// handlerů (Set) a volej všechny.
 const conflictHandlers = new Map<string, ConflictHandler>();
 const conflictRounds = new Map<string, number>();
 const MAX_CONFLICT_ROUNDS = 6;
