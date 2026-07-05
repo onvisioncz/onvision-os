@@ -12,6 +12,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { cadenceByClient, cadenceSummary, ymOf, type CadenceClient } from "@/lib/post-cadence";
+import { pillarBalance } from "@/lib/pillar-balance";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 type PostStatus = "napad" | "priprava" | "ke_schvaleni" | "schvaleno" | "publikovano";
@@ -1308,6 +1309,40 @@ function KlientiView({
               Nový post
             </button>
           </div>
+          {/* Content pilíře — vyváženost obsahu */}
+          {(() => {
+            const bal = pillarBalance(posts, pillars, selectedKlient);
+            if (bal.total === 0 || bal.slices.length === 0) return null;
+            return (
+              <div className="rounded-[12px] p-3.5" style={{ background: "oklch(1 0 0 / 0.03)", border: "1px solid oklch(1 0 0 / 0.07)" }}>
+                <div className="flex items-center justify-between gap-3 mb-2.5">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: "oklch(0.55 0.005 222)" }}>Content pilíře</span>
+                  {bal.dominant ? (
+                    <span className="text-[11px] font-semibold" style={{ color: "oklch(0.8 0.16 75)" }}>⚠ {bal.dominant.emoji ?? ""} {bal.dominant.label} dominuje ({bal.dominant.pct} %)</span>
+                  ) : bal.vyvazene ? (
+                    <span className="text-[11px] font-semibold" style={{ color: "oklch(0.7 0.155 155)" }}>✓ vyvážené</span>
+                  ) : bal.unused.length > 0 ? (
+                    <span className="text-[11px]" style={{ color: "oklch(0.5 0.005 222)" }}>{bal.unused.length} nevyužitých pilířů</span>
+                  ) : null}
+                </div>
+                {/* stacked bar */}
+                <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5" style={{ background: "oklch(1 0 0 / 0.05)" }}>
+                  {bal.slices.filter(s => s.count > 0).map(s => (
+                    <div key={s.id} title={`${s.label}: ${s.count} (${s.pct} %)`} style={{ width: `${s.pct}%`, background: s.color ?? "oklch(0.5 0.02 265)" }} />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {bal.slices.map(s => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: s.count === 0 ? "oklch(0.4 0.005 222)" : "oklch(0.72 0.01 265)" }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: s.id === "__none__" ? "oklch(0.35 0.005 222)" : (s.color ?? "oklch(0.5 0.02 265)"), opacity: s.count === 0 ? 0.4 : 1 }} />
+                      {s.emoji ? `${s.emoji} ` : ""}{s.label} <span style={{ color: "oklch(0.45 0.005 222)" }}>{s.count}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {clientPosts.map(p => (
               <KlientPostCard key={p.id} post={p} pillars={pillars} onClick={() => onOpenPost(p)} />
