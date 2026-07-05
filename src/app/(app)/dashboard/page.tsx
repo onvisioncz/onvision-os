@@ -30,6 +30,7 @@ import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
 import { AiBrief } from "@/components/ai-brief";
 import { VyhledGlance } from "@/components/dashboard/vyhled-glance";
+import { CompanyBarometer } from "@/components/dashboard/company-barometer";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { PwaInstallBanner } from "@/components/pwa-install-button";
 import { useChatContext } from "@/components/chat/chat-shell";
@@ -1243,6 +1244,12 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         <NerveCenter />
+
+        {isAdmin && (
+          <motion.div variants={item}>
+            <CompanyBarometer />
+          </motion.div>
+        )}
 
         {isAdmin && (
           <motion.div variants={item}>
