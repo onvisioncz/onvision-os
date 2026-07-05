@@ -179,11 +179,11 @@ export default function TydenniVyhledPage() {
                           {POST_TYPY.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
                         <input className={`${iCls} flex-1 min-w-[160px]`} style={iStyle} value={r.popis} placeholder="Co konkrétně… (téma, poznámka)" onChange={(e) => patchRow(r.id, { popis: e.target.value })} />
-                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.copywriter} onChange={(e) => patchRow(r.id, { copywriter: e.target.value })} title="Kdo tvoří COPY">
+                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.copywriter} onChange={(e) => patchRow(r.id, { copywriter: e.target.value, taskCopyId: undefined })} title="Kdo tvoří COPY">
                           <option value="">COPY — kdo?</option>
                           {TEAM.map((n) => <option key={n} value={n}>{n}</option>)}
                         </select>
-                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.vizual} onChange={(e) => patchRow(r.id, { vizual: e.target.value })} title="Kdo tvoří vizuál">
+                        <select className={iCls} style={{ ...iStyle, width: 150 }} value={r.vizual} onChange={(e) => patchRow(r.id, { vizual: e.target.value, taskVizualId: undefined })} title="Kdo tvoří vizuál">
                           <option value="">VIZUÁL — kdo?</option>
                           {TEAM.map((n) => <option key={n} value={n}>{n}</option>)}
                         </select>
