@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Trash2, ChevronDown, TrendingUp, TrendingDown,
   Wallet, BarChart3, CheckCircle2, Clock, AlertCircle,
-  FileText, Receipt, Paperclip, Download, CreditCard,
+  FileText, Receipt, Paperclip, Download, CreditCard, Repeat2, Sparkle,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -620,6 +620,58 @@ function PrehledTab({
 /* ── PŘÍJMY tab ─────────────────────────────────────────────────────────────── */
 const EMPTY_INCOME: Omit<IncomeItem, "id"> = { mesic: "Leden", klient: "", typ: "Měsíční klient", datumZaplaceni: "", castka: 0, stav: "Zaplaceno" };
 
+/** Jedna kolonka příjmů (měsíční klienti / jednorázové) — měsíčně seskupené. */
+function IncomeColumn({ title, icon, items, accent, onEdit, onDelete }: {
+  title: string; icon: React.ReactNode; items: IncomeItem[]; accent: string;
+  onEdit: (i: IncomeItem) => void; onDelete: (id: number) => void;
+}) {
+  const total = items.reduce((s, i) => s + i.castka, 0);
+  const groups: { mesic: string; items: IncomeItem[] }[] = [];
+  const seen: Record<string, number> = {};
+  items.forEach(it => {
+    if (seen[it.mesic] === undefined) { seen[it.mesic] = groups.length; groups.push({ mesic: it.mesic, items: [] }); }
+    groups[seen[it.mesic]].items.push(it);
+  });
+  return (
+    <div className="card overflow-hidden flex flex-col">
+      <div className="px-4 py-3 flex items-center justify-between gap-2" style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)", background: `${accent.replace(")", " / 0.06)")}` }}>
+        <span className="flex items-center gap-2 text-[13px] font-bold" style={{ color: accent, fontFamily: "var(--font-outfit)" }}>{icon}{title}</span>
+        <span className="text-right">
+          <span className="num text-[14px] font-bold" style={{ color: accent, fontFamily: "var(--font-outfit)" }}>{fKc(total)}</span>
+          <span className="text-[10px] text-[--muted-foreground] ml-2">{items.length}×</span>
+        </span>
+      </div>
+      {items.length === 0 ? (
+        <div className="py-10 text-center text-[13px] text-[--muted-foreground]">Žádné příjmy.</div>
+      ) : (
+        <div>
+          {groups.map(group => (
+            <div key={group.mesic}>
+              <MonthHeader mesic={group.mesic} total={group.items.reduce((s, i) => s + i.castka, 0)} count={group.items.length} color={accent} />
+              {group.items.map(item => {
+                const is = itemStatusStyle(item.stav);
+                return (
+                  <div key={item.id} className="group flex items-center gap-2 px-4 py-2.5 border-b hover:bg-white/[0.015] transition-colors" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-semibold text-[--foreground] truncate" style={{ fontFamily: "var(--font-outfit)" }}>{item.klient}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[11px]" style={{ color: is.color }}>{is.icon}{item.stav}{item.datumZaplaceni ? <span className="text-[--muted-foreground]"> · {item.datumZaplaceni}</span> : null}</div>
+                    </div>
+                    <span className="num text-[13px] font-bold shrink-0" style={{ color: accent, fontFamily: "var(--font-outfit)" }}>{fKc(item.castka)}</span>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <motion.button onClick={() => onEdit(item)} whileTap={{ scale: 0.9 }} className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{ color: "oklch(0.45 0.005 222)" }}><Edit2 className="w-3.5 h-3.5" /></motion.button>
+                      <motion.button onClick={() => onDelete(item.id)} whileTap={{ scale: 0.9 }} className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity" style={{ color: "oklch(0.55 0.18 25)" }}><Trash2 className="w-3.5 h-3.5" /></motion.button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p: IncomeItem[]) => IncomeItem[]) => void }) {
   const [modal, setModal]     = useState<IncomeItem | null | "new">(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -630,15 +682,6 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
     return [...base].sort((a, b) => MONTHS_CZ.indexOf(b.mesic) - MONTHS_CZ.indexOf(a.mesic));
   }, [items, mesicF]);
 
-  const grouped = useMemo(() => {
-    const g: { mesic: string; items: IncomeItem[] }[] = [];
-    const seen: Record<string, number> = {};
-    filtered.forEach(it => {
-      if (seen[it.mesic] === undefined) { seen[it.mesic] = g.length; g.push({ mesic: it.mesic, items: [] }); }
-      g[seen[it.mesic]].items.push(it);
-    });
-    return g;
-  }, [filtered]);
 
   const total      = items.reduce((s, i) => s + i.castka, 0);
   const monthly    = items.filter(i => i.typ === "Měsíční klient").reduce((s, i) => s + i.castka, 0);
@@ -698,62 +741,18 @@ function PrijmyTab({ items, setItems }: { items: IncomeItem[]; setItems: (fn: (p
         </div>
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ borderBottom: "1px solid oklch(1 0 0 / 0.07)" }}>
-                {["Klient", "Typ", "Datum", "Částka", "Stav", ""].map((h, i) => (
-                  <th key={i} className={`px-4 py-3 text-left text-[10px] font-semibold text-[--muted-foreground] uppercase tracking-[0.07em] ${h === "Datum" ? "hidden lg:table-cell" : h === "" ? "w-8" : ""}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {grouped.map(group => (
-                <Fragment key={group.mesic}>
-                  <tr>
-                    <td colSpan={6} className="px-4">
-                      <MonthHeader mesic={group.mesic} total={group.items.reduce((s,i) => s+i.castka,0)} count={group.items.length} color="oklch(0.67 0.155 155)" />
-                    </td>
-                  </tr>
-                  {group.items.map(item => {
-                    const is = itemStatusStyle(item.stav);
-                    const ts = incomeTypeStyle(item.typ);
-                    return (
-                      <tr key={item.id} className="group border-b hover:bg-white/[0.015] transition-colors" style={{ borderColor: "oklch(1 0 0 / 0.05)" }}>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-[--foreground]" style={{ fontFamily: "var(--font-outfit)", letterSpacing: "-0.01em" }}>{item.klient}</td>
-                        <td className="px-4 py-3"><Badge label={item.typ} {...ts} /></td>
-                        <td className="px-4 py-3 text-[12px] text-[--muted-foreground] hidden lg:table-cell">{item.datumZaplaceni || "—"}</td>
-                        <td className="px-4 py-3 num text-[13px] font-bold text-right" style={{ color: "oklch(0.67 0.155 155)", fontFamily: "var(--font-outfit)" }}>{fKc(item.castka)}</td>
-                        <td className="px-4 py-3">
-                          <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: is.color }}>{is.icon}{item.stav}</span>
-                        </td>
-                        <td className="pr-4 pl-2 py-3">
-                          <div className="flex items-center gap-0.5">
-                            <motion.button onClick={() => setModal(item)} whileTap={{ scale: 0.9 }}
-                              className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
-                              style={{ color: "oklch(0.45 0.005 222)" }}>
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </motion.button>
-                            <motion.button onClick={() => setDeleteId(item.id)} whileTap={{ scale: 0.9 }}
-                              className="opacity-0 group-hover:opacity-100 p-1 rounded-[5px] btn-tactile transition-opacity"
-                              style={{ color: "oklch(0.55 0.18 25)" }}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </motion.button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </Fragment>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="py-12 text-center text-[13px] text-[--muted-foreground]">Žádné příjmy.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Dvě kolonky: měsíční klienti vlevo, jednorázové zakázky vpravo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <IncomeColumn
+          title="Měsíční klienti" icon={<Repeat2 className="w-3.5 h-3.5" />}
+          items={filtered.filter(i => i.typ === "Měsíční klient")}
+          accent="oklch(0.62 0.27 265)" onEdit={setModal} onDelete={setDeleteId}
+        />
+        <IncomeColumn
+          title="Jednorázové zakázky / projekty" icon={<Sparkle className="w-3.5 h-3.5" />}
+          items={filtered.filter(i => i.typ !== "Měsíční klient")}
+          accent="oklch(0.72 0.18 290)" onEdit={setModal} onDelete={setDeleteId}
+        />
       </div>
 
       {/* Delete confirm dialog */}
