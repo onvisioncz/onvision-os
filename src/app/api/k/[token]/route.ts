@@ -52,6 +52,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const body = await req.json().catch(() => null);
   if (!body?.action) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
+  // Ochrana veřejného (bez loginu) zápisu proti zneužití/DoS: limity délky
+  // vstupů a stropy na počet položek, ať držitel tokenu nenafoukne úložiště.
+  const MAX_TEXT = 2000, MAX_CAS = 120, MAX_COMMENTS = 200, MAX_NPS = 1000;
+  const clip = (s: unknown, n: number) => String(s ?? "").trim().slice(0, n);
+
   if (body.action === "approve" || body.action === "comment") {
     const approvals = (await readKey<ClientApproval[]>(sb, APPROVALS_KEY)) ?? [];
     const idx = approvals.findIndex((a) => a.id === body.approvalId && a.klient === klient);
@@ -60,9 +65,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     if (body.action === "approve") {
       approvals[idx].status = body.status === "Schváleno" ? "Schváleno" : "Vráceno";
     } else {
-      if (!body.text?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
-      approvals[idx].comments = [...(approvals[idx].comments ?? []), {
-        id: Date.now(), cas: (body.cas ?? "").trim(), text: body.text.trim(), autor: "Klient", createdAt: new Date().toISOString(),
+      const text = clip(body.text, MAX_TEXT);
+      if (!text) return NextResponse.json({ error: "empty" }, { status: 400 });
+      const existing = approvals[idx].comments ?? [];
+      if (existing.length >= MAX_COMMENTS) return NextResponse.json({ error: "too_many" }, { status: 429 });
+      approvals[idx].comments = [...existing, {
+        id: Date.now(), cas: clip(body.cas, MAX_CAS), text, autor: "Klient", createdAt: new Date().toISOString(),
       }];
     }
     await writeKey(sb, APPROVALS_KEY, approvals);
@@ -73,8 +81,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     const score = Number(body.score);
     if (isNaN(score) || score < 0 || score > 10) return NextResponse.json({ error: "bad_score" }, { status: 400 });
     const nps = (await readKey<NpsRating[]>(sb, NPS_KEY)) ?? [];
-    nps.push({ id: Date.now(), klient, score, comment: (body.comment ?? "").trim(), createdAt: new Date().toISOString() });
-    await writeKey(sb, NPS_KEY, nps);
+    // strop na celkový počet záznamů (ochrana proti DoS přes veřejný endpoint)
+    const trimmed = nps.slice(-(MAX_NPS - 1));
+    trimmed.push({ id: Date.now(), klient, score, comment: clip(body.comment, MAX_TEXT), createdAt: new Date().toISOString() });
+    await writeKey(sb, NPS_KEY, trimmed);
     return NextResponse.json({ ok: true });
   }
 
