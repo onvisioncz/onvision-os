@@ -294,3 +294,66 @@ export function PushSubscribeButton() {
     </button>
   );
 }
+
+/* ── Reusable hook + inline nudge ─────────────────────────────────────────────
+ * Aby přiřazené úkoly / nedělní upomínky reálně chodily do mobilu, musí mít
+ * uživatel zapnutý push odběr. Tenhle hook + banner to připomene tam, kde to
+ * dává smysl (např. Týdenní výhled), a jedním klikem odběr zapne. */
+export function usePushSubscription() {
+  const [state, setState] = useState<State>("loading");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) { setState("unsupported"); return; }
+    if (Notification.permission === "denied") { setState("denied"); return; }
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription();
+      setState(sub ? "subscribed" : "unsubscribed");
+    }).catch(() => setState("unsupported"));
+  }, []);
+
+  const subscribe = async () => {
+    setBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") { setState("denied"); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""),
+      });
+      const displayName = await fetchMyDisplayName();
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: sub.toJSON(), displayName }),
+      });
+      if (res.ok) setState("subscribed");
+    } catch (err) {
+      console.error("[push] subscribe error:", err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { state, busy, subscribe };
+}
+
+/** Banner „zapni si notifikace" — vykreslí se JEN když odběr chybí. */
+export function PushNudge({ message }: { message?: string }) {
+  const { state, busy, subscribe } = usePushSubscription();
+  if (state !== "unsubscribed") return null;   // subscribed / denied / unsupported / loading → nic
+  return (
+    <div className="mb-4 flex items-center justify-between gap-3 flex-wrap px-4 py-2.5 rounded-[10px]"
+      style={{ background: "oklch(0.62 0.27 265 / 0.08)", border: "1px solid oklch(0.62 0.27 265 / 0.25)" }}>
+      <span className="flex items-center gap-2 text-[12px]" style={{ color: "oklch(0.75 0.14 265)" }}>
+        <BellOff className="w-3.5 h-3.5 shrink-0" />
+        {message ?? "Zapni si notifikace, ať ti chodí upomínky a přiřazené úkoly do mobilu."}
+      </span>
+      <button onClick={subscribe} disabled={busy}
+        className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold shrink-0 disabled:opacity-50"
+        style={{ background: "oklch(0.62 0.27 265)", color: "white" }}>
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />} Zapnout
+      </button>
+    </div>
+  );
+}

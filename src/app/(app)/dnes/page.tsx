@@ -17,6 +17,7 @@ import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { TIME_KEY, fmtHod, type TimeEntry } from "@/lib/vykazy";
 import { GEAR_KEY, GEAR_RES_KEY, type GearItem, type GearReservation } from "@/lib/gear";
 import { CALLSHEET_KEY, type CallSheet } from "@/lib/callsheet";
+import { PushNudge } from "@/components/push-subscribe-button";
 
 interface Task { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
 interface ShootingDay { id: number; datum: string; klient: string; typ: string; lokace: string; clenove: string[]; zacatek: string; konec: string }
@@ -152,6 +153,8 @@ export default function DnesPage() {
           {data.weekHours > 0 && ` Tento týden máš vykázáno ${fmtHod(data.weekHours)}.`}
         </p>
       </div>
+
+      <PushNudge />
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* Úkoly */}

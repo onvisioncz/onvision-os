@@ -5,6 +5,7 @@ import { CalendarRange, Plus, Trash2, Check, Send, AlertTriangle, ChevronLeft, C
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { DEFAULT_USERS } from "@/lib/roles";
+import { PushNudge } from "@/components/push-subscribe-button";
 import {
   isoWeekKey, weekRange, outlookStatus, submitKey, POST_TYPY, OUTLOOK_AUTHORS, MONTHLY_CLIENTS,
   type OutlookEntry, type OutlookSubmits, type PostTyp,
@@ -115,6 +116,9 @@ export default function TydenniVyhledPage() {
           <button onClick={() => setOffset((o) => o + 1)} className="p-1.5 rounded-[7px]" style={iStyle} aria-label="Další týden"><ChevronRight className="w-4 h-4" /></button>
         </div>
       </div>
+
+      {/* Nudge: bez zapnutých notifikací nepřijde nedělní upomínka */}
+      {isAuthor && <PushNudge message="Zapni si notifikace, ať ti dorazí nedělní upomínka na výhled i přiřazené úkoly." />}
 
       {/* Admin: přehled stavu odevzdání */}
       {isAdmin && (
