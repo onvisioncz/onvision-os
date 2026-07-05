@@ -393,8 +393,12 @@ export default function StoryMakerPage() {
   const onPhoto = (file: File | null) => {
     if (!file) return;
     const img = new Image();
-    img.onload = () => setBg((p) => ({ ...p, kind: "photo", img, zoom: 1, panX: 0, panY: 0 }));
-    img.src = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    // Uvolni hned po načtení — canvas kreslí z dekódovaného obrázku, ne
+    // znovu ze zdrojové URL, takže nic nerozbije a ušetří se paměť.
+    img.onload = () => { URL.revokeObjectURL(url); setBg((p) => ({ ...p, kind: "photo", img, zoom: 1, panX: 0, panY: 0 })); };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
   };
   const exportPng = () => {
     const master = document.createElement("canvas");

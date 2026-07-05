@@ -85,9 +85,14 @@ function loadFiles(files: FileList | File[]): Promise<{ img: HTMLImageElement; n
   return Promise.all([...files].filter((f) => f.type.startsWith("image/")).map((f) =>
     new Promise<{ img: HTMLImageElement; name: string }>((resolve, reject) => {
       const img = new Image();
-      img.onload = () => resolve({ img, name: f.name });
-      img.onerror = reject;
-      img.src = URL.createObjectURL(f);
+      const url = URL.createObjectURL(f);
+      // Uvolni blob URL hned po načtení — dekódovaný obrázek zůstává
+      // canvasu k dispozici (draw nečte znovu ze src), jen se neplýtvá
+      // pamětí na blob, který už nikdo nepotřebuje. Bez tohohle by dlouhá
+      // session s desítkami nahraných fotek postupně unikala paměť.
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ img, name: f.name }); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(`Nepodařilo se načíst ${f.name}`)); };
+      img.src = url;
     })
   ));
 }
