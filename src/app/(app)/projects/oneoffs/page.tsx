@@ -183,7 +183,12 @@ const SEED: Project[] = [
 
 /* ── Helpers ─────────────────────────────────────────────────────────────────── */
 function fKc(n: number) {
-  return n.toLocaleString("cs-CZ") + " Kč";
+  return (n || 0).toLocaleString("cs-CZ") + ",- Kč";
+}
+/** Vezme cokoli uživatel napsal ("65 000", "65.000 Kč") a vrátí čisté číslo. */
+function parseCastka(raw: string): number {
+  const digits = (raw || "").replace(/[^\d]/g, "");
+  return digits ? parseInt(digits, 10) : 0;
 }
 
 const TYP_STYLE: Record<string, { color: string; bg: string; border: string }> = {
@@ -961,11 +966,13 @@ function ProjectModal({
               </label>
               {editing ? (
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="text-sm bg-transparent outline-none border-b"
                   style={{ color: "oklch(0.67 0.155 155)", borderColor: "oklch(1 0 0 / 0.15)", fontFamily: "var(--font-outfit)" }}
-                  value={editDraft?.castka ?? 0}
-                  onChange={(e) => field("castka", Number(e.target.value))}
+                  value={editDraft?.castka ? editDraft.castka.toLocaleString("cs-CZ") : ""}
+                  placeholder="0"
+                  onChange={(e) => field("castka", parseCastka(e.target.value))}
                 />
               ) : (
                 <span className="text-sm font-semibold" style={{ fontFamily: "var(--font-outfit)", color: "oklch(0.67 0.155 155)" }}>
