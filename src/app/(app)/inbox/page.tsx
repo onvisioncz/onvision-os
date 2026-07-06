@@ -3,6 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { useUserRole } from "@/lib/hooks/use-user-role";
+import {
+  notifVisibleFor, AUD_FINANCE, AUD_BILLING, AUD_CONTENT, AUD_PRODUCTION, AUD_OUTPUTS, type Audience,
+} from "@/lib/notif-audience";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CreditCard, Clock, FileCheck, AlertTriangle,
@@ -40,6 +44,7 @@ interface Notif {
   castka?: number;
   link?: string;       // deep-link destination
   linkLabel?: string;  // button label e.g. "Přejít na fakturace"
+  audience?: Audience; // kdo upozornění vidí (ne-admin filtr); admin vidí vše
 }
 
 /* ── Read/archived state stored in Supabase ─────────────────────────────────── */
@@ -120,7 +125,7 @@ function generate(
         body = `${t.nazev} — termín ${t.deadline}. Přiřazeno: ${t.prirazeno}.`;
       }
 
-      out.push({ id: `task-${t.id}`, type: "deadline", title, body, cas: relativeCas(days), urgency, link: "/ukoly", linkLabel: "Otevřít úkoly" });
+      out.push({ id: `task-${t.id}`, type: "deadline", title, body, cas: relativeCas(days), urgency, link: "/ukoly", linkLabel: "Otevřít úkoly", audience: { kind: "person", name: t.prirazeno } });
     });
 
   /* 2. Faktury po splatnosti nebo splatné do 3 dnů ───────────────────────────── */
@@ -142,6 +147,7 @@ function generate(
           castka: f.castka,
           link: "/fakturace",
           linkLabel: "Otevřít fakturace",
+          audience: AUD_FINANCE,
         });
       } else if (days <= 3) {
         out.push({
@@ -154,6 +160,7 @@ function generate(
           castka: f.castka,
           link: "/fakturace",
           linkLabel: "Otevřít fakturace",
+          audience: AUD_FINANCE,
         });
       }
     });
@@ -172,6 +179,7 @@ function generate(
         castka: s.castka,
         link: "/fakturace",
         linkLabel: "Otevřít schválení",
+        audience: AUD_BILLING,
       });
     });
 
@@ -207,6 +215,7 @@ function generate(
       castka: g.total,
       link: "/finance",
       linkLabel: "Přejít na finance",
+      audience: AUD_FINANCE,
     });
   });
 
@@ -257,6 +266,8 @@ function eventToNotif(e: NotifEvent): Notif {
     urgency: e.type === "task_assigned" ? 1 : 2,
     link: e.url,
     linkLabel: e.type === "task_assigned" ? "Otevřít úkoly" : "Otevřít výstupy",
+    // task_assigned má konkrétního příjemce; upload výstupu vidí obsahové role
+    audience: e.type === "task_assigned" ? { kind: "email", email: e.targetEmail } : AUD_OUTPUTS,
   };
 }
 
@@ -268,19 +279,20 @@ interface GearRes { id: number; kdo: string; od: string; do: string; projekt: st
 function generateNew(approvals: CApproval[], nps: NpsItem[], reservations: GearRes[]): Notif[] {
   const out: Notif[] = [];
   approvals.filter((a) => a.status === "Čeká").forEach((a) =>
-    out.push({ id: `appr-${a.id}`, type: "schvaleni", title: `Čeká na schválení klientem`, body: `${a.nazev} · ${a.klient}`, cas: "", urgency: 1, link: "/klient-share", linkLabel: "Otevřít sdílení" }));
+    out.push({ id: `appr-${a.id}`, type: "schvaleni", title: `Čeká na schválení klientem`, body: `${a.nazev} · ${a.klient}`, cas: "", urgency: 1, link: "/klient-share", linkLabel: "Otevřít sdílení", audience: AUD_CONTENT }));
   approvals.forEach((a) => (a.comments ?? []).filter((c) => c.autor === "Klient").forEach((c, idx) =>
-    out.push({ id: `cmt-${a.id}-${idx}`, type: "upozorneni", title: `Komentář klienta · ${a.klient}`, body: `${c.cas ? `${c.cas} — ` : ""}${c.text}`, cas: "", urgency: 2, link: "/klient-share", linkLabel: "Otevřít" })));
+    out.push({ id: `cmt-${a.id}-${idx}`, type: "upozorneni", title: `Komentář klienta · ${a.klient}`, body: `${c.cas ? `${c.cas} — ` : ""}${c.text}`, cas: "", urgency: 2, link: "/klient-share", linkLabel: "Otevřít", audience: AUD_CONTENT })));
   nps.forEach((n) =>
-    out.push({ id: `nps-${n.id}`, type: "upozorneni", title: `Hodnocení klienta: ${n.score}/10`, body: n.klient, cas: "", urgency: n.score < 7 ? 1 : 3, link: "/klient-share", linkLabel: "Otevřít" }));
+    out.push({ id: `nps-${n.id}`, type: "upozorneni", title: `Hodnocení klienta: ${n.score}/10`, body: n.klient, cas: "", urgency: n.score < 7 ? 1 : 3, link: "/klient-share", linkLabel: "Otevřít", audience: AUD_CONTENT }));
   const today = new Date().toISOString().slice(0, 10);
   reservations.filter((r) => r.do >= today).forEach((r) =>
-    out.push({ id: `gear-${r.id}`, type: "upozorneni", title: `Rezervace techniky`, body: `${r.kdo} · ${r.od}–${r.do}${r.projekt ? ` · ${r.projekt}` : ""}`, cas: "", urgency: 3, link: "/technika", linkLabel: "Otevřít techniku" }));
+    out.push({ id: `gear-${r.id}`, type: "upozorneni", title: `Rezervace techniky`, body: `${r.kdo} · ${r.od}–${r.do}${r.projekt ? ` · ${r.projekt}` : ""}`, cas: "", urgency: 3, link: "/technika", linkLabel: "Otevřít techniku", audience: AUD_PRODUCTION }));
   return out;
 }
 
 export default function InboxPage() {
   const router = useRouter();
+  const { user } = useUserRole();
 
   /* Read/archived state — only this persists to Supabase */
   const [state, setState] = useSupabaseData<InboxState>("ov-inbox-state", () => EMPTY_STATE);
@@ -331,9 +343,10 @@ export default function InboxPage() {
       .filter(n => !existingIds.has(n.id))
       // Most recent events first for event section
       .reverse();
-    // Events go after system alerts
-    return [...system, ...eventNotifs];
-  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes]);
+    // Cílení: zaměstnanec vidí jen svoje úkoly + upozornění pro jeho role; admin vše.
+    const audienceUser = user ? { roles: user.roles, displayName: user.displayName, email: user.email } : null;
+    return [...system, ...eventNotifs].filter(n => notifVisibleFor(n.audience, audienceUser));
+  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes, user]);
 
   /* Apply read/archived state */
   const notifs = useMemo(

@@ -777,10 +777,10 @@ export default function UkolyPage() {
             className="text-[22px] md:text-[28px] leading-none text-[--foreground]"
             style={{ fontFamily: "var(--font-outfit)", fontWeight: 700, letterSpacing: "-0.03em" }}
           >
-            Úkoly
+            {seeAll ? "Úkoly" : "Moje úkoly"}
           </h1>
           <p className="text-[12px] md:text-[13px] text-[--muted-foreground] mt-1.5">
-            OnVision s.r.o. · Správa úkolů týmu
+            {seeAll ? "OnVision s.r.o. · Správa úkolů týmu" : "Tvoje přiřazené úkoly"}
           </p>
         </div>
         <motion.button
@@ -845,10 +845,12 @@ export default function UkolyPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">Člen:</span>
-          {ASSIGNEES.map(a => filterChip(a, assigneeFilter === a, () => setAssigneeFilter(a)))}
-        </div>
+        {seeAll && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">Člen:</span>
+            {ASSIGNEES.map(a => filterChip(a, assigneeFilter === a, () => setAssigneeFilter(a)))}
+          </div>
+        )}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-semibold text-[--muted-foreground] uppercase tracking-[0.06em]">Stav:&nbsp;&nbsp;</span>
           {STATUS_FILTER.map(s => filterChip(
