@@ -87,7 +87,7 @@ export function NotifBanner() {
           transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           style={{
             position: "fixed",
-            top: 16,
+            top: "max(env(safe-area-inset-top, 0px) + 12px, 16px)",
             left: 0,
             right: 0,
             marginLeft: "auto",
@@ -195,15 +195,18 @@ export function NotifBanner() {
               border: "none",
               cursor: "pointer",
               color: "oklch(0.38 0.005 222)",
-              padding: 4,
+              padding: 0,
+              width: 32,
+              height: 32,
               flexShrink: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginTop: 1,
+              marginTop: -6,
+              marginRight: -8,
             }}
           >
-            <X style={{ width: 13, height: 13 }} />
+            <X style={{ width: 15, height: 15 }} />
           </button>
         </motion.div>
       )}

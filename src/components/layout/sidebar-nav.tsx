@@ -538,15 +538,15 @@ export function MobileNav() {
               className="fixed inset-0 z-40" style={{ background: "oklch(0 0 0 / 0.55)", backdropFilter: "blur(2px)" }} />
             <motion.div key="more-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed left-0 right-0 bottom-0 z-50 rounded-t-[20px] overflow-hidden"
+              className="fixed left-0 right-0 bottom-0 z-50 rounded-t-[20px] flex flex-col"
               style={{ background: "oklch(0.12 0.012 265)", borderTop: "1px solid oklch(1 0 0 / 0.10)", maxHeight: "82vh" }}>
-              <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
                 <span className="text-[12px] font-bold uppercase tracking-[0.12em]" style={{ color: "var(--muted-foreground)", fontFamily: "var(--font-outfit)" }}>Všechny sekce</span>
                 <button onClick={() => setMoreOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "oklch(1 0 0 / 0.06)" }}>
                   <X className="w-4 h-4" style={{ color: "var(--muted-foreground)" }} />
                 </button>
               </div>
-              <div className="overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom,0px),24px)]" style={{ maxHeight: "calc(82vh - 56px)" }}>
+              <div className="overflow-y-auto overscroll-contain px-3 pb-[max(env(safe-area-inset-bottom,0px),24px)] min-h-0" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
                 {moreSections.map((sec) => (
                   <div key={sec.label} className="mb-3">
                     <p className="px-2 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--muted-foreground)", opacity: 0.7 }}>{sec.label}</p>
