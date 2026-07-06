@@ -912,9 +912,12 @@ export default function DashboardPage() {
             </div>
           </div>
           {isAdamDashboard && (
-            <div className={cardClass} style={{ ...cardStyle, padding: "16px 20px", flex: 1 }}>
-              <NerveCenter />
-            </div>
+            <>
+              <div className={cardClass} style={{ ...cardStyle, padding: "16px 20px", flex: "0 0 auto" }}>
+                <NerveCenter stack />
+              </div>
+              <div className="flex-1"><VyhledGlance /></div>
+            </>
           )}
           </div>
 
@@ -1282,7 +1285,7 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {isAdmin && (
+        {isAdmin && !isAdamDashboard && (
           <motion.div variants={item}>
             <VyhledGlance />
           </motion.div>

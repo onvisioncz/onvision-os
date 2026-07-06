@@ -29,7 +29,7 @@ const fmtKc = (n: number) => new Intl.NumberFormat("cs-CZ", { style: "currency",
 
 interface Signal { key: string; count: number; label: string; detail?: string; href: string; color: string; icon: React.ElementType }
 
-export function NerveCenter() {
+export function NerveCenter({ stack = false }: { stack?: boolean } = {}) {
   const [invoices] = useSupabaseData<Inv[]>("ov-issued-invoices", () => []);
   const [financeFaktury] = useSupabaseData<AnyInvoice[]>("ov-finance-faktury", () => []);
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
@@ -120,18 +120,19 @@ export function NerveCenter() {
     return out;
   }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates, monthlyClients, absences, shooting]);
 
+  const round = stack ? "rounded-[9px]" : "rounded-full";
   return (
-    <div className="mb-6">
+    <div className={stack ? "" : "mb-6"}>
       <span className="block mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[--muted-foreground] flex items-center gap-1.5">
         <AlertTriangle className="w-3 h-3" style={{ color: signals.length ? AMBER : GREEN }} /> Nervové centrum
       </span>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={stack ? "flex flex-col gap-1.5" : "flex flex-wrap items-center gap-2"}>
       {signals.length === 0 ? (
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold" style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>
+        <span className={`flex items-center gap-1.5 px-3 py-1.5 ${round} text-[12px] font-semibold`} style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>
           <ShieldCheck className="w-3.5 h-3.5" /> Vše v klidu
         </span>
       ) : signals.map((s) => (
-        <Link key={s.key} href={s.href} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] transition-transform hover:-translate-y-0.5"
+        <Link key={s.key} href={s.href} className={`flex items-center gap-1.5 px-2.5 py-1.5 ${round} text-[12px] transition-transform hover:-translate-y-0.5 ${stack ? "w-full" : ""}`}
           style={{ color: s.color, background: s.color.replace(")", " / 0.12)"), border: `1px solid ${s.color.replace(")", " / 0.28)")}` }}>
           <s.icon className="w-3.5 h-3.5 shrink-0" />
           <span className="font-bold" style={{ fontFamily: "var(--font-heading)" }}>{s.count}</span>
