@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
+import { DEFAULT_USERS } from "@/lib/roles";
 
 export const runtime = "nodejs";
 
 const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const FORBIDDEN = NextResponse.json({ error: "Forbidden" }, { status: 403 });
 const META_API = "https://graph.facebook.com/v20.0";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
@@ -113,6 +115,18 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
+
+  // ── Brief shrnuje citlivá finanční data (ceny, výplaty) → jen admin/vedení ──
+  let briefRoles: string[] = [];
+  try {
+    const { data } = await supabase.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
+    const users = Array.isArray(data?.value) ? data.value as typeof DEFAULT_USERS : DEFAULT_USERS;
+    briefRoles = (users.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())
+      ?? DEFAULT_USERS.find((u) => u.email.toLowerCase() === user.email!.toLowerCase()))?.roles ?? [];
+  } catch {
+    briefRoles = DEFAULT_USERS.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())?.roles ?? [];
+  }
+  if (!briefRoles.includes("admin")) return FORBIDDEN;
 
   if (!(await aiRateLimitOk(user.email))) {
     return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });

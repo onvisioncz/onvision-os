@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_USERS, type Role } from "@/lib/roles";
+import { canReadKey, canWriteKey, readNeedsRoles, redactForRead } from "@/lib/sync-acl";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -76,86 +77,8 @@ async function getAuthenticatedClient() {
   return { supabase, user };
 }
 
-/* ── Role-based write permissions per key ───────────────────────────────────── */
-// Lists which roles may write to each key. "admin" always has full access.
-// Keys NOT listed here are admin-only by default.
-const KEY_WRITE_ROLES: Record<string, Role[]> = {
-  "ov-user-roles":          ["admin"],
-  "ov-monthly-clients":     ["admin"],
-  "ov-finance-summaries":   ["admin", "fakturace"],
-  "ov-issued-invoices":     ["admin", "fakturace"],
-  "ov-schvaleni-items":     ["admin", "fakturace"],
-  "ov-finance-incomes":     ["admin", "fakturace"],
-  // /finance — chybělo, takže role "fakturace" (má na stránku přístup přes
-  // ROLE_ROUTES) tam nemohla nic uložit; server to tiše odmítal (403).
-  "ov-finance-expenses":    ["admin", "fakturace"],
-  "ov-finance-faktury":     ["admin", "fakturace"],
-  "ov-finance-doklady":     ["admin", "fakturace"],
-  // /cile — role "fakturace" má route, ale chyběl zápis.
-  "ov-cile":                ["admin", "fakturace"],
-  // /odmeny — role "fakturace" i "ucetni" mají route, chyběl zápis oběma.
-  "ov-odmeny":              ["admin", "fakturace", "ucetni"],
-  // /cashflow — počáteční zůstatek; role "fakturace" má route, chyběl zápis.
-  "ov-vyhledy-zustatek":    ["admin", "fakturace"],
-  "ov-pipeline-deals":      ["admin"],
-  "ov-oneoffs-projects":    ["admin", "produkce"],
-  "ov-ukoly-tasks":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
-  "ov-ads-campaigns":       ["admin", "smm"],
-  // ov-ads (Reklamy) — přístup jen admini + konkrétní e-maily (viz KEY_WRITE_EMAILS).
-  // Žádná role sama o sobě nestačí, proto zde není.
-  "ov-smm-plan":            ["admin", "smm"],
-  "ov-smm-posts":           ["admin", "smm"],
-  "ov-smm-hashtag-sets":    ["admin", "smm"],
-  "ov-smm-pillars":         ["admin", "smm"],
-  "ov-shooting-plan":       ["admin", "produkce"],
-  "ov-shooting-days":       ["admin", "produkce"],
-  // Dovolené/absence týmu — zapisovat mohou plánující role.
-  "ov-absence":             ["admin", "produkce", "pm", "smm", "grafik"],
-  "ov-shoot-checklists":    ["admin", "produkce", "pm"],
-  // /produkce — Zdeněk a Matěj (role "produkce") si sem zapisují vlastní
-  // odpracované položky; bez tohohle by jim server ukládání tiše odmítal (403).
-  "ov-produkce-zdenek":     ["admin", "produkce"],
-  "ov-produkce-matej":      ["admin", "produkce"],
-  "ov-produkce-grafici":    ["admin", "produkce", "grafik"],
-  "ov-produkce-pending":    ["admin", "produkce"],
-  "ov-outputs":             ["admin", "produkce", "grafik", "smm"],
-  "ov-output-messages":    ["admin", "produkce", "grafik", "smm", "pm", "fakturace"],
-  "ov-calendar-events":     ["admin", "pm", "smm"],
-  "ov-reports-archive":     ["admin", "smm"],
-  "ov-investice":           ["admin"],
-  "ov-finance-predplatne":  ["admin", "fakturace"],
-  // push subscriptions — every authenticated user can write their own
-  "ov-push-subscriptions":  ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
-  "ov-team-chat":           ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
-  // Inbox stav (přečteno/odloženo) — každý si spravuje své notifikace.
-  "ov-inbox-state":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace", "ucetni"],
-  // Evidence smluv — admini a fakturace.
-  "ov-contracts":           ["admin", "fakturace"],
-  // Výkazy hodin — zapisuje je každý, kdo si trackuje práci (/vykazy, /dnes).
-  // Bez tohohle dostávaly non-admin role tiché 403 a hodiny se jim neuložily.
-  "ov-time-entries":        ["admin", "pm", "produkce", "grafik", "smm", "fakturace", "ucetni"],
-  // Technika (/technika) — rezervace i správu techniky dělá celá produkční parta.
-  "ov-gear":                ["admin", "produkce", "grafik", "smm", "pm"],
-  "ov-gear-reservations":   ["admin", "produkce", "grafik", "smm", "pm"],
-  // Call sheety (/call-sheet) a lokace (/lokace) — produkce.
-  "ov-call-sheets":         ["admin", "produkce", "pm"],
-  "ov-lokace":              ["admin", "produkce"],
-  // Brand voice klienta (/smm-ai) — správci sítí.
-  "ov-client-voice":        ["admin", "smm", "pm"],
-  // Cashflow/cíle meta (/cashflow, /cile) — fakturace.
-  "ov-vyhledy-vystupy":     ["admin", "fakturace"],
-  // Týdenní výhled obsahu — vyplňují správci sítí, jednatel (admin) opravuje.
-  "ov-weekly-outlook":         ["admin", "smm", "pm"],
-  "ov-weekly-outlook-submits": ["admin", "smm", "pm"],
-};
-
-/* ── Per-email write allowlist ────────────────────────────────────────────────
- * Pro klíče, kde přístup nemá dostat celá role, ale jen konkrétní lidé.
- * Admini mají přístup vždy (bypass). E-maily malými písmeny.
- * ov-ads (Reklamy) — vyhodnocuje je Tomáš Dang. */
-const KEY_WRITE_EMAILS: Record<string, string[]> = {
-  "ov-ads": ["tomas@onvision.cz"],
-};
+/* ── Access-control (čtení/zápis/redakce) je v testovatelné knihovně ────────── */
+// Viz src/lib/sync-acl.ts + test sync-acl.test.ts (hlídá invariant read ⊇ write).
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
 async function getUserRoles(
@@ -185,11 +108,19 @@ async function getUserRoles(
 
 /* ── GET /api/sync?key=... ──────────────────────────────────────────────────── */
 export async function GET(req: NextRequest) {
-  const { supabase } = await getAuthenticatedClient();
-  if (!supabase) return UNAUTHORIZED;
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!supabase || !user) return UNAUTHORIZED;
 
   const key = req.nextUrl.searchParams.get("key");
   if (!key) return NextResponse.json({ error: "Missing key" }, { status: 400 });
+
+  // Fast path: nechráněný provozní klíč → žádný dotaz na role (rychlost).
+  let userRoles: Role[] | null = null;
+  if (readNeedsRoles(key)) {
+    userRoles = await getUserRoles(supabase, user.email!);
+    // ── Read gating: citlivá data (ceny, výplaty, faktury…) jen oprávněným ──
+    if (!canReadKey(key, userRoles, user.email ?? "")) return FORBIDDEN;
+  }
 
   const { data, error } = await supabase
     .from("app_data")
@@ -198,8 +129,10 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Redakce peněžních polí pro role, které je nemají vidět (jména klientů ano, ceny ne)
+  const value = userRoles ? redactForRead(key, data?.value ?? null, userRoles) : (data?.value ?? null);
   // updated_at slouží jako verzovací token pro optimistický zámek při zápisu
-  return NextResponse.json({ value: data?.value ?? null, token: data?.updated_at ?? null });
+  return NextResponse.json({ value, token: data?.updated_at ?? null });
 }
 
 /* ── POST /api/sync  { key, value } ────────────────────────────────────────── */
@@ -220,21 +153,9 @@ export async function POST(req: NextRequest) {
   // chování (poslední vyhrává). Nový klient posílá string|null → optimistický zámek.
   const legacy = baseToken === undefined;
 
-  // ── Role check ───────────────────────────────────────────────────────────────
+  // ── Role check (write) ───────────────────────────────────────────────────────
   const userRoles = await getUserRoles(supabase, user.email!);
-  const isAdmin   = userRoles.includes("admin");
-
-  if (!isAdmin) {
-    const allowedRoles = KEY_WRITE_ROLES[key];
-    const allowedEmails = KEY_WRITE_EMAILS[key];
-    if (!allowedRoles && !allowedEmails) {
-      // Unknown key — admin only
-      return FORBIDDEN;
-    }
-    const roleOk = allowedRoles?.some((r) => userRoles.includes(r)) ?? false;
-    const emailOk = allowedEmails?.includes((user.email ?? "").toLowerCase()) ?? false;
-    if (!roleOk && !emailOk) return FORBIDDEN;
-  }
+  if (!canWriteKey(key, userRoles, user.email ?? "")) return FORBIDDEN;
 
   // ── Přečti AKTUÁLNÍ řádek (hodnota + token) — pro konflikt i pro push diff ──
   const { data: cur } = await supabase
