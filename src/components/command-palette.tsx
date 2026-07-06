@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, CornerDownLeft, ArrowRight, Plus } from "lucide-react";
+import { useUserRole } from "@/lib/hooks/use-user-role";
+import { canAccess, extraRoutesForEmail } from "@/lib/roles";
 
 interface Cmd { label: string; href: string; group: "Přejít na" | "Akce" | "Nástroje"; keywords?: string }
 
@@ -62,6 +64,7 @@ const str = (v: unknown) => (v == null ? "" : String(v));
 
 export function CommandPalette() {
   const router = useRouter();
+  const { user } = useUserRole();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
@@ -102,20 +105,27 @@ export function CommandPalette() {
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 30); }, [open]);
   useEffect(() => { setActive(0); }, [q]);
 
+  // Přístup podle role — hledání nesmí nabízet stránky, které uživatel nemá vidět.
+  const allow = useCallback(
+    (href: string) => !user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]),
+    [user]
+  );
+
   const flat = useMemo<FlatItem[]>(() => {
     const nq = norm(q.trim());
     const items: FlatItem[] = [];
     const trimmed = q.trim();
-    // Rychlé založení úkolu z čehokoliv, co uživatel napsal
-    if (trimmed.length >= 3) {
+    // Rychlé založení úkolu — jen když má uživatel přístup k úkolům
+    if (trimmed.length >= 3 && allow("/ukoly")) {
       const clean = trimmed.replace(/^(úkol|ukol|task|todo)\s*:?\s*/i, "").trim() || trimmed;
       items.push({ label: `Vytvořit úkol: „${clean}"`, href: "/ukoly", group: "Rychlá akce", action: "create-task" });
     }
-    if (nq) entities.filter((e) => norm(e.label).includes(nq) || norm(e.sub).includes(nq)).slice(0, 8).forEach((e) => items.push({ ...e, group: "Výsledky" }));
-    const cmds = nq ? COMMANDS.filter((c) => norm(c.label).includes(nq) || (c.keywords && norm(c.keywords).includes(nq))) : COMMANDS;
+    if (nq) entities.filter((e) => (norm(e.label).includes(nq) || norm(e.sub).includes(nq)) && allow(e.href)).slice(0, 8).forEach((e) => items.push({ ...e, group: "Výsledky" }));
+    const base = COMMANDS.filter((c) => allow(c.href));
+    const cmds = nq ? base.filter((c) => norm(c.label).includes(nq) || (c.keywords && norm(c.keywords).includes(nq))) : base;
     cmds.forEach((c) => items.push({ label: c.label, href: c.href, group: c.group }));
     return items;
-  }, [q, entities]);
+  }, [q, entities, allow]);
 
   const createTask = useCallback(async (rawText: string) => {
     const nazev = rawText.replace(/^(úkol|ukol|task|todo)\s*:?\s*/i, "").trim();
