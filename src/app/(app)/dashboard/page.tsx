@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { overdueInvoices, unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
+import { WeeklyOutlookPanel } from "@/components/dashboard/weekly-outlook-panel";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
@@ -421,6 +422,8 @@ export default function DashboardPage() {
   /* ── Auth ── */
   const { user } = useUserRole();
   const isAdmin = user?.roles.includes("admin") ?? false;
+  // Adam má upravený dashboard (AI asistent → týdenní výhled). Ostatní klasický.
+  const isAdamDashboard = (user?.email ?? "").toLowerCase() === "info@onvision.cz";
   const router = useRouter();
   const { toggleAi } = useChatContext();
 
@@ -905,7 +908,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* AI inline card — status + suggestion */}
+          {/* AI inline card / Týdenní výhled (Adam) */}
+          {isAdamDashboard ? (
+            <div className="md:col-span-3"><WeeklyOutlookPanel /></div>
+          ) : (
           <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -944,6 +950,7 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
+          )}
         </motion.div>
 
         {/* ── Quick Add Panel ── */}
