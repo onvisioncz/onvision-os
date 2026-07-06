@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
   ChevronLeft, ChevronRight, User, Calendar, Banknote, Tag,
+  Trash2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import {
   DndContext,
@@ -39,6 +40,13 @@ const TYPY: Typ[] = ["VIDEO PRODUKCE", "PORTRÉTOVÉ FOCENÍ", "LIFESTYLE FOCEN�
 const TEAM: string[] = ["Adam", "Honza", "Zdeněk", "Matěj", "Michael", "Monika", "Patrik", "Martin", "Tereza", "David", "Dominika", "Jakub", "Tomáš"];
 
 interface CheckItem { text: string; done: boolean }
+
+/* Minimální tvary pro zápis do příjmů a úkolů při dokončení zakázky. */
+interface IncomeLite { id: number; mesic: string; klient: string; typ: string; datumZaplaceni: string; castka: number; stav: string }
+interface TaskLite { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
+
+const CZ_MONTHS = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
+const currentCzMonth = () => CZ_MONTHS[new Date().getMonth()];
 
 interface Project {
   id: number;
@@ -251,6 +259,8 @@ const stagger = {
 /* ── Main page ────────────────────────────────────────────────────────────────── */
 export default function OneoffsPage() {
   const [projects, setProjects] = useSupabaseData<Project[]>("ov-oneoffs-projects", () => SEED);
+  const [, setIncomes] = useSupabaseData<IncomeLite[]>("ov-finance-incomes", () => []);
+  const [, setTasks] = useSupabaseData<TaskLite[]>("ov-ukoly-tasks", () => []);
   const [filterTyp, setFilterTyp] = useState<Typ | "">("");
   const [filterClen, setFilterClen] = useState<string>("");
   const [selected, setSelected] = useState<Project | null>(null);
@@ -338,6 +348,30 @@ export default function OneoffsPage() {
     setSelected(editDraft);
     setEditing(false);
     setEditDraft(null);
+  }
+
+  /* ── Smazat projekt (když zakázka nedopadne) ──── */
+  function deleteProject(id: number) {
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    closeModal();
+  }
+
+  /* ── Dokončit zakázku → přesun do „Dokončeno" + zápis do příjmů (+ úkol na fakturu) ──── */
+  function completeProject(p: Project, invoiceDone: boolean) {
+    setProjects((prev) => prev.map((x) => (x.id === p.id ? { ...x, column: "dokonceno" } : x)));
+    // Zápis do příjmů jako jednorázová zakázka (čeká na platbu).
+    setIncomes((prev) => [
+      { id: Date.now(), mesic: currentCzMonth(), klient: p.klient || p.title, typ: "Jednorázový", datumZaplaceni: "", castka: p.castka, stav: "Čeká" },
+      ...(prev ?? []),
+    ]);
+    // Pokud faktura ještě není → úkol na vystavení (propíše se do úkolů i notifikací).
+    if (!invoiceDone) {
+      setTasks((prev) => [
+        { id: Date.now() + 1, nazev: `Vystavit fakturu — ${p.klient || p.title} (${fKc(p.castka)})`, projekt: p.title, prirazeno: "Adam", priorita: "Vysoká", status: "Nové", deadline: "" },
+        ...(prev ?? []),
+      ]);
+    }
+    closeModal();
   }
 
   /* ── Open modal ──── */
@@ -507,6 +541,8 @@ export default function OneoffsPage() {
             onEditDraftChange={setEditDraft}
             onToggleCheck={(idx) => toggleCheck(selected.id, idx)}
             onMove={(dir) => moveProject(selected.id, dir)}
+            onDelete={() => deleteProject(selected.id)}
+            onComplete={(invoiceDone) => completeProject(selected, invoiceDone)}
           />
         )}
       </AnimatePresence>
@@ -800,6 +836,8 @@ function ProjectModal({
   onEditDraftChange,
   onToggleCheck,
   onMove,
+  onDelete,
+  onComplete,
 }: {
   project: Project;
   editing: boolean;
@@ -811,12 +849,16 @@ function ProjectModal({
   onEditDraftChange: (p: Project) => void;
   onToggleCheck: (idx: number) => void;
   onMove: (dir: -1 | 1) => void;
+  onDelete: () => void;
+  onComplete: (invoiceDone: boolean) => void;
 }) {
   const p = editing && editDraft ? editDraft : project;
   const fmt = fmtStyleByTyp(p.typ);
   const pri = prioritaStyle(p.priorita);
   const colIdx = COLUMN_IDS.indexOf(p.column);
   const colDef = COLUMNS.find((c) => c.id === p.column)!;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [completeStep, setCompleteStep] = useState(false);
 
   function field<K extends keyof Project>(key: K, value: Project[K]) {
     if (!editDraft) return;
@@ -871,9 +913,14 @@ function ProjectModal({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {!editing && (
-              <button onClick={onEditStart} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity" style={{ background: "oklch(1 0 0 / 0.07)" }}>
-                <Edit2 className="w-4 h-4" style={{ color: "oklch(0.7 0.005 222)" }} />
-              </button>
+              <>
+                <button onClick={onEditStart} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity" style={{ background: "oklch(1 0 0 / 0.07)" }} title="Upravit">
+                  <Edit2 className="w-4 h-4" style={{ color: "oklch(0.7 0.005 222)" }} />
+                </button>
+                <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity" style={{ background: "oklch(0.65 0.22 25 / 0.12)" }} title="Smazat projekt">
+                  <Trash2 className="w-4 h-4" style={{ color: "oklch(0.65 0.22 25)" }} />
+                </button>
+              </>
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity" style={{ background: "oklch(1 0 0 / 0.07)" }}>
               <X className="w-4 h-4" style={{ color: "oklch(0.7 0.005 222)" }} />
@@ -1031,43 +1078,71 @@ function ProjectModal({
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              {p.checklist.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                  style={{ background: "oklch(1 0 0 / 0.04)" }}
-                  onClick={() => onToggleCheck(idx)}
-                >
-                  <div
-                    className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
-                    style={{
-                      background: item.done ? "oklch(0.67 0.155 155)" : "oklch(1 0 0 / 0.06)",
-                      border: item.done ? "none" : "1px solid oklch(1 0 0 / 0.15)",
-                    }}
-                  >
-                    {item.done && <Check className="w-2.5 h-2.5 text-white" />}
+              {editing ? (
+                /* Editace: každá položka je textové pole + mazání */
+                editDraft?.checklist.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-lg" style={{ background: "oklch(1 0 0 / 0.04)" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const checklist = editDraft.checklist.map((c, i) => i === idx ? { ...c, done: !c.done } : c);
+                        onEditDraftChange({ ...editDraft, checklist });
+                      }}
+                      className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                      style={{ background: item.done ? "oklch(0.67 0.155 155)" : "oklch(1 0 0 / 0.06)", border: item.done ? "none" : "1px solid oklch(1 0 0 / 0.15)" }}
+                    >
+                      {item.done && <Check className="w-2.5 h-2.5 text-white" />}
+                    </button>
+                    <input
+                      className="flex-1 text-sm bg-transparent outline-none"
+                      style={{ color: "oklch(0.8 0.005 222)" }}
+                      value={item.text}
+                      placeholder="Napiš úkol…"
+                      autoFocus={item.text === ""}
+                      onChange={(e) => {
+                        const checklist = editDraft.checklist.map((c, i) => i === idx ? { ...c, text: e.target.value } : c);
+                        onEditDraftChange({ ...editDraft, checklist });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onEditDraftChange({ ...editDraft, checklist: editDraft.checklist.filter((_, i) => i !== idx) })}
+                      className="p-1 rounded hover:opacity-70 shrink-0"
+                      style={{ color: "oklch(0.6 0.02 25)" }}
+                      title="Smazat úkol"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <span
-                    className="text-sm"
-                    style={{
-                      color: item.done ? "oklch(0.45 0.005 222)" : "oklch(0.75 0.005 222)",
-                      textDecoration: item.done ? "line-through" : "none",
-                    }}
+                ))
+              ) : (
+                /* Náhled: klikni pro odškrtnutí */
+                p.checklist.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ background: "oklch(1 0 0 / 0.04)" }}
+                    onClick={() => onToggleCheck(idx)}
                   >
-                    {item.text}
-                  </span>
-                </div>
-              ))}
+                    <div
+                      className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
+                      style={{ background: item.done ? "oklch(0.67 0.155 155)" : "oklch(1 0 0 / 0.06)", border: item.done ? "none" : "1px solid oklch(1 0 0 / 0.15)" }}
+                    >
+                      {item.done && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <span className="text-sm" style={{ color: item.done ? "oklch(0.45 0.005 222)" : "oklch(0.75 0.005 222)", textDecoration: item.done ? "line-through" : "none" }}>
+                      {item.text}
+                    </span>
+                  </div>
+                ))
+              )}
               {editing && (
                 <button
                   className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs hover:opacity-70 transition-opacity"
                   style={{ color: "oklch(0.5 0.005 222)", border: "1px dashed oklch(1 0 0 / 0.1)" }}
                   onClick={() => {
                     if (!editDraft) return;
-                    onEditDraftChange({
-                      ...editDraft,
-                      checklist: [...editDraft.checklist, { text: "Nový úkol", done: false }],
-                    });
+                    onEditDraftChange({ ...editDraft, checklist: [...editDraft.checklist, { text: "", done: false }] });
                   }}
                 >
                   <Plus className="w-3 h-3" /> Přidat úkol
@@ -1116,8 +1191,49 @@ function ProjectModal({
             </div>
           )}
 
+          {/* Potvrzení smazání */}
+          {confirmDelete && (
+            <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "oklch(0.65 0.22 25 / 0.1)", border: "1px solid oklch(0.65 0.22 25 / 0.3)" }}>
+              <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(0.8 0.1 25)" }}>
+                <AlertTriangle className="w-4 h-4 shrink-0" /> Opravdu smazat „{p.title}"? Přesune se do koše (30 dní na obnovu).
+              </div>
+              <div className="flex gap-2">
+                <button onClick={onDelete} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ background: "oklch(0.65 0.22 25)", color: "white" }}>Smazat</button>
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.6 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}>Zpět</button>
+              </div>
+            </div>
+          )}
+
+          {/* Dokončení zakázky → příjmy + dotaz na fakturu */}
+          {!editing && !confirmDelete && p.column !== "dokonceno" && (
+            completeStep ? (
+              <div className="rounded-xl p-3 flex flex-col gap-2.5" style={{ background: "oklch(0.67 0.155 155 / 0.1)", border: "1px solid oklch(0.67 0.155 155 / 0.3)" }}>
+                <div className="text-sm font-semibold" style={{ color: "oklch(0.8 0.12 155)" }}>
+                  Zapsat <strong>{fKc(p.castka)}</strong> do příjmů jako jednorázovou zakázku. Máte už vystavenou fakturu?
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => onComplete(true)} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ background: "oklch(0.67 0.155 155)", color: "white" }}>
+                    Ano, hotovo
+                  </button>
+                  <button onClick={() => onComplete(false)} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ background: "oklch(0.62 0.27 265 / 0.16)", color: "oklch(0.72 0.2 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}>
+                    Ne — připomeň fakturu
+                  </button>
+                </div>
+                <button onClick={() => setCompleteStep(false)} className="text-xs self-start" style={{ color: "oklch(0.5 0.005 222)" }}>Zpět</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setCompleteStep(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
+                style={{ background: "oklch(0.67 0.155 155 / 0.14)", color: "oklch(0.72 0.16 155)", border: "1px solid oklch(0.67 0.155 155 / 0.3)" }}
+              >
+                <CheckCircle2 className="w-4 h-4" /> Zakázka dokončena
+              </button>
+            )
+          )}
+
           {/* Column dropdown (view mode) */}
-          {!editing && (
+          {!editing && !confirmDelete && (
             <ColumnSelect
               current={p.column}
               onSelect={(col) => {
