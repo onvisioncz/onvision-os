@@ -890,7 +890,7 @@ function ProjectModal({
 
       {/* Panel */}
       <motion.div
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl flex flex-col"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl flex flex-col"
         style={{ background: "rgba(12, 10, 35, 0.55)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.09)" }}
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -1047,7 +1047,7 @@ function ProjectModal({
               <User className="w-3 h-3 inline mr-1" />Tým
             </label>
             {editing ? (
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {TEAM.map((name) => (
                   <label key={name} className="flex items-center gap-1.5 text-sm cursor-pointer" style={{ color: "oklch(0.7 0.005 222)" }}>
                     <input
