@@ -1366,8 +1366,8 @@ export default function DashboardPage() {
           variants={item}
           className="grid grid-cols-1 md:grid-cols-3 gap-[14px]"
         >
-          {/* Col 1: Nejbližší deadliny */}
-          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+          {/* Col 1: Nejbližší deadliny (Adam: vpravo) */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 3 : 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Nejbližší deadliny</p>
               <Link href="/ukoly" style={{ fontSize: 11, color: "rgba(130,130,255,0.75)", textDecoration: "none" }}>Zobrazit vše →</Link>
@@ -1443,7 +1443,7 @@ export default function DashboardPage() {
               ? `Dnes · ${today.getDate()}. ${today.toLocaleDateString("cs-CZ", { month: "long" })}`
               : `${agendaDay.getDate()}. ${agendaDay.toLocaleDateString("cs-CZ", { month: "long" })}`;
             return (
-              <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+              <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 2 : 0 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Tento týden</p>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>
@@ -1509,8 +1509,8 @@ export default function DashboardPage() {
             );
           })()}
 
-          {/* Col 3: Dnešní úkoly */}
-          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px" }}>
+          {/* Col 3: Dnešní úkoly (Adam: vlevo) */}
+          <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 1 : 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Dnešní úkoly</p>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{tasks.filter(t => t.status === "Hotovo").length} z {tasks.length} hotových</span>
