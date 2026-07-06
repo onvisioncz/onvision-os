@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Sparkles, Loader2, RefreshCw, ListPlus, Check } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { WeeklyDays } from "@/components/dashboard/weekly-outlook-panel";
 import { buildProfit, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 import { parseDeadline, daysUntil } from "@/lib/dates";
@@ -55,7 +56,7 @@ function inlineBold(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
-export function AiBrief() {
+export function AiBrief({ showWeekly = false }: { showWeekly?: boolean }) {
   const [invoices] = useSupabaseData<Inv[]>("ov-issued-invoices", () => []);
   const [financeFaktury] = useSupabaseData<AnyInvoice[]>("ov-finance-faktury", () => []);
   const [tasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => []);
@@ -217,6 +218,12 @@ export function AiBrief() {
         </button>
       </div>
       <p className="text-[12px] text-[--muted-foreground] mb-3">Claude přečte reálný stav firmy a napíše ti, co hoří a co rozhodnout.</p>
+
+      {showWeekly && (
+        <div className="mb-3 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <WeeklyDays />
+        </div>
+      )}
 
       {error && <p className="text-[12px]" style={{ color: "oklch(0.68 0.2 25)" }}>{error}</p>}
       {!brief && !loading && !error && (

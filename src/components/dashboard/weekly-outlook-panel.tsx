@@ -40,8 +40,21 @@ function isoOf(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Týdenní výhled — program na aktuální týden z reálného obsahu. */
+/** Týdenní výhled — plný panel (karta). */
 export function WeeklyOutlookPanel() {
+  return (
+    <div className="glass-card p-5 flex flex-col" style={{ minHeight: 220 }}>
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="w-4 h-4" style={{ color: "oklch(0.7 0.18 300)" }} />
+        <h3 className="text-[14px] font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Týdenní výhled</h3>
+      </div>
+      <WeeklyDays />
+    </div>
+  );
+}
+
+/** Obsah týdenního výhledu bez karty — pro vložení do AI briefu. */
+export function WeeklyDays() {
   const [posts] = useSupabaseData<SmmPost[]>("ov-smm-posts", () => []);
   const [shootings] = useSupabaseData<ShootingDay[]>("ov-shooting-days", () => []);
   const [events] = useSupabaseData<CalEvent[]>("ov-calendar-events", () => []);
@@ -80,10 +93,9 @@ export function WeeklyOutlookPanel() {
   const nic = week.totalPosts + week.totalShoots + week.totalEvents === 0;
 
   return (
-    <div className="glass-card p-5 flex flex-col" style={{ minHeight: 220 }}>
-      <div className="flex items-center gap-2 mb-1">
-        <Sparkles className="w-4 h-4" style={{ color: "oklch(0.7 0.18 300)" }} />
-        <h3 className="text-[14px] font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Týdenní výhled</h3>
+    <div className="flex flex-col">
+      <div className="flex items-center mb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "oklch(0.5 0.005 222)" }}>Program týdne</span>
         <span className="ml-auto text-[11px] text-[--muted-foreground]">{week.range}</span>
       </div>
 

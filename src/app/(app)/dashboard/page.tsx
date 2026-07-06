@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { overdueInvoices, unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
-import { WeeklyOutlookPanel } from "@/components/dashboard/weekly-outlook-panel";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
@@ -910,7 +909,7 @@ export default function DashboardPage() {
 
           {/* AI inline card / Týdenní výhled (Adam) */}
           {isAdamDashboard ? (
-            <div className="md:col-span-3"><WeeklyOutlookPanel /></div>
+            <div className="md:col-span-3"><AiBrief showWeekly /></div>
           ) : (
           <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1266,7 +1265,7 @@ export default function DashboardPage() {
 
         <NerveCenter />
 
-        {isAdmin && (
+        {isAdmin && !isAdamDashboard && (
           <motion.div variants={item}>
             <AiBrief />
           </motion.div>
@@ -1279,9 +1278,11 @@ export default function DashboardPage() {
         )}
 
         {/* ── 2. Metric cards (aligned with top grid, 6-col) ── */}
+        {/* Adam: přesunuto pod Finance přehled (přes CSS order). */}
         <motion.div
           variants={item}
           className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
+          style={{ order: isAdamDashboard ? 3 : 0 }}
         >
           {/* Tile 1: Příjmy (MRR) — cols 1-2 */}
           <div className={`${cardClass} md:col-span-2`} style={{ ...cardStyle, padding: "18px 20px" }}>
@@ -1589,6 +1590,7 @@ export default function DashboardPage() {
         <motion.div
           variants={item}
           className="grid grid-cols-1 gap-4"
+          style={{ order: isAdamDashboard ? 2 : 0 }}
         >
           {/* Left: Finance chart */}
           <div className={cardClass} style={{ ...cardStyle, padding: "22px 22px 16px" }}>
@@ -2127,8 +2129,8 @@ export default function DashboardPage() {
           </div>
         </motion.div>}
 
-        {/* ── Barometr firmy (úplně dole) ── */}
-        {isAdmin && (
+        {/* ── Barometr firmy (úplně dole) — Adam ho nechce ── */}
+        {isAdmin && !isAdamDashboard && (
           <motion.div variants={item}>
             <CompanyBarometer />
           </motion.div>
