@@ -25,6 +25,7 @@ import {
   Flag,
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { overdueInvoices, unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
@@ -453,6 +454,19 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
   const [oneoffs] = useSupabaseData<Oneoff[]>("ov-oneoffs-projects", () => []);
+  // Faktury (read-only) — pro stav pod grafem Finance přehled.
+  const [issuedInv, setIssuedInv] = useState<AnyInvoice[]>([]);
+  const [financeInv, setFinanceInv] = useState<AnyInvoice[]>([]);
+  useEffect(() => {
+    fetch("/api/sync?key=ov-issued-invoices").then((r) => r.json()).then(({ value }) => { if (Array.isArray(value)) setIssuedInv(value); }).catch(() => {});
+    fetch("/api/sync?key=ov-finance-faktury").then((r) => r.json()).then(({ value }) => { if (Array.isArray(value)) setFinanceInv(value); }).catch(() => {});
+  }, []);
+  const invoiceStatus = useMemo(() => {
+    const overdue = overdueInvoices(issuedInv, financeInv);
+    const unpaid = unpaidInvoices(issuedInv, financeInv);
+    const unpaidTotal = unpaid.reduce((s, i) => s + (i.castka || 0), 0);
+    return { overdueCount: overdue.count, overdueTotal: overdue.total, unpaidCount: unpaid.length, unpaidTotal };
+  }, [issuedInv, financeInv]);
 
   /* ── Greeting (client-only to avoid SSR mismatch) ── */
   const [greeting, setGreeting] = useState("");
@@ -1690,6 +1704,33 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            {/* Stav faktur — jsou všechny uhrazené? */}
+            <Link href="/fakturace" style={{ textDecoration: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: "1px solid oklch(1 0 0 / 0.07)" }}>
+                {invoiceStatus.overdueCount === 0 && invoiceStatus.unpaidCount === 0 ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "oklch(0.7 0.155 155)" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 99, background: "oklch(0.7 0.155 155)" }} /> Všechny faktury uhrazené
+                  </span>
+                ) : (
+                  <>
+                    {invoiceStatus.overdueCount > 0 && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "oklch(0.65 0.22 25)" }}>
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: "oklch(0.65 0.22 25)" }} />
+                        {invoiceStatus.overdueCount} po splatnosti · {fmt(invoiceStatus.overdueTotal)}
+                      </span>
+                    )}
+                    {invoiceStatus.unpaidCount > 0 && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "oklch(0.78 0.165 75)" }}>
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: "oklch(0.78 0.165 75)" }} />
+                        {invoiceStatus.unpaidCount} čeká na platbu · {fmt(invoiceStatus.unpaidTotal)}
+                      </span>
+                    )}
+                  </>
+                )}
+                <span style={{ marginLeft: "auto", fontSize: 11, color: "oklch(0.5 0.005 222)" }}>Otevřít fakturace →</span>
+              </div>
+            </Link>
           </div>
 
         </motion.div>
