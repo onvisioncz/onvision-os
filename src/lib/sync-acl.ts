@@ -93,6 +93,15 @@ export const KEY_READ_ROLES: Record<string, Role[]> = {
   "ov-audit-log":           ["admin"],
   "ov-ads":                 ["admin"],
   "ov-ads-campaigns":       ["admin", "smm"],
+  // Sazby týmu (Kč/h) a historie MRR — citlivá čísla, jen finance/vedení.
+  "ov-team-rates":          ["admin", "fakturace", "ucetni"],
+  "ov-mrr-history":         ["admin", "fakturace", "ucetni"],
+  // Ryze vedení: AI konverzace, strategický plán, rychlé poznámky, zálohy, koš.
+  "ov-ai-chats":            ["admin"],
+  "ov-gameplan":            ["admin"],
+  "ov-quick-notes":         ["admin"],
+  "ov-backups":             ["admin"],
+  "ov-trash":               ["admin"],
 };
 
 /* ── Čtení: konkrétní e-maily (nad rámec rolí) ─────────────────────────────── */

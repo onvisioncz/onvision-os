@@ -5,6 +5,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
+import { hasAnyRole } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
+  // Strategické návrhy nad firemními daty — jen jednatelé (admin).
+  if (!(await hasAnyRole(user.email, []))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!(await aiRateLimitOk(user.email))) return NextResponse.json({ error: RATE_LIMIT_MSG }, { status: 429 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
