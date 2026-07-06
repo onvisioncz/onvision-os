@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_USERS } from "@/lib/roles";
 import { invoicesToCsv } from "@/lib/exports";
 import type { AnyInvoice } from "@/lib/overdue";
@@ -14,12 +15,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let roles: string[] = [];
   try {
-    const { data } = await supabase.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
+    const { data } = await db.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
     const users: typeof DEFAULT_USERS = Array.isArray(data?.value) ? data.value : DEFAULT_USERS;
     roles = users.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())?.roles ?? [];
   } catch {
@@ -30,7 +32,7 @@ export async function GET() {
   }
 
   const read = async (key: string): Promise<AnyInvoice[]> => {
-    const { data } = await supabase.from("app_data").select("value").eq("key", key).maybeSingle();
+    const { data } = await db.from("app_data").select("value").eq("key", key).maybeSingle();
     return Array.isArray(data?.value) ? (data!.value as AnyInvoice[]) : [];
   };
   const [issued, finance] = await Promise.all([

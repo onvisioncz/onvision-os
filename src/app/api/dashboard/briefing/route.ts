@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 import { DEFAULT_USERS } from "@/lib/roles";
@@ -113,13 +114,14 @@ async function callClaude(systemPrompt: string, userPrompt: string, apiKey: stri
 /* ── POST /api/dashboard/briefing ───────────────────────────────────────── */
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return UNAUTHORIZED;
 
   // ── Brief shrnuje citlivá finanční data (ceny, výplaty) → jen admin/vedení ──
   let briefRoles: string[] = [];
   try {
-    const { data } = await supabase.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
+    const { data } = await db.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
     const users = Array.isArray(data?.value) ? data.value as typeof DEFAULT_USERS : DEFAULT_USERS;
     briefRoles = (users.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())
       ?? DEFAULT_USERS.find((u) => u.email.toLowerCase() === user.email!.toLowerCase()))?.roles ?? [];
@@ -145,13 +147,13 @@ export async function POST(req: NextRequest) {
     tasksRes, dealsRes, approvalsRes, clientsRes,
     invoicesRes, summariesRes, smmRes,
   ] = await Promise.allSettled([
-    supabase.from("app_data").select("value").eq("key", "ov-ukoly-tasks").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-pipeline-deals").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-schvaleni-items").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-monthly-clients").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-issued-invoices").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-finance-summaries").maybeSingle(),
-    supabase.from("app_data").select("value").eq("key", "ov-smm-plan").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-ukoly-tasks").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-pipeline-deals").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-schvaleni-items").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-monthly-clients").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-issued-invoices").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-finance-summaries").maybeSingle(),
+    db.from("app_data").select("value").eq("key", "ov-smm-plan").maybeSingle(),
   ]);
 
   const tasks: Task[]           = tasksRes.status     === "fulfilled" && Array.isArray(tasksRes.value.data?.value)     ? tasksRes.value.data.value     : [];

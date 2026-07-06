@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -14,11 +15,12 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 
 export async function POST() {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Load subscriptions
-  const { data } = await supabase
+  const { data } = await db
     .from("app_data")
     .select("value")
     .eq("key", "ov-push-subscriptions")

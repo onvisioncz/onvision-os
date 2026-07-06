@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -16,6 +17,7 @@ interface PushSub {
 /* ── POST /api/push/subscribe ─────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Load existing subscriptions
-  const { data } = await supabase
+  const { data } = await db
     .from("app_data")
     .select("value")
     .eq("key", "ov-push-subscriptions")
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
     },
   ];
 
-  await supabase
+  await db
     .from("app_data")
     .upsert(
       { key: "ov-push-subscriptions", value: updated, updated_at: new Date().toISOString() },
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
 /* ── DELETE /api/push/subscribe — unsubscribe ────────────────────────── */
 export async function DELETE(req: NextRequest) {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -71,7 +74,7 @@ export async function DELETE(req: NextRequest) {
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { data } = await supabase
+  const { data } = await db
     .from("app_data")
     .select("value")
     .eq("key", "ov-push-subscriptions")
@@ -82,7 +85,7 @@ export async function DELETE(req: NextRequest) {
     (s) => !(s.email === user.email && s.subscription.endpoint === body.endpoint)
   );
 
-  await supabase
+  await db
     .from("app_data")
     .upsert(
       { key: "ov-push-subscriptions", value: updated, updated_at: new Date().toISOString() },

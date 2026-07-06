@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { aiRateLimitOk, RATE_LIMIT_MSG } from "@/lib/ai-ratelimit";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
 async function handleGenerate(req: NextRequest) {
   // Auth
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return UNAUTHORIZED;
 
@@ -153,7 +155,7 @@ async function handleGenerate(req: NextRequest) {
   // sdíleného archivu — jen role, které mají na /reporty přístup (admin, smm).
   let roles: string[] = [];
   try {
-    const { data } = await supabase.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
+    const { data } = await db.from("app_data").select("value").eq("key", "ov-user-roles").maybeSingle();
     const users: typeof DEFAULT_USERS = Array.isArray(data?.value) ? data.value : DEFAULT_USERS;
     roles = (users.find((u) => u.email.toLowerCase() === user.email!.toLowerCase())
       ?? DEFAULT_USERS.find((u) => u.email!.toLowerCase() === user.email!.toLowerCase()))?.roles ?? [];
@@ -178,7 +180,7 @@ async function handleGenerate(req: NextRequest) {
   }
 
   // Get analyst info from user roles
-  const { data: rolesData } = await supabase
+  const { data: rolesData } = await db
     .from("app_data")
     .select("value")
     .eq("key", "ov-user-roles")
@@ -494,7 +496,7 @@ async function handleGenerate(req: NextRequest) {
   const [y, mon] = month.split("-");
   const filename = `OnVision_Report_${client.replace(/\s+/g, "_")}_${CZECH_MONTHS_FULL[parseInt(mon, 10) - 1]}_${y}.pdf`;
 
-  const { data: existingArchive } = await supabase
+  const { data: existingArchive } = await db
     .from("app_data")
     .select("value")
     .eq("key", "ov-reports-archive")
@@ -520,7 +522,7 @@ async function handleGenerate(req: NextRequest) {
 
   const updatedArchive = [...archive, newEntry];
 
-  await supabase
+  await db
     .from("app_data")
     .upsert(
       { key: "ov-reports-archive", value: updatedArchive, updated_at: new Date().toISOString() },

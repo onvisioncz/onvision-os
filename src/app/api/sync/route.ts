@@ -1,8 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_USERS, type Role } from "@/lib/roles";
 import { canReadKey, canWriteKey, readNeedsRoles, redactForRead } from "@/lib/sync-acl";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+
+/** Service-role klient na data — obchází RLS. Autorizaci hlídá tato routa v kódu.
+ * app_data je pod RLS zamčené pro anon/authenticated, takže přímý přístup
+ * z prohlížeče nic nevrátí; jediná cesta k datům vede přes tuto ověřenou routu. */
+type Db = ReturnType<typeof createAdminClient>;
 
 // web-push requires Node.js crypto — force Node.js runtime (not Edge)
 export const runtime = "nodejs";
@@ -24,7 +30,7 @@ interface PushSubRecord {
 }
 
 async function sendPushToEmails(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   emails: string[],
   payload: { title: string; body: string; url?: string; tag?: string },
   /** First-name fallbacks used when email lookup finds nothing (handles login-email ≠ roster-email) */
@@ -69,12 +75,15 @@ async function sendPushToEmails(
 const UNAUTHORIZED = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 const FORBIDDEN     = NextResponse.json({ error: "Forbidden" },     { status: 403 });
 
-/* ── Auth helper ────────────────────────────────────────────────────────────── */
-async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase: null, user: null };
-  return { supabase, user };
+/* ── Auth helper ──────────────────────────────────────────────────────────────
+ * Identitu ověříme přes cookie-SSR klienta (auth schema). Data pak čteme/píšeme
+ * service-role klientem (db), který obchází RLS — přímý přístup z prohlížeče je
+ * RLS zakázán, takže veškerý přístup k datům jde jen přes tuto ověřenou routu. */
+async function getAuthenticatedClient(): Promise<{ db: Db | null; user: { email?: string } | null }> {
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) return { db: null, user: null };
+  return { db: createAdminClient(), user };
 }
 
 /* ── Access-control (čtení/zápis/redakce) je v testovatelné knihovně ────────── */
@@ -82,7 +91,7 @@ async function getAuthenticatedClient() {
 
 /* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
 async function getUserRoles(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   email: string
 ): Promise<Role[]> {
   try {
@@ -108,7 +117,7 @@ async function getUserRoles(
 
 /* ── GET /api/sync?key=... ──────────────────────────────────────────────────── */
 export async function GET(req: NextRequest) {
-  const { supabase, user } = await getAuthenticatedClient();
+  const { db: supabase, user } = await getAuthenticatedClient();
   if (!supabase || !user) return UNAUTHORIZED;
 
   const key = req.nextUrl.searchParams.get("key");
@@ -137,7 +146,7 @@ export async function GET(req: NextRequest) {
 
 /* ── POST /api/sync  { key, value } ────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
-  const { supabase, user } = await getAuthenticatedClient();
+  const { db: supabase, user } = await getAuthenticatedClient();
   if (!supabase || !user) return UNAUTHORIZED;
 
   let body: { key?: string; value?: unknown; baseToken?: string | null };
@@ -248,7 +257,7 @@ function itemLabel(x: Record<string, unknown>): string {
 }
 
 async function captureDeletions(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   srcKey: string,
   oldValue: unknown,
   newValue: unknown,
@@ -308,7 +317,7 @@ const AUDIT_SKIP = new Set(["ov-audit-log", "ov-inbox-state", "ov-notif-events",
 interface AuditEntry { ts: string; email: string; key: string; change?: string }
 
 async function appendAudit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   key: string,
   email: string,
   oldValue?: unknown,
@@ -347,7 +356,7 @@ interface NotifEvent {
 }
 
 async function appendNotifEvent(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   event: Omit<NotifEvent, "id" | "createdAt">
 ) {
   try {
@@ -375,7 +384,7 @@ async function appendNotifEvent(
 
 /* ── Push trigger logic ─────────────────────────────────────────────────── */
 async function triggerPush(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Db,
   key: string,
   value: unknown,
   authorEmail: string,

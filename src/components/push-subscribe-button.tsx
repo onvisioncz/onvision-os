@@ -16,21 +16,18 @@ function urlBase64ToUint8Array(base64String: string) {
 
 type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed";
 
-/** Look up the current user's display name from ov-user-roles (or DEFAULT_USERS fallback) */
+/** Look up the current user's display name from ov-user-roles (or DEFAULT_USERS fallback).
+ * Čte přes /api/sync (ne přímo z DB) — app_data je pod RLS zamčené pro prohlížeč. */
 async function fetchMyDisplayName(): Promise<string | undefined> {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) return undefined;
 
-    const { data } = await supabase
-      .from("app_data")
-      .select("value")
-      .eq("key", "ov-user-roles")
-      .maybeSingle();
-
+    const res = await fetch("/api/sync?key=ov-user-roles");
+    const { value } = await res.json();
     const roster: Array<{ email: string; displayName?: string }> =
-      Array.isArray(data?.value) ? data.value : DEFAULT_USERS;
+      Array.isArray(value) ? value : DEFAULT_USERS;
 
     const me = roster.find(u => u.email === user.email);
     return me?.displayName;

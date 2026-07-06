@@ -7,6 +7,7 @@
  * Auth: cookie session + role admin nebo fakturace.
  */
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { identityFromEmail } from "@/lib/agent/identity";
 import { sendMail, isEmailConfigured } from "@/lib/email/gmail";
@@ -21,6 +22,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
 
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
   const month: string = body.month;
 
   // načti data odměn
-  const { data } = await supabase.from("app_data").select("value").eq("key", ODMENY_KEY).maybeSingle();
+  const { data } = await db.from("app_data").select("value").eq("key", ODMENY_KEY).maybeSingle();
   const lidi: OdmenaPerson[] = Array.isArray(data?.value) ? (data!.value as OdmenaPerson[]) : [];
 
   /* ── Souhrn pro účetní / vedení ─────────────────────────────────────── */
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
     // označ jako odeslané
     person.mesice = person.mesice ?? {};
     person.mesice[month] = { ...(person.mesice[month] ?? {}), mailOdeslan: true };
-    await supabase
+    await db
       .from("app_data")
       .upsert({ key: ODMENY_KEY, value: lidi, updated_at: new Date().toISOString() }, { onConflict: "key" });
 

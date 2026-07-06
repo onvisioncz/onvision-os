@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_USERS } from "@/lib/roles";
 
 export const runtime = "nodejs";
@@ -12,12 +13,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = await createClient();
+  const db = createAdminClient(); // data přes service-role (RLS lockdown)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const me = DEFAULT_USERS.find((u) => u.email.toLowerCase() === user.email!.toLowerCase());
   if (!me?.roles.includes("admin")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("app_data")
     .select("key, value, updated_at")
     .order("key");
