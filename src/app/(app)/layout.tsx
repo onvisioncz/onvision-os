@@ -4,6 +4,7 @@ import { ChatShell } from "@/components/chat/chat-shell";
 import { NotifBanner } from "@/components/notif-banner";
 import { VystupyFab } from "@/components/layout/vystup-fab";
 import { CommandPalette } from "@/components/command-palette";
+import { RouteGuard } from "@/components/layout/route-guard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col overflow-y-auto pb-[calc(72px+env(safe-area-inset-bottom,0px))] md:pb-0">
           <TopBar />
           <main className="flex-1">
-            {children}
+            <RouteGuard>{children}</RouteGuard>
           </main>
         </div>
         <MobileNav />

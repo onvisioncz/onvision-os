@@ -14,6 +14,7 @@ import {
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
+import { firstName, isMine } from "@/lib/task-owner";
 import { TIME_KEY, fmtHod, type TimeEntry } from "@/lib/vykazy";
 import { GEAR_KEY, GEAR_RES_KEY, type GearItem, type GearReservation } from "@/lib/gear";
 import { CALLSHEET_KEY, type CallSheet } from "@/lib/callsheet";
@@ -27,12 +28,6 @@ const RED = "oklch(0.65 0.22 25)";
 const AMBER = "oklch(0.74 0.165 75)";
 const GREEN = "oklch(0.67 0.155 155)";
 
-const firstName = (s: string) => (s || "").trim().split(/\s+/)[0].toLowerCase();
-const ALIASES: Record<string, string[]> = { jan: ["jan", "honza"] };
-const isMine = (assigned: string, myFirst: string) => {
-  const a = firstName(assigned);
-  return a === myFirst || (ALIASES[myFirst] ?? []).includes(a);
-};
 
 export default function DnesPage() {
   const { user, loading } = useUserRole();

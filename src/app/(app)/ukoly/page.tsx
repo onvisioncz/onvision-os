@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { canSeeAllTasks, isMine, firstName } from "@/lib/task-owner";
 
 /* ── Czech month helper ─────────────────────────────────────────────────────── */
 function currentMonthDeadline(den: number): string {
@@ -643,6 +644,9 @@ function RecurringSablony({ templates, onEdit }: { templates: Task[]; onEdit: (t
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function UkolyPage() {
   const [tasks, setTasks] = useSupabaseData<Task[]>("ov-ukoly-tasks", () => SEED);
+  const { user } = useUserRole();
+  const seeAll = canSeeAllTasks(user?.roles);
+  const myFirst = firstName(user?.displayName ?? "");
   const [assigneeFilter, setAssigneeFilter] = useState("Vše");
   const [statusFilter, setStatusFilter] = useState<TStatus | "Vše">("Vše");
   const [q, setQ] = useState("");
@@ -707,9 +711,12 @@ export default function UkolyPage() {
     setTasks(prev => [{ id: newId, ...t }, ...prev]);
   };
 
+  /* Zaměstnanec vidí jen svoje přiřazené úkoly; admin a PM vidí vše. */
+  const scoped = seeAll ? tasks : tasks.filter(t => isMine(t.prirazeno, myFirst));
+
   /* Templates are excluded from the regular filtered list */
-  const nonTemplates = tasks.filter(t => !t.opakovaniSablona);
-  const templates = tasks.filter(t => t.opakovaniSablona === true);
+  const nonTemplates = scoped.filter(t => !t.opakovaniSablona);
+  const templates = scoped.filter(t => t.opakovaniSablona === true);
 
   const needle = q.trim().toLowerCase();
   const filtered = nonTemplates.filter(t => {
