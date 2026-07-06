@@ -830,8 +830,9 @@ export default function DashboardPage() {
           variants={item}
           className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
-          {/* Greeting card */}
-          <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "24px 26px" }}>
+          {/* Greeting card (+ Nervové centrum pod ním u Adama) */}
+          <div className="md:col-span-3 flex flex-col gap-[14px]">
+          <div className={cardClass} style={{ ...cardStyle, padding: "24px 26px", ...(isAdamDashboard ? { flex: "0 0 auto" } : { flex: 1 }) }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
             </p>
@@ -905,6 +906,12 @@ export default function DashboardPage() {
                 Uzavřít měsíc
               </button>
             </div>
+          </div>
+          {isAdamDashboard && (
+            <div className={cardClass} style={{ ...cardStyle, padding: "16px 20px", flex: 1 }}>
+              <NerveCenter />
+            </div>
+          )}
           </div>
 
           {/* AI inline card / Týdenní výhled (Adam) */}
@@ -1263,7 +1270,7 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        <NerveCenter />
+        {!isAdamDashboard && <NerveCenter />}
 
         {isAdmin && !isAdamDashboard && (
           <motion.div variants={item}>
