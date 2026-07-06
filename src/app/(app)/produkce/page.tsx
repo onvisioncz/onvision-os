@@ -111,7 +111,7 @@ const M_SEED: MEntry[] = [
   { id:  6, mesic: "Duben",  datum: "22. 4.", projekt: "EASTGATE Brno — průběh stavby měsíc DUBEN",                             format: "3 HOD", status: "✅", castka: 3000, poznamka: "" },
 ];
 
-/* ── Seed: Grafici (Monika Kudličková + Patrik Petr) ────────────────────────── */
+/* ── Seed: Grafici (Monika Weiser + Patrik Petr) ────────────────────────── */
 const G_SEED: GEntry[] = [
   // ── MONIKA KUDLIČKOVÁ ──────────────────────────────────────────────────────
   // LEDEN — bez projektu (přeskočeno)
@@ -1054,7 +1054,7 @@ function MForm({ entry, onSave }: { entry:MEntry|null; onSave:(d:Omit<MEntry,"id
 
 /* ── GRAFIK colors ───────────────────────────────────────────────────────────── */
 const GRAFICI_COLORS: Record<"Monika"|"Patrik", { accent: string; accentBg: string; accentBorder: string; initials: string; fullName: string }> = {
-  Monika: { accent: "oklch(0.76 0.20 340)", accentBg: "oklch(0.76 0.20 340 / 0.1)", accentBorder: "oklch(0.76 0.20 340 / 0.25)", initials: "MK", fullName: "Monika Kudličková" },
+  Monika: { accent: "oklch(0.76 0.20 340)", accentBg: "oklch(0.76 0.20 340 / 0.1)", accentBorder: "oklch(0.76 0.20 340 / 0.25)", initials: "MK", fullName: "Monika Weiser" },
   Patrik: { accent: "oklch(0.70 0.20 290)", accentBg: "oklch(0.70 0.20 290 / 0.1)", accentBorder: "oklch(0.70 0.20 290 / 0.25)", initials: "PP", fullName: "Patrik Petr" },
 };
 
@@ -1411,7 +1411,7 @@ const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
   { id:"prehled", label:"Přehled",            short:"Přehled", color:"oklch(0.62 0.27 265)" },
   { id:"zdenek",  label:"Zdeněk Dolíhal",     short:"Zdeněk",  color:"oklch(0.75 0.19 48)"  },
   { id:"matej",   label:"Matěj Hořák",        short:"Matěj",   color:"oklch(0.65 0.22 25)"  },
-  { id:"monika",  label:"Monika Kudličková",  short:"Monika",  color:"oklch(0.76 0.20 340)" },
+  { id:"monika",  label:"Monika Weiser",  short:"Monika",  color:"oklch(0.76 0.20 340)" },
   { id:"patrik",  label:"Patrik Petr",        short:"Patrik",  color:"oklch(0.70 0.20 290)" },
 ];
 

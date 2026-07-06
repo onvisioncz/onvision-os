@@ -77,7 +77,7 @@ export const DEFAULT_USERS: UserConfig[] = [
   },
   {
     email: "monika@onvision.cz",
-    displayName: "Monika Kudličková",
+    displayName: "Monika Weiser",
     roles: ["grafik"],
     clients: [],
     color: "oklch(0.72 0.2 310)",
