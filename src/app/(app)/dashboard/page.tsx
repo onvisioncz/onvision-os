@@ -419,7 +419,7 @@ const FAZE_ORDER = ["Lead", "Kvalifikace", "Nabídka", "Jednání", "Realizace"]
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
   /* ── Auth ── */
-  const { user } = useUserRole();
+  const { user, loading: roleLoading } = useUserRole();
   const isAdmin = user?.roles.includes("admin") ?? false;
   // Adam má upravený dashboard (AI asistent → týdenní výhled). Ostatní klasický.
   const isAdamDashboard = (user?.email ?? "").toLowerCase() === "info@onvision.cz";
@@ -807,6 +807,10 @@ export default function DashboardPage() {
   }, [tasks]);
 
   /* ── Render ── */
+  // Než se zjistí profil, nerenderuj (jinak problikne špatná varianta dashboardu).
+  if (roleLoading) {
+    return <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.28)", fontSize: 13 }}>Načítám dashboard…</div>;
+  }
   return (
     <div
       style={{

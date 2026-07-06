@@ -112,7 +112,7 @@ export function WeeklyDays() {
       </p>
 
       {/* Den po dni */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5">
         {week.rows.map((r) => {
           const count = r.posts.length + r.shoots.length + r.events.length;
           const isToday = r.idx === week.todayIdx;
@@ -121,10 +121,10 @@ export function WeeklyDays() {
             <div key={r.idx}>
               <button
                 onClick={() => setOpenDay(open ? null : r.idx)}
-                className="w-full flex items-center gap-2.5 py-1.5 px-2 rounded-[8px] transition-colors"
+                className="w-full flex items-center gap-2.5 py-1 px-2 rounded-[7px] transition-colors"
                 style={{ background: isToday ? "oklch(0.62 0.27 265 / 0.1)" : count ? "oklch(1 0 0 / 0.03)" : "transparent", cursor: count ? "pointer" : "default" }}
               >
-                <span className="text-[11px] font-bold w-7 shrink-0 text-left" style={{ color: isToday ? "oklch(0.72 0.2 265)" : "oklch(0.5 0.005 222)" }}>
+                <span className="text-[11px] font-bold w-14 shrink-0 text-left whitespace-nowrap" style={{ color: isToday ? "oklch(0.72 0.2 265)" : "oklch(0.5 0.005 222)" }}>
                   {DAY_LABELS[r.idx]} {r.date.getDate()}.
                 </span>
                 {count === 0 ? (
