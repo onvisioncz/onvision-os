@@ -33,7 +33,10 @@ type ColumnId =
   | "dokonceno";
 
 type Priorita = "vysoká" | "střední" | "nízká";
-type Typ = "VIDEO" | "FOTO" | "VIDEO + FOTO" | "BTS" | "REKLAMA";
+type Typ = "VIDEO PRODUKCE" | "PORTRÉTOVÉ FOCENÍ" | "LIFESTYLE FOCENÍ" | "GRAFICKÉ SLUŽBY" | "DESIGNOVÉ SLUŽBY";
+const TYPY: Typ[] = ["VIDEO PRODUKCE", "PORTRÉTOVÉ FOCENÍ", "LIFESTYLE FOCENÍ", "GRAFICKÉ SLUŽBY", "DESIGNOVÉ SLUŽBY"];
+// Celý tým OnVision (křestní jména; Jan = Honza dle zavedeného úzu).
+const TEAM: string[] = ["Adam", "Honza", "Zdeněk", "Matěj", "Michael", "Monika", "Patrik", "Martin", "Tereza", "David", "Dominika", "Jakub", "Tomáš"];
 
 interface CheckItem { text: string; done: boolean }
 
@@ -69,7 +72,7 @@ const COLUMN_IDS = COLUMNS.map((c) => c.id);
 const SEED: Project[] = [
   {
     id: 1, title: "Průběh stavby", klient: "EASTGATE Brno", column: "potvrzeno",
-    priorita: "vysoká", typ: "VIDEO", datum: "20. 5. 2026", castka: 35000,
+    priorita: "vysoká", typ: "VIDEO PRODUKCE", datum: "20. 5. 2026", castka: 35000,
     clenove: ["Adam", "Honza"],
     checklist: [
       { text: "Schůzka s klientem", done: true },
@@ -80,7 +83,7 @@ const SEED: Project[] = [
   },
   {
     id: 2, title: "Kampaňové video", klient: "SENIMED s.r.o.", column: "nataceni",
-    priorita: "vysoká", typ: "VIDEO + FOTO", datum: "15. 5. 2026", castka: 28000,
+    priorita: "vysoká", typ: "VIDEO PRODUKCE", datum: "15. 5. 2026", castka: 28000,
     clenove: ["Adam"],
     checklist: [
       { text: "Scénář schválen", done: true },
@@ -91,7 +94,7 @@ const SEED: Project[] = [
   },
   {
     id: 3, title: "Produktový film", klient: "Power Plate Česko", column: "preprodukce",
-    priorita: "střední", typ: "VIDEO", datum: "2. 6. 2026", castka: 45000,
+    priorita: "střední", typ: "VIDEO PRODUKCE", datum: "2. 6. 2026", castka: 45000,
     clenove: ["Honza"],
     checklist: [
       { text: "Brief potvrzen", done: true },
@@ -102,7 +105,7 @@ const SEED: Project[] = [
   },
   {
     id: 4, title: "Firemní akce", klient: "IMTOS s.r.o.", column: "postprodukce",
-    priorita: "střední", typ: "VIDEO + FOTO", datum: "17. 4. 2026", castka: 22000,
+    priorita: "střední", typ: "VIDEO PRODUKCE", datum: "17. 4. 2026", castka: 22000,
     clenove: ["Adam", "Honza"],
     checklist: [
       { text: "Footage import", done: true },
@@ -114,7 +117,7 @@ const SEED: Project[] = [
   },
   {
     id: 5, title: "Race coverage", klient: "BehejBrno", column: "schvaleni",
-    priorita: "nízká", typ: "VIDEO", datum: "19. 4. 2026", castka: 18000,
+    priorita: "nízká", typ: "VIDEO PRODUKCE", datum: "19. 4. 2026", castka: 18000,
     clenove: ["Honza"],
     checklist: [
       { text: "Střih odevzdán", done: true },
@@ -125,7 +128,7 @@ const SEED: Project[] = [
   },
   {
     id: 6, title: "Brand fotky", klient: "Cukrárna TOFFI", column: "dokonceno",
-    priorita: "nízká", typ: "FOTO", datum: "7. 5. 2026", castka: 12000,
+    priorita: "nízká", typ: "PORTRÉTOVÉ FOCENÍ", datum: "7. 5. 2026", castka: 12000,
     clenove: ["Adam"],
     checklist: [
       { text: "Focení", done: true },
@@ -136,7 +139,7 @@ const SEED: Project[] = [
   },
   {
     id: 7, title: "Promo video", klient: "TEKMA s.r.o.", column: "poptavka",
-    priorita: "vysoká", typ: "VIDEO", datum: "TBD", castka: 60000,
+    priorita: "vysoká", typ: "VIDEO PRODUKCE", datum: "TBD", castka: 60000,
     clenove: [],
     checklist: [
       { text: "Odpověď na poptávku", done: false },
@@ -147,7 +150,7 @@ const SEED: Project[] = [
   },
   {
     id: 8, title: "Dvorecký most", klient: "FIRESTA", column: "nabidka",
-    priorita: "střední", typ: "VIDEO", datum: "12. 6. 2026", castka: 38000,
+    priorita: "střední", typ: "VIDEO PRODUKCE", datum: "12. 6. 2026", castka: 38000,
     clenove: ["Honza"],
     checklist: [
       { text: "Nabídka odeslána", done: true },
@@ -157,7 +160,7 @@ const SEED: Project[] = [
   },
   {
     id: 9, title: "Social content", klient: "EFFECT Clinic", column: "preprodukce",
-    priorita: "střední", typ: "FOTO", datum: "25. 5. 2026", castka: 15000,
+    priorita: "střední", typ: "PORTRÉTOVÉ FOCENÍ", datum: "25. 5. 2026", castka: 15000,
     clenove: ["Adam"],
     checklist: [
       { text: "Moodboard schválen", done: true },
@@ -167,7 +170,7 @@ const SEED: Project[] = [
   },
   {
     id: 10, title: "Sezóna 2026", klient: "SK Brno Slatina", column: "potvrzeno",
-    priorita: "střední", typ: "VIDEO", datum: "16. 5. 2026", castka: 25000,
+    priorita: "střední", typ: "VIDEO PRODUKCE", datum: "16. 5. 2026", castka: 25000,
     clenove: ["Adam", "Honza"],
     checklist: [
       { text: "Smlouva podepsána", done: true },
@@ -183,23 +186,39 @@ function fKc(n: number) {
   return n.toLocaleString("cs-CZ") + " Kč";
 }
 
+const TYP_STYLE: Record<string, { color: string; bg: string; border: string }> = {
+  "VIDEO PRODUKCE":     { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",  border: "oklch(0.62 0.27 265 / 0.25)" },
+  "PORTRÉTOVÉ FOCENÍ":  { color: "oklch(0.74 0.165 75)", bg: "oklch(0.74 0.165 75 / 0.09)", border: "oklch(0.74 0.165 75 / 0.22)" },
+  "LIFESTYLE FOCENÍ":   { color: "oklch(0.68 0.15 180)", bg: "oklch(0.68 0.15 180 / 0.09)", border: "oklch(0.68 0.15 180 / 0.22)" },
+  "GRAFICKÉ SLUŽBY":    { color: "oklch(0.72 0.18 290)", bg: "oklch(0.64 0.21 290 / 0.1)",  border: "oklch(0.64 0.21 290 / 0.22)" },
+  "DESIGNOVÉ SLUŽBY":   { color: "oklch(0.66 0.2 340)",  bg: "oklch(0.66 0.2 340 / 0.1)",   border: "oklch(0.66 0.2 340 / 0.22)" },
+};
+const DEFAULT_TYP_STYLE = { color: "oklch(0.6 0.02 265)", bg: "oklch(1 0 0 / 0.05)", border: "oklch(1 0 0 / 0.12)" };
+
 function fmtStyleByTyp(typ: Typ) {
-  if (typ === "VIDEO")        return { color: "oklch(0.62 0.27 265)", bg: "oklch(0.62 0.27 265 / 0.1)",  border: "oklch(0.62 0.27 265 / 0.25)" };
-  if (typ === "FOTO")         return { color: "oklch(0.74 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.09)",  border: "oklch(0.74 0.165 75 / 0.22)" };
-  if (typ === "VIDEO + FOTO") return { color: "oklch(0.72 0.18 290)",  bg: "oklch(0.64 0.21 290 / 0.1)",   border: "oklch(0.64 0.21 290 / 0.22)" };
-  if (typ === "BTS")          return { color: "oklch(0.78 0.165 75)",  bg: "oklch(0.74 0.165 75 / 0.07)",  border: "oklch(0.74 0.165 75 / 0.18)" };
-  /* REKLAMA */                return { color: "oklch(0.65 0.22 25)",   bg: "oklch(0.65 0.22 25 / 0.08)",   border: "oklch(0.65 0.22 25 / 0.2)" };
+  return TYP_STYLE[typ] ?? DEFAULT_TYP_STYLE;
 }
 
 function prioritaStyle(p: Priorita) {
   if (p === "vysoká") return { color: "oklch(0.65 0.22 25)",  bg: "oklch(0.65 0.22 25 / 0.1)",  border: "oklch(0.65 0.22 25 / 0.25)" };
   if (p === "střední") return { color: "oklch(0.74 0.165 75)", bg: "oklch(0.74 0.165 75 / 0.09)", border: "oklch(0.74 0.165 75 / 0.22)" };
-  return { color: "oklch(0.45 0.005 222)", bg: "oklch(1 0 0 / 0.05)", border: "oklch(1 0 0 / 0.1)" };
+  /* nízká → zelená */ return { color: "oklch(0.67 0.155 155)", bg: "oklch(0.67 0.155 155 / 0.1)", border: "oklch(0.67 0.155 155 / 0.25)" };
 }
 
 const AVATAR_COLORS: Record<string, string> = {
-  Adam:  "oklch(0.62 0.27 265 / 0.85)",
-  Honza: "oklch(0.67 0.155 155 / 0.85)",
+  Adam:     "oklch(0.62 0.27 265 / 0.85)",
+  Honza:    "oklch(0.72 0.2 310 / 0.85)",
+  Zdeněk:   "oklch(0.75 0.19 48 / 0.85)",
+  Matěj:    "oklch(0.68 0.18 180 / 0.85)",
+  Michael:  "oklch(0.72 0.17 140 / 0.85)",
+  Monika:   "oklch(0.72 0.2 310 / 0.85)",
+  Patrik:   "oklch(0.65 0.18 240 / 0.85)",
+  Martin:   "oklch(0.67 0.155 155 / 0.85)",
+  Tereza:   "oklch(0.70 0.18 0 / 0.85)",
+  David:    "oklch(0.65 0.22 25 / 0.85)",
+  Dominika: "oklch(0.67 0.155 155 / 0.85)",
+  Jakub:    "oklch(0.70 0.16 220 / 0.85)",
+  Tomáš:    "oklch(0.75 0.15 85 / 0.85)",
 };
 
 function Avatar({ name }: { name: string }) {
@@ -338,7 +357,7 @@ export default function OneoffsPage() {
       klient: "Klient",
       column: col,
       priorita: "střední",
-      typ: "VIDEO",
+      typ: "VIDEO PRODUKCE",
       datum: "",
       castka: 0,
       clenove: [],
@@ -393,7 +412,7 @@ export default function OneoffsPage() {
       {/* ── Filter bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 md:px-6 pb-4 shrink-0 flex-wrap">
         <Tag className="w-4 h-4" style={{ color: "oklch(0.45 0.005 222)" }} />
-        {(["", "VIDEO", "FOTO", "VIDEO + FOTO", "BTS", "REKLAMA"] as (Typ | "")[]).map((t) => (
+        {(["", ...TYPY] as (Typ | "")[]).map((t) => (
           <button
             key={t || "all-typ"}
             onClick={() => setFilterTyp(t)}
@@ -409,7 +428,7 @@ export default function OneoffsPage() {
         ))}
         <span className="w-px h-4 mx-1" style={{ background: "oklch(1 0 0 / 0.1)" }} />
         <User className="w-4 h-4" style={{ color: "oklch(0.45 0.005 222)" }} />
-        {(["", "Adam", "Honza"] as string[]).map((c) => (
+        {(["", ...TEAM] as string[]).map((c) => (
           <button
             key={c || "all-clen"}
             onClick={() => setFilterClen(c)}
@@ -884,7 +903,7 @@ function ProjectModal({
                 value={editDraft?.typ}
                 onChange={(e) => field("typ", e.target.value as Typ)}
               >
-                {(["VIDEO", "FOTO", "VIDEO + FOTO", "BTS", "REKLAMA"] as Typ[]).map((v) => <option key={v} value={v}>{v}</option>)}
+                {TYPY.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             ) : (
               <span className="text-xs font-bold px-2 py-0.5 rounded-[5px]" style={{ color: fmt.color, background: fmt.bg, border: `1px solid ${fmt.border}` }}>
@@ -963,7 +982,7 @@ function ProjectModal({
             </label>
             {editing ? (
               <div className="flex gap-3">
-                {["Adam", "Honza"].map((name) => (
+                {TEAM.map((name) => (
                   <label key={name} className="flex items-center gap-1.5 text-sm cursor-pointer" style={{ color: "oklch(0.7 0.005 222)" }}>
                     <input
                       type="checkbox"
