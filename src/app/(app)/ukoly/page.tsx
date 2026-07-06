@@ -5,7 +5,7 @@ import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, Square, X, Calendar, User, RefreshCw, ChevronDown, ChevronRight,
-  MessageSquare, Send, Search,
+  MessageSquare, Send, Search, Trash2,
 } from "lucide-react";
 import { parseDeadline, daysUntil, fmtDeadline } from "@/lib/dates";
 import { useUserRole } from "@/lib/hooks/use-user-role";
@@ -374,10 +374,11 @@ function AddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Omit<Tas
 }
 
 /* ── Edit modal ─────────────────────────────────────────────────────────────── */
-function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (t: Task) => void }) {
+function EditModal({ task, onClose, onSave, onDelete }: { task: Task; onClose: () => void; onSave: (t: Task) => void; onDelete: () => void }) {
   const [form, setForm] = useState<Task>({ ...task });
   const { user } = useUserRole();
   const [novyKomentar, setNovyKomentar] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const komentare = form.komentare ?? [];
   const addKomentar = () => {
@@ -466,7 +467,24 @@ function EditModal({ task, onClose, onSave }: { task: Task; onClose: () => void;
           </div>
         </div>
 
-        <div className="flex gap-2 justify-end pt-1">
+        {confirmDelete && (
+          <div className="rounded-[10px] p-3 flex flex-col gap-2" style={{ background: "oklch(0.65 0.22 25 / 0.1)", border: "1px solid oklch(0.65 0.22 25 / 0.3)" }}>
+            <span className="text-[13px]" style={{ color: "oklch(0.8 0.1 25)" }}>Opravdu smazat úkol? Přesune se do koše (30 dní na obnovu).</span>
+            <div className="flex gap-2">
+              <button onClick={() => { onDelete(); onClose(); }} className="btn-tactile flex-1 py-2 rounded-[8px] text-[13px] font-semibold" style={{ background: "oklch(0.65 0.22 25)", color: "white" }}>Smazat</button>
+              <button onClick={() => setConfirmDelete(false)} className="btn-tactile flex-1 py-2 rounded-[8px] text-[13px] font-semibold" style={{ background: "oklch(1 0 0 / 0.06)", color: "oklch(0.6 0.005 222)", border: "1px solid oklch(1 0 0 / 0.1)" }}>Zpět</button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 items-center pt-1">
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="btn-tactile px-3 py-2 rounded-[8px] text-[13px] font-medium flex items-center gap-1.5 mr-auto"
+            style={{ color: "oklch(0.65 0.22 25)", background: "oklch(0.65 0.22 25 / 0.1)", border: "1px solid oklch(0.65 0.22 25 / 0.25)" }}
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Smazat
+          </button>
           <button
             onClick={onClose}
             className="btn-tactile px-4 py-2 rounded-[8px] text-[13px] font-medium"
@@ -706,6 +724,10 @@ export default function UkolyPage() {
     setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
   };
 
+  const deleteTask = (id: number) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+  };
+
   const addTask = (t: Omit<Task, "id">) => {
     const newId = Math.max(0, ...tasks.map(x => x.id)) + 1;
     setTasks(prev => [{ id: newId, ...t }, ...prev]);
@@ -911,7 +933,7 @@ export default function UkolyPage() {
       {/* Modals */}
       <AnimatePresence>
         {editing && (
-          <EditModal task={editing} onClose={() => setEditing(null)} onSave={save} />
+          <EditModal task={editing} onClose={() => setEditing(null)} onSave={save} onDelete={() => deleteTask(editing.id)} />
         )}
       </AnimatePresence>
       <AnimatePresence>
