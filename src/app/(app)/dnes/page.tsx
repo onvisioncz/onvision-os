@@ -156,9 +156,9 @@ export default function DnesPage() {
 
       <PushNudge />
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-4 min-w-0">
         {/* Úkoly */}
-        <div className="glass-card p-4 md:col-span-2">
+        <div className="glass-card p-4 md:col-span-2 min-w-0">
           <h2 className="text-[13px] font-bold mb-2 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
             <CheckSquare className="w-4 h-4" style={{ color: PRIMARY }} /> Moje úkoly
             <Link href="/ukoly" className="ml-auto text-[11px] font-semibold flex items-center gap-1" style={{ color: PRIMARY }}>
@@ -177,7 +177,7 @@ export default function DnesPage() {
         </div>
 
         {/* Natáčení */}
-        <div className="glass-card p-4">
+        <div className="glass-card p-4 min-w-0">
           <h2 className="text-[13px] font-bold mb-2 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
             <Clapperboard className="w-4 h-4" style={{ color: PRIMARY }} /> Natáčení (7 dní)
           </h2>
@@ -197,7 +197,7 @@ export default function DnesPage() {
         </div>
 
         {/* Rezervace techniky */}
-        <div className="glass-card p-4">
+        <div className="glass-card p-4 min-w-0">
           <h2 className="text-[13px] font-bold mb-2 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
             <Camera className="w-4 h-4" style={{ color: PRIMARY }} /> Moje technika
           </h2>
@@ -217,7 +217,7 @@ export default function DnesPage() {
         </div>
 
         {/* Rychlý zápis hodin */}
-        <div className="glass-card p-4 md:col-span-2">
+        <div className="glass-card p-4 md:col-span-2 min-w-0">
           <h2 className="text-[13px] font-bold mb-2 flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
             <Clock className="w-4 h-4" style={{ color: PRIMARY }} /> Rychlý zápis hodin
             <span className="ml-auto text-[11px] text-[--muted-foreground]">tento týden: <strong style={{ color: PRIMARY }}>{fmtHod(data.weekHours)}</strong></span>
