@@ -330,6 +330,11 @@ export default function KlientDetailPage() {
     setEditPoznamka(client.poznamka);
     setEditKontakt(client.kontakt);
     setEditing(true);
+    // Formulář je v sekci Poznámky dole na stránce — bez scrollu to na
+    // mobilu vypadá, jako by tlačítko v hlavičce nic neudělalo.
+    setTimeout(() => {
+      document.getElementById("poznamky-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   }
 
   function saveEdit() {
@@ -942,6 +947,7 @@ export default function KlientDetailPage() {
 
       {/* ── 8. Poznamky ── */}
       <motion.div
+        id="poznamky-section"
         {...fadeUp}
         transition={{ ...fadeUp.transition, delay: 0.18 }}
         className="mb-8"

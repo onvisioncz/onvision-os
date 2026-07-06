@@ -121,10 +121,11 @@ export function NerveCenter() {
   }, [invoices, financeFaktury, tasks, approvals, nps, reservations, costs, timeEntries, rates, monthlyClients, absences, shooting]);
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2">
-      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[--muted-foreground] mr-1 flex items-center gap-1.5">
+    <div className="mb-6">
+      <span className="block mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[--muted-foreground] flex items-center gap-1.5">
         <AlertTriangle className="w-3 h-3" style={{ color: signals.length ? AMBER : GREEN }} /> Nervové centrum
       </span>
+      <div className="flex flex-wrap items-center gap-2">
       {signals.length === 0 ? (
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold" style={{ color: GREEN, background: "oklch(0.67 0.155 155 / 0.12)" }}>
           <ShieldCheck className="w-3.5 h-3.5" /> Vše v klidu
@@ -137,6 +138,7 @@ export function NerveCenter() {
           <span className="font-medium opacity-90">{s.label}{s.detail ? ` · ${s.detail}` : ""}</span>
         </Link>
       ))}
+      </div>
     </div>
   );
 }
