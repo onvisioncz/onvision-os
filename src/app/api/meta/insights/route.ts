@@ -1,7 +1,8 @@
-import { getUserFromRequest, EDGE_UNAUTHORIZED } from "@/lib/supabase/edge";
+import { createClient } from "@/lib/supabase/server";
+import { hasAnyRole } from "@/lib/api-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const META_API = "https://graph.facebook.com/v20.0";
 
@@ -40,9 +41,15 @@ async function getLongLivedToken(): Promise<{ token: string; isNew: boolean; exp
 }
 
 export async function GET(req: NextRequest) {
-  // ── Auth check ──────────────────────────────────────────────────────────────
-  const user = await getUserFromRequest(req);
-  if (!user) return EDGE_UNAUTHORIZED;
+  // ── Auth + role check ─────────────────────────────────────────────────────────
+  // Reklamní data (dosah, výkon) vidí jen vedení (admin) + Tomáš Dang.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const email = (user.email ?? "").toLowerCase();
+  if (email !== "tomas@onvision.cz" && !(await hasAnyRole(user.email, []))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const pageId = searchParams.get("pageId") ?? process.env.ONVISION_PAGE_ID;
