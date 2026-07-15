@@ -99,6 +99,7 @@ export const KEY_READ_ROLES: Record<string, Role[]> = {
   // Ryze vedení: AI konverzace, strategický plán, rychlé poznámky, zálohy, koš.
   "ov-ai-chats":            ["admin"],
   "ov-gameplan":            ["admin"],
+  "ov-weekly-brief":        ["admin"],
   "ov-quick-notes":         ["admin"],
   "ov-backups":             ["admin"],
   "ov-trash":               ["admin"],

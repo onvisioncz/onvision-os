@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sparkles, Loader2, RefreshCw, ListPlus, Check } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { WeeklyDays } from "@/components/dashboard/weekly-outlook-panel";
@@ -74,9 +74,18 @@ export function AiBrief({ showWeekly = false }: { showWeekly?: boolean }) {
   const [shooting] = useSupabaseData<ShootingDay[]>("ov-shooting-days", () => []);
   const [reservations] = useSupabaseData<Reservation[]>("ov-gear-reservations", () => []);
 
+  // Nedělní cron předpřipraví brief do ov-weekly-brief → zobraz ho rovnou.
+  const [stored] = useSupabaseData<{ brief?: string; generatedAt?: string } | null>("ov-weekly-brief", () => null);
   const [brief, setBrief] = useState<string | null>(null);
+  const [briefAt, setBriefAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Jednorázově naplň brief z uloženého (dokud si uživatel nevygeneruje vlastní).
+  useEffect(() => {
+    if (!brief && stored?.brief) { setBrief(stored.brief); setBriefAt(stored.generatedAt ?? null); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stored]);
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
@@ -181,6 +190,7 @@ export function AiBrief({ showWeekly = false }: { showWeekly?: boolean }) {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Nepodařilo se vygenerovat brief."); return; }
       setBrief(data.brief);
+      setBriefAt(null);
     } catch {
       setError("Chyba spojení.");
     } finally {
@@ -232,6 +242,11 @@ export function AiBrief({ showWeekly = false }: { showWeekly?: boolean }) {
       {loading && <p className="text-[12px] text-[--muted-foreground]">Čtu data firmy a píšu brief…</p>}
       {brief && !loading && (
         <>
+          {briefAt && (
+            <p className="text-[11px] mb-2" style={{ color: "oklch(0.55 0.005 222)" }}>
+              Připraveno automaticky {new Date(briefAt).toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" })} · klikni „Znovu" pro aktuální
+            </p>
+          )}
           <BriefBody text={brief} />
           {/* AI, co koná: akční kroky z briefu → rovnou úkoly */}
           <div className="flex items-center gap-2 mt-3">
