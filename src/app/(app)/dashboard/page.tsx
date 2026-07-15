@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { overdueInvoices, unpaidInvoices, type AnyInvoice } from "@/lib/overdue";
+import { pluralCz } from "@/lib/format";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { NerveCenter } from "@/components/dashboard/nerve-center";
@@ -352,7 +353,7 @@ function DeadlinePill({ deadline }: { deadline: string }) {
       label = deadline; sublabel = `za ${days} dny`;
     } else if (days <= 7) {
       color = "oklch(0.70 0.08 222)"; bg = "oklch(0.62 0.27 265 / 0.09)"; border = "oklch(0.62 0.27 265 / 0.20)";
-      label = deadline; sublabel = `za ${days} dní`;
+      label = deadline; sublabel = `za ${days} ${pluralCz(days, "den", "dny", "dní")}`;
     } else {
       color = "oklch(0.55 0.005 222)"; bg = "oklch(1 0 0 / 0.05)"; border = "oklch(1 0 0 / 0.12)";
       label = deadline; sublabel = null;
@@ -1406,7 +1407,7 @@ export default function DashboardPage() {
                     : days < 0 ? "Po termínu"
                     : days === 0 ? "Dnes"
                     : days === 1 ? "Zítra"
-                    : `${days} dní`;
+                    : `${days} ${pluralCz(days, "den", "dny", "dní")}`;
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span
