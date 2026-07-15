@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { escapeHtml, fmtKc, fmtNum, sanitizeHtml } from "../format";
+import { escapeHtml, fmtKc, fmtNum, sanitizeHtml, pluralCz } from "../format";
+
+describe("pluralCz", () => {
+  const f = (n: number) => pluralCz(n, "den", "dny", "dní");
+  it("1 → one", () => expect(f(1)).toBe("den"));
+  it("2–4 → few", () => { expect(f(2)).toBe("dny"); expect(f(4)).toBe("dny"); });
+  it("0 a 5+ → many", () => { expect(f(0)).toBe("dní"); expect(f(5)).toBe("dní"); expect(f(11)).toBe("dní"); });
+  it("záporná čísla dle absolutní hodnoty", () => expect(f(-1)).toBe("den"));
+});
 
 describe("escapeHtml", () => {
   it("escapuje &, <, >, uvozovky", () => {

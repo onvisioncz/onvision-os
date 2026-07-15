@@ -18,6 +18,18 @@ export function fmtNum(n: number): string {
 }
 
 /**
+ * České skloňování podle počtu: 1 → one, 2–4 → few, jinak → many.
+ * pluralCz(1,"den","dny","dní") → "den", pluralCz(5,...) → "dní".
+ * Vrací jen tvar slova (bez čísla).
+ */
+export function pluralCz(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n);
+  if (abs === 1) return one;
+  if (abs >= 2 && abs <= 4) return few;
+  return many;
+}
+
+/**
  * Escapuje text před vložením do HTML e-mailu/reportu.
  * Jakékoli jméno/název editovatelné uživatelem (jméno kolegy, název projektu,
  * poznámka…) musí projít tímhle dřív, než skončí v `bodyHtml` — jinak jde

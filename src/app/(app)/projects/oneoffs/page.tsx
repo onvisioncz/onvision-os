@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { pluralCz } from "@/lib/format";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
@@ -446,7 +447,7 @@ export default function OneoffsPage() {
         {[
           { label: "Projektů celkem", value: String(projects.length) },
           { label: "Pipeline hodnota", value: fKc(totalValue) },
-          { label: "Natáčení tento měsíc", value: String(shootingDays) + " dní" },
+          { label: "Natáčení tento měsíc", value: `${shootingDays} ${pluralCz(shootingDays, "den", "dny", "dní")}` },
         ].map((s) => (
           <div key={s.label}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"
