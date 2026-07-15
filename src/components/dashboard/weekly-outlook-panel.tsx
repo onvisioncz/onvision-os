@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarRange, ChevronDown, Film, Send, Users, Sparkles } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { pluralCz } from "@/lib/format";
 
 /* Tvary dat (podmnožiny) */
 interface SmmPost { id: string; klient: string; datum: string; format?: string; status?: string; platform?: string }
@@ -104,9 +105,9 @@ export function WeeklyDays() {
         {nic ? (
           "Tento týden zatím nic naplánovaného. Přidej příspěvky, natáčení nebo schůzky."
         ) : (
-          <>Tento týden jde ven <strong style={{ color: "oklch(0.7 0.18 300)" }}>{week.totalPosts}</strong> {plural(week.totalPosts, "příspěvek", "příspěvky", "příspěvků")}
-            {week.totalShoots > 0 && <>, <strong style={{ color: "oklch(0.65 0.22 25)" }}>{week.totalShoots}</strong> {plural(week.totalShoots, "natáčení", "natáčení", "natáčení")}</>}
-            {week.totalEvents > 0 && <> a <strong style={{ color: "oklch(0.62 0.27 265)" }}>{week.totalEvents}</strong> {plural(week.totalEvents, "schůzka", "schůzky", "schůzek")}</>}.
+          <>Tento týden jde ven <strong style={{ color: "oklch(0.7 0.18 300)" }}>{week.totalPosts}</strong> {pluralCz(week.totalPosts, "příspěvek", "příspěvky", "příspěvků")}
+            {week.totalShoots > 0 && <>, <strong style={{ color: "oklch(0.65 0.22 25)" }}>{week.totalShoots}</strong> {pluralCz(week.totalShoots, "natáčení", "natáčení", "natáčení")}</>}
+            {week.totalEvents > 0 && <> a <strong style={{ color: "oklch(0.62 0.27 265)" }}>{week.totalEvents}</strong> {pluralCz(week.totalEvents, "schůzka", "schůzky", "schůzek")}</>}.
           </>
         )}
       </p>
@@ -174,10 +175,4 @@ export function WeeklyDays() {
       </div>
     </div>
   );
-}
-
-function plural(n: number, one: string, few: string, many: string): string {
-  if (n === 1) return one;
-  if (n >= 2 && n <= 4) return few;
-  return many;
 }
