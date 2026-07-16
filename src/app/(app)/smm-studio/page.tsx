@@ -157,6 +157,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
   const totalW = W * slides;
   canvas.width = totalW; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = bg; ctx.fillRect(0, 0, totalW, H);
   if (photos.length) {
     const rects = baseRects(photos);
@@ -169,6 +170,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
         const tmp = document.createElement("canvas");
         tmp.width = Math.ceil(ew); tmp.height = H;
         const tctx = tmp.getContext("2d")!;
+        tctx.imageSmoothingEnabled = true; tctx.imageSmoothingQuality = "high";
         // Obrázek vyplní CELOU šířku (slot + prolínací zóna) jedním cover-fit —
         // prolnutí je tak vždy vyplněné obsahem fotky. Vodorovný posun funguje,
         // dokud je vodorovná vůle (landscape fotka nebo přiblížení kolečkem).
@@ -215,6 +217,7 @@ function drawMaster(canvas: HTMLCanvasElement, photos: BasePhoto[], overlays: Ov
 function drawGrid(canvas: HTMLCanvasElement, layout: GridLayout, cells: ({ img: HTMLImageElement } | null)[], gap: number, bg: string) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
   GRID_LAYOUTS[layout].cells.forEach(([fx, fy, fw, fh], i) => {
     const x = fx * W + gap / 2, y = fy * H + gap / 2;
@@ -293,6 +296,7 @@ export default function SmmStudioPage() {
       const scale = Math.min(availW / totalW, 420 / H);
       disp.width = Math.round(totalW * scale); disp.height = Math.round(H * scale);
       const dctx = disp.getContext("2d")!;
+      dctx.imageSmoothingEnabled = true; dctx.imageSmoothingQuality = "high";
       dctx.clearRect(0, 0, disp.width, disp.height);
       dctx.drawImage(master, 0, 0, disp.width, disp.height);
 
