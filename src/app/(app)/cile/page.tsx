@@ -5,6 +5,7 @@ import { Target, TrendingUp, Wallet, Percent, Film } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import { MonthlyReview } from "@/components/monthly-review";
+import { RevenueConcentration } from "@/components/revenue-concentration";
 import { buildProfit, invoiceYear, fmtKc, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 
@@ -103,8 +104,9 @@ export default function CilePage() {
       </div>
 
       {canEdit && (
-        <div className="mb-5">
+        <div className="mb-5 space-y-5">
           <MonthlyReview />
+          <RevenueConcentration />
         </div>
       )}
 
