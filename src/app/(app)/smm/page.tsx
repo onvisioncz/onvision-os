@@ -242,7 +242,9 @@ function compressSmmBlob(file: File): Promise<Blob> {
       const canvas = document.createElement("canvas");
       canvas.width = Math.min(TARGET_W, sw);
       canvas.height = Math.min(TARGET_H, sh);
-      canvas.getContext("2d")!.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d")!;
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
         if (blob) resolve(blob);
         else reject(new Error("compression failed"));
