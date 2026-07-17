@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Building2, TrendingUp, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { ClientLoyalty } from "@/components/client-loyalty";
 import { parseDeadline, daysUntil } from "@/lib/dates";
 import { clientHealth } from "@/lib/client-health";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -265,6 +266,9 @@ export default function KlientiPage() {
             </p>
           </div>
         </motion.div>
+
+        {/* ── Loajalita & LTV klientů ── */}
+        <ClientLoyalty />
 
         {/* ── Table (desktop) / Cards (mobile) ── */}
         <motion.div
