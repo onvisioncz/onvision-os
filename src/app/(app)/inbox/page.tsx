@@ -7,6 +7,10 @@ import { useUserRole } from "@/lib/hooks/use-user-role";
 import {
   notifVisibleFor, AUD_FINANCE, AUD_BILLING, AUD_CONTENT, AUD_PRODUCTION, AUD_OUTPUTS, type Audience,
 } from "@/lib/notif-audience";
+import { clientHealth, type HealthClient } from "@/lib/client-health";
+import { cadenceByClient, ymOf } from "@/lib/post-cadence";
+import { parseDeadline, daysUntil } from "@/lib/dates";
+import type { AnyInvoice } from "@/lib/overdue";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CreditCard, Clock, FileCheck, AlertTriangle,
@@ -109,6 +113,67 @@ function generateOneoffs(projects: OneoffProject[]): Notif[] {
       linkLabel: "Otevřít projekt",
       audience: AUD_PRODUCTION,
     });
+  });
+  return out;
+}
+
+/* ── Churn radar: klienti v riziku (health) nebo potichu na sítích ────────────── */
+const AUD_MGMT: Audience = { kind: "roles", roles: ["admin", "pm"] };
+interface ChurnClient extends HealthClient { name?: string }
+interface SmmPostLite { klient?: string; datum?: string; status?: string }
+
+function generateChurn(clients: ChurnClient[], invoices: AnyInvoice[], smmPosts: SmmPostLite[]): Notif[] {
+  const out: Notif[] = [];
+  const active = clients.filter((c) => c.aktivni !== false && !!c.name);
+  const match = (a: string, b: string) => { const x = (a || "").toLowerCase().trim(), y = (b || "").toLowerCase().trim(); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+
+  // Klienti potichu na sítích tento měsíc (0 příspěvků)
+  const ym = ymOf(new Date().toISOString());
+  const tichoSet = new Set(
+    cadenceByClient(smmPosts, clients as { name?: string }[], ym).filter((r) => r.band === "ticho").map((r) => r.klient)
+  );
+
+  active.forEach((c) => {
+    // Součet částek po splatnosti pro klienta (z obou skladů faktur)
+    const overdueSum = invoices
+      .filter((i) => (i.stav ?? "") !== "Zaplacena" && (i.stav ?? "") !== "Storno")
+      .filter((i) => match(i.klientNazev ?? i.klient ?? "", c.name!))
+      .filter((i) => {
+        let d = parseDeadline(i.datumSplatnosti ?? i.splatnost ?? "");
+        if (!d) { const v = parseDeadline(i.datumVystaveni ?? i.datum ?? ""); if (v) d = new Date(v.getTime() + 14 * 86400000); }
+        return d ? daysUntil(d) < 0 : false;
+      })
+      .reduce((s, i) => s + (Number(i.castka) || 0), 0);
+
+    const h = clientHealth(c, overdueSum);
+    const worst = [...h.factors].sort((a, b) => a.score - b.score)[0];
+    const ticho = tichoSet.has(c.name!);
+
+    if (h.band === "riziko") {
+      out.push({
+        id: `churn-risk-${c.name}`,
+        type: "upozorneni",
+        title: `Klient v riziku · ${c.name}`,
+        body: `Health score ${h.score}/100. Nejslabší: ${worst?.label ?? "—"} — ${worst?.note ?? ""}.${ticho ? " Navíc tento měsíc mlčí na sítích." : ""}`,
+        cas: "",
+        urgency: 1,
+        link: "/klienti",
+        linkLabel: "Otevřít klienty",
+        audience: AUD_MGMT,
+      });
+    } else if (ticho) {
+      out.push({
+        id: `churn-ticho-${c.name}`,
+        type: "upozorneni",
+        title: `Klient mlčí na sítích · ${c.name}`,
+        body: `Tento měsíc zatím 0 publikovaných příspěvků. Zkontroluj plán obsahu, ať klient neusne.`,
+        cas: "",
+        urgency: 2,
+        link: "/klienti",
+        linkLabel: "Otevřít klienty",
+        audience: AUD_MGMT,
+      });
+    }
   });
   return out;
 }
@@ -338,6 +403,9 @@ export default function InboxPage() {
   const [npsList,    setNpsList]    = useState<NpsItem[]>([]);
   const [gearRes,    setGearRes]    = useState<GearRes[]>([]);
   const [oneoffs,    setOneoffs]    = useState<OneoffProject[]>([]);
+  const [clients,    setClients]    = useState<ChurnClient[]>([]);
+  const [issuedInv,  setIssuedInv]  = useState<AnyInvoice[]>([]);
+  const [smmPosts,   setSmmPosts]   = useState<SmmPostLite[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
@@ -353,7 +421,10 @@ export default function InboxPage() {
       fetch("/api/sync?key=ov-nps").then(r => r.json()),
       fetch("/api/sync?key=ov-gear-reservations").then(r => r.json()),
       fetch("/api/sync?key=ov-oneoffs-projects").then(r => r.json()),
-    ]).then(([t, f, s, i, ev, ca, np, gr, oo]) => {
+      fetch("/api/sync?key=ov-monthly-clients").then(r => r.json()),
+      fetch("/api/sync?key=ov-issued-invoices").then(r => r.json()),
+      fetch("/api/sync?key=ov-smm-posts").then(r => r.json()),
+    ]).then(([t, f, s, i, ev, ca, np, gr, oo, mc, ii, sp]) => {
       if (Array.isArray(t.value)) setTasks(t.value);
       if (Array.isArray(f.value)) setFaktury(f.value);
       if (Array.isArray(s.value)) setSchvaleni(s.value);
@@ -363,13 +434,16 @@ export default function InboxPage() {
       if (Array.isArray(np.value)) setNpsList(np.value);
       if (Array.isArray(gr.value)) setGearRes(gr.value);
       if (Array.isArray(oo.value)) setOneoffs(oo.value);
+      if (Array.isArray(mc.value)) setClients(mc.value);
+      if (Array.isArray(ii.value)) setIssuedInv(ii.value);
+      if (Array.isArray(sp.value)) setSmmPosts(sp.value);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [lastRefresh]);
 
   /* Generate notifications from live data + stored events */
   const allNotifs = useMemo(() => {
-    const system = [...generate(tasks, faktury, schvaleni, incomes), ...generateNew(cApprovals, npsList, gearRes), ...generateOneoffs(oneoffs)];
+    const system = [...generate(tasks, faktury, schvaleni, incomes), ...generateNew(cApprovals, npsList, gearRes), ...generateOneoffs(oneoffs), ...generateChurn(clients, [...issuedInv, ...faktury as unknown as AnyInvoice[]], smmPosts)];
     // Convert stored events to Notif format; deduplicate by id
     const existingIds = new Set(system.map(n => n.id));
     const eventNotifs = events
@@ -380,7 +454,7 @@ export default function InboxPage() {
     // Cílení: zaměstnanec vidí jen svoje úkoly + upozornění pro jeho role; admin vše.
     const audienceUser = user ? { roles: user.roles, displayName: user.displayName, email: user.email } : null;
     return [...system, ...eventNotifs].filter(n => notifVisibleFor(n.audience, audienceUser));
-  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes, oneoffs, user]);
+  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes, oneoffs, clients, issuedInv, smmPosts, user]);
 
   /* Apply read/archived state */
   const notifs = useMemo(
