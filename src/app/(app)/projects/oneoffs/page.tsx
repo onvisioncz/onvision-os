@@ -407,6 +407,12 @@ export default function OneoffsPage() {
     return url;
   }
 
+  /* ── Zrušit sdílený odkaz (kdyby unikl) → starý přestane platit ──── */
+  function revokeShare(p: Project) {
+    setProjects((prev) => prev.map((x) => (x.id === p.id ? { ...x, shareToken: undefined } : x)));
+    setSelected((s) => (s && s.id === p.id ? { ...s, shareToken: undefined } : s));
+  }
+
   /* ── Open modal ──── */
   function openModal(p: Project) {
     setSelected(p);
@@ -577,6 +583,7 @@ export default function OneoffsPage() {
             onDelete={() => deleteProject(selected.id)}
             onComplete={(invoiceDone) => completeProject(selected, invoiceDone)}
             onShare={() => shareProject(selected)}
+            onRevoke={() => revokeShare(selected)}
           />
         )}
       </AnimatePresence>
@@ -873,6 +880,7 @@ function ProjectModal({
   onDelete,
   onComplete,
   onShare,
+  onRevoke,
 }: {
   project: Project;
   editing: boolean;
@@ -887,6 +895,7 @@ function ProjectModal({
   onDelete: () => void;
   onComplete: (invoiceDone: boolean) => void;
   onShare: () => Promise<string>;
+  onRevoke: () => void;
 }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
@@ -1329,9 +1338,18 @@ function ProjectModal({
                 {shareCopied ? "Odkaz zkopírován" : project.shareToken ? "Zkopírovat odkaz" : "Vytvořit sdílený odkaz"}
               </button>
               {shownUrl && (
-                <div className="text-[11px] break-all rounded-lg px-2.5 py-1.5" style={{ background: "oklch(0 0 0 / 0.2)", color: "oklch(0.6 0.05 265)", fontFamily: "monospace" }}>
-                  {shownUrl}
-                </div>
+                <>
+                  <div className="text-[11px] break-all rounded-lg px-2.5 py-1.5" style={{ background: "oklch(0 0 0 / 0.2)", color: "oklch(0.6 0.05 265)", fontFamily: "monospace" }}>
+                    {shownUrl}
+                  </div>
+                  <button
+                    onClick={() => { onRevoke(); setShareUrl(null); }}
+                    className="self-start flex items-center gap-1.5 text-xs font-semibold transition-opacity hover:opacity-70"
+                    style={{ color: "oklch(0.65 0.22 25)" }}
+                  >
+                    <X className="w-3.5 h-3.5" /> Zrušit odkaz (přestane platit)
+                  </button>
+                </>
               )}
 
               {/* Co externista vyplnil */}

@@ -5,10 +5,11 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Veřejné cesty — bez cookie autentizace.
-  // /api/cron se chrání vlastním CRON_SECRET; /d a /l jsou veřejné sdílené
-  // stránky pro klienty (delivery odkazy, showcase lokací) — chráněné jen
-  // neuhodnutelným tokenem v URL.
-  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/"];
+  // /api/cron se chrání vlastním CRON_SECRET; /d, /l, /k a /p jsou veřejné
+  // sdílené stránky (delivery odkazy, showcase lokací, klientské odkazy,
+  // /p = externí spolupráce u jednorázovek) — chráněné jen neuhodnutelným
+  // tokenem v URL. Přes tato API se citlivá data (ceny) nikdy neposílají ven.
+  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/", "/p/", "/api/p/"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Pokud chybí env vars, pusť dál bez auth kontroly

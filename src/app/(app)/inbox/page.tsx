@@ -82,6 +82,37 @@ function pastCas(daysAgo: number): string {
   return `před ${Math.round(daysAgo / 7)} týdny`;
 }
 
+/* ── Jednorázovky: upozornění, když externista doplní brief / výstup ──────────── */
+interface OneoffBrief { lokace?: string; technika?: string; scenar?: string; outputLink?: string; updatedAt?: string; }
+interface OneoffProject { id: number; title: string; klient: string; externBrief?: OneoffBrief; }
+
+function generateOneoffs(projects: OneoffProject[]): Notif[] {
+  const out: Notif[] = [];
+  projects.forEach(p => {
+    const b = p.externBrief;
+    if (!b?.updatedAt) return;
+    const d = new Date(b.updatedAt);
+    if (isNaN(d.getTime())) return;
+    const dAgo = -daysDiff(d);
+    if (dAgo < 0 || dAgo > 14) return; // jen čerstvé (posledních 14 dní)
+    const hasOutput = !!b.outputLink;
+    out.push({
+      id: `oneoff-extern-${p.id}-${b.updatedAt}`,
+      type: "upozorneni",
+      title: hasOutput ? `Externista odevzdal výstup · ${p.title}` : `Externista doplnil zadání · ${p.title}`,
+      body: hasOutput
+        ? `${p.klient || p.title} — je k dispozici odkaz na stažení.`
+        : `${p.klient || p.title} — doplněna lokace/technika/scénář.`,
+      cas: pastCas(dAgo),
+      urgency: hasOutput ? 1 : 2,
+      link: "/projects/oneoffs",
+      linkLabel: "Otevřít projekt",
+      audience: AUD_PRODUCTION,
+    });
+  });
+  return out;
+}
+
 /* ── Notification generator ─────────────────────────────────────────────────── */
 function generate(
   tasks: Task[],
@@ -306,6 +337,7 @@ export default function InboxPage() {
   const [cApprovals, setCApprovals] = useState<CApproval[]>([]);
   const [npsList,    setNpsList]    = useState<NpsItem[]>([]);
   const [gearRes,    setGearRes]    = useState<GearRes[]>([]);
+  const [oneoffs,    setOneoffs]    = useState<OneoffProject[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
@@ -320,7 +352,8 @@ export default function InboxPage() {
       fetch("/api/sync?key=ov-client-approvals").then(r => r.json()),
       fetch("/api/sync?key=ov-nps").then(r => r.json()),
       fetch("/api/sync?key=ov-gear-reservations").then(r => r.json()),
-    ]).then(([t, f, s, i, ev, ca, np, gr]) => {
+      fetch("/api/sync?key=ov-oneoffs-projects").then(r => r.json()),
+    ]).then(([t, f, s, i, ev, ca, np, gr, oo]) => {
       if (Array.isArray(t.value)) setTasks(t.value);
       if (Array.isArray(f.value)) setFaktury(f.value);
       if (Array.isArray(s.value)) setSchvaleni(s.value);
@@ -329,13 +362,14 @@ export default function InboxPage() {
       if (Array.isArray(ca.value)) setCApprovals(ca.value);
       if (Array.isArray(np.value)) setNpsList(np.value);
       if (Array.isArray(gr.value)) setGearRes(gr.value);
+      if (Array.isArray(oo.value)) setOneoffs(oo.value);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [lastRefresh]);
 
   /* Generate notifications from live data + stored events */
   const allNotifs = useMemo(() => {
-    const system = [...generate(tasks, faktury, schvaleni, incomes), ...generateNew(cApprovals, npsList, gearRes)];
+    const system = [...generate(tasks, faktury, schvaleni, incomes), ...generateNew(cApprovals, npsList, gearRes), ...generateOneoffs(oneoffs)];
     // Convert stored events to Notif format; deduplicate by id
     const existingIds = new Set(system.map(n => n.id));
     const eventNotifs = events
@@ -346,7 +380,7 @@ export default function InboxPage() {
     // Cílení: zaměstnanec vidí jen svoje úkoly + upozornění pro jeho role; admin vše.
     const audienceUser = user ? { roles: user.roles, displayName: user.displayName, email: user.email } : null;
     return [...system, ...eventNotifs].filter(n => notifVisibleFor(n.audience, audienceUser));
-  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes, user]);
+  }, [tasks, faktury, schvaleni, incomes, events, cApprovals, npsList, gearRes, oneoffs, user]);
 
   /* Apply read/archived state */
   const notifs = useMemo(
