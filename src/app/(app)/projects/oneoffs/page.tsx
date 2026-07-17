@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
   ChevronLeft, ChevronRight, User, Calendar, Banknote, Tag,
-  Trash2, CheckCircle2, AlertTriangle,
+  Trash2, CheckCircle2, AlertTriangle, Link2, Copy, Download,
 } from "lucide-react";
 import {
   DndContext,
@@ -61,6 +61,13 @@ interface Project {
   clenove: string[];
   checklist: CheckItem[];
   poznamka: string;
+  shareToken?: string;              // veřejný odkaz pro externistu (bez ceny)
+  externBrief?: ExternBrief;        // co externista přes odkaz vyplnil
+}
+
+interface ExternBrief {
+  lokace?: string; technika?: string; scenar?: string; poznamka?: string;
+  outputLink?: string; outputNote?: string; updatedAt?: string;
 }
 
 /* ── Column definitions ─────────────────────────────────────────────────────── */
@@ -387,6 +394,19 @@ export default function OneoffsPage() {
     closeModal();
   }
 
+  /* ── Sdílet s externistou → vygeneruj token (jednou), ulož a zkopíruj odkaz ──── */
+  async function shareProject(p: Project): Promise<string> {
+    let token = p.shareToken;
+    if (!token) {
+      token = crypto.randomUUID().replace(/-/g, ""); // 32 znaků, neuhádnutelné
+      setProjects((prev) => prev.map((x) => (x.id === p.id ? { ...x, shareToken: token } : x)));
+      setSelected((s) => (s && s.id === p.id ? { ...s, shareToken: token } : s));
+    }
+    const url = `${window.location.origin}/p/${token}`;
+    try { await navigator.clipboard.writeText(url); } catch { /* uživatel zkopíruje ručně */ }
+    return url;
+  }
+
   /* ── Open modal ──── */
   function openModal(p: Project) {
     setSelected(p);
@@ -556,6 +576,7 @@ export default function OneoffsPage() {
             onMove={(dir) => moveProject(selected.id, dir)}
             onDelete={() => deleteProject(selected.id)}
             onComplete={(invoiceDone) => completeProject(selected, invoiceDone)}
+            onShare={() => shareProject(selected)}
           />
         )}
       </AnimatePresence>
@@ -851,6 +872,7 @@ function ProjectModal({
   onMove,
   onDelete,
   onComplete,
+  onShare,
 }: {
   project: Project;
   editing: boolean;
@@ -864,7 +886,16 @@ function ProjectModal({
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
   onComplete: (invoiceDone: boolean) => void;
+  onShare: () => Promise<string>;
 }) {
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  async function handleShare() {
+    const url = await onShare();
+    setShareUrl(url); setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2500);
+  }
+  const shownUrl = shareUrl ?? (project.shareToken && typeof window !== "undefined" ? `${window.location.origin}/p/${project.shareToken}` : null);
   const p = editing && editDraft ? editDraft : project;
   const fmt = fmtStyleByTyp(p.typ);
   const pri = prioritaStyle(p.priorita);
@@ -1279,9 +1310,59 @@ function ProjectModal({
               }}
             />
           )}
+
+          {/* ── Externí spolupráce: sdílený odkaz (bez ceny) + co externista vyplnil ── */}
+          {!editing && !confirmDelete && (
+            <div className="rounded-xl p-3 flex flex-col gap-2.5" style={{ background: "oklch(1 0 0 / 0.03)", border: "1px solid oklch(1 0 0 / 0.08)" }}>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.6 0.005 222)" }}>
+                <Link2 className="w-3.5 h-3.5" /> Externí spolupráce
+              </div>
+              <p className="text-xs" style={{ color: "oklch(0.55 0.005 222)" }}>
+                Odkaz pro externistu (Michael / Monika Weiser). Vidí zadání a doplní info + výstup — <strong>cenu nikdy nevidí</strong>.
+              </p>
+              <button
+                onClick={handleShare}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
+                style={{ background: "oklch(0.62 0.27 265 / 0.14)", color: "oklch(0.72 0.2 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+              >
+                {shareCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {shareCopied ? "Odkaz zkopírován" : project.shareToken ? "Zkopírovat odkaz" : "Vytvořit sdílený odkaz"}
+              </button>
+              {shownUrl && (
+                <div className="text-[11px] break-all rounded-lg px-2.5 py-1.5" style={{ background: "oklch(0 0 0 / 0.2)", color: "oklch(0.6 0.05 265)", fontFamily: "monospace" }}>
+                  {shownUrl}
+                </div>
+              )}
+
+              {/* Co externista vyplnil */}
+              {project.externBrief && (project.externBrief.lokace || project.externBrief.technika || project.externBrief.scenar || project.externBrief.outputLink) && (
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "oklch(0.72 0.16 155)" }}>Doplněno externistou</div>
+                  {project.externBrief.lokace && <BriefRow label="Lokace" value={project.externBrief.lokace} />}
+                  {project.externBrief.technika && <BriefRow label="Technika" value={project.externBrief.technika} />}
+                  {project.externBrief.scenar && <BriefRow label="Scénář" value={project.externBrief.scenar} />}
+                  {project.externBrief.outputLink && (
+                    <a href={project.externBrief.outputLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-semibold mt-0.5" style={{ color: "oklch(0.72 0.2 265)" }}>
+                      <Download className="w-3.5 h-3.5" /> Stáhnout výstup{project.externBrief.outputNote ? ` · ${project.externBrief.outputNote}` : ""}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function BriefRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-xs">
+      <span style={{ color: "oklch(0.5 0.005 222)" }}>{label}: </span>
+      <span style={{ color: "oklch(0.75 0.005 222)" }}>{value}</span>
+    </div>
   );
 }
 
