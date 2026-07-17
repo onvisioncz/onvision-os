@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Target, TrendingUp, Wallet, Percent, Film } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { MonthlyReview } from "@/components/monthly-review";
 import { buildProfit, invoiceYear, fmtKc, type InvoiceLite, type ClientCost } from "@/lib/ziskovost";
 import { TIME_KEY, RATES_KEY, laborByClient, type TimeEntry } from "@/lib/vykazy";
 
@@ -100,6 +101,12 @@ export default function CilePage() {
         </div>
         <select className="glass-input px-3 py-2 text-[13px]" value={rok} onChange={(e) => setRok(Number(e.target.value))}>{years.map((y) => <option key={y} value={y}>{y}</option>)}</select>
       </div>
+
+      {canEdit && (
+        <div className="mb-5">
+          <MonthlyReview />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <Metric label="Obrat" icon={Wallet} actual={actuals.obrat} target={cil.obrat} unit="" isKc onTarget={(v) => setTarget("obrat", v)} canEdit={canEdit} />

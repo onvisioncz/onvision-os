@@ -100,6 +100,7 @@ export const KEY_READ_ROLES: Record<string, Role[]> = {
   "ov-ai-chats":            ["admin"],
   "ov-gameplan":            ["admin"],
   "ov-weekly-brief":        ["admin"],
+  "ov-monthly-review":      ["admin"],
   "ov-quick-notes":         ["admin"],
   "ov-backups":             ["admin"],
   "ov-trash":               ["admin"],
