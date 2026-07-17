@@ -12,6 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { identityFromEmail } from "@/lib/agent/identity";
 import { overdueInvoices, type AnyInvoice } from "@/lib/overdue";
+import { weightedPipeline, isOpen, type PipelineDeal } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,10 +84,9 @@ export async function GET(req: NextRequest) {
   const past = [...sorted].reverse().find((s) => new Date(s.date).getTime() <= monthAgoTs) ?? sorted[0] ?? null;
   const mrrDelta = past ? mrrNow - past.mrr : 0;
 
-  // ── Pipeline: otevřené dealy vážený forecast ──
-  const closedFazes = new Set(["Dokončeno", "Prohráno", "Zrušeno"]);
-  const openDeals = deals.filter((d) => !closedFazes.has(d.faze));
-  const weightedForecast = openDeals.reduce((s, d) => s + (d.hodnota || 0) * (d.pravdepodobnost || 0) / 100, 0);
+  // ── Pipeline: otevřené dealy vážený forecast (sdílená knihovna, konzistentní s /pipeline) ──
+  const openDeals = deals.filter((d) => isOpen({ faze: d.faze as PipelineDeal["faze"] }));
+  const weightedForecast = weightedPipeline(deals as unknown as PipelineDeal[]);
   const hotDeals = openDeals.filter((d) => (d.pravdepodobnost || 0) >= 70).sort((a, b) => b.hodnota - a.hodnota);
 
   // ── Dokončené jednorázovky ──
