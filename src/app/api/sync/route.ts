@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_USERS, type Role } from "@/lib/roles";
 import { canReadKey, canWriteKey, readNeedsRoles, redactForRead, mergeProtectedWrite } from "@/lib/sync-acl";
+import { firstName } from "@/lib/task-owner";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -89,11 +90,11 @@ async function getAuthenticatedClient(): Promise<{ db: Db | null; user: { email?
 /* ── Access-control (čtení/zápis/redakce) je v testovatelné knihovně ────────── */
 // Viz src/lib/sync-acl.ts + test sync-acl.test.ts (hlídá invariant read ⊇ write).
 
-/* ── Fetch user roles from DB (falls back to DEFAULT_USERS) ─────────────────── */
-async function getUserRoles(
+/* ── Fetch user roles + display name from DB (falls back to DEFAULT_USERS) ──── */
+async function getUserIdentity(
   supabase: Db,
   email: string
-): Promise<Role[]> {
+): Promise<{ roles: Role[]; first: string }> {
   try {
     const { data } = await supabase
       .from("app_data")
@@ -106,12 +107,12 @@ async function getUserRoles(
       : DEFAULT_USERS;
 
     const config = users.find((u) => u.email === email);
-    return config?.roles ?? [];
+    return { roles: config?.roles ?? [], first: firstName(config?.displayName ?? "") };
   } catch {
     // On DB error fall back to hardcoded defaults — fail open for reads, fail
     // closed for writes (checked below)
     const config = DEFAULT_USERS.find((u) => u.email === email);
-    return config?.roles ?? [];
+    return { roles: config?.roles ?? [], first: firstName(config?.displayName ?? "") };
   }
 }
 
@@ -125,8 +126,10 @@ export async function GET(req: NextRequest) {
 
   // Fast path: nechráněný provozní klíč → žádný dotaz na role (rychlost).
   let userRoles: Role[] | null = null;
+  let userFirst = "";
   if (readNeedsRoles(key)) {
-    userRoles = await getUserRoles(supabase, user.email!);
+    const ident = await getUserIdentity(supabase, user.email!);
+    userRoles = ident.roles; userFirst = ident.first;
     // ── Read gating: citlivá data (ceny, výplaty, faktury…) jen oprávněným ──
     if (!canReadKey(key, userRoles, user.email ?? "")) return FORBIDDEN;
   }
@@ -139,7 +142,7 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // Redakce peněžních polí pro role, které je nemají vidět (jména klientů ano, ceny ne)
-  const value = userRoles ? redactForRead(key, data?.value ?? null, userRoles) : (data?.value ?? null);
+  const value = userRoles ? redactForRead(key, data?.value ?? null, userRoles, userFirst) : (data?.value ?? null);
   // updated_at slouží jako verzovací token pro optimistický zámek při zápisu
   return NextResponse.json({ value, token: data?.updated_at ?? null });
 }
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest) {
   const legacy = baseToken === undefined;
 
   // ── Role check (write) ───────────────────────────────────────────────────────
-  const userRoles = await getUserRoles(supabase, user.email!);
+  const { roles: userRoles, first: userFirst } = await getUserIdentity(supabase, user.email!);
   if (!canWriteKey(key, userRoles, user.email ?? "")) return FORBIDDEN;
 
   // ── Přečti AKTUÁLNÍ řádek (hodnota + token) — pro konflikt i pro push diff ──
@@ -176,15 +179,17 @@ export async function POST(req: NextRequest) {
   const currentToken: string | null = (cur?.updated_at as string | undefined) ?? null;
 
   // ── Optimistický zámek: token se musí shodovat s tím, co klient viděl ─────
+  // Konfliktní hodnota se vrací klientovi → musí projít stejnou redakcí jako GET,
+  // jinak by ne-admin dostal cizí úkoly / ceny „zadními vrátky".
   if (!legacy && (currentToken ?? null) !== (baseToken ?? null)) {
     return NextResponse.json(
-      { conflict: true, value: currentValue, token: currentToken },
+      { conflict: true, value: redactForRead(key, currentValue, userRoles, userFirst), token: currentToken },
       { status: 409 }
     );
   }
 
   // ── Ochrana redagovaných polí: kdo ceny nevidí, nesmí je zápisem smazat ────
-  const valueToWrite = mergeProtectedWrite(key, value, currentValue, userRoles);
+  const valueToWrite = mergeProtectedWrite(key, value, currentValue, userRoles, userFirst);
 
   // ── Zápis (podmíněný na updated_at kvůli souběhu mezi čtením a zápisem) ────
   const newTs = new Date().toISOString();
@@ -214,7 +219,7 @@ export async function POST(req: NextRequest) {
         .eq("key", key)
         .maybeSingle();
       return NextResponse.json(
-        { conflict: true, value: cur2?.value ?? null, token: (cur2?.updated_at as string) ?? null },
+        { conflict: true, value: redactForRead(key, cur2?.value ?? null, userRoles, userFirst), token: (cur2?.updated_at as string) ?? null },
         { status: 409 }
       );
     }
@@ -223,13 +228,13 @@ export async function POST(req: NextRequest) {
   if (writeError) return NextResponse.json({ error: writeError }, { status: 500 });
 
   // ── Push notifications (fire-and-forget, never blocks the response) ──────
-  void triggerPush(supabase, key, value, user.email!, currentValue);
+  void triggerPush(supabase, key, valueToWrite, user.email!, currentValue);
 
   // ── Audit log (fire-and-forget) — kdo co kdy změnil + souhrn změny ──────
-  void appendAudit(supabase, key, user.email!, currentValue, value);
+  void appendAudit(supabase, key, user.email!, currentValue, valueToWrite);
 
   // ── Koš (fire-and-forget) — zachyť smazané položky pro 30denní obnovu ───
-  void captureDeletions(supabase, key, currentValue, value, user.email!);
+  void captureDeletions(supabase, key, currentValue, valueToWrite, user.email!);
 
   return NextResponse.json({ ok: true, token: newTs });
 }

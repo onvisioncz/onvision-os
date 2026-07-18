@@ -387,8 +387,8 @@ export default function OneoffsPage() {
     // Pokud faktura ještě není → úkol na vystavení (propíše se do úkolů i notifikací).
     if (!invoiceDone) {
       setTasks((prev) => [
-        // Bez částky v názvu — úkoly čtou všichni, ceny jen jednatelé + fakturace.
-        { id: Date.now() + 1, nazev: `Vystavit fakturu — ${p.klient || p.title}`, projekt: p.title, prirazeno: "Adam", priorita: "Vysoká", status: "Nové", deadline: "" },
+        // Částka v názvu je OK — úkol vidí server-side jen adresát (Adam) + jednatelé.
+        { id: Date.now() + 1, nazev: `Vystavit fakturu — ${p.klient || p.title} (${fKc(p.castka)})`, projekt: p.title, prirazeno: "Adam", priorita: "Vysoká", status: "Nové", deadline: "" },
         ...(prev ?? []),
       ]);
     }

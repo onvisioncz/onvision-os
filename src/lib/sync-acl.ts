@@ -8,6 +8,7 @@
  * reálná data. Když přidáš klíč do WRITE, musí mít odpovídající READ přístup. */
 
 import type { Role } from "@/lib/roles";
+import { isMine, canSeeAllTasks } from "./task-owner";
 
 /* ── Zápis: role ───────────────────────────────────────────────────────────────
  * Klíč NEUVEDENÝ zde smí zapisovat jen admin (default deny). */
@@ -138,11 +139,20 @@ export function canReadKey(key: string, roles: Role[], email: string): boolean {
 
 /** Klíč potřebuje dotaz na role při čtení (buď je gated, nebo se redaguje). */
 export function readNeedsRoles(key: string): boolean {
-  return key in KEY_READ_ROLES || key in KEY_READ_EMAILS || key === "ov-monthly-clients" || key === "ov-notif-events";
+  return key in KEY_READ_ROLES || key in KEY_READ_EMAILS
+    || key === "ov-monthly-clients" || key === "ov-notif-events" || key === "ov-ukoly-tasks";
 }
 
-export function redactForRead(key: string, value: unknown, roles: Role[]): unknown {
+export function redactForRead(key: string, value: unknown, roles: Role[], myFirst = ""): unknown {
   if (roles.includes("admin")) return value;
+  // Úkoly: každý čte JEN svoje přiřazené (admin + pm vidí vše kvůli koordinaci).
+  // Úkol s částkou v poznámce tak nikdy nedoputuje k nikomu jinému než adresátovi.
+  if (key === "ov-ukoly-tasks" && Array.isArray(value)) {
+    if (canSeeAllTasks(roles)) return value;
+    return value.filter((t) =>
+      t && typeof t === "object" && isMine(String((t as Record<string, unknown>).prirazeno ?? ""), myFirst)
+    );
+  }
   if (key === "ov-monthly-clients" && Array.isArray(value)) {
     const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));
     if (privileged) return value;
@@ -181,8 +191,25 @@ export function redactForRead(key: string, value: unknown, roles: Role[]): unkno
 /* ── Ochrana redagovaných polí při zápisu ─────────────────────────────────────
  * Kdo dostal data BEZ cen (produkce u jednorázovek), nesmí je uložením smazat.
  * Před zápisem se citlivá pole obnoví z existující hodnoty v DB (párování dle id). */
-export function mergeProtectedWrite(key: string, incoming: unknown, existing: unknown, roles: Role[]): unknown {
+export function mergeProtectedWrite(key: string, incoming: unknown, existing: unknown, roles: Role[], myFirst = ""): unknown {
   if (roles.includes("admin")) return incoming;
+  // Úkoly: kdo nevidí vše, smí měnit/mazat JEN svoje. Cizí existující úkoly se
+  // zachovají z DB beze změny; nové úkoly (id, které v DB není) projdou — to je
+  // legitimní „zadal jsem kolegovi úkol" (např. z checklistu jednorázovky).
+  if (key === "ov-ukoly-tasks" && Array.isArray(incoming)) {
+    if (canSeeAllTasks(roles)) return incoming;
+    const prev = (Array.isArray(existing) ? existing : [])
+      .filter((t): t is Record<string, unknown> => !!t && typeof t === "object");
+    const prevIds = new Set(prev.map((t) => t.id));
+    const others = prev.filter((t) => !isMine(String(t.prirazeno ?? ""), myFirst));
+    const allowed = incoming.filter((t) => {
+      if (!t || typeof t !== "object") return false;
+      const rec = t as Record<string, unknown>;
+      const mine = isMine(String(rec.prirazeno ?? ""), myFirst);
+      return mine || !prevIds.has(rec.id); // svoje cokoliv; cizí jen NOVÉ
+    });
+    return [...others, ...allowed];
+  }
   if (key === "ov-oneoffs-projects" && Array.isArray(incoming)) {
     const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));
     if (privileged) return incoming;

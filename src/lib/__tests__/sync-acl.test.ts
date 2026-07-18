@@ -85,9 +85,9 @@ describe("redactForRead — ceny měsíčních klientů", () => {
     }
   });
 
-  it("nemění jiné klíče", () => {
-    const tasks = [{ id: 1, nazev: "úkol" }];
-    expect(redactForRead("ov-ukoly-tasks", tasks, ["smm"])).toBe(tasks);
+  it("nemění nechráněné klíče", () => {
+    const notes = [{ id: 1, text: "cokoliv" }];
+    expect(redactForRead("ov-quick-notes", notes, ["smm"])).toBe(notes);
   });
 });
 
@@ -98,8 +98,8 @@ describe("readNeedsRoles", () => {
     expect(readNeedsRoles("ov-ads")).toBe(true);
   });
   it("provozní klíče roli nevyžadují (rychlá cesta)", () => {
-    expect(readNeedsRoles("ov-ukoly-tasks")).toBe(false);
     expect(readNeedsRoles("ov-outputs")).toBe(false);
+    expect(readNeedsRoles("ov-gear")).toBe(false);
   });
 });
 
@@ -168,5 +168,64 @@ describe("přísné pravidlo: částky jen admin + fakturace", () => {
         expect(["admin", "fakturace"].includes(r), `${key} povoluje roli ${r} — částky smí jen admin + fakturace`).toBe(true);
       }
     }
+  });
+});
+
+describe("ov-ukoly-tasks: úkol vidí JEN adresát (+ admin/pm)", () => {
+  const tasks = [
+    { id: 1, nazev: "Vystavit fakturu (65 000 Kč)", prirazeno: "Dominika", status: "Nové" },
+    { id: 2, nazev: "Natočit reels", prirazeno: "Zdeněk", status: "Nové" },
+    { id: 3, nazev: "Grafika banner", prirazeno: "Matěj", status: "Nové" },
+  ];
+
+  it("zaměstnanec čte jen svoje přiřazené úkoly", () => {
+    const out = redactForRead("ov-ukoly-tasks", tasks, ["produkce"], "zdeněk") as { id: number }[];
+    expect(out.map((t) => t.id)).toEqual([2]);
+  });
+  it("Dominika (fakturace) vidí jen svoje — cizí ne", () => {
+    const out = redactForRead("ov-ukoly-tasks", tasks, ["fakturace"], "dominika") as { id: number }[];
+    expect(out.map((t) => t.id)).toEqual([1]);
+  });
+  it("admin a pm vidí všechny úkoly (koordinace)", () => {
+    expect((redactForRead("ov-ukoly-tasks", tasks, ["admin"], "adam") as unknown[]).length).toBe(3);
+    expect((redactForRead("ov-ukoly-tasks", tasks, ["pm"], "kdokoli") as unknown[]).length).toBe(3);
+  });
+  it("čtení úkolů vyžaduje identitu (kvůli filtru)", () => {
+    expect(readNeedsRoles("ov-ukoly-tasks")).toBe(true);
+  });
+});
+
+describe("ov-ukoly-tasks: zápis nesmí přepsat/smazat cizí úkoly", () => {
+  const dbTasks = [
+    { id: 1, nazev: "Fakturace", prirazeno: "Dominika" },
+    { id: 2, nazev: "Reels", prirazeno: "Zdeněk" },
+    { id: 3, nazev: "Banner", prirazeno: "Matěj" },
+  ];
+
+  it("Zdeněk uloží svoje + založí NOVÝ úkol Matějovi; cizí zůstanou z DB", () => {
+    // Zdeněk viděl jen svůj úkol (id 2); přidá nový úkol pro Matěje (id 99).
+    const incoming = [
+      { id: 2, nazev: "Reels HOTOVO", prirazeno: "Zdeněk", status: "Hotovo" },
+      { id: 99, nazev: "Nový úkol", prirazeno: "Matěj" },
+    ];
+    const out = mergeProtectedWrite("ov-ukoly-tasks", incoming, dbTasks, ["produkce"], "zdeněk") as Record<string, unknown>[];
+    const byId = new Map(out.map((t) => [t.id, t]));
+    expect(byId.get(1)?.nazev).toBe("Fakturace");      // Dominičin zůstal
+    expect(byId.get(3)?.nazev).toBe("Banner");         // Matějův původní zůstal
+    expect(byId.get(2)?.status).toBe("Hotovo");        // Zdeňkova úprava prošla
+    expect(byId.get(99)?.nazev).toBe("Nový úkol");     // nový úkol založen
+    expect(out).toHaveLength(4);
+  });
+
+  it("útok: nelze upravit cizí existující úkol (Matějův se z DB obnoví)", () => {
+    const incoming = [{ id: 3, nazev: "PŘEPSÁNO ÚTOČNÍKEM", prirazeno: "Matěj" }];
+    const out = mergeProtectedWrite("ov-ukoly-tasks", incoming, dbTasks, ["produkce"], "zdeněk") as Record<string, unknown>[];
+    const banner = out.find((t) => t.id === 3);
+    expect(banner?.nazev).toBe("Banner"); // původní text z DB, ne útočníkův
+  });
+
+  it("admin uloží cokoliv beze změny", () => {
+    const incoming = [{ id: 1, nazev: "cokoliv", prirazeno: "kdokoli" }];
+    expect(mergeProtectedWrite("ov-ukoly-tasks", incoming, dbTasks, ["admin"], "adam")).toBe(incoming);
   });
 });
