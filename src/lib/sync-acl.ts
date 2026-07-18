@@ -22,12 +22,12 @@ export const KEY_WRITE_ROLES: Record<string, Role[]> = {
   "ov-finance-faktury":     ["admin", "fakturace"],
   "ov-finance-doklady":     ["admin", "fakturace"],
   "ov-cile":                ["admin", "fakturace"],
-  "ov-odmeny":              ["admin", "fakturace", "ucetni"],
+  "ov-odmeny":              ["admin", "fakturace"],
   "ov-vyhledy-zustatek":    ["admin", "fakturace"],
   "ov-pipeline-deals":      ["admin"],
   "ov-oneoffs-projects":    ["admin", "produkce"],
   "ov-ukoly-tasks":         ["admin", "pm", "produkce", "grafik", "smm", "fakturace"],
-  "ov-ads-campaigns":       ["admin", "smm"],
+  "ov-ads-campaigns":       ["admin"],
   "ov-smm-plan":            ["admin", "smm"],
   "ov-smm-posts":           ["admin", "smm"],
   "ov-smm-hashtag-sets":    ["admin", "smm"],
@@ -72,14 +72,14 @@ export const KEY_WRITE_EMAILS: Record<string, string[]> = {
  * úkoly, výstupy, technika, kalendář). Uvedené klíče jsou citlivé.
  * READ role je vždy nadmnožinou WRITE rolí téhož klíče (viz invariant). */
 export const KEY_READ_ROLES: Record<string, Role[]> = {
-  "ov-odmeny":              ["admin", "fakturace", "ucetni"],
-  "ov-finance-summaries":   ["admin", "fakturace", "ucetni"],
-  "ov-finance-incomes":     ["admin", "fakturace", "ucetni"],
-  "ov-finance-expenses":    ["admin", "fakturace", "ucetni"],
-  "ov-finance-faktury":     ["admin", "fakturace", "ucetni"],
-  "ov-finance-doklady":     ["admin", "fakturace", "ucetni"],
-  "ov-finance-predplatne":  ["admin", "fakturace", "ucetni"],
-  "ov-issued-invoices":     ["admin", "fakturace", "ucetni"],
+  "ov-odmeny":              ["admin", "fakturace"],
+  "ov-finance-summaries":   ["admin", "fakturace"],
+  "ov-finance-incomes":     ["admin", "fakturace"],
+  "ov-finance-expenses":    ["admin", "fakturace"],
+  "ov-finance-faktury":     ["admin", "fakturace"],
+  "ov-finance-doklady":     ["admin", "fakturace"],
+  "ov-finance-predplatne":  ["admin", "fakturace"],
+  "ov-issued-invoices":     ["admin", "fakturace"],
   "ov-schvaleni-items":     ["admin", "fakturace"],
   "ov-cile":                ["admin", "fakturace"],
   "ov-vyhledy-zustatek":    ["admin", "fakturace"],
@@ -92,10 +92,10 @@ export const KEY_READ_ROLES: Record<string, Role[]> = {
   "ov-gdpr-consents":       ["admin", "fakturace"],
   "ov-audit-log":           ["admin"],
   "ov-ads":                 ["admin"],
-  "ov-ads-campaigns":       ["admin", "smm"],
+  "ov-ads-campaigns":       ["admin"],
   // Sazby týmu (Kč/h) a historie MRR — citlivá čísla, jen finance/vedení.
-  "ov-team-rates":          ["admin", "fakturace", "ucetni"],
-  "ov-mrr-history":         ["admin", "fakturace", "ucetni"],
+  "ov-team-rates":          ["admin", "fakturace"],
+  "ov-mrr-history":         ["admin", "fakturace"],
   // Ryze vedení: AI konverzace, strategický plán, rychlé poznámky, zálohy, koš.
   "ov-ai-chats":            ["admin"],
   "ov-gameplan":            ["admin"],
@@ -114,7 +114,7 @@ export const KEY_READ_EMAILS: Record<string, string[]> = {
 /* ── Redakce citlivých polí ───────────────────────────────────────────────────
  * Klíče míchající data pro všechny (jména/loga klientů) s citlivými (ceny).
  * Serverově odstřihneme peněžní pole těm, kdo je nemají vidět. */
-export const FINANCE_READ_ROLES: Role[] = ["admin", "fakturace", "ucetni"];
+export const FINANCE_READ_ROLES: Role[] = ["admin", "fakturace"];
 
 export function canWriteKey(key: string, roles: Role[], email: string): boolean {
   if (roles.includes("admin")) return true;
@@ -156,10 +156,48 @@ export function redactForRead(key: string, value: unknown, roles: Role[]): unkno
       return c;
     });
   }
+  // Jednorázovky: produkce potřebuje projekty pro práci, ale ceny vidí jen
+  // jednatelé + fakturace. Ostatním se castka serverově odstřihne.
+  if (key === "ov-oneoffs-projects" && Array.isArray(value)) {
+    const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));
+    if (privileged) return value;
+    return value.map((p) => {
+      if (p && typeof p === "object") {
+        const rest = { ...(p as Record<string, unknown>) };
+        delete rest.castka;
+        return rest;
+      }
+      return p;
+    });
+  }
   // Notifikační eventy: položky označené adminOnly (selfcheck nálezy s
   // částkami, cash-gap…) se ne-adminům server-side odfiltrují.
   if (key === "ov-notif-events" && Array.isArray(value)) {
     return value.filter((e) => !(e && typeof e === "object" && (e as Record<string, unknown>).adminOnly === true));
   }
   return value;
+}
+
+/* ── Ochrana redagovaných polí při zápisu ─────────────────────────────────────
+ * Kdo dostal data BEZ cen (produkce u jednorázovek), nesmí je uložením smazat.
+ * Před zápisem se citlivá pole obnoví z existující hodnoty v DB (párování dle id). */
+export function mergeProtectedWrite(key: string, incoming: unknown, existing: unknown, roles: Role[]): unknown {
+  if (roles.includes("admin")) return incoming;
+  if (key === "ov-oneoffs-projects" && Array.isArray(incoming)) {
+    const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));
+    if (privileged) return incoming;
+    const prevById = new Map(
+      (Array.isArray(existing) ? existing : [])
+        .filter((p): p is Record<string, unknown> => !!p && typeof p === "object")
+        .map((p) => [p.id, p])
+    );
+    return incoming.map((p) => {
+      if (p && typeof p === "object") {
+        const prev = prevById.get((p as Record<string, unknown>).id);
+        return { ...(p as Record<string, unknown>), castka: (prev?.castka as number | undefined) ?? 0 };
+      }
+      return p;
+    });
+  }
+  return incoming;
 }

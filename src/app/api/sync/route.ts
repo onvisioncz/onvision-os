@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_USERS, type Role } from "@/lib/roles";
-import { canReadKey, canWriteKey, readNeedsRoles, redactForRead } from "@/lib/sync-acl";
+import { canReadKey, canWriteKey, readNeedsRoles, redactForRead, mergeProtectedWrite } from "@/lib/sync-acl";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -183,6 +183,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Ochrana redagovaných polí: kdo ceny nevidí, nesmí je zápisem smazat ────
+  const valueToWrite = mergeProtectedWrite(key, value, currentValue, userRoles);
+
   // ── Zápis (podmíněný na updated_at kvůli souběhu mezi čtením a zápisem) ────
   const newTs = new Date().toISOString();
   let writeError: string | null = null;
@@ -191,13 +194,13 @@ export async function POST(req: NextRequest) {
     // Legacy klient, nebo řádek zatím neexistuje → upsert (staré chování).
     const { error } = await supabase
       .from("app_data")
-      .upsert({ key, value, updated_at: newTs }, { onConflict: "key" });
+      .upsert({ key, value: valueToWrite, updated_at: newTs }, { onConflict: "key" });
     if (error) writeError = error.message;
   } else {
     // Podmíněný update: projde jen když se updated_at pořád rovná baseToken.
     const { data: upd, error } = await supabase
       .from("app_data")
-      .update({ value, updated_at: newTs })
+      .update({ value: valueToWrite, updated_at: newTs })
       .eq("key", key)
       .eq("updated_at", baseToken as string)
       .select("updated_at");

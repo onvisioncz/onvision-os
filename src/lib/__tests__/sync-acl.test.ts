@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   KEY_WRITE_ROLES, KEY_READ_ROLES,
-  canReadKey, canWriteKey, redactForRead, readNeedsRoles,
+  canReadKey, canWriteKey, redactForRead, readNeedsRoles, mergeProtectedWrite,
 } from "../sync-acl";
 import type { Role } from "../roles";
 
@@ -34,7 +34,7 @@ describe("canReadKey", () => {
 
   it("fakturace a účetní čtou finance", () => {
     expect(canReadKey("ov-odmeny", ["fakturace"], "f@onvision.cz")).toBe(true);
-    expect(canReadKey("ov-odmeny", ["ucetni"], "u@onvision.cz")).toBe(true);
+    expect(canReadKey("ov-odmeny", ["ucetni"], "u@onvision.cz")).toBe(false); // ucetni už finance nečte
     expect(canReadKey("ov-finance-faktury", ["fakturace"], "f@onvision.cz")).toBe(true);
   });
 
@@ -79,7 +79,7 @@ describe("redactForRead — ceny měsíčních klientů", () => {
   });
 
   it("fakturace, účetní a admin vidí ceny", () => {
-    for (const roles of [["fakturace"], ["ucetni"], ["admin"]] as Role[][]) {
+    for (const roles of [["fakturace"], ["admin"]] as Role[][]) {
       const out = redactForRead("ov-monthly-clients", clients, roles) as Record<string, unknown>[];
       expect(out[0].pausal).toBe(50000);
     }
@@ -119,5 +119,54 @@ describe("ov-notif-events: adminOnly redakce (selfcheck nálezy s částkami)", 
   it("čtení eventů vyžaduje role (kvůli redakci), ale nezakazuje ne-adminům", () => {
     expect(readNeedsRoles("ov-notif-events")).toBe(true);
     expect(canReadKey("ov-notif-events", ["smm"], "x@y.cz")).toBe(true);
+  });
+});
+
+describe("ov-oneoffs-projects: ceny jen jednatelé + fakturace", () => {
+  const projects = [
+    { id: 1, title: "Video", klient: "ACME", castka: 65000, checklist: [] },
+    { id: 2, title: "Foceni", klient: "BETA", castka: 12000, checklist: [] },
+  ];
+  it("produkce dostane projekty BEZ castka", () => {
+    const out = redactForRead("ov-oneoffs-projects", projects, ["produkce"]) as Record<string, unknown>[];
+    expect(out[0].castka).toBeUndefined();
+    expect(out[0].title).toBe("Video");
+  });
+  it("fakturace a admin vidí ceny", () => {
+    for (const roles of [["fakturace"], ["admin"]] as Role[][]) {
+      const out = redactForRead("ov-oneoffs-projects", projects, roles) as Record<string, unknown>[];
+      expect(out[0].castka).toBe(65000);
+    }
+  });
+  it("zápis od produkce nesmaže ceny — merge z existujících dat dle id", () => {
+    const incoming = [
+      { id: 1, title: "Video UPRAVENO", klient: "ACME", checklist: [{ text: "x", done: true }] }, // bez castka (redakce)
+      { id: 3, title: "Novy projekt", klient: "GAMA" },                                          // nový — castka 0
+    ];
+    const out = mergeProtectedWrite("ov-oneoffs-projects", incoming, projects, ["produkce"]) as Record<string, unknown>[];
+    expect(out[0].castka).toBe(65000);       // cena obnovena z DB
+    expect(out[0].title).toBe("Video UPRAVENO"); // úpravy zůstaly
+    expect(out[1].castka).toBe(0);           // nový projekt bez ceny
+  });
+  it("zápis od fakturace/admina projde beze změny", () => {
+    const incoming = [{ id: 1, title: "Video", castka: 99000 }];
+    for (const roles of [["fakturace"], ["admin"]] as Role[][]) {
+      const out = mergeProtectedWrite("ov-oneoffs-projects", incoming, projects, roles) as Record<string, unknown>[];
+      expect(out[0].castka).toBe(99000);
+    }
+  });
+});
+
+describe("přísné pravidlo: částky jen admin + fakturace", () => {
+  it("finanční klíče nečte žádná jiná role", () => {
+    const financeKeys = Object.entries(KEY_READ_ROLES).filter(([, roles]) => roles.length > 0);
+    for (const [key, roles] of financeKeys) {
+      const allowed = new Set(roles);
+      // Jediné výjimky s vysvětlením: oneoffs (produkce čte, ale ceny se redagují)
+      if (key === "ov-oneoffs-projects") { expect([...allowed].sort()).toEqual(["admin", "fakturace", "produkce"]); continue; }
+      for (const r of allowed) {
+        expect(["admin", "fakturace"].includes(r), `${key} povoluje roli ${r} — částky smí jen admin + fakturace`).toBe(true);
+      }
+    }
   });
 });

@@ -303,8 +303,8 @@ export default function OneoffsPage() {
     });
   }, [projects, filterTyp, filterClen]);
 
-  const totalValue = useMemo(() => projects.reduce((s, p) => s + p.castka, 0), [projects]);
-  const visibleValue = useMemo(() => visible.reduce((s, p) => s + p.castka, 0), [visible]);
+  const totalValue = useMemo(() => projects.reduce((s, p) => s + (p.castka || 0), 0), [projects]);
+  const visibleValue = useMemo(() => visible.reduce((s, p) => s + (p.castka || 0), 0), [visible]);
 
   /* ── Shooting days this month ──── */
   const shootingDays = useMemo(
@@ -387,7 +387,8 @@ export default function OneoffsPage() {
     // Pokud faktura ještě není → úkol na vystavení (propíše se do úkolů i notifikací).
     if (!invoiceDone) {
       setTasks((prev) => [
-        { id: Date.now() + 1, nazev: `Vystavit fakturu — ${p.klient || p.title} (${fKc(p.castka)})`, projekt: p.title, prirazeno: "Adam", priorita: "Vysoká", status: "Nové", deadline: "" },
+        // Bez částky v názvu — úkoly čtou všichni, ceny jen jednatelé + fakturace.
+        { id: Date.now() + 1, nazev: `Vystavit fakturu — ${p.klient || p.title}`, projekt: p.title, prirazeno: "Adam", priorita: "Vysoká", status: "Nové", deadline: "" },
         ...(prev ?? []),
       ]);
     }
@@ -536,7 +537,7 @@ export default function OneoffsPage() {
           >
             {COLUMNS.map((col) => {
               const cards = visible.filter((p) => p.column === col.id);
-              const colTotal = cards.reduce((s, p) => s + p.castka, 0);
+              const colTotal = cards.reduce((s, p) => s + (p.castka || 0), 0);
               return (
                 <DroppableColumn
                   key={col.id}
