@@ -192,10 +192,12 @@ export const ROLE_ROUTES: Record<Role, string[]> = {
   admin:     ["*"],
   // Dashboard je exekutivní přehled jen pro jednatele (admin). Zaměstnanci mají
   // jako domovskou stránku „Můj den" (/dnes).
-  fakturace: ["/dnes", "/inbox", "/ukoly", "/finance", "/fakturace", "/smlouvy", "/gdpr", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile", "/parovani", "/upominky", "/fakturovat"],
+  // Kreativa (/produkce) je citlivý přehled dní a odměn týmu → jen jednatelé + Dominika.
+  // Zaměstnancům se posílá měsíčně přes veřejný náhledový odkaz /z/[token].
+  fakturace: ["/dnes", "/inbox", "/ukoly", "/finance", "/fakturace", "/produkce", "/smlouvy", "/gdpr", "/klienti", "/odmeny", "/ziskovost", "/cashflow", "/vykazy", "/cile", "/parovani", "/upominky", "/fakturovat"],
   ucetni:    ["/dnes", "/inbox", "/odmeny", "/fakturace", "/parovani", "/upominky"],
-  produkce:  ["/dnes", "/inbox", "/shooting", "/produkce", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
-  grafik:    ["/dnes", "/inbox", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena", "/produkce"],
+  produkce:  ["/dnes", "/inbox", "/shooting", "/call-sheet", "/technika", "/lokace", "/vykazy", "/ukoly", "/outputs", "/delivery", "/klient-share", "/zapis", "/checklist", "/dovolena"],
+  grafik:    ["/dnes", "/inbox", "/smm-studio", "/ukoly", "/outputs", "/technika", "/vykazy", "/delivery", "/zapis", "/dovolena"],
   smm:       ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/calendar", "/outputs", "/reporty", "/technika", "/vykazy", "/delivery", "/klient-share", "/zapis", "/dovolena"],
   pm:        ["/dnes", "/inbox", "/smm", "/smm-ai", "/smm-studio", "/tydenni-vyhled", "/ukoly", "/outputs", "/technika", "/vykazy", "/klient-share", "/zapis", "/dovolena"],
 };

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, ChevronDown, Layers,
   Clock, AlertCircle, CheckCircle2, User, CalendarDays,
-  TrendingUp, RefreshCw, ArrowUpCircle, ArrowDownCircle, Undo2,
+  TrendingUp, RefreshCw, ArrowUpCircle, ArrowDownCircle, Undo2, Share2,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -1416,6 +1416,8 @@ const TABS: { id:ProdTab; label:string; short:string; color:string }[] = [
 ];
 
 type HistorySnap = { zEntries: ZEntry[]; pendingItems: QPending[] };
+type ShareProdPerson = "zdenek" | "matej" | "monika" | "patrik";
+interface ShareRec { token: string; person: ShareProdPerson; createdAt?: string }
 
 export default function ProdukccePage() {
   const [tab,          setTab]          = useState<ProdTab>("prehled");
@@ -1423,11 +1425,13 @@ export default function ProdukccePage() {
   const [mEntries,     setMEntries]     = useSupabaseData<MEntry[]>("ov-produkce-matej", () => M_SEED);
   const [gEntries,     setGEntries]     = useSupabaseData<GEntry[]>("ov-produkce-grafici", () => G_SEED);
   const [pendingItems, setPendingItems] = useSupabaseData<QPending[]>("ov-produkce-pending", () => Q_SEED);
+  const [shares,       setShares]       = useSupabaseData<ShareRec[]>("ov-produkce-shares", () => []);
+  const [sharedUrl,    setSharedUrl]    = useState<string | null>(null);
   const [history,      setHistory]      = useState<HistorySnap[]>([]);
 
   // ── Kdo jsem: jednatel vidí vše, člen týmu jen SVŮJ vlastní přehled ──
   const { email, user } = useUserRole();
-  const isAdmin = !!user?.roles.includes("admin");
+  const isAdmin = !!(user?.roles.includes("admin") || user?.roles.includes("fakturace"));
   const myTab: ProdTab | null = useMemo(() => {
     const e = (email ?? "").toLowerCase();
     if (e.startsWith("zdenek@")) return "zdenek";
@@ -1459,6 +1463,21 @@ export default function ProdukccePage() {
     setHistory(h=>h.slice(0,-1));
   }, [history, canUndo]);
 
+  // ── Sdílení měsíčního náhledu zaměstnanci (veřejný odkaz /z/[token]) ──
+  const shareTab = useCallback(async (person: ProdTab) => {
+    if (person === "prehled") return;
+    const p = person as ShareProdPerson;
+    let rec = shares.find((s) => s.person === p);
+    if (!rec) {
+      rec = { token: crypto.randomUUID().replace(/-/g, ""), person: p, createdAt: new Date().toISOString() };
+      setShares((prev) => [...(prev ?? []).filter((s) => s.person !== p), rec!]);
+    }
+    const url = `${window.location.origin}/z/${rec.token}`;
+    try { await navigator.clipboard.writeText(url); } catch { /* zkopíruje ručně */ }
+    setSharedUrl(url);
+    setTimeout(() => setSharedUrl(null), 5000);
+  }, [shares, setShares]);
+
   // Ctrl+Z global listener
   useEffect(()=>{
     const handler = (e: KeyboardEvent) => {
@@ -1486,6 +1505,18 @@ export default function ProdukccePage() {
             <p className="text-[12px] text-[--muted-foreground] mt-1">{isAdmin ? "Externisté · foto, video & grafika · 2026" : "Tvůj přehled odvedené práce a čerpání · 2026"}</p>
           </div>
         </div>
+        {/* Sdílet měsíční náhled zaměstnanci (jen manažer, na osobní záložce) */}
+        <div className="flex items-center gap-2">
+        {isAdmin && tab !== "prehled" && (
+          <button
+            onClick={() => shareTab(tab)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-semibold btn-tactile shrink-0"
+            style={{ background: "oklch(0.62 0.27 265 / 0.14)", border: "1px solid oklch(0.62 0.27 265 / 0.3)", color: "oklch(0.72 0.2 265)" }}
+            title="Vytvoří odkaz jen k náhledu — zaměstnanec vidí svoje dny a co se natáčelo, nic víc">
+            <Share2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{sharedUrl ? "Zkopírováno" : "Sdílet náhled"}</span>
+          </button>
+        )}
         {/* Undo button */}
         <AnimatePresence>
           {canUndo&&(
@@ -1504,7 +1535,20 @@ export default function ProdukccePage() {
             </motion.button>
           )}
         </AnimatePresence>
+        </div>
       </motion.div>
+
+      {/* Odkaz zkopírován — potvrzení */}
+      <AnimatePresence>
+        {sharedUrl && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex items-center gap-2 px-3 py-2 rounded-[8px] text-[12px]"
+            style={{ background: "oklch(0.67 0.155 155 / 0.1)", border: "1px solid oklch(0.67 0.155 155 / 0.3)", color: "oklch(0.75 0.16 155)" }}>
+            <span className="font-semibold shrink-0">Odkaz zkopírován:</span>
+            <span className="font-mono text-[11px] truncate" style={{ color: "oklch(0.6 0.05 155)" }}>{sharedUrl}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tab bar */}
       <motion.div className="flex items-center gap-1" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.35,delay:0.05}}>
