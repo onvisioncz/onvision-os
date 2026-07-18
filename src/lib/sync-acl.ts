@@ -138,7 +138,7 @@ export function canReadKey(key: string, roles: Role[], email: string): boolean {
 
 /** Klíč potřebuje dotaz na role při čtení (buď je gated, nebo se redaguje). */
 export function readNeedsRoles(key: string): boolean {
-  return key in KEY_READ_ROLES || key in KEY_READ_EMAILS || key === "ov-monthly-clients";
+  return key in KEY_READ_ROLES || key in KEY_READ_EMAILS || key === "ov-monthly-clients" || key === "ov-notif-events";
 }
 
 export function redactForRead(key: string, value: unknown, roles: Role[]): unknown {
@@ -155,6 +155,11 @@ export function redactForRead(key: string, value: unknown, roles: Role[]): unkno
       }
       return c;
     });
+  }
+  // Notifikační eventy: položky označené adminOnly (selfcheck nálezy s
+  // částkami, cash-gap…) se ne-adminům server-side odfiltrují.
+  if (key === "ov-notif-events" && Array.isArray(value)) {
+    return value.filter((e) => !(e && typeof e === "object" && (e as Record<string, unknown>).adminOnly === true));
   }
   return value;
 }

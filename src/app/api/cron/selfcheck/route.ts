@@ -281,6 +281,9 @@ export async function GET(req: NextRequest) {
       url: "/inbox",
       createdAt: new Date().toISOString(),
       targetEmail: null,
+      // Nálezy obsahují částky (cash-gap, faktury) → jen pro jednatele.
+      // redactForRead je ne-adminům server-side vůbec nepošle.
+      adminOnly: true,
     };
     await writeKey(sb, "ov-notif-events", [...(Array.isArray(events) ? events : []), ev].slice(-100));
   }

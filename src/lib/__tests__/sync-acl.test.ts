@@ -102,3 +102,22 @@ describe("readNeedsRoles", () => {
     expect(readNeedsRoles("ov-outputs")).toBe(false);
   });
 });
+
+describe("ov-notif-events: adminOnly redakce (selfcheck nálezy s částkami)", () => {
+  const events = [
+    { id: "t1", type: "task_assigned", title: "Úkol", targetEmail: "a@b.cz" },
+    { id: "s1", type: "task_assigned", title: "Self-check", body: "Cash-gap: 120 000 Kč", targetEmail: null, adminOnly: true },
+  ];
+  it("ne-admin dostane eventy bez adminOnly položek", () => {
+    const out = redactForRead("ov-notif-events", events, ["smm"]) as { id: string }[];
+    expect(out.map((e) => e.id)).toEqual(["t1"]);
+  });
+  it("admin vidí vše", () => {
+    const out = redactForRead("ov-notif-events", events, ["admin"]) as { id: string }[];
+    expect(out).toHaveLength(2);
+  });
+  it("čtení eventů vyžaduje role (kvůli redakci), ale nezakazuje ne-adminům", () => {
+    expect(readNeedsRoles("ov-notif-events")).toBe(true);
+    expect(canReadKey("ov-notif-events", ["smm"], "x@y.cz")).toBe(true);
+  });
+});

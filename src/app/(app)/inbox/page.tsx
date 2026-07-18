@@ -350,6 +350,7 @@ interface NotifEvent {
   url: string;
   createdAt: string;
   targetEmail: string | null;
+  adminOnly?: boolean; // citlivé nálezy (selfcheck) — server je ne-adminům stejně nepošle
 }
 
 function eventToNotif(e: NotifEvent): Notif {
@@ -363,7 +364,7 @@ function eventToNotif(e: NotifEvent): Notif {
     link: e.url,
     linkLabel: e.type === "task_assigned" ? "Otevřít úkoly" : "Otevřít výstupy",
     // task_assigned má konkrétního příjemce; upload výstupu vidí obsahové role
-    audience: e.type === "task_assigned" ? { kind: "email", email: e.targetEmail } : AUD_OUTPUTS,
+    audience: e.adminOnly ? { kind: "roles", roles: ["admin"] } : e.type === "task_assigned" ? { kind: "email", email: e.targetEmail } : AUD_OUTPUTS,
   };
 }
 
