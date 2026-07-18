@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPersonView, buildZdenekView, buildGraficView, type RawZ, type RawG, type RawPending } from "./produkce-share";
+import { buildPersonView, buildZdenekView, buildGraficView, cleanStatus, type RawZ, type RawG, type RawPending } from "./produkce-share";
 
 const zEntries: RawZ[] = [
   { mesic: "Únor", datum: "10. 2.", projekt: "NERA", format: "CELODENNÍ", status: "✅", poznamka: "" },
@@ -26,6 +26,13 @@ describe("buildZdenekView", () => {
     expect(json).not.toMatch(/castka|Kč/);
     const keys = Object.keys(v.months[0].items[0]);
     expect(keys.sort()).toEqual(["datum", "detail", "poznamka", "projekt", "status"]);
+  });
+  it("neobsahuje žádné emoji ve stavu — jen čisté tokeny", () => {
+    const json = JSON.stringify(v);
+    expect(json).not.toMatch(/[✅❓❌⚠️🎬]/u);
+    for (const m of v.months) for (const it of m.items) {
+      expect(["hotovo", "ceka", ""]).toContain(it.status);
+    }
   });
   it("jméno a role z metadat", () => {
     expect(v.jmeno).toBe("Zdeněk Dolíhal");
@@ -60,5 +67,14 @@ describe("buildPersonView dispečer", () => {
       expect(v.months).toEqual([]);
       expect(v.zaznamu).toBe(0);
     }
+  });
+});
+
+describe("cleanStatus", () => {
+  it("mapuje emoji na čisté tokeny", () => {
+    expect(cleanStatus("✅")).toBe("hotovo");
+    expect(cleanStatus("❓")).toBe("ceka");
+    expect(cleanStatus("")).toBe("");
+    expect(cleanStatus("hotovo")).toBe("hotovo");
   });
 });

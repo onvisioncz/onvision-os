@@ -39,6 +39,15 @@ export const PERSON_META: Record<ProdPerson, { jmeno: string; role: string }> = 
 
 const monthIdx = (m: string) => { const i = MONTHS_CZ.indexOf((m || "").trim()); return i < 0 ? 99 : i; };
 
+/** Emoji stav ("✅"/"❓") → čistý token — žádné motikony ven na veřejný náhled. */
+export type Stav = "hotovo" | "ceka" | "";
+export function cleanStatus(raw: string): Stav {
+  const s = (raw || "").trim();
+  if (s === "✅" || s.toLowerCase() === "hotovo") return "hotovo";
+  if (s === "❓" || s === "?" || s.toLowerCase() === "čeká" || s.toLowerCase() === "ceka") return "ceka";
+  return "";
+}
+
 /** Seskupí ploché záznamy po měsících v chronologickém pořadí. */
 function groupByMonth(rows: ShareEntry[], months: string[]): ShareMonth[] {
   const map = new Map<string, ShareEntry[]>();
@@ -55,7 +64,7 @@ function groupByMonth(rows: ShareEntry[], months: string[]): ShareMonth[] {
 /** Náhled pro Zdeňka — paušální dny + bilance nadpracovaných / nevyčerpaných. */
 export function buildZdenekView(entries: RawZ[], pending: RawPending[]): PersonView {
   const rows: ShareEntry[] = (entries ?? []).map((e) => ({
-    datum: e.datum, projekt: e.projekt, detail: e.format, status: e.status, poznamka: e.poznamka,
+    datum: e.datum, projekt: e.projekt, detail: e.format, status: cleanStatus(e.status), poznamka: e.poznamka,
   }));
   const months = (entries ?? []).map((e) => e.mesic);
   const open = (pending ?? []).filter((p) => !p.settled);
@@ -74,7 +83,7 @@ export function buildZdenekView(entries: RawZ[], pending: RawPending[]): PersonV
 /** Náhled pro Matěje — seznam práce (bez částek). */
 export function buildMatejView(entries: RawM[]): PersonView {
   const rows: ShareEntry[] = (entries ?? []).map((e) => ({
-    datum: e.datum, projekt: e.projekt, detail: e.format, status: e.status, poznamka: e.poznamka,
+    datum: e.datum, projekt: e.projekt, detail: e.format, status: cleanStatus(e.status), poznamka: e.poznamka,
   }));
   return {
     person: "matej", ...PERSON_META.matej,
@@ -89,7 +98,7 @@ export function buildMatejView(entries: RawM[]): PersonView {
 export function buildGraficView(entries: RawG[], grafik: "Monika" | "Patrik"): PersonView {
   const mine = (entries ?? []).filter((e) => (e.grafik || "").toLowerCase() === grafik.toLowerCase());
   const rows: ShareEntry[] = mine.map((e) => ({
-    datum: e.datum, projekt: e.projekt, detail: e.popis, status: e.status, poznamka: e.poznamka,
+    datum: e.datum, projekt: e.projekt, detail: e.popis, status: cleanStatus(e.status), poznamka: e.poznamka,
   }));
   const person: ProdPerson = grafik.toLowerCase() === "monika" ? "monika" : "patrik";
   return {

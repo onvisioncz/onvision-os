@@ -24,6 +24,17 @@ const wrap: React.CSSProperties = {
 const cardS: React.CSSProperties = { width: "100%", maxWidth: 640, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22, marginBottom: 16 };
 const labelS: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: C.soft };
 
+/** Čistý stavový odznak — žádné emoji. */
+function StatusBadge({ stav }: { stav: string }) {
+  if (stav === "hotovo") return (
+    <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", padding: "3px 8px", borderRadius: 99, background: "rgba(63,191,111,0.14)", color: "#4bd07f", border: "1px solid rgba(63,191,111,0.3)" }}>HOTOVO</span>
+  );
+  if (stav === "ceka") return (
+    <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", padding: "3px 8px", borderRadius: 99, background: "rgba(255,180,80,0.12)", color: "#ffc266", border: "1px solid rgba(255,180,80,0.28)" }}>ČEKÁ</span>
+  );
+  return <span style={{ flexShrink: 0, width: 8 }} />;
+}
+
 export default function ProdukceSharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [view, setView] = useState<View | null>(null);
@@ -95,7 +106,7 @@ export default function ProdukceSharePage({ params }: { params: Promise<{ token:
                   <p style={{ fontSize: 14, fontWeight: 600 }}>{e.projekt}</p>
                   <p style={{ fontSize: 12.5, color: C.soft, marginTop: 1 }}>{e.detail}{e.poznamka ? ` · ${e.poznamka}` : ""}</p>
                 </div>
-                <span style={{ fontSize: 14, flexShrink: 0 }}>{e.status}</span>
+                <StatusBadge stav={e.status} />
               </div>
             ))}
           </div>
