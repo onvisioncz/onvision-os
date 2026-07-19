@@ -35,8 +35,8 @@ type ColumnId =
   | "dokonceno";
 
 type Priorita = "vysoká" | "střední" | "nízká";
-type Typ = "VIDEO PRODUKCE" | "PORTRÉTOVÉ FOCENÍ" | "LIFESTYLE FOCENÍ" | "GRAFICKÉ SLUŽBY" | "DESIGNOVÉ SLUŽBY";
-const TYPY: Typ[] = ["VIDEO PRODUKCE", "PORTRÉTOVÉ FOCENÍ", "LIFESTYLE FOCENÍ", "GRAFICKÉ SLUŽBY", "DESIGNOVÉ SLUŽBY"];
+type Typ = "VIDEO PRODUKCE" | "PORTRÉTOVÉ FOCENÍ" | "LIFESTYLE FOCENÍ" | "GRAFICKÉ SLUŽBY" | "DESIGNOVÉ SLUŽBY" | "LIVE COVERAGE";
+const TYPY: Typ[] = ["VIDEO PRODUKCE", "PORTRÉTOVÉ FOCENÍ", "LIFESTYLE FOCENÍ", "GRAFICKÉ SLUŽBY", "DESIGNOVÉ SLUŽBY", "LIVE COVERAGE"];
 // Celý tým OnVision (křestní jména; Jan = Honza dle zavedeného úzu).
 const TEAM: string[] = ["Adam", "Honza", "Zdeněk", "Matěj", "Michael", "Monika", "Patrik", "Martin", "Tereza", "David", "Dominika", "Jakub", "Tomáš"];
 
@@ -213,6 +213,7 @@ const TYP_STYLE: Record<string, { color: string; bg: string; border: string }> =
   "LIFESTYLE FOCENÍ":   { color: "oklch(0.68 0.15 180)", bg: "oklch(0.68 0.15 180 / 0.09)", border: "oklch(0.68 0.15 180 / 0.22)" },
   "GRAFICKÉ SLUŽBY":    { color: "oklch(0.72 0.18 290)", bg: "oklch(0.64 0.21 290 / 0.1)",  border: "oklch(0.64 0.21 290 / 0.22)" },
   "DESIGNOVÉ SLUŽBY":   { color: "oklch(0.66 0.2 340)",  bg: "oklch(0.66 0.2 340 / 0.1)",   border: "oklch(0.66 0.2 340 / 0.22)" },
+  "LIVE COVERAGE":      { color: "oklch(0.7 0.19 25)",   bg: "oklch(0.7 0.19 25 / 0.1)",    border: "oklch(0.7 0.19 25 / 0.24)" },
 };
 const DEFAULT_TYP_STYLE = { color: "oklch(0.6 0.02 265)", bg: "oklch(1 0 0 / 0.05)", border: "oklch(1 0 0 / 0.12)" };
 
