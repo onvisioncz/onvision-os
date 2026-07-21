@@ -76,7 +76,7 @@ const COLUMNS: { id: ColumnId; label: string; tint: string; border: string }[] =
   { id: "nabidka",      label: "Nabídka",       tint: "oklch(0.62 0.27 265 / 0.08)", border: "oklch(0.62 0.27 265 / 0.22)" },
   { id: "potvrzeno",    label: "Potvrzeno",     tint: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.22)" },
   { id: "preprodukce",  label: "Pre-produkce",  tint: "oklch(0.74 0.165 75 / 0.08)",  border: "oklch(0.74 0.165 75 / 0.22)" },
-  { id: "nataceni",     label: "Natáčení",      tint: "oklch(0.65 0.22 25 / 0.08)",   border: "oklch(0.65 0.22 25 / 0.22)" },
+  { id: "nataceni",     label: "Produkční den", tint: "oklch(0.65 0.22 25 / 0.08)",   border: "oklch(0.65 0.22 25 / 0.22)" },
   { id: "postprodukce", label: "Post-produkce", tint: "oklch(0.72 0.18 290 / 0.08)",  border: "oklch(0.72 0.18 290 / 0.22)" },
   { id: "schvaleni",    label: "Schválení",     tint: "oklch(0.74 0.165 75 / 0.08)",  border: "oklch(0.74 0.165 75 / 0.22)" },
   { id: "dokonceno",    label: "Dokončeno",     tint: "oklch(0.67 0.155 155 / 0.08)", border: "oklch(0.67 0.155 155 / 0.22)" },
@@ -475,7 +475,7 @@ export default function OneoffsPage() {
         {[
           { label: "Projektů celkem", value: String(projects.length) },
           { label: "Pipeline hodnota", value: fKc(totalValue) },
-          { label: "Natáčení tento měsíc", value: `${shootingDays} ${pluralCz(shootingDays, "den", "dny", "dní")}` },
+          { label: "Produkční dny tento měsíc", value: `${shootingDays} ${pluralCz(shootingDays, "den", "dny", "dní")}` },
         ].map((s) => (
           <div key={s.label}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"

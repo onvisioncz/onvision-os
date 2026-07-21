@@ -32,7 +32,7 @@ async function readProjects(sb: SB): Promise<Project[]> {
 
 const COL_LABEL: Record<string, string> = {
   poptavka: "Poptávka", nabidka: "Nabídka", potvrzeno: "Potvrzeno", preprodukce: "Pre-produkce",
-  nataceni: "Natáčení", postprodukce: "Post-produkce", schvaleni: "Schválení", dokonceno: "Dokončeno",
+  nataceni: "Produkční den", postprodukce: "Post-produkce", schvaleni: "Schválení", dokonceno: "Dokončeno",
 };
 
 /** Projekt bez ceny — bezpečný veřejný tvar. */

@@ -132,7 +132,7 @@ const COLUMN_LABELS: Record<Project["column"], string> = {
   nabidka: "Nabídka",
   potvrzeno: "Potvrzeno",
   preprodukce: "Preprodukce",
-  nataceni: "Natáčení",
+  nataceni: "Produkční den",
   postprodukce: "Postprodukce",
   schvaleni: "Schválení",
   dokonceno: "Dokončeno",
