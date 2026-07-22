@@ -90,7 +90,7 @@ export { fmtKc };
 /** Fakturační údaje OnVision pro výzvu k fakturaci. */
 export const ONVISION_BILLING = {
   nazev: "OnVision s.r.o.",
-  adresa: "Křenová 64/13, 602 00 Brno",
+  adresa: "Palackého třída 659/11, Královo Pole, 612 00 Brno",
   ico: "23052341",
   dph: "Firma není plátce DPH",
   email: "fakturace@onvision.cz",

@@ -58,6 +58,7 @@ const s = StyleSheet.create({
   supplierName: { fontWeight: 700, fontSize: 9, marginBottom: 2 },
   supplierLine: { color: MUTED, marginBottom: 1.5 },
   supplierIco:  { color: BLUE, marginBottom: 1.5 },
+  supplierRejstrik: { color: MUTED, fontSize: 7, marginBottom: 1.5 },
   noVat:        { fontWeight: 700, fontSize: 8, marginTop: 4 },
 
   /* Right column */
@@ -211,6 +212,7 @@ export function InvoicePDF({ data }: { data: InvoiceData }) {
             <Text style={s.supplierLine}>{d.ulice}</Text>
             <Text style={s.supplierLine}>{d.psc} {d.mesto}</Text>
             <Text style={s.supplierIco}>{"IČ: "}{d.ico}</Text>
+            {d.rejstrik && <Text style={s.supplierRejstrik}>{d.rejstrik}</Text>}
             <Text style={{ height: 5 }} />
             <Link src={telHref} style={s.supplierLine}>
               <Text>{"Telefon: "}{d.telefon}</Text>

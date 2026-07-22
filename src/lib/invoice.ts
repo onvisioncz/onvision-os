@@ -32,13 +32,16 @@ export interface Dodavatel {
   konstantniSymbol?: string;
   showLogo: boolean;     // true only for onvision
   vatText: string;       // "Firma není plátce DPH" or "Nejsem plátce DPH"
+  /** Zápis v obchodním rejstříku — na obchodních listinách vyžaduje § 435 OZ.
+   *  Jen u s.r.o.; OSVČ (Jan, Adam) zapsané nejsou, proto volitelné. */
+  rejstrik?: string;
 }
 
 export const DODAVATELE: Record<DodavatelKlic, Dodavatel> = {
   onvision: {
     nazev: "OnVision s.r.o.",
-    ulice: "Křenová 64/13",
-    psc: "602 00",
+    ulice: "Palackého třída 659/11, Královo Pole",
+    psc: "612 00",
     mesto: "Brno",
     ico: "23052341",
     telefon: "603 398 994",
@@ -52,6 +55,7 @@ export const DODAVATELE: Record<DodavatelKlic, Dodavatel> = {
     konstantniSymbol: "0308",
     showLogo: true,
     vatText: "Firma není plátce DPH",
+    rejstrik: "C 144176 vedená u Krajského soudu v Brně",
   },
   jan: {
     nazev: "Jan Kříž",

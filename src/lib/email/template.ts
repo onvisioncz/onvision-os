@@ -55,7 +55,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;"
       <!-- Footer -->
       <tr><td style="padding:20px 28px 0;">
         <p style="margin:0;font-family:${BODYFONT};font-size:12px;line-height:1.6;color:${C.muted};">
-          OnVision s.r.o. · Křenová 64/13, 602 00 Brno · IČO 23052341 · Firma není plátce DPH<br>
+          OnVision s.r.o. · Palackého třída 659/11, Královo Pole, 612 00 Brno · IČO 23052341 · Firma není plátce DPH<br>
           <a href="https://www.onvision.cz" style="color:${C.accent};text-decoration:none;">www.onvision.cz</a> · fakturace@onvision.cz
         </p>
       </td></tr>

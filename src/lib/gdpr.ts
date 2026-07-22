@@ -10,7 +10,7 @@ export interface Spravce {
 export const ONVISION_SPRAVCE: Spravce = {
   nazev: "OnVision s.r.o.",
   ico: "23052341",
-  adresa: "Křenová 64/13, 602 00 Brno",
+  adresa: "Palackého třída 659/11, Královo Pole, 612 00 Brno",
   email: "info@onvision.cz",
   web: "www.onvision.cz",
 };

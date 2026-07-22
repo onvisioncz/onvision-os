@@ -209,7 +209,7 @@ export function CallSheetPDF({ data }: { data: CallSheet }) {
         )}
 
         <View style={s.footer} fixed>
-          <Text>OnVision s.r.o. · Křenová 64/13, 602 00 Brno · www.onvision.cz</Text>
+          <Text>OnVision s.r.o. · Palackého třída 659/11, Královo Pole, 612 00 Brno · www.onvision.cz</Text>
           <Text>fakturace@onvision.cz</Text>
         </View>
       </Page>
