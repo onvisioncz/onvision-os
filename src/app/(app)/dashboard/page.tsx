@@ -1365,10 +1365,11 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ── 3. Klíčové karty: Úkoly · Tento týden · Deadliny.
-               U Adama stacknuté pod sebe (místo velkého AI briefu). ── */}
+               U Adama do 2 sloupců (Úkoly | Týden, pod tím Deadliny) —
+               šetří místo, Finance jsou vidět dřív. ── */}
         <motion.div
           variants={item}
-          className={`grid grid-cols-1 gap-[14px] ${isAdamDashboard ? "" : "md:grid-cols-3"}`}
+          className={`grid grid-cols-1 gap-[14px] ${isAdamDashboard ? "md:grid-cols-2" : "md:grid-cols-3"}`}
         >
           {/* Col 1: Nejbližší deadliny (Adam: vpravo) */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 3 : 0 }}>
