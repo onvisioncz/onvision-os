@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target, Rocket,
+  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target,
   LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane, CalendarRange, FileSignature, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,6 @@ import { useInboxUnread } from "@/lib/hooks/use-inbox-unread";
 const STANDALONE_TOP = [
   { label: "Můj den",   short: "Dnes",     href: "/dnes",       icon: Sun },
   { label: "Dashboard", short: "Přehled",  href: "/dashboard",  icon: LayoutDashboard },
-  { label: "Gameplán",  short: "Plán",     href: "/gameplan",   icon: Rocket },
   { label: "Upozornění", short: "Upoz.",    href: "/inbox",      icon: Inbox },
   { label: "Úkoly",     short: "Úkoly",    href: "/ukoly",      icon: CheckSquare },
   { label: "Tým",       short: "Tým",      href: "/tym",        icon: Users },
@@ -285,9 +284,13 @@ export function SidebarNav() {
   const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
   const isAdmin     = user?.roles.includes("admin") ?? false;
 
+  // Jednatelé (admin) mají domovskou stránku Dashboard; „Můj den" je pro
+  // zaměstnance, takže se jim v menu nezobrazuje.
+  const hideForAdmin = (href: string) => isAdmin && href === "/dnes";
+
   const visibleHrefs = new Set(
     ALL_NAV
-      .filter(({ href }) => !user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]))
+      .filter(({ href }) => !hideForAdmin(href) && (!user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)])))
       .map(({ href }) => href)
   );
 
@@ -445,6 +448,10 @@ export function MobileNav() {
   const { toggleAi } = useChatContext();
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Jednatelé (admin) mají domov Dashboard; „Můj den" je jen pro zaměstnance.
+  const isAdmin = user?.roles.includes("admin") ?? false;
+  const hideForAdmin = (href: string) => isAdmin && href === "/dnes";
+
   // Clear badge when user is on /ukoly
   useEffect(() => {
     if (path === "/ukoly") markTaskBadgeSeen();
@@ -455,7 +462,7 @@ export function MobileNav() {
     { label: "Hlavní", items: [...STANDALONE_TOP, ...STANDALONE_BOTTOM] },
     ...GROUPS.map((g) => ({ label: g.label, items: g.items })),
     { label: "Systém", items: [{ short: "Nastavení", href: "/nastaveni", icon: Settings }] },
-  ].map((s) => ({ label: s.label, items: s.items.filter((i) => !user || canAccess(user.roles, i.href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)])) }))
+  ].map((s) => ({ label: s.label, items: s.items.filter((i) => !hideForAdmin(i.href) && (!user || canAccess(user.roles, i.href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]))) }))
     .filter((s) => s.items.length > 0);
 
   // 4 klíčové záložky (filtrované dle oprávnění) + „Víc"
@@ -464,7 +471,7 @@ export function MobileNav() {
     { short: "Přehled", href: "/dashboard", icon: LayoutDashboard },
     { short: "Úkoly",   href: "/ukoly",     icon: CheckSquare },
     { short: "Finance", href: "/finance",   icon: Receipt },
-  ].filter(({ href }) => !user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)]));
+  ].filter(({ href }) => !hideForAdmin(href) && (!user || canAccess(user.roles, href, [...(user.extraRoutes ?? []), ...extraRoutesForEmail(user.email)])));
 
   const bar = [...PRIMARY, { short: "Víc", href: "__more__", icon: LayoutGrid }];
 

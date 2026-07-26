@@ -835,8 +835,8 @@ export default function DashboardPage() {
           variants={item}
           className="grid grid-cols-1 md:grid-cols-6 gap-[14px]"
         >
-          {/* Greeting card (+ Nervové centrum pod ním u Adama) */}
-          <div className="md:col-span-3 flex flex-col gap-[14px]">
+          {/* Greeting card — u Adama plná šířka (AI brief nahrazen 3 kartami níže) */}
+          <div className={`${isAdamDashboard ? "md:col-span-6" : "md:col-span-3"} flex flex-col gap-[14px]`}>
           <div className={cardClass} style={{ ...cardStyle, padding: "24px 26px", ...(isAdamDashboard ? { flex: "0 0 auto" } : { flex: 1 }) }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)", marginBottom: 12, fontFamily: "var(--font-jakarta)" }}>
               {todayLabel} · OnVision Workspace
@@ -870,9 +870,7 @@ export default function DashboardPage() {
               </button>
               {/* Ghost buttons — Lucide ikony, žádné emoji */}
               {[
-                { label: "Rychlá poznámka", icon: PenLine, onClick: () => setNoteOpen(true) },
                 { label: "Zeptej se AI", icon: Sparkles, onClick: toggleAi },
-                { label: "Spustit agenta", icon: Play, onClick: () => router.push("/ai") },
               ].map(({ label, icon: BtnIcon, onClick }) => (
                 <button key={label} onClick={onClick} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
@@ -912,20 +910,10 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
-          {isAdamDashboard && (
-            <>
-              <div className={cardClass} style={{ ...cardStyle, padding: "16px 20px", flex: "0 0 auto" }}>
-                <NerveCenter stack />
-              </div>
-              <div className="flex-1"><VyhledGlance /></div>
-            </>
-          )}
           </div>
 
-          {/* AI inline card / Týdenní výhled (Adam) */}
-          {isAdamDashboard ? (
-            <div className="md:col-span-3"><AiBrief showWeekly /></div>
-          ) : (
+          {/* Pravý sloupec hlavičky — jen u zaměstnanců (Adam má místo toho 3 karty níže) */}
+          {!isAdamDashboard && (
           <div className={`${cardClass} md:col-span-3`} style={{ ...cardStyle, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1376,10 +1364,11 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── 3. Three-col: Deadlines · Kalendář · Úkoly ── */}
+        {/* ── 3. Klíčové karty: Úkoly · Tento týden · Deadliny.
+               U Adama stacknuté pod sebe (místo velkého AI briefu). ── */}
         <motion.div
           variants={item}
-          className="grid grid-cols-1 md:grid-cols-3 gap-[14px]"
+          className={`grid grid-cols-1 gap-[14px] ${isAdamDashboard ? "" : "md:grid-cols-3"}`}
         >
           {/* Col 1: Nejbližší deadliny (Adam: vpravo) */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 3 : 0 }}>
