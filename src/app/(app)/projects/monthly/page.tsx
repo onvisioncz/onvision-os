@@ -8,8 +8,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, ChevronDown, RefreshCw, Users,
   Share2, Film, Camera, Mail, Megaphone, LayoutGrid,
-  CheckCircle2, Circle, Trash2, AlertTriangle, CalendarDays,
+  CheckCircle2, Circle, Trash2, AlertTriangle, CalendarDays, CalendarPlus,
 } from "lucide-react";
+import { ProdukcniDenModal } from "@/components/produkce-den-modal";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 type DeliverableCategory =
@@ -666,6 +667,7 @@ function ClientCard({
   const [addPrirazeno, setAddPrirazeno] = useState<string>("—");
   const [showAdd, setShowAdd] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [denOpen, setDenOpen] = useState(false);
   const addRef = useRef<HTMLInputElement>(null);
 
   const visible = useMemo(
@@ -1112,8 +1114,16 @@ function ClientCard({
         </div>
       )}
 
-      {/* Footer: Nový měsíc */}
-      <div className="px-4 py-3 border-t" style={{ borderColor: "oklch(1 0 0 / 0.06)" }}>
+      {/* Footer: Zapsat produkční den + Nový měsíc */}
+      <div className="px-4 py-3 border-t flex items-center justify-between gap-2" style={{ borderColor: "oklch(1 0 0 / 0.06)" }}>
+        <button
+          onClick={() => setDenOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold btn-tactile"
+          style={{ background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.28)", color: "oklch(0.72 0.2 265)" }}
+        >
+          <CalendarPlus className="w-3.5 h-3.5" />
+          Zapsat produkční den
+        </button>
         <motion.button
           onClick={() => setConfirmReset(true)}
           whileTap={{ scale: 0.97 }}
@@ -1126,6 +1136,15 @@ function ClientCard({
           Nový měsíc →
         </motion.button>
       </div>
+
+      {denOpen && (
+        <ProdukcniDenModal
+          zdroj="monthly"
+          projekt={client.name}
+          klient={client.name}
+          onClose={() => setDenOpen(false)}
+        />
+      )}
 
       {/* Confirm reset */}
       <AnimatePresence>
