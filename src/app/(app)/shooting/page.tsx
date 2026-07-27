@@ -730,7 +730,7 @@ export default function ShootingPage() {
       </div>
 
       {/* Nejbližší projekty — akce z produkčních dní (nad kalendářem) */}
-      <NejblizsiProjekty />
+      <NejblizsiProjekty showWhenEmpty />
 
       {/* Gantt grid */}
       <div style={{ overflowX: "auto", marginBottom: 28 }} className="[&::-webkit-scrollbar]{display:none}">

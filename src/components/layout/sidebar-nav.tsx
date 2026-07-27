@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Receipt,
   CalendarDays, Settings, Megaphone, Clapperboard,
   Inbox, CheckSquare, BarChart2, PackageOpen, Layers2, LogOut, FileText,
-  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Clock, Package, MapPin, Share2, Target,
+  Building2, Film, Sparkles, ChevronRight, Wallet, ClipboardList, TrendingUp, LineChart, Camera, Package, MapPin, Share2, Target,
   LayoutGrid, X, Sun, Trash2, Landmark, BellRing, ClipboardCheck, Plane, CalendarRange, FileSignature, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,8 +39,6 @@ const GROUPS = [
     items: [
       { label: "Měsíční klienti",  short: "Měsíční",  href: "/projects/monthly", icon: Users },
       { label: "Jednorázové projekty",     short: "Projekt.", href: "/projects/oneoffs", icon: FolderKanban },
-      { label: "Výkazy hodin",     short: "Výkazy",   href: "/vykazy", icon: Clock },
-      { label: "Zápis → úkoly",    short: "Zápis",    href: "/zapis", icon: FileText },
     ],
   },
   {

@@ -28,7 +28,7 @@ type Detail = Pick<ProdukcniDen, "casZacatek" | "casKonec" | "sraz" | "scenar" |
  * Admin vidí vše + edituje detaily; označení lidé vidí své akce a svou odměnu
  * (cizí odměny server skryje). Umístěno nahoře na /shooting.
  */
-export function NejblizsiProjekty() {
+export function NejblizsiProjekty({ showWhenEmpty = false }: { showWhenEmpty?: boolean }) {
   const [dny, setDny] = useSupabaseData<ProdukcniDen[]>("ov-produkce-dny", () => []);
   const { user } = useUserRole();
   const isAdmin = !!user?.roles.includes("admin");
@@ -53,7 +53,7 @@ export function NejblizsiProjekty() {
     [dny]
   );
 
-  if (!upcoming.length) return null;
+  if (!upcoming.length && !showWhenEmpty) return null;
 
   const startEdit = (d: ProdukcniDen) => {
     setEditId(d.id);
@@ -76,6 +76,13 @@ export function NejblizsiProjekty() {
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: C.soft, marginBottom: 12, display: "flex", alignItems: "center", gap: 7 }}>
         <CalendarClock size={14} style={{ color: C.accent }} /> Nejbližší projekty
       </p>
+
+      {upcoming.length === 0 && (
+        <div style={{ background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12, padding: "18px 16px", textAlign: "center" }}>
+          <p style={{ fontSize: 13.5, color: C.text, margin: 0 }}>Zatím žádné produkční dny.</p>
+          <p style={{ fontSize: 12, color: C.soft, margin: "6px 0 0" }}>Zapiš je u klienta (Měsíční klienti → „Zapsat produkční den") nebo u jednorázovky — pak se objeví tady.</p>
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {upcoming.map((d) => {
