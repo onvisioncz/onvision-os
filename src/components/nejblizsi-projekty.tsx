@@ -72,15 +72,15 @@ export function NejblizsiProjekty({ showWhenEmpty = false }: { showWhenEmpty?: b
   );
 
   return (
-    <div style={{ marginBottom: 28 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: C.soft, marginBottom: 12, display: "flex", alignItems: "center", gap: 7 }}>
-        <CalendarClock size={14} style={{ color: C.accent }} /> Nejbližší projekty
+    <div style={{ marginBottom: 28, background: "oklch(0.62 0.27 265 / 0.06)", border: "1px solid oklch(0.62 0.27 265 / 0.25)", borderRadius: 14, padding: 18 }}>
+      <p style={{ fontSize: 15, fontWeight: 800, color: "oklch(0.97 0 0)", margin: "0 0 14px", display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-outfit)" }}>
+        <CalendarClock size={18} style={{ color: C.accent }} /> Nejbližší projekty
       </p>
 
       {upcoming.length === 0 && (
         <div style={{ background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12, padding: "18px 16px", textAlign: "center" }}>
-          <p style={{ fontSize: 13.5, color: C.text, margin: 0 }}>Zatím žádné produkční dny.</p>
-          <p style={{ fontSize: 12, color: C.soft, margin: "6px 0 0" }}>Zapiš je u klienta (Měsíční klienti → „Zapsat produkční den") nebo u jednorázovky — pak se objeví tady.</p>
+          <p style={{ fontSize: 14, color: C.text, margin: 0, fontWeight: 600 }}>Zatím žádné produkční dny.</p>
+          <p style={{ fontSize: 12.5, color: C.soft, margin: "6px 0 0" }}>Zapiš je u klienta (Měsíční klienti → „Zapsat produkční den") nebo u jednorázovky — pak se objeví tady.</p>
         </div>
       )}
 
