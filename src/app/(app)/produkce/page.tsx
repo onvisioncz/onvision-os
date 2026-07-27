@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
+import { ProdukcniDnyPanel } from "@/components/produkce-dny-panel";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Edit2, Check, ChevronDown, Layers,
@@ -1268,6 +1269,7 @@ function PrehledTab({ zEntries, mEntries, gEntries }: { zEntries:ZEntry[]; mEntr
 
   return (
     <div className="space-y-4">
+      <ProdukcniDnyPanel />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Zdeněk card */}
         <div className="card p-5 space-y-4">
