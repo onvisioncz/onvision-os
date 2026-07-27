@@ -96,7 +96,8 @@ export const KEY_READ_ROLES: Record<string, Role[]> = {
   "ov-produkce-grafici":    ["admin", "fakturace"],
   "ov-produkce-pending":    ["admin", "fakturace"],
   "ov-produkce-shares":     ["admin", "fakturace"],
-  "ov-produkce-dny":        ["admin", "fakturace"],
+  // ov-produkce-dny ZÁMĚRNĚ není zde: čtou i označení lidé (svoje akce),
+  // ale server jim přes redactForRead skryje cizí odměny. Viz níže.
   "ov-client-costs":        ["admin", "fakturace"],
   "ov-investice":           ["admin"],
   "ov-contracts":           ["admin", "fakturace"],
@@ -150,7 +151,8 @@ export function canReadKey(key: string, roles: Role[], email: string): boolean {
 /** Klíč potřebuje dotaz na role při čtení (buď je gated, nebo se redaguje). */
 export function readNeedsRoles(key: string): boolean {
   return key in KEY_READ_ROLES || key in KEY_READ_EMAILS
-    || key === "ov-monthly-clients" || key === "ov-notif-events" || key === "ov-ukoly-tasks";
+    || key === "ov-monthly-clients" || key === "ov-notif-events"
+    || key === "ov-ukoly-tasks" || key === "ov-produkce-dny";
 }
 
 export function redactForRead(key: string, value: unknown, roles: Role[], myFirst = ""): unknown {
@@ -162,6 +164,23 @@ export function redactForRead(key: string, value: unknown, roles: Role[], myFirs
     return value.filter((t) =>
       t && typeof t === "object" && isMine(String((t as Record<string, unknown>).prirazeno ?? ""), myFirst)
     );
+  }
+  // Produkční dny: admin+fakturace vidí vše (i odměny). Označení lidé vidí
+  // JEN akce, na kterých jsou — a v nich pouze SVOU odměnu; cizí odměny
+  // (cenovky ostatních) se odstřihnou. Kdo není označen, nevidí akci vůbec.
+  if (key === "ov-produkce-dny" && Array.isArray(value)) {
+    const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));
+    if (privileged) return value;
+    return value
+      .filter((d) => d && typeof d === "object" && Array.isArray((d as Record<string, unknown>).people)
+        && ((d as { people: { jmeno?: string }[] }).people).some((p) => isMine(String(p?.jmeno ?? ""), myFirst)))
+      .map((d) => {
+        const den = d as { people: { jmeno?: string; odmena?: number }[] } & Record<string, unknown>;
+        return {
+          ...den,
+          people: den.people.map((p) => isMine(String(p?.jmeno ?? ""), myFirst) ? p : { ...p, odmena: undefined }),
+        };
+      });
   }
   if (key === "ov-monthly-clients" && Array.isArray(value)) {
     const privileged = FINANCE_READ_ROLES.some((r) => roles.includes(r));

@@ -229,3 +229,43 @@ describe("ov-ukoly-tasks: zápis nesmí přepsat/smazat cizí úkoly", () => {
     expect(mergeProtectedWrite("ov-ukoly-tasks", incoming, dbTasks, ["admin"], "adam")).toBe(incoming);
   });
 });
+
+describe("ov-produkce-dny: označení vidí svou akci bez cizích odměn", () => {
+  const dny = [
+    { id: 1, projekt: "IMTOS", scenar: "tajný plán", people: [
+      { jmeno: "Zdeněk", ukol: "Kamera", odmena: 4000 },
+      { jmeno: "Matěj", ukol: "Střih", odmena: 3000 },
+    ]},
+    { id: 2, projekt: "SENIMED", people: [ { jmeno: "Tereza", ukol: "Foto", odmena: 2000 } ] },
+  ];
+
+  it("admin/fakturace vidí vše včetně všech odměn", () => {
+    for (const roles of [["admin"], ["fakturace"]] as Role[][]) {
+      const out = redactForRead("ov-produkce-dny", dny, roles, "kdokoli") as typeof dny;
+      expect(out).toHaveLength(2);
+      expect(out[0].people[1].odmena).toBe(3000);
+    }
+  });
+
+  it("Zdeněk vidí jen svou akci a jen svou odměnu (Matějova skrytá)", () => {
+    const out = redactForRead("ov-produkce-dny", dny, ["produkce"], "zdeněk") as typeof dny;
+    expect(out).toHaveLength(1);           // jen akce IMTOS, kde je označen
+    expect(out[0].projekt).toBe("IMTOS");
+    const zdenek = out[0].people.find((p) => p.jmeno === "Zdeněk")!;
+    const matej = out[0].people.find((p) => p.jmeno === "Matěj")!;
+    expect(zdenek.odmena).toBe(4000);      // svou vidí
+    expect(matej.odmena).toBeUndefined();  // cizí NE
+    expect(JSON.stringify(out)).not.toMatch(/3000|2000/); // žádná cizí cenovka
+  });
+
+  it("neoznačený člověk nevidí žádnou akci", () => {
+    const out = redactForRead("ov-produkce-dny", dny, ["smm"], "david") as unknown[];
+    expect(out).toHaveLength(0);
+  });
+
+  it("čtení produkčních dní vyžaduje identitu (kvůli redakci)", () => {
+    expect(readNeedsRoles("ov-produkce-dny")).toBe(true);
+    expect(canReadKey("ov-produkce-dny", ["produkce"], "z@onvision.cz")).toBe(true); // není přísně gated
+    expect(canWriteKey("ov-produkce-dny", ["produkce"], "z@onvision.cz")).toBe(false); // psát smí jen admin+fakturace
+  });
+});

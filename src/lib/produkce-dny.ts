@@ -31,6 +31,14 @@ export interface ProdukcniDen {
   people: DenPerson[];
   createdAt: string;
   createdBy?: string;
+  // ── Detaily akce (doplňují se na /shooting; vidí je i označení lidé) ──
+  casZacatek?: string;  // začátek (např. "8:00")
+  casKonec?: string;    // konec
+  sraz?: string;        // místo + čas srazu
+  scenar?: string;      // scénář / průběh dne (delší text)
+  podklady?: string;    // odkaz na podklady (Drive, moodboard…)
+  kontakt?: string;     // kontakt na místě (jméno + telefon)
+  poznamka?: string;    // volná poznámka
 }
 
 /* ── Odvozené úkoly (bez ceny) ──────────────────────────────────────────────── */
