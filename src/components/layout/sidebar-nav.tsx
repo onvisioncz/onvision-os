@@ -284,9 +284,10 @@ export function SidebarNav() {
   const avatarColor = user?.color ?? "oklch(0.62 0.27 265)";
   const isAdmin     = user?.roles.includes("admin") ?? false;
 
-  // Jednatelé (admin) mají domovskou stránku Dashboard; „Můj den" je pro
-  // zaměstnance, takže se jim v menu nezobrazuje.
-  const hideForAdmin = (href: string) => isAdmin && href === "/dnes";
+  // „Můj den" je jen pro zaměstnance. Skryjeme ho adminům — a taky během
+  // načítání role (user ještě není znám), aby u jednatelů neproblikl a nezmizel.
+  // Zobrazí se tedy až když je potvrzeno, že uživatel NENÍ admin.
+  const hideForAdmin = (href: string) => href === "/dnes" && (loading || isAdmin);
 
   const visibleHrefs = new Set(
     ALL_NAV
@@ -443,14 +444,15 @@ export function SidebarNav() {
 /* ── Mobile bottom nav ──────────────────────────────────────────────────── */
 export function MobileNav() {
   const path = usePathname();
-  const { user } = useUserRole();
+  const { user, loading } = useUserRole();
   const taskBadge = useTaskBadge();
   const { toggleAi } = useChatContext();
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Jednatelé (admin) mají domov Dashboard; „Můj den" je jen pro zaměstnance.
+  // Skryté i během načítání role, aby u jednatelů neproblikl a nezmizel.
   const isAdmin = user?.roles.includes("admin") ?? false;
-  const hideForAdmin = (href: string) => isAdmin && href === "/dnes";
+  const hideForAdmin = (href: string) => href === "/dnes" && (loading || isAdmin);
 
   // Clear badge when user is on /ukoly
   useEffect(() => {
