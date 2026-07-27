@@ -19,6 +19,7 @@ import { TIME_KEY, fmtHod, type TimeEntry } from "@/lib/vykazy";
 import { GEAR_KEY, GEAR_RES_KEY, type GearItem, type GearReservation } from "@/lib/gear";
 import { CALLSHEET_KEY, type CallSheet } from "@/lib/callsheet";
 import { PushNudge } from "@/components/push-subscribe-button";
+import { NejblizsiProjekty } from "@/components/nejblizsi-projekty";
 
 interface Task { id: number; nazev: string; projekt: string; prirazeno: string; priorita: string; status: string; deadline: string }
 interface ShootingDay { id: number; datum: string; klient: string; typ: string; lokace: string; clenove: string[]; zacatek: string; konec: string }
@@ -150,6 +151,9 @@ export default function DnesPage() {
       </div>
 
       <PushNudge />
+
+      {/* Moje akce / produkční dny — jen kde jsem označen (server redaguje) */}
+      <NejblizsiProjekty />
 
       <div className="grid md:grid-cols-2 gap-4 min-w-0">
         {/* Úkoly */}

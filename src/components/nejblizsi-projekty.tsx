@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarClock, MapPin, Clock, FileText, LinkIcon, Phone, Users, Pencil, Check, X } from "lucide-react";
+import { CalendarClock, MapPin, Clock, FileText, LinkIcon, Phone, Users, Pencil, Check, X, Share2 } from "lucide-react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
 import { useUserRole } from "@/lib/hooks/use-user-role";
 import type { ProdukcniDen } from "@/lib/produkce-dny";
@@ -34,6 +34,19 @@ export function NejblizsiProjekty() {
   const isAdmin = !!user?.roles.includes("admin");
   const [editId, setEditId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Detail>({});
+  const [sharedId, setSharedId] = useState<number | null>(null);
+
+  // Sdílet akci → vygeneruj token (jednou), ulož a zkopíruj /a/[token]
+  const shareAkce = async (d: ProdukcniDen) => {
+    let token = d.shareToken;
+    if (!token) {
+      token = crypto.randomUUID().replace(/-/g, "");
+      setDny((prev) => (prev ?? []).map((x) => (x.id === d.id ? { ...x, shareToken: token } : x)));
+    }
+    try { await navigator.clipboard.writeText(`${window.location.origin}/a/${token}`); } catch { /* zkopíruje ručně */ }
+    setSharedId(d.id);
+    setTimeout(() => setSharedId(null), 2500);
+  };
 
   const upcoming = useMemo(
     () => [...(dny ?? [])].sort((a, b) => ts(a.datum) - ts(b.datum)),
@@ -75,9 +88,14 @@ export function NejblizsiProjekty() {
                   <p style={{ fontSize: 12, color: C.soft, margin: "2px 0 0" }}>{d.klient}{d.datum ? ` · ${d.datum}` : ""}{d.popis ? ` · ${d.popis}` : ""}</p>
                 </div>
                 {isAdmin && !editing && (
-                  <button onClick={() => startEdit(d)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.28)", color: C.accent, fontSize: 11.5, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
-                    <Pencil size={12} /> Detaily
-                  </button>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => shareAkce(d)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: "oklch(0.67 0.155 155 / 0.12)", border: "1px solid oklch(0.67 0.155 155 / 0.3)", color: "oklch(0.78 0.16 155)", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}>
+                      {sharedId === d.id ? <Check size={12} /> : <Share2 size={12} />} {sharedId === d.id ? "Zkopírováno" : "Sdílet akci"}
+                    </button>
+                    <button onClick={() => startEdit(d)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: "oklch(0.62 0.27 265 / 0.12)", border: "1px solid oklch(0.62 0.27 265 / 0.28)", color: C.accent, fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}>
+                      <Pencil size={12} /> Detaily
+                    </button>
+                  </div>
                 )}
                 {isAdmin && editing && (
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>

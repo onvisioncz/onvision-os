@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tasksForDen, notifsForDen, odmenyByPerson, personDenView, type ProdukcniDen } from "./produkce-dny";
+import { tasksForDen, notifsForDen, odmenyByPerson, personDenView, publicDenView, type ProdukcniDen } from "./produkce-dny";
 
 const den: ProdukcniDen = {
   id: 1, zdroj: "monthly", projekt: "IMTOS — natáčení", klient: "IMTOS",
@@ -65,5 +65,15 @@ describe("personDenView — bez celkové ceny a cizích odměn", () => {
   });
   it("nepřiřazený člověk nevidí nic", () => {
     expect(personDenView(den, "Tereza")).toBeNull();
+  });
+});
+
+describe("publicDenView — veřejný odkaz bez cenovek", () => {
+  it("obsahuje logistiku + tým (jména+úkoly), ale ŽÁDNÉ odměny", () => {
+    const v = publicDenView(den);
+    expect(v.tym.map((t) => t.jmeno)).toEqual(["Zdeněk", "Matěj", "Michael"]);
+    expect(Object.keys(v.tym[0]).sort()).toEqual(["jmeno", "ukol"]);
+    const json = JSON.stringify(v);
+    expect(json).not.toMatch(/odmena|4000|3000|5000|Kč/); // žádné cenovky
   });
 });

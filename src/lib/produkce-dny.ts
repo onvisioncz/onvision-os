@@ -39,6 +39,7 @@ export interface ProdukcniDen {
   podklady?: string;    // odkaz na podklady (Drive, moodboard…)
   kontakt?: string;     // kontakt na místě (jméno + telefon)
   poznamka?: string;    // volná poznámka
+  shareToken?: string;  // veřejný odkaz na akci /a/[token] (bez cen)
 }
 
 /* ── Odvozené úkoly (bez ceny) ──────────────────────────────────────────────── */
@@ -103,6 +104,27 @@ export function odmenyByPerson(dny: ProdukcniDen[], mesicFilter?: (den: Produkcn
 export interface PersonDenView {
   projekt: string; klient: string; datum: string; popis: string;
   lokace: string; mujUkol: string; mojeOdmena: number;
+}
+
+/* ── Veřejný náhled akce (sdílený odkaz pro lidi bez loginu) ─────────────────── */
+export interface PublicDenView {
+  projekt: string; klient: string; datum: string;
+  casZacatek: string; casKonec: string; sraz: string; lokace: string;
+  scenar: string; podklady: string; kontakt: string; poznamka: string;
+  tym: { jmeno: string; ukol: string }[];  // jména + úkoly, ŽÁDNÉ odměny
+}
+
+/** Veřejný pohled na akci — logistika + tým (jména + úkoly).
+ *  ŽÁDNÉ odměny, žádná celková cena. Bezpečné pro sdílený odkaz. */
+export function publicDenView(den: ProdukcniDen): PublicDenView {
+  return {
+    projekt: den.projekt, klient: den.klient, datum: den.datum,
+    casZacatek: den.casZacatek ?? "", casKonec: den.casKonec ?? "",
+    sraz: den.sraz ?? "", lokace: den.lokace ?? "",
+    scenar: den.scenar ?? "", podklady: den.podklady ?? "",
+    kontakt: den.kontakt ?? "", poznamka: den.poznamka ?? "",
+    tym: (den.people ?? []).map((p) => ({ jmeno: p.jmeno, ukol: p.ukol })),
+  };
 }
 
 /** Co daný člověk vidí o produkčním dni — JEN jeho úkol a jeho odměna.

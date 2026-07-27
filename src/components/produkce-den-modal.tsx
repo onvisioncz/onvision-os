@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, CalendarPlus, Check, Loader2, Users } from "lucide-react";
 import { DEFAULT_USERS } from "@/lib/roles";
@@ -48,6 +49,10 @@ export function ProdukcniDenModal({ zdroj, projekt, klient, onClose, onSaved }: 
   const [rows, setRows] = useState<Record<string, Draft>>({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  // Portál do body — aby fixed overlay unikl transformovaným rodičům (karta má
+  // animaci), jinak je modal oříznutý a nejde na něj klikat.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [error, setError] = useState<string | null>(null);
 
   const toggle = (jmeno: string) => setRows((p) => ({ ...p, [jmeno]: { selected: !p[jmeno]?.selected, ukol: p[jmeno]?.ukol ?? "", odmena: p[jmeno]?.odmena ?? "" } }));
@@ -97,7 +102,9 @@ export function ProdukcniDenModal({ zdroj, projekt, klient, onClose, onSaved }: 
   const iCls = "w-full rounded-[9px] px-3 py-2 text-[13px]";
   const iStyle: React.CSSProperties = { background: "oklch(1 0 0 / 0.05)", border: "1px solid oklch(1 0 0 / 0.1)", color: "var(--foreground)", outline: "none" };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -165,6 +172,7 @@ export function ProdukcniDenModal({ zdroj, projekt, klient, onClose, onSaved }: 
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }

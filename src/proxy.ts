@@ -10,7 +10,7 @@ export async function proxy(request: NextRequest) {
   // /p = externí spolupráce u jednorázovek, /z = měsíční náhled produkce pro
   // zaměstnance) — chráněné jen neuhodnutelným tokenem v URL. Přes tato API se
   // citlivá data (ceny) nikdy neposílají ven.
-  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/", "/p/", "/api/p/", "/z/", "/api/z/"];
+  const publicPaths = ["/login", "/auth/callback", "/api/cron", "/d/", "/l/", "/k/", "/api/k/", "/p/", "/api/p/", "/z/", "/api/z/", "/a/", "/api/a/"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   // Pokud chybí env vars, pusť dál bez auth kontroly
