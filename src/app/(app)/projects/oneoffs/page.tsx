@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { useUserRole } from "@/lib/hooks/use-user-role";
 import { pluralCz } from "@/lib/format";
+import { ProdukcniDenModal } from "@/components/produkce-den-modal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   KanbanSquare, Plus, X, Edit2, Check, ChevronDown,
   ChevronLeft, ChevronRight, User, Calendar, Banknote, Tag,
-  Trash2, CheckCircle2, AlertTriangle, Link2, Copy, Download,
+  Trash2, CheckCircle2, AlertTriangle, Link2, Copy, Download, CalendarPlus,
 } from "lucide-react";
 import {
   DndContext,
@@ -901,6 +903,9 @@ function ProjectModal({
 }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [denOpen, setDenOpen] = useState(false);
+  const { user: denUser } = useUserRole();
+  const canManageDen = !!denUser?.roles.some((r) => r === "admin" || r === "fakturace");
   async function handleShare() {
     const url = await onShare();
     setShareUrl(url); setShareCopied(true);
@@ -1319,6 +1324,25 @@ function ProjectModal({
                 const dir = diff > 0 ? 1 : -1;
                 for (let i = 0; i < steps; i++) setTimeout(() => onMove(dir as -1 | 1), i * 0);
               }}
+            />
+          )}
+
+          {/* ── Zapsat produkční den (jen jednatelé + fakturace) ── */}
+          {!editing && !confirmDelete && canManageDen && (
+            <button
+              onClick={() => setDenOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
+              style={{ background: "oklch(0.62 0.27 265 / 0.14)", color: "oklch(0.72 0.2 265)", border: "1px solid oklch(0.62 0.27 265 / 0.3)" }}
+            >
+              <CalendarPlus className="w-4 h-4" /> Zapsat produkční den
+            </button>
+          )}
+          {denOpen && (
+            <ProdukcniDenModal
+              zdroj="oneoff"
+              projekt={p.title}
+              klient={p.klient}
+              onClose={() => setDenOpen(false)}
             />
           )}
 
