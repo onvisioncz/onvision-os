@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useSupabaseData } from "@/lib/hooks/use-supabase-data";
+import { NejblizsiProjekty } from "@/components/nejblizsi-projekty";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clapperboard,
@@ -727,6 +728,9 @@ export default function ShootingPage() {
           Nový výjezd
         </motion.button>
       </div>
+
+      {/* Nejbližší projekty — akce z produkčních dní (nad kalendářem) */}
+      <NejblizsiProjekty />
 
       {/* Gantt grid */}
       <div style={{ overflowX: "auto", marginBottom: 28 }} className="[&::-webkit-scrollbar]{display:none}">
