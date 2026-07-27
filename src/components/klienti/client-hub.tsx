@@ -44,7 +44,7 @@ export function ClientHub({ klientName }: { klientName: string }) {
   return (
     <div className="grid gap-2.5 grid-cols-2 lg:grid-cols-4 mb-5">
       <Stat label={`Zisk ${year}`} value={fmtKc(zisk)} color={zisk >= 0 ? GREEN : RED} icon={zisk >= 0 ? TrendingUp : TrendingDown} sub={profit ? `marže ${Math.round(profit.marze)} %` : "—"} href="/ziskovost" />
-      <Stat label={`Hodiny ${year}`} value={`${hodiny.toLocaleString("cs-CZ", { maximumFractionDigits: 0 })} h`} color={PRIMARY} icon={Clock} href="/vykazy" />
+      <Stat label={`Hodiny ${year}`} value={`${hodiny.toLocaleString("cs-CZ", { maximumFractionDigits: 0 })} h`} color={PRIMARY} icon={Clock} />
       <Stat label="Spokojenost" value={latestNps ? `${latestNps.score}/10` : "—"} color={latestNps ? (latestNps.score >= 9 ? GREEN : latestNps.score >= 7 ? AMBER : RED) : "var(--muted-foreground)"} icon={Star} href="/klient-share" />
       {shareUrl ? (
         <div className="rounded-[10px] p-3 flex flex-col justify-between" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
@@ -64,12 +64,17 @@ export function ClientHub({ klientName }: { klientName: string }) {
   );
 }
 
-function Stat({ label, value, color, icon: Icon, sub, href }: { label: string; value: string; color: string; icon: React.ElementType; sub?: string; href: string }) {
-  return (
-    <Link href={href} className="rounded-[10px] p-3" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+function Stat({ label, value, color, icon: Icon, sub, href }: { label: string; value: string; color: string; icon: React.ElementType; sub?: string; href?: string }) {
+  const inner = (
+    <>
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-[--muted-foreground] mb-1"><Icon className="w-3 h-3" style={{ color }} /> {label}</div>
       <div className="text-[18px] font-bold leading-none" style={{ color, fontFamily: "var(--font-heading)" }}>{value}</div>
       {sub && <div className="text-[11px] text-[--muted-foreground] mt-0.5">{sub}</div>}
-    </Link>
+    </>
   );
+  const cls = "rounded-[10px] p-3";
+  const st = { background: "var(--card)", border: "1px solid var(--border)" } as React.CSSProperties;
+  return href
+    ? <Link href={href} className={cls} style={st}>{inner}</Link>
+    : <div className={cls} style={st}>{inner}</div>;
 }
