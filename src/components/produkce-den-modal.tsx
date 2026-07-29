@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, CalendarPlus, Check, Loader2, Users } from "lucide-react";
 import { DEFAULT_USERS } from "@/lib/roles";
-import { firstName } from "@/lib/task-owner";
 import {
   tasksForDen, type ProdukcniDen, type DenPerson,
 } from "@/lib/produkce-dny";
@@ -13,7 +12,9 @@ import {
 /** Tým k výběru — aktivní lidé z rosteru (křestní jméno + e-mail pro notifikaci). */
 const TEAM = DEFAULT_USERS
   .filter((u) => u.aktivni !== false)
-  .map((u) => ({ jmeno: firstName(u.displayName), display: u.displayName, email: u.email }));
+  // Ukládáme CELÉ jméno (ne jen křestní) — jinak by se dva lidé se stejným
+  // křestním jménem (Matěj Hořák × Matěj Vobořil) slili v tabulce odměn.
+  .map((u) => ({ jmeno: u.displayName, display: u.displayName, email: u.email }));
 
 const fmtKc = (n: number) => new Intl.NumberFormat("cs-CZ").format(n || 0) + ",- Kč";
 

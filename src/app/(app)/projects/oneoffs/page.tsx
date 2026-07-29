@@ -40,7 +40,7 @@ type Priorita = "vysoká" | "střední" | "nízká";
 type Typ = "VIDEO PRODUKCE" | "PORTRÉTOVÉ FOCENÍ" | "LIFESTYLE FOCENÍ" | "GRAFICKÉ SLUŽBY" | "DESIGNOVÉ SLUŽBY" | "LIVE COVERAGE";
 const TYPY: Typ[] = ["VIDEO PRODUKCE", "PORTRÉTOVÉ FOCENÍ", "LIFESTYLE FOCENÍ", "GRAFICKÉ SLUŽBY", "DESIGNOVÉ SLUŽBY", "LIVE COVERAGE"];
 // Celý tým OnVision (křestní jména; Jan = Honza dle zavedeného úzu).
-const TEAM: string[] = ["Adam", "Honza", "Zdeněk", "Matěj", "Michael", "Monika", "Patrik", "Martin", "Tereza", "David", "Dominika", "Jakub", "Tomáš"];
+const TEAM: string[] = ["Adam", "Honza", "Zdeněk", "Matěj", "Matěj Vobořil", "Michael", "Monika", "Patrik", "Martin", "Tereza", "David", "Dominika", "Jakub", "Tomáš"];
 
 interface CheckItem { text: string; done: boolean; prirazeno?: string; taskId?: number }
 

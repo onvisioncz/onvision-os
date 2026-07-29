@@ -76,6 +76,17 @@ export const DEFAULT_USERS: UserConfig[] = [
     pozice: "Video produkce",
   },
   {
+    // TODO: doplnit reálný e-mail + vytvořit účet, ať mu chodí notifikace a login.
+    email: "matej.voboril@onvision.cz",
+    displayName: "Matěj Vobořil",
+    roles: ["produkce"],
+    clients: [],
+    color: "oklch(0.70 0.15 320)",
+    initials: "MV",
+    aktivni: true,
+    pozice: "Kameraman & fotograf",
+  },
+  {
     email: "monika@onvision.cz",
     displayName: "Monika Weiser",
     roles: ["grafik"],
