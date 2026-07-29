@@ -1517,8 +1517,8 @@ export default function DashboardPage() {
           {/* Col 3: Dnešní úkoly (Adam: vlevo) */}
           <div className={cardClass} style={{ ...cardStyle, padding: "18px 20px", order: isAdamDashboard ? 1 : 0 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Dnešní úkoly</p>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{tasks.filter(t => t.status === "Hotovo").length} z {tasks.length} hotových</span>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.60)" }}>Úkoly týmu</p>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{tasks.filter(t => t.status !== "Hotovo").length} otevřených</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", maxHeight: 240, overflowY: "auto", scrollbarWidth: "thin" }}>
               <AnimatePresence mode="popLayout">
@@ -1559,7 +1559,10 @@ export default function DashboardPage() {
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12.5, color: isDone ? "rgba(255,255,255,0.60)" : "rgba(255,255,255,0.88)", lineHeight: 1.4, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.nazev}</p>
-                        <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, marginTop: 3, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
+                          {t.prirazeno && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.66)" }}>{t.prirazeno}</span>}
+                          <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, display: "inline-block", background: tag.bg, color: tag.col }}>{t.priorita}</span>
+                        </div>
                       </div>
                       <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", flexShrink: 0 }}>{t.deadline ? fmtDeadline(t.deadline) : ""}</span>
                     </motion.div>
