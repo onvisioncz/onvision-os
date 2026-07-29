@@ -22,6 +22,8 @@ const jakarta = Inter({
 export const metadata: Metadata = {
   title: "OnVision OS",
   description: "Interní systém kreativní agentury OnVision s.r.o.",
+  // Interní systém — nikdy neindexovat ve vyhledávačích.
+  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
